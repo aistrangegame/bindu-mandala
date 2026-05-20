@@ -74,13 +74,21 @@ struct LotusMandalaView: View {
         let breathBoost: CGFloat = isToday && !reduceMotion ? (sin(breathePhase * .pi * 2) * 0.18) : 0
         let effectiveOpacity = max(0, min(1, baseOpacity + Double(breathBoost)))
 
+        // Bake the rotation into the Shape's path rather than applying a
+        // .rotationEffect to the view. .rotationEffect is render-only and
+        // does NOT rotate the contentShape's interpretation — so every
+        // petal's hit area ends up stacked at the top of the un-rotated
+        // parent frame, and only the last petal in the ZStack ever wins
+        // a tap. Using .rotation on the Shape itself keeps the painted
+        // path and the contentShape in the same coordinate space at the
+        // same angle.
         PetalShape()
+            .rotation(.degrees(angle))
             .fill(clusterColor)
             .opacity(effectiveOpacity)
             .blur(radius: isEmbodied ? 0.6 : 0)
             .shadow(color: isToday ? clusterColor.opacity(0.6) : .clear,
                     radius: isToday ? 14 : 0)
-            .rotationEffect(.degrees(angle))
             .contentShape(petalHitArea(angle: angle))
             .onTapGesture {
                 Haptics.light()
@@ -90,8 +98,12 @@ struct LotusMandalaView: View {
     }
 
     /// Loosely-fitted hit area to make petal taps comfortable on iPhone.
+    /// The angle is baked into the path so the hit region sits over the
+    /// painted petal — see `petalView` for why this can't be a
+    /// .rotationEffect.
     private func petalHitArea(angle: Double) -> some Shape {
         PetalShape(outerRatio: 0.46, innerRatio: 0.10, halfWidthRatio: 0.11)
+            .rotation(.degrees(angle))
     }
 
     @ViewBuilder
