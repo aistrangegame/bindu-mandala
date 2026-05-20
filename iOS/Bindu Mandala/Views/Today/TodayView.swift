@@ -1,0 +1,225 @@
+import SwiftUI
+import SwiftData
+
+/// The Today screen — the daily companion.
+/// Two variants per DESIGN_SPEC: V1 with body outline · V2 with bīja texture.
+struct TodayView: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Query(sort: \Shakti.position) private var shaktis: [Shakti]
+
+    enum Variant { case body, bija }
+    @AppStorage("today_variant_raw") private var variantRaw: String = Variant.body.storage
+    private var variant: Variant {
+        get { variantRaw == Variant.bija.storage ? .bija : .body }
+    }
+
+    @State private var nameVisible = false
+    @State private var promptVisible = false
+    @State private var showRecognition = ProcessInfo.processInfo.arguments.contains("AUTO_RECOGNIZE")
+    @State private var showSettings = ProcessInfo.processInfo.arguments.contains("OPEN_SETTINGS")
+
+    var today: Shakti? {
+        let pos = LunarPhaseService.todayPosition()
+        return shaktis.first(where: { $0.position == pos }) ?? shaktis.first
+    }
+
+    var body: some View {
+        ZStack {
+            Color.ground.ignoresSafeArea()
+
+            // Warm crimson radial behind the name
+            RadialGradient(
+                gradient: Gradient(colors: [Color.accentRed.opacity(0.18), Color.clear]),
+                center: UnitPoint(x: 0.5, y: 0.38),
+                startRadius: 0, endRadius: 320
+            )
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+
+            // V2 bīja background texture
+            if let s = today, variant == .bija {
+                Text(s.bija)
+                    .font(.custom(AppFont.cormorant, size: 280))
+                    .foregroundStyle(Color.gold.opacity(0.07))
+                    .tracking(-12)
+                    .offset(y: -8)
+                    .allowsHitTesting(false)
+            }
+
+            DustMotesView(count: 9)
+
+            if let s = today {
+                content(for: s)
+            } else {
+                ProgressView().tint(Color.gold)
+            }
+        }
+        .onAppear(perform: animateIn)
+        .fullScreenCover(isPresented: $showRecognition) {
+            if let s = today { RecognitionMomentView(shakti: s, isPresented: $showRecognition) }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                Haptics.soft()
+                showSettings = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(Color.gold.opacity(0.55))
+                    .padding(10)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+            .padding(.trailing, 8)
+            .accessibilityLabel("Settings")
+        }
+    }
+
+    private func content(for s: Shakti) -> some View {
+        VStack(spacing: 0) {
+            // Moon at top
+            MoonPhaseView()
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+
+            // Center column
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+
+                ClusterDotView(cluster: s.cluster)
+                    .padding(.bottom, variant == .bija ? 20 : 16)
+
+                Text(s.name)
+                    .font(.custom(AppFont.cormorant, size: variant == .bija ? 48 : 44))
+                    .foregroundStyle(Color.cream)
+                    .tracking(3.4)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+                    .padding(.horizontal, 24)
+                    .opacity(nameVisible ? 1 : 0)
+                    .offset(y: nameVisible ? 0 : 8)
+                    .padding(.bottom, variant == .bija ? 12 : 10)
+
+                Text(s.phonetic.uppercased())
+                    .font(.system(size: 12, weight: .regular))
+                    .tracking(2.4)
+                    .foregroundStyle(Color.cream.opacity(0.45))
+                    .padding(.bottom, variant == .bija ? 22 : 18)
+
+                Text(s.quality)
+                    .font(.custom(AppFont.cormorant, size: variant == .bija ? 22 : 20))
+                    .foregroundStyle(Color.gold)
+                    .tracking(0.8)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, variant == .bija ? 28 : 20)
+
+                Rectangle()
+                    .fill(Color.gold.opacity(0.4))
+                    .frame(width: 48, height: 0.5)
+                    .padding(.bottom, variant == .bija ? 28 : 20)
+
+                Text("\u{201C}\(s.somatic)\u{201D}")
+                    .font(.custom(AppFont.cormorantItalic, size: variant == .bija ? 20 : 19))
+                    .foregroundStyle(Color.cream.opacity(0.78))
+                    .tracking(0.4)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(6)
+                    .padding(.horizontal, 32)
+                    .opacity(promptVisible ? 1 : 0)
+                    .offset(y: promptVisible ? 0 : 6)
+                    .padding(.bottom, variant == .bija ? 36 : 28)
+
+                if variant == .body {
+                    BodyOutlineView(clusterColor: s.cluster.color, size: 90)
+                        .opacity(0.9)
+                        .padding(.bottom, 8)
+                    Text(bodyLocationLabel(s.bodilyLocation).uppercased())
+                        .font(.system(size: 10))
+                        .tracking(1.8)
+                        .foregroundStyle(s.cluster.color.opacity(0.65))
+                        .padding(.bottom, 12)
+                } else {
+                    Text(s.bija)
+                        .font(.custom(AppFont.cormorant, size: 42))
+                        .foregroundStyle(Color.gold.opacity(0.6))
+                        .tracking(2)
+                        .padding(.bottom, 6)
+                    Text("BĪJA")
+                        .font(.system(size: 10))
+                        .tracking(2.2)
+                        .foregroundStyle(Color.cream.opacity(0.3))
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            // I feel her — primary CTA
+            VStack(spacing: 12) {
+                Button(action: triggerRecognition) {
+                    Text("I feel her")
+                        .font(.custom(AppFont.cormorant, size: 20))
+                        .tracking(2.4)
+                        .foregroundStyle(Color.cream)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(
+                            Capsule().fill(Color.accentRed)
+                                .shadow(color: Color.accentRed.opacity(0.45), radius: 32, y: 4)
+                        )
+                }
+                .buttonStyle(.plain)
+
+                Text("Today's Bīja \u{2014} \(s.bija)")
+                    .font(.system(size: 11))
+                    .tracking(1.65)
+                    .foregroundStyle(Color.cream.opacity(0.3))
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
+        }
+    }
+
+    private func triggerRecognition() {
+        Haptics.medium()
+        showRecognition = true
+    }
+
+    private func animateIn() {
+        let nameAnim: Animation = reduceMotion ? .linear(duration: 0.01)
+                                               : .easeInOut(duration: 1.4)
+        let promptAnim: Animation = reduceMotion ? .linear(duration: 0.01)
+                                                 : .easeInOut(duration: 1.4)
+        withAnimation(nameAnim) { nameVisible = true }
+        withAnimation(promptAnim.delay(reduceMotion ? 0 : 0.55)) { promptVisible = true }
+    }
+
+    private func bodyLocationLabel(_ raw: String) -> String {
+        switch raw.lowercased() {
+        case "skin":   return "Skin Surface"
+        case "heart":  return "Heart Center"
+        case "head":   return "Head"
+        case "solar":  return "Solar Plexus"
+        case "ears":   return "Ears"
+        case "eyes":   return "Eyes"
+        case "tongue": return "Tongue"
+        case "nose":   return "Nose"
+        case "whole":  return "Whole Body"
+        case "spine":  return "Spine"
+        case "temples":return "Temples"
+        case "throat": return "Throat"
+        case "sacrum": return "Sacrum"
+        case "crown":  return "Crown"
+        default:       return raw.capitalized
+        }
+    }
+}
+
+private extension TodayView.Variant {
+    var storage: String { self == .body ? "body" : "bija" }
+}

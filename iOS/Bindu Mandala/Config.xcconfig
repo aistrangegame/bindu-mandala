@@ -1,0 +1,13 @@
+// Bindu Mandala — base build config.
+//
+// This file is committed. Per-machine secrets (the Airtable PAT) live in
+// Config.local.xcconfig, which is gitignored and optionally included below.
+//
+// To enable Airtable sync: create Config.local.xcconfig next to this file
+// with:
+//     AIRTABLE_PAT = patYourTokenHere
+//
+// Until that file exists the app runs entirely on bundled bootstrap data,
+// which is the whole point of being local-first.
+
+#include? "Config.local.xcconfig"

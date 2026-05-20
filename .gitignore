@@ -1,0 +1,47 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.swp
+*.swo
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+xcuserdata/
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+.swiftpm/
+
+# CocoaPods / Carthage / SPM caches
+Pods/
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Secrets — Airtable PAT, etc.
+# Config.xcconfig is committed (it's a wrapper that #include?'s the local file).
+# Config.local.xcconfig holds the actual token and is never tracked.
+iOS/Bindu Mandala/Config.local.xcconfig
+iOS/Bindu Mandala/Secrets.plist
+*.env
+.env.local
+
+# Editor
+.idea/
+.vscode/
+
+# Claude Code per-project local config (permissions, etc.)
+.claude/

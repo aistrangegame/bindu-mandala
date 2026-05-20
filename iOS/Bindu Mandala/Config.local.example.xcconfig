@@ -1,0 +1,5 @@
+// Copy this file to Config.local.xcconfig (which is gitignored) and paste
+// your Airtable Personal Access Token below. The token will flow into
+// Info.plist at build time and AirtableService will pick it up.
+
+AIRTABLE_PAT = patReplaceMeWithYourToken
