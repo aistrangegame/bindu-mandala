@@ -117,7 +117,13 @@ struct RecognitionMomentView: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { dismiss() }
+        .onTapGesture {
+            // Don't allow dismissing the ceremony before her name has arrived —
+            // the recognition has already been logged in stage(), so an early
+            // tap would cost the user the visual without changing the record.
+            guard nameVisible else { return }
+            dismiss()
+        }
         .onAppear(perform: stage)
         .preferredColorScheme(.dark)
         .statusBarHidden()

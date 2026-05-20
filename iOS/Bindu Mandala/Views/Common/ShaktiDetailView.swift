@@ -34,6 +34,7 @@ struct ShaktiDetailView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .enableSwipeBack()
     }
 
     // MARK: - Sections
@@ -73,9 +74,18 @@ struct ShaktiDetailView: View {
                 .tracking(2.0)
                 .foregroundStyle(Color.cream.opacity(0.4))
                 .padding(.bottom, 12)
-            HStack(spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
                 ClusterDotView(cluster: shakti.cluster)
-                statusPill
+                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 4) {
+                    statusPill
+                    if shakti.status != .embodied {
+                        Text("Tap to deepen".uppercased())
+                            .font(.system(size: 9))
+                            .tracking(1.6)
+                            .foregroundStyle(Color.cream.opacity(0.4))
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

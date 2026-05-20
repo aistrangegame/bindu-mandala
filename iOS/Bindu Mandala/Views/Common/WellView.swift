@@ -134,6 +134,7 @@ struct LetterEditorView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .enableSwipeBack()
         .onAppear(perform: load)
         .onDisappear(perform: save)
     }

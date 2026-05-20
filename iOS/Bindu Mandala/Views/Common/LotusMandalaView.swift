@@ -35,14 +35,33 @@ struct LotusMandalaView: View {
 
     // MARK: - Petals
 
+    @ViewBuilder
     private var petals: some View {
-        ZStack {
-            ForEach(0..<16, id: \.self) { i in
-                let shakti = shakti(at: i)
-                let angle = Double(i) * 22.5
-                petalView(for: shakti, at: i, angle: angle)
+        if shaktis.isEmpty {
+            skeletonPetals
+        } else {
+            ZStack {
+                ForEach(0..<16, id: \.self) { i in
+                    let shakti = shakti(at: i)
+                    let angle = Double(i) * 22.5
+                    petalView(for: shakti, at: i, angle: angle)
+                }
             }
         }
+    }
+
+    /// Drawn while `shaktis` is empty (pre-bootstrap / sync error).
+    /// Faint petal outlines arranged in the 16-fold geometry. No labels,
+    /// no fills, no tap targets — the lotus reads as "not yet inhabited."
+    private var skeletonPetals: some View {
+        ZStack {
+            ForEach(0..<16, id: \.self) { i in
+                PetalShape()
+                    .stroke(Color.gold.opacity(0.10), lineWidth: 0.5)
+                    .rotationEffect(.degrees(Double(i) * 22.5))
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     @ViewBuilder

@@ -90,11 +90,11 @@ struct SilenceView: View {
                         .opacity(captionVisible ? 1 : 0)
                         .position(x: cx, y: cy + 220)
 
-                    // Tap to return hint — almost invisible
+                    // Tap to return hint — quiet, but findable in daylight.
                     Text("Tap to return".uppercased())
                         .font(.system(size: 9))
                         .tracking(2.8)
-                        .foregroundStyle(Color.cream.opacity(0.14))
+                        .foregroundStyle(Color.cream.opacity(0.28))
                         .position(x: cx, y: geo.size.height - 38)
                 }
             }
