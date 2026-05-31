@@ -8,7 +8,6 @@ struct ShaktiDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var statusCeremony: CGFloat = 0   // 0…1 pulse for the pill
     @State private var bijaPulse: CGFloat = 0        // 0…1 pulse for tap-to-hear
 
     var body: some View {
@@ -20,9 +19,15 @@ struct ShaktiDetailView: View {
                 header
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
+                        devanagariSection
                         qualitySection
                         somaticSection
+                        appreciationPhraseSection
                         bijaSection
+                        iconographySection
+                        codexPortraitSection
+                        lineageSection
+                        cosmicFunctionSection
                         tattvaSection
                         if shakti.hasFieldConnection { fieldConnectionSection }
                         herMomentsSection
@@ -30,6 +35,7 @@ struct ShaktiDetailView: View {
                     }
                     .padding(.horizontal, 26)
                 }
+                .overlay(alignment: .bottom) { BottomScrollFade() }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -69,22 +75,32 @@ struct ShaktiDetailView: View {
                 .tracking(2.0)
                 .foregroundStyle(Color.cream)
                 .padding(.bottom, 6)
+                .accessibilityLabel("\(shakti.phonetic), \(shakti.quality)")
+
+            if let etym = shakti.etymology, !etym.isEmpty {
+                Text(etym)
+                    .font(.custom(AppFont.cormorantItalic, size: 12.5))
+                    .lineSpacing(5)
+                    .foregroundStyle(Color.cream.opacity(0.55))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 10)
+            }
+
             Text(shakti.phonetic.uppercased())
                 .font(.system(size: 11))
                 .tracking(2.0)
                 .foregroundStyle(Color.cream.opacity(0.4))
                 .padding(.bottom, 12)
-            HStack(alignment: .top, spacing: 12) {
+
+            HStack(alignment: .center, spacing: 10) {
                 ClusterDotView(cluster: shakti.cluster)
-                    .padding(.top, 2)
-                VStack(alignment: .leading, spacing: 4) {
-                    statusPill
-                    if shakti.status != .embodied {
-                        Text("Tap to deepen".uppercased())
-                            .font(.system(size: 9))
-                            .tracking(1.6)
-                            .foregroundStyle(Color.cream.opacity(0.4))
-                    }
+                statusPill
+                Spacer()
+                if let kp = shakti.khadgamalaPosition {
+                    Text("\(kp) · 102")
+                        .font(.system(size: 10))
+                        .tracking(0.8)
+                        .foregroundStyle(Color.cream.opacity(0.50))
                 }
             }
         }
@@ -95,25 +111,17 @@ struct ShaktiDetailView: View {
         .overlay(Rectangle().fill(Color.gold.opacity(0.10)).frame(height: 0.5), alignment: .bottom)
     }
 
+    /// Display-only since Phase 6 — status advances through recognition count thresholds
+    /// in `AirtableService`, never through a tap on this pill.
     private var statusPill: some View {
         let color = pillColor(for: shakti.status)
-        return Button(action: advanceStatus) {
-            Text(shakti.status.label.uppercased())
-                .font(.system(size: 10))
-                .tracking(1.6)
-                .foregroundStyle(color)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-                .background(
-                    Capsule().stroke(color, lineWidth: 1)
-                )
-                .background(
-                    Capsule().fill(color.opacity(0.18 * Double(statusCeremony)))
-                )
-                .scaleEffect(1 + statusCeremony * 0.08)
-                .shadow(color: color.opacity(0.45 * Double(statusCeremony)), radius: 12 * statusCeremony)
-        }
-        .buttonStyle(.plain)
+        return Text(shakti.status.label.uppercased())
+            .font(.system(size: 10))
+            .tracking(1.6)
+            .foregroundStyle(color)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+            .background(Capsule().stroke(color, lineWidth: 1))
     }
 
     private func pillColor(for status: ShaktiStatus) -> Color {
@@ -122,34 +130,6 @@ struct ShaktiDetailView: View {
         case .exploring: return Color.gold.opacity(0.55)
         case .active:    return Color.gold
         case .embodied:  return Color.clusterInner
-        }
-    }
-
-    private func advanceStatus() {
-        guard shakti.status != .embodied else {
-            // Soft tap acknowledging she is already there.
-            Haptics.soft()
-            return
-        }
-        Haptics.soft()
-        let next = shakti.status.advanced()
-        if reduceMotion {
-            shakti.status = next
-            try? context.save()
-            return
-        }
-        // Ceremony — gentle expand & glow, settle, then commit the new status.
-        withAnimation(.easeOut(duration: 0.55)) {
-            statusCeremony = 1
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
-            withAnimation(.easeInOut(duration: 0.35)) {
-                shakti.status = next
-            }
-            try? context.save()
-            withAnimation(.easeIn(duration: 0.6).delay(0.05)) {
-                statusCeremony = 0
-            }
         }
     }
 
@@ -178,37 +158,65 @@ struct ShaktiDetailView: View {
         }
     }
 
+    /// Bīja field structure across the 102:
+    /// - Type 1 — pure syllable ("aṁ", "Hrīm")
+    /// - Type 2 — syllable + " — " + description ("Kaṃ — governs K-row …")
+    /// Parsed on the literal " — " (space + em dash + space). The description
+    /// rejoins any further " — " occurrences inside the body.
+    private var parsedBija: (syllable: String, description: String?) {
+        let raw = shakti.bija
+        let parts = raw.components(separatedBy: " — ")
+        guard parts.count > 1 else { return (raw, nil) }
+        let syllable = parts[0]
+        let description = parts[1...].joined(separator: " — ")
+        return (syllable, description.isEmpty ? nil : description)
+    }
+
     private var bijaSection: some View {
-        section("Bīja Syllable · Tap to Hear", alignment: .center) {
-            HStack(spacing: 24) {
-                Spacer(minLength: 0)
-                Text(shakti.bija)
-                    .font(.custom(AppFont.cormorant, size: 108))
-                    .foregroundStyle(Color.gold)
-                    .shadow(color: Color.gold.opacity(0.4), radius: 28)
+        let parsed = parsedBija
+        return section("Bīja Syllable · Tap to Hear", alignment: .center) {
+            VStack(spacing: 12) {
+                HStack(spacing: 24) {
+                    Spacer(minLength: 0)
+                    Text(parsed.syllable)
+                        .font(.custom(AppFont.cormorant, size: 64))
+                        .foregroundStyle(Color.gold)
+                        .shadow(color: Color.gold.opacity(0.4), radius: 20)
+                        .onTapGesture { soundBija() }
+                        .accessibilityLabel("Bija syllable: \(parsed.syllable). Tap to hear.")
+                        .accessibilityAddTraits(.isButton)
+                    ZStack {
+                        Circle()
+                            .stroke(Color.gold.opacity(0.55), lineWidth: 1)
+                            .background(Circle().fill(Color.gold.opacity(0.05)))
+                            .frame(width: 44, height: 44)
+                        Circle()
+                            .stroke(Color.gold.opacity(0.25), lineWidth: 0.5)
+                            .frame(width: 56, height: 56)
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.gold.opacity(0.85))
+                        Circle()
+                            .stroke(Color.gold.opacity(0.5), lineWidth: 1)
+                            .scaleEffect(1 + bijaPulse * 1.4)
+                            .opacity(Double(1 - bijaPulse))
+                            .frame(width: 44, height: 44)
+                    }
+                    .frame(width: 56, height: 56)
+                    .contentShape(Circle())
                     .onTapGesture { soundBija() }
-                ZStack {
-                    Circle()
-                        .stroke(Color.gold.opacity(0.55), lineWidth: 1)
-                        .background(Circle().fill(Color.gold.opacity(0.05)))
-                        .frame(width: 44, height: 44)
-                    Circle()
-                        .stroke(Color.gold.opacity(0.25), lineWidth: 0.5)
-                        .frame(width: 56, height: 56)
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.gold.opacity(0.85))
-                    // Pulse rings on tap
-                    Circle()
-                        .stroke(Color.gold.opacity(0.5), lineWidth: 1)
-                        .scaleEffect(1 + bijaPulse * 1.4)
-                        .opacity(Double(1 - bijaPulse))
-                        .frame(width: 44, height: 44)
+                    Spacer(minLength: 0)
                 }
-                .frame(width: 56, height: 56)
-                .contentShape(Circle())
-                .onTapGesture { soundBija() }
-                Spacer(minLength: 0)
+
+                if let description = parsed.description {
+                    Text(description)
+                        .font(.custom(AppFont.cormorantItalic, size: 14))
+                        .lineSpacing(8)
+                        .foregroundStyle(Color.cream.opacity(0.55))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 12)
+                }
             }
         }
     }
@@ -270,7 +278,104 @@ struct ShaktiDetailView: View {
 
     private var herMomentsSection: some View {
         section("Her Moments") {
-            HerMomentsList(position: shakti.position, clusterColor: shakti.cluster.color)
+            HerMomentsList(
+                position: shakti.position,
+                clusterColor: shakti.cluster.color,
+                airtableRecordId: shakti.airtableRecordId
+            )
+        }
+    }
+
+    // MARK: - Phase 2 sections
+
+    @ViewBuilder
+    private var devanagariSection: some View {
+        if let v = shakti.devanagari, !v.isEmpty {
+            Text(v)
+                .font(.system(size: 44))
+                .foregroundStyle(Color.cream)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 22)
+                .accessibilityLabel("Devanagari script: \(shakti.phonetic)")
+        }
+    }
+
+    @ViewBuilder
+    private var appreciationPhraseSection: some View {
+        if let v = shakti.appreciationPhrase, !v.isEmpty {
+            VStack(spacing: 14) {
+                Rectangle()
+                    .fill(Color.gold.opacity(0.3))
+                    .frame(width: 32, height: 0.5)
+                Text(v)
+                    .font(.custom(AppFont.cormorantItalic, size: 16))
+                    .tracking(0.6)
+                    .lineSpacing(7)
+                    .foregroundStyle(Color.gold)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 24)
+        }
+    }
+
+    @ViewBuilder
+    private var iconographySection: some View {
+        if let v = shakti.iconography, !v.isEmpty {
+            section("Iconography") {
+                Text(v)
+                    .font(.custom(AppFont.cormorantItalic, size: 14.5))
+                    .lineSpacing(8)
+                    .foregroundStyle(Color.cream.opacity(0.58))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    /// The soul of the screen — rendered bare, no section label.
+    /// Italic Cormorant gold, generous line height. Never truncated.
+    @ViewBuilder
+    private var codexPortraitSection: some View {
+        if let v = shakti.codexPortrait, !v.isEmpty {
+            Text(v)
+                .font(.custom(AppFont.cormorantItalic, size: 16))
+                .tracking(0.2)
+                .lineSpacing(9)
+                .foregroundStyle(Color.gold)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 26)
+        }
+    }
+
+    @ViewBuilder
+    private var lineageSection: some View {
+        if let v = shakti.shaktiFamilyRaw, !v.isEmpty {
+            section("Lineage") {
+                Text(v)
+                    .font(.custom(AppFont.cormorantItalic, size: 13.5))
+                    .lineSpacing(6)
+                    .foregroundStyle(Color.cream.opacity(0.58))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var cosmicFunctionSection: some View {
+        if let v = shakti.shaktiFunction, !v.isEmpty {
+            section("Cosmic Function") {
+                Text(v)
+                    .font(.system(size: 13.5))
+                    .lineSpacing(6)
+                    .foregroundStyle(Color.cream.opacity(0.58))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 
@@ -281,9 +386,9 @@ struct ShaktiDetailView: View {
                                         @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: alignment, spacing: 10) {
             Text(title.uppercased())
-                .font(.system(size: 9.5))
+                .font(.system(size: 10.5))
                 .tracking(2.0)
-                .foregroundStyle(Color.cream.opacity(0.3))
+                .foregroundStyle(Color.cream.opacity(0.55))
                 .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)
             content()
                 .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)
@@ -295,51 +400,99 @@ struct ShaktiDetailView: View {
 private struct HerMomentsList: View {
     let position: Int
     let clusterColor: Color
+    let airtableRecordId: String?
     @Environment(\.modelContext) private var context
 
+    @State private var airtableMoments: [RecognitionAirtableRow] = []
+    @State private var airtableLoaded = false
+
     var body: some View {
-        let entries = RecognitionLogStore(context: context).entries(for: position)
+        let localEntries = RecognitionLogStore(context: context).entries(for: position)
+
         VStack(alignment: .leading, spacing: 0) {
-            if entries.isEmpty {
-                Text("She has not been felt here yet.")
-                    .font(.custom(AppFont.cormorantItalic, size: 14))
-                    .foregroundStyle(Color.cream.opacity(0.35))
-                    .padding(.vertical, 6)
-            } else {
-                ForEach(entries) { entry in
-                    HStack(alignment: .top, spacing: 14) {
-                        Circle()
-                            .fill(clusterColor.opacity(0.7))
-                            .frame(width: 6, height: 6)
-                            .padding(.top, 6)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(timestamp(entry.timestamp))
-                                .font(.system(size: 12))
-                                .tracking(0.7)
-                                .foregroundStyle(Color.cream.opacity(0.4))
-                            if let note = entry.note, !note.isEmpty {
-                                Text(note)
-                                    .font(.custom(AppFont.cormorantItalic, size: 13))
-                                    .foregroundStyle(Color.cream.opacity(0.6))
-                            }
-                        }
-                        Spacer()
-                    }
-                    .padding(.vertical, 10)
-                    .overlay(
-                        Rectangle().fill(Color.gold.opacity(0.08)).frame(height: 0.5),
-                        alignment: .bottom
+            // Once Airtable has answered with anything, it becomes the authoritative
+            // record. Local entries are shown immediately so the section is never
+            // empty during the fetch. Offline / pre-sync / fetch-failure: keep local.
+            if airtableLoaded && !airtableMoments.isEmpty {
+                ForEach(airtableMoments) { moment in
+                    momentRow(
+                        timestamp: moment.feltAt.map(formatTimestamp) ?? "she was felt here",
+                        note: moment.notes,
+                        moonPhase: moment.moonPhase
                     )
                 }
+            } else if !localEntries.isEmpty {
+                ForEach(localEntries) { entry in
+                    momentRow(
+                        timestamp: formatTimestamp(entry.timestamp),
+                        note: entry.note,
+                        moonPhase: nil
+                    )
+                }
+            } else {
+                Text("She has not been felt here yet.")
+                    .font(.custom(AppFont.cormorantItalic, size: 14))
+                    .foregroundStyle(Color.cream.opacity(0.55))
+                    .padding(.vertical, 6)
             }
+        }
+        .task(id: airtableRecordId ?? "") {
+            await loadAirtableMoments()
         }
     }
 
-    private func timestamp(_ d: Date) -> String {
-        // "she was felt here · today, 9:14 AM" style.
+    private func momentRow(timestamp: String, note: String?, moonPhase: String?) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Circle()
+                .fill(clusterColor.opacity(0.7))
+                .frame(width: 6, height: 6)
+                .padding(.top, 6)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(timestamp)
+                        .font(.system(size: 12))
+                        .tracking(0.7)
+                        .foregroundStyle(Color.cream.opacity(0.55))
+                    if let moonPhase, !moonPhase.isEmpty {
+                        Text("· \(moonPhase.lowercased())")
+                            .font(.custom(AppFont.cormorantItalic, size: 12))
+                            .foregroundStyle(Color.cream.opacity(0.50))
+                    }
+                }
+                if let note, !note.isEmpty {
+                    Text(note)
+                        .font(.custom(AppFont.cormorantItalic, size: 13))
+                        .foregroundStyle(Color.cream.opacity(0.6))
+                }
+            }
+            Spacer()
+        }
+        .padding(.vertical, 10)
+        .overlay(
+            Rectangle().fill(Color.gold.opacity(0.08)).frame(height: 0.5),
+            alignment: .bottom
+        )
+    }
+
+    private func loadAirtableMoments() async {
+        guard let recordId = airtableRecordId, !recordId.isEmpty else {
+            airtableLoaded = false
+            return
+        }
+        do {
+            let rows = try await AirtableService.shared.fetchRecognitions(forShaktiRecordId: recordId)
+            airtableMoments = rows
+            airtableLoaded = true
+        } catch {
+            // Silent — local entries stay visible.
+            airtableLoaded = false
+        }
+    }
+
+    private func formatTimestamp(_ d: Date) -> String {
         let cal = Calendar.current
         let df = DateFormatter()
-        if cal.isDateInToday(d)        { df.dateFormat = "'she was felt here · today,' h:mm a" }
+        if cal.isDateInToday(d)         { df.dateFormat = "'she was felt here · today,' h:mm a" }
         else if cal.isDateInYesterday(d){ df.dateFormat = "'she was felt here · yesterday,' h:mm a" }
         else                            { df.dateFormat = "'she was felt here ·' MMM d, h:mm a" }
         return df.string(from: d)

@@ -279,7 +279,11 @@ enum ShaktiBootstrap {
         let descriptor = FetchDescriptor<Shakti>()
         let existing = (try? context.fetchCount(descriptor)) ?? 0
         guard existing == 0 else { return }
-        for s in all { context.insert(s) }
+        for s in all {
+            s.ringNumber = 2
+            s.khadgamalaPosition = s.position + 28   // Karṣiṇīs are Khaḍgamālā 29–44
+            context.insert(s)
+        }
         try? context.save()
     }
 }

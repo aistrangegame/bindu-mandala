@@ -62,6 +62,36 @@ struct BodyOutlineView: View {
                                control: CGPoint(x: 88 * scale, y: 56 * scale))
             drawStroke(torso, opacity: 0.4)
 
+            // Arms — from upper torso/shoulder, descending. Coordinates
+            // translated from Claude Designs/screens.jsx BodyOutlineSVG().
+            var larm = Path()
+            larm.move(to: CGPoint(x: 26 * scale, y: 70 * scale))
+            larm.addQuadCurve(to: CGPoint(x: 13 * scale, y: 120 * scale),
+                              control: CGPoint(x: 14 * scale, y: 90 * scale))
+            larm.addQuadCurve(to: CGPoint(x: 16 * scale, y: 136 * scale),
+                              control: CGPoint(x: 12 * scale, y: 132 * scale))
+            larm.addQuadCurve(to: CGPoint(x: 19 * scale, y: 135 * scale),
+                              control: CGPoint(x: 18 * scale, y: 138 * scale))
+            larm.addLine(to: CGPoint(x: 20 * scale, y: 118 * scale))
+            larm.addQuadCurve(to: CGPoint(x: 23 * scale, y: 90 * scale),
+                              control: CGPoint(x: 19 * scale, y: 106 * scale))
+            larm.addLine(to: CGPoint(x: 26 * scale, y: 70 * scale))
+            drawStroke(larm, opacity: 0.35)
+
+            var rarm = Path()
+            rarm.move(to: CGPoint(x: 94 * scale, y: 70 * scale))
+            rarm.addQuadCurve(to: CGPoint(x: 107 * scale, y: 120 * scale),
+                              control: CGPoint(x: 106 * scale, y: 90 * scale))
+            rarm.addQuadCurve(to: CGPoint(x: 104 * scale, y: 136 * scale),
+                              control: CGPoint(x: 108 * scale, y: 132 * scale))
+            rarm.addQuadCurve(to: CGPoint(x: 101 * scale, y: 135 * scale),
+                              control: CGPoint(x: 102 * scale, y: 138 * scale))
+            rarm.addLine(to: CGPoint(x: 100 * scale, y: 118 * scale))
+            rarm.addQuadCurve(to: CGPoint(x: 97 * scale, y: 90 * scale),
+                              control: CGPoint(x: 101 * scale, y: 106 * scale))
+            rarm.addLine(to: CGPoint(x: 94 * scale, y: 70 * scale))
+            drawStroke(rarm, opacity: 0.35)
+
             // Legs (left & right)
             var lleg = Path()
             lleg.move(to: CGPoint(x: 46 * scale, y: 147 * scale))

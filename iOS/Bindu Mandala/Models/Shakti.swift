@@ -6,8 +6,9 @@ import SwiftData
 /// everything else mirrors the Airtable source of truth.
 @Model
 final class Shakti {
-    /// Position 1–16 (also drives petal index 0–15 via `pos - 1`).
-    @Attribute(.unique) var position: Int
+    /// Per-ring index 1–N. Ring 2: 1–16. Unique enforced in reconcile, not by attribute,
+    /// since the same per-ring index recurs across rings (Ring 1 position 1, Ring 2 position 1, …).
+    var position: Int
 
     var name: String              // "Sparśākarṣiṇī"
     var shortName: String         // "Sparśa"
@@ -34,6 +35,32 @@ final class Shakti {
     /// Last time this row was reconciled from Airtable.
     var lastSyncedAt: Date?
 
+    // MARK: - Phase 1 — global identity + ring
+
+    /// Canonical Khaḍgamālā position 1–102 (Airtable `fldI0aV1sfOeNybHI`).
+    var khadgamalaPosition: Int?
+    /// Ring 1–9, derived from Khaḍgamālā position at reconcile time.
+    var ringNumber: Int?
+    /// Airtable record id from the live schema (distinct from the legacy `airtableId`).
+    var airtableRecordId: String?
+
+    // MARK: - Phase 1 — extended Shakti fields (read from Airtable)
+
+    var devanagari: String?           // fldDhcJ1BJQCM5llO
+    var iconography: String?          // fldXJEBCQxLdHWGuP
+    var codexPortrait: String?        // fldlcmg7wtfIxgcZu (polymorphic — Shakti context)
+    var etymology: String?            // fldXypzqrhVILCqgh
+    var appreciationPhrase: String?   // fldBqEDpBonMc2s1K
+    var shaktiFunction: String?       // fldzT3dAhsAK75rKN
+    var shaktiFamilyRaw: String?      // fldYAlclWH7CfJhOg
+
+    // MARK: - Recognition mirrors (read back from Airtable)
+
+    /// Airtable's most-recent `Last Felt` timestamp (fldWT0dGqdUQrdRGT).
+    var lastFelt: Date?
+    /// Airtable's authoritative recognition count (flddp0tLpf8iuxyt4).
+    var serverRecognitionCount: Int?
+
     init(
         position: Int,
         name: String,
@@ -51,7 +78,17 @@ final class Shakti {
         status: ShaktiStatus,
         airtableId: String? = nil,
         fieldName: String? = nil,
-        fieldNote: String? = nil
+        fieldNote: String? = nil,
+        khadgamalaPosition: Int? = nil,
+        ringNumber: Int? = nil,
+        airtableRecordId: String? = nil,
+        devanagari: String? = nil,
+        iconography: String? = nil,
+        codexPortrait: String? = nil,
+        etymology: String? = nil,
+        appreciationPhrase: String? = nil,
+        shaktiFunction: String? = nil,
+        shaktiFamilyRaw: String? = nil
     ) {
         self.position = position
         self.name = name
@@ -70,6 +107,16 @@ final class Shakti {
         self.airtableId = airtableId
         self.fieldName = fieldName
         self.fieldNote = fieldNote
+        self.khadgamalaPosition = khadgamalaPosition
+        self.ringNumber = ringNumber
+        self.airtableRecordId = airtableRecordId
+        self.devanagari = devanagari
+        self.iconography = iconography
+        self.codexPortrait = codexPortrait
+        self.etymology = etymology
+        self.appreciationPhrase = appreciationPhrase
+        self.shaktiFunction = shaktiFunction
+        self.shaktiFamilyRaw = shaktiFamilyRaw
     }
 
     var cluster: Cluster {

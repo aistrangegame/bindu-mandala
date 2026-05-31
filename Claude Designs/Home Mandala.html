@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phase 2 — The Home Mandala · Pure Geometry</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #060104;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+    }
+    #root { width: 100vw; height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,150,63,0.22); border-radius: 2px; }
+
+    /* ── Ring 2 — 16-petal lotus, per-status soft breathing ─────────────── */
+    @keyframes homeTodayBreathe {
+      0%, 100% { filter: brightness(1) drop-shadow(0 0 6px rgba(201,150,63,0.5)); }
+      50% { filter: brightness(1.55) drop-shadow(0 0 14px rgba(201,150,63,0.85)); }
+    }
+    .home-petal-today {
+      animation: homeTodayBreathe 3.5s ease-in-out infinite;
+      transform-origin: center;
+    }
+    @keyframes homeTodayGlow {
+      0%, 100% { opacity: 0.45; transform: scale(1); }
+      50% { opacity: 0.78; transform: scale(1.06); }
+    }
+    .home-petal-today-glow {
+      animation: homeTodayGlow 3.5s ease-in-out infinite;
+      transform-origin: center;
+    }
+    @keyframes homePetalEmbodied {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.18); }
+    }
+    .home-petal-embodied { animation: homePetalEmbodied 4.5s ease-in-out infinite; }
+
+    @keyframes homePetalActive {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.10); }
+    }
+    .home-petal-active { animation: homePetalActive 6s ease-in-out infinite; }
+
+    @keyframes homePetalExploring {
+      0%, 100% { filter: brightness(0.95); }
+      50% { filter: brightness(1.05); }
+    }
+    .home-petal-exploring { animation: homePetalExploring 7.5s ease-in-out infinite; }
+
+    @keyframes homePetalMapped {
+      0%, 100% { filter: brightness(0.9); }
+      50% { filter: brightness(0.98); }
+    }
+    .home-petal-mapped { animation: homePetalMapped 10s ease-in-out infinite; }
+
+    /* ── Ring 3 — 8-petal lotus, slow translucent breathing ─────────────── */
+    @keyframes homeR3Petal {
+      0%, 100% { filter: brightness(0.9); }
+      50% { filter: brightness(1.18); }
+    }
+    .home-r3-petal { animation: homeR3Petal 8s ease-in-out infinite; }
+
+    /* ── Triangles — each ring of triangles its own breath ──────────────── */
+    @keyframes triUp1 { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
+    @keyframes triUp2 { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.20); } }
+    @keyframes triUp3 { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.18); } }
+    @keyframes triUp4 { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.15); } }
+    .home-tri-up-0 { animation: triUp1  9s ease-in-out infinite; }
+    .home-tri-up-1 { animation: triUp2 11s ease-in-out infinite; }
+    .home-tri-up-2 { animation: triUp3 13s ease-in-out infinite; }
+    .home-tri-up-3 { animation: triUp4 15s ease-in-out infinite; }
+    .home-tri-down-0 { animation: triUp1 10s ease-in-out infinite; }
+    .home-tri-down-1 { animation: triUp2 12s ease-in-out infinite; }
+    .home-tri-down-2 { animation: triUp3 14s ease-in-out infinite; }
+    .home-tri-down-3 { animation: triUp4 16s ease-in-out infinite; }
+    .home-tri-down-4 { animation: triUp1 18s ease-in-out infinite; }
+
+    /* ── The Bindu — 4-second breath ────────────────────────────────────── */
+    @keyframes homeBinduBreathe {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50%      { transform: translate(-50%, -50%) scale(1.20); }
+    }
+    .home-bindu {
+      position: absolute; top: 50%; left: 50%;
+      border-radius: 50%;
+      animation: homeBinduBreathe 4s ease-in-out infinite;
+    }
+
+    /* ── Dust motes ─────────────────────────────────────────────────────── */
+    @keyframes moteRise {
+      0%   { transform: translate(0,0); opacity: 0; }
+      8%   { opacity: 1; }
+      50%  { transform: translate(calc(var(--drift)*.5), -420px); }
+      92%  { opacity: 0.5; }
+      100% { transform: translate(var(--drift), -880px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ── Data ──────────────────────────────────────────────────────────── -->
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+
+<!-- ── Components ────────────────────────────────────────────────────── -->
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="home-mandala.jsx"></script>
+
+<!-- ── App ───────────────────────────────────────────────────────────── -->
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function PhaseHeader() {
+  return null; // header lives in DesignCanvas title
+}
+
+function App() {
+  return (
+    <DesignCanvas background="#060104" title="Phase II · The Home Mandala">
+
+      {/* ─────────────────────────────────────────────────────────────────
+          THE HOME — five temporal states
+          The yantra is alive. Same instrument, different hours.
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="five-states" title="The Home — Five Temporal States"
+        subtitle="Same yantra. Different atmospheres. No labels. No tab bar. The yantra is the navigation.">
+
+        <DCArtboard id="home-dawn" label="Dawn · 6am · warm, ascending" width={390} height={844}>
+          <HomeScreen time="dawn"/>
+        </DCArtboard>
+
+        <DCArtboard id="home-noon" label="Noon · 12pm · vivid, full" width={390} height={844}>
+          <HomeScreen time="noon"/>
+        </DCArtboard>
+
+        <DCArtboard id="home-dusk" label="Dusk · 6pm · amber, descending" width={390} height={844}>
+          <HomeScreen time="dusk"/>
+        </DCArtboard>
+
+        <DCArtboard id="home-night" label="Night · 11pm · silver, deep" width={390} height={844}>
+          <HomeScreen time="night"/>
+        </DCArtboard>
+
+        <DCArtboard id="home-newmoon" label="New Moon · the Bindu rises" width={390} height={844}>
+          <HomeScreen time="newmoon"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          DESIGN NOTES — what changed from v2
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="comparison" title="The Reframe — What Changed"
+        subtitle="v2 was a diagram. v3 is the yantra itself.">
+
+        <DCArtboard id="reframe-notes" label="The Reframe" width={520} height={844}>
+          <div style={{
+            width: 520, height: 844, background: '#060104',
+            padding: '64px 48px',
+            display: 'flex', flexDirection: 'column', gap: 24,
+            color: 'rgba(242,232,217,0.7)',
+            fontFamily: "'Cormorant Garamond', serif",
+            fontWeight: 300, lineHeight: 1.7, overflow: 'hidden',
+          }}>
+            <div style={{
+              fontFamily: '-apple-system, sans-serif', fontSize: 10,
+              letterSpacing: '0.28em', textTransform: 'uppercase',
+              color: '#C9963F', opacity: 0.7, marginBottom: 12,
+            }}>Phase II · Codex of Changes</div>
+
+            <h2 style={{
+              fontSize: 38, lineHeight: 1.1, color: '#F2E8D9',
+              fontWeight: 300, letterSpacing: '0.02em', marginBottom: 12,
+            }}>The Home is not<br/>a screen.</h2>
+
+            <p style={{
+              fontSize: 18, fontStyle: 'italic',
+              color: 'rgba(242,232,217,0.55)', marginBottom: 8,
+            }}>It is a presence you return to.</p>
+
+            <div style={{
+              height: 0.5, background: 'rgba(201,150,63,0.2)', margin: '8px 0',
+            }}/>
+
+            {[
+              { gone: 'No tab bar', kept: 'The yantra is the navigation' },
+              { gone: 'No labels on the mandala', kept: 'Geometry is the language' },
+              { gone: 'No "Today" headline',     kept: 'One petal glows warmer · you learn to see her' },
+              { gone: 'No legend, no avaraṇa name', kept: 'You know where you are by feel' },
+              { gone: 'No interaction hints',    kept: 'Initiation teaches gestures · home stays pure' },
+              { gone: 'No fixed atmosphere',     kept: 'Five temporal states · the yantra reads time' },
+            ].map((row, i) => (
+              <div key={i} style={{
+                display: 'grid', gridTemplateColumns: '14px 1fr', gap: 12,
+                alignItems: 'baseline',
+              }}>
+                <div style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: '#C9963F', opacity: 0.6, marginTop: 8,
+                }}/>
+                <div>
+                  <div style={{
+                    fontSize: 12, color: 'rgba(242,232,217,0.35)',
+                    letterSpacing: '0.18em', textTransform: 'uppercase',
+                    fontFamily: '-apple-system, sans-serif',
+                    marginBottom: 4,
+                  }}>removed</div>
+                  <div style={{ fontSize: 17, color: 'rgba(242,232,217,0.9)',
+                    marginBottom: 8, fontStyle: 'italic' }}>{row.gone}</div>
+                  <div style={{
+                    fontSize: 12, color: 'rgba(201,150,63,0.6)',
+                    letterSpacing: '0.18em', textTransform: 'uppercase',
+                    fontFamily: '-apple-system, sans-serif',
+                    marginBottom: 4,
+                  }}>kept</div>
+                  <div style={{ fontSize: 17, color: '#C9963F' }}>{row.kept}</div>
+                </div>
+              </div>
+            ))}
+
+            <div style={{
+              marginTop: 'auto', paddingTop: 24,
+              borderTop: '0.5px solid rgba(201,150,63,0.15)',
+              fontSize: 14, fontStyle: 'italic',
+              color: 'rgba(242,232,217,0.45)', lineHeight: 1.7,
+            }}>
+              The yantra you encounter at dawn is not the yantra you encounter at dusk. The same nine rings, the same 102 forces — but the light is different, the breath is different, the Bindu sits differently. Time is felt, not displayed.
+            </div>
+          </div>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          ATMOSPHERIC DETAIL — comparison of breath rates per ring
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="breath-rates" title="The Living Breath"
+        subtitle="Each ring metabolizes at its own pace · the deepest are slowest">
+
+        <DCArtboard id="breath-legend" label="The Nine Metabolisms" width={520} height={520}>
+          <div style={{
+            width: 520, height: 520, background: '#060104',
+            padding: '48px 42px',
+            display: 'flex', flexDirection: 'column',
+            color: 'rgba(242,232,217,0.7)',
+            fontFamily: "'Cormorant Garamond', serif",
+            fontWeight: 300,
+          }}>
+            <div style={{
+              fontFamily: '-apple-system, sans-serif', fontSize: 10,
+              letterSpacing: '0.28em', textTransform: 'uppercase',
+              color: '#C9963F', opacity: 0.7, marginBottom: 16,
+            }}>Breath Rates</div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr 80px', gap: 14,
+              alignItems: 'center', fontSize: 14 }}>
+              {[
+                { ring: 'Ring 1', form: 'Bhupura',          rate: '—', note: 'the ground does not breathe' },
+                { ring: 'Ring 2', form: '16-petal lotus',   rate: '3s',  note: 'home ring, today\'s pull at 3.5s' },
+                { ring: 'Ring 3', form: '8-petal lotus',    rate: '8s',  note: 'translucent, slower' },
+                { ring: 'Ring 4', form: '14 triangles',     rate: '9s',  note: 'geometric, crystalline' },
+                { ring: 'Ring 5', form: '10 outer tris',    rate: '11s', note: 'completion' },
+                { ring: 'Ring 6', form: '10 inner tris',    rate: '13s', note: 'protection' },
+                { ring: 'Ring 7', form: '8 vāk tris',       rate: '15s', note: 'sound chamber' },
+                { ring: 'Ring 8', form: 'Mūla Trikoṇa',    rate: '18s', note: 'almost still' },
+                { ring: 'Ring 9', form: 'Bindu',            rate: '4s',  note: 'always alive · the heart' },
+              ].map((row, i) => (
+                <React.Fragment key={i}>
+                  <div style={{
+                    fontFamily: '-apple-system, sans-serif',
+                    fontSize: 10, letterSpacing: '0.18em',
+                    color: i === 1 ? '#C9963F' : 'rgba(242,232,217,0.35)',
+                    textTransform: 'uppercase',
+                  }}>{row.ring}</div>
+                  <div style={{
+                    fontSize: 15, color: i === 1 ? '#F2E8D9' : 'rgba(242,232,217,0.65)',
+                    fontStyle: i === 8 ? 'italic' : 'normal',
+                  }}>{row.form}</div>
+                  <div style={{
+                    fontSize: 14, color: '#C9963F', opacity: 0.75,
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontStyle: 'italic', textAlign: 'right',
+                  }}>{row.rate}</div>
+                </React.Fragment>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 28, paddingTop: 18,
+              borderTop: '0.5px solid rgba(201,150,63,0.15)',
+              fontSize: 14, fontStyle: 'italic',
+              color: 'rgba(242,232,217,0.45)', lineHeight: 1.7,
+            }}>
+              When you look at the mandala for ten seconds, your eye begins to read the rhythms. The home ring is alive. The ground is still. The Bindu pulses at the speed of a slow heart.
+            </div>
+          </div>
+        </DCArtboard>
+
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

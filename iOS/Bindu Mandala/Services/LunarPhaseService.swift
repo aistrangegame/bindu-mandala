@@ -95,4 +95,41 @@ enum LunarPhaseService {
         let f = phaseFraction(at: date)
         return (1 - cos(2 * .pi * f)) / 2
     }
+
+    /// Lunar day 1–30 — the integer day of the synodic cycle, 1-indexed.
+    /// Used by Phase 6 Recognition writes (`Lunar Day` field on the Airtable row).
+    static func currentDay(at date: Date = .now) -> Int {
+        Int(floor(moonAgeDays(at: date))) + 1
+    }
+
+    /// Human-readable phase name — "Waxing Crescent", "Full Moon", etc.
+    /// Used by Phase 6 Recognition writes (`Moon Phase` field).
+    static func phaseName(at date: Date = .now) -> String {
+        phase(at: date).label
+    }
+
+    /// 1–15 within the current fortnight. Used by Phase 9 Nityā mapping.
+    /// Synodic day 1–15 = waxing tithi 1–15. Synodic day 16–30 = waning
+    /// tithi 1–15 (i.e. currentDay − 15).
+    static func currentTithi(at date: Date = .now) -> Int {
+        let day = currentDay(at: date)
+        return day <= 15 ? day : (day - 15)
+    }
+
+    /// True for synodic day 1–15 (Śukla Pakṣa).
+    static func isWaxingFortnight(at date: Date = .now) -> Bool {
+        currentDay(at: date) <= 15
+    }
+
+    /// The Mandala's atmospheric state. New moon (phaseFraction < 0.03) overrides
+    /// everything; otherwise hour-of-day → dawn / noon / dusk / night, contiguously.
+    static func currentTimeVariant(at date: Date = .now,
+                                   calendar: Calendar = .current) -> TimeVariant {
+        if phaseFraction(at: date) < 0.03 { return .newmoon }
+        let hour = calendar.component(.hour, from: date)
+        if hour < 5 || hour >= 21 { return .night }
+        if hour < 10                { return .dawn }
+        if hour < 15                { return .noon }
+        return .dusk
+    }
 }

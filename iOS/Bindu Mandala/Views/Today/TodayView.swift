@@ -7,6 +7,8 @@ struct TodayView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Shakti.position) private var shaktis: [Shakti]
+    @Query(sort: \NityaDevi.tithiPosition) private var nityas: [NityaDevi]
+    @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
 
     enum Variant { case body, bija }
     @AppStorage("today_variant_raw") private var variantRaw: String = Variant.body.storage
@@ -17,11 +19,11 @@ struct TodayView: View {
     @State private var nameVisible = false
     @State private var promptVisible = false
     @State private var showRecognition = ProcessInfo.processInfo.arguments.contains("AUTO_RECOGNIZE")
-    @State private var showSettings = ProcessInfo.processInfo.arguments.contains("OPEN_SETTINGS")
+    @State private var nityaDetailFor: NityaSlot?
 
     var today: Shakti? {
         let pos = LunarPhaseService.todayPosition()
-        return shaktis.first(where: { $0.position == pos }) ?? shaktis.first
+        return shaktis.first(where: { $0.position == pos && ($0.ringNumber ?? 2) == 2 }) ?? shaktis.first
     }
 
     var body: some View {
@@ -59,24 +61,10 @@ struct TodayView: View {
         .fullScreenCover(isPresented: $showRecognition) {
             if let s = today { RecognitionMomentView(shakti: s, isPresented: $showRecognition) }
         }
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
-        }
-        .overlay(alignment: .topTrailing) {
-            Button {
-                Haptics.soft()
-                showSettings = true
-            } label: {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 14, weight: .light))
-                    .foregroundStyle(Color.gold.opacity(0.55))
-                    .padding(10)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 4)
-            .padding(.trailing, 8)
-            .accessibilityLabel("Settings")
+        .sheet(item: $nityaDetailFor) { slot in
+            NityaDetailView(slot: slot)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -86,6 +74,10 @@ struct TodayView: View {
             MoonPhaseView()
                 .padding(.top, 8)
                 .padding(.bottom, 12)
+
+            // Nityā — compact card just below the moon.
+            // Hidden entirely when no data resolves (.unknown).
+            nityaCardLayer
 
             // Center column
             VStack(spacing: 0) {
@@ -104,6 +96,7 @@ struct TodayView: View {
                     .opacity(nameVisible ? 1 : 0)
                     .offset(y: nameVisible ? 0 : 8)
                     .padding(.bottom, variant == .bija ? 12 : 10)
+                    .accessibilityLabel("\(s.phonetic), \(s.quality)")
 
                 Text(s.phonetic.uppercased())
                     .font(.system(size: 12, weight: .regular))
@@ -142,18 +135,13 @@ struct TodayView: View {
                     Text(bodyLocationLabel(s.bodilyLocation).uppercased())
                         .font(.system(size: 10))
                         .tracking(1.8)
-                        .foregroundStyle(s.cluster.color.opacity(0.65))
+                        .foregroundStyle(Color.cream.opacity(0.55))
                         .padding(.bottom, 12)
                 } else {
                     Text(s.bija)
                         .font(.custom(AppFont.cormorant, size: 42))
-                        .foregroundStyle(Color.gold.opacity(0.6))
+                        .foregroundStyle(Color.gold.opacity(0.85))
                         .tracking(2)
-                        .padding(.bottom, 6)
-                    Text("BĪJA")
-                        .font(.system(size: 10))
-                        .tracking(2.2)
-                        .foregroundStyle(Color.cream.opacity(0.3))
                 }
 
                 Spacer(minLength: 0)
@@ -174,16 +162,107 @@ struct TodayView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("I feel her — record recognition of \(s.phonetic)")
 
                 Text("Today's Bīja \u{2014} \(s.bija)")
                     .font(.system(size: 11))
                     .tracking(1.65)
-                    .foregroundStyle(Color.cream.opacity(0.3))
+                    .foregroundStyle(Color.cream.opacity(0.50))
+
+                RingPositionIndicatorView()
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 16)
         }
     }
+
+    // MARK: - Nityā layer (Phase 9)
+
+    /// What presides over today, resolved at view evaluation time. New moon
+    /// (waning day 15 → mirror position 0) wraps to Nityā 1 per brief's
+    /// "New moon day → Kāmeśvarī" verification rule.
+    private var nityaSlot: NityaSlot {
+        let f = LunarPhaseService.phaseFraction()
+
+        // Full moon window — Lalitā via the Ring 9 Avaraṇa
+        if f >= 0.47 && f <= 0.53 {
+            if let ring9 = avaranas.first(where: { $0.ringNumber == 9 }) {
+                return .lalita(ring9)
+            }
+            return .unknown
+        }
+
+        // Daily tithi → Nityā position (waxing direct, waning mirror)
+        let day = LunarPhaseService.currentDay()
+        let position: Int
+        if day <= 15 {
+            position = day                    // waxing 1→1 … 15→15
+        } else {
+            position = 15 - (day - 15)        // waning 16→14 … 29→1; 30→0
+        }
+        let resolved = position >= 1 ? position : 1
+        if let nitya = nityas.first(where: { $0.tithiPosition == resolved }) {
+            return .nitya(nitya)
+        }
+        return .unknown
+    }
+
+    @ViewBuilder
+    private var nityaCardLayer: some View {
+        let slot = nityaSlot
+        if case .unknown = slot {
+            EmptyView()
+        } else {
+            nityaCard(slot)
+                .padding(.bottom, 12)
+        }
+    }
+
+    private func nityaCard(_ slot: NityaSlot) -> some View {
+        let display = nityaCardDisplay(slot)
+        return Button {
+            nityaDetailFor = slot
+        } label: {
+            VStack(spacing: 4) {
+                Text(display.name)
+                    .font(.custom(AppFont.cormorantItalic, size: 17))
+                    .tracking(1.2)
+                    .foregroundStyle(Color.gold)
+                if !display.epithet.isEmpty {
+                    Text(display.epithet.uppercased())
+                        .font(.system(size: 10))
+                        .tracking(2.4)
+                        .foregroundStyle(Color.cream.opacity(0.55))
+                }
+            }
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private struct NityaCardDisplay {
+        let name: String
+        let epithet: String
+    }
+
+    private func nityaCardDisplay(_ slot: NityaSlot) -> NityaCardDisplay {
+        switch slot {
+        case .nitya(let n):
+            return NityaCardDisplay(name: n.sanskritName,
+                                    epithet: n.quality ?? "")
+        case .lalita(_):
+            // Pūrṇimā = Lalitā, named directly. Ring 9's sanskritName is the
+            // chakra ("Sarvānandamaya Chakra"), not the presiding goddess.
+            return NityaCardDisplay(name: "Lalitā Mahātripurasundarī",
+                                    epithet: "Pūrṇimā · Full Moon")
+        case .unknown:
+            return NityaCardDisplay(name: "", epithet: "")
+        }
+    }
+
+    // MARK: - Recognition
 
     private func triggerRecognition() {
         Haptics.medium()

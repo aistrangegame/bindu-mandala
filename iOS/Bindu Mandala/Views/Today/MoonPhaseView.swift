@@ -7,11 +7,14 @@ struct MoonPhaseView: View {
     var body: some View {
         HStack(spacing: 9) {
             moonGlyph
+                .accessibilityHidden(true)   // label is on the parent
             Text(LunarPhaseService.headerLabel(at: date).uppercased())
                 .font(.system(size: 11, weight: .regular))
                 .tracking(1.4)
-                .foregroundStyle(Color.cream.opacity(0.45))
+                .foregroundStyle(Color.cream.opacity(0.55))
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Moon phase: \(LunarPhaseService.headerLabel(at: date))")
     }
 
     /// Crescent rendered with a mask offset to match the illuminated fraction.

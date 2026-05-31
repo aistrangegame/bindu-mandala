@@ -1,12 +1,27 @@
 import SwiftUI
 import SwiftData
 
-/// The Well — third tab. A love-letter space, one private letter per Śakti.
-/// Letters are local-only and never synced or read by anyone.
+/// The Well — a love-letter space, one private letter per Karṣiṇī.
+/// Local SwiftData is the source of truth; Airtable receives what it can when it can.
 struct WellView: View {
     @Environment(\.modelContext) private var context
-    @Query(sort: \Shakti.position) private var shaktis: [Shakti]
+    @Query(sort: \Shakti.position) private var allShaktis: [Shakti]
+    @Query private var allLetters: [ShaktiLetter]
     @State private var openingFor: Shakti?
+
+    /// Only Ring 2 Karṣiṇīs receive letters. `ShaktiLetter.shaktiPosition` is
+    /// `@Attribute(.unique)` over 1–16; including other rings would collide.
+    private var ring2Shaktis: [Shakti] {
+        allShaktis.filter { ($0.ringNumber ?? 2) == 2 }
+            .sorted { $0.position < $1.position }
+    }
+
+    /// One look-up across the whole list, vs. the old code which inserted a
+    /// fresh `ShaktiLetter` per rendered row just to read the preview.
+    private var lettersByPosition: [Int: String] {
+        Dictionary(allLetters.map { ($0.shaktiPosition, $0.body) },
+                   uniquingKeysWith: { first, _ in first })
+    }
 
     var body: some View {
         NavigationStack {
@@ -17,7 +32,7 @@ struct WellView: View {
                     header
                     ScrollView {
                         LazyVStack(spacing: 0) {
-                            ForEach(shaktis) { s in
+                            ForEach(ring2Shaktis) { s in
                                 Button {
                                     openingFor = s
                                 } label: {
@@ -58,7 +73,7 @@ struct WellView: View {
     }
 
     private func row(for shakti: Shakti) -> some View {
-        let preview = LetterStore(context: context).letter(for: shakti.position).body
+        let preview = lettersByPosition[shakti.position] ?? ""
         let firstLine = preview.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
         let hasLetter = !firstLine.trimmingCharacters(in: .whitespaces).isEmpty
         return HStack(alignment: .top, spacing: 14) {
@@ -95,7 +110,8 @@ struct WellView: View {
     }
 }
 
-/// Full-screen editor for one letter. surface background, cream Cormorant.
+/// Full-screen editor for one letter. Surface background, cream Cormorant.
+/// Auto-saves 5s after the last keystroke; always saves on dismiss.
 struct LetterEditorView: View {
     @Bindable var shakti: Shakti
     @Environment(\.modelContext) private var context
@@ -103,6 +119,8 @@ struct LetterEditorView: View {
 
     @State private var draft: String = ""
     @State private var loaded = false
+    @State private var dirty = false
+    @State private var saveTask: Task<Void, Never>?
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -129,6 +147,14 @@ struct LetterEditorView: View {
                         .background(Color.surface)
                         .padding(.horizontal, 20)
                         .padding(.top, 10)
+                        .onChange(of: draft) { _, _ in
+                            // Initial load assigns draft without going through user
+                            // input — `loaded` gates the dirty flag so first-render
+                            // doesn't trigger a save (and doesn't seed Airtable).
+                            guard loaded else { return }
+                            dirty = true
+                            scheduleAutoSave()
+                        }
                 }
             }
         }
@@ -136,7 +162,10 @@ struct LetterEditorView: View {
         .toolbar(.hidden, for: .navigationBar)
         .enableSwipeBack()
         .onAppear(perform: load)
-        .onDisappear(perform: save)
+        .onDisappear {
+            saveTask?.cancel()
+            saveIfNeeded()
+        }
     }
 
     private var header: some View {
@@ -171,18 +200,43 @@ struct LetterEditorView: View {
 
     private func load() {
         guard !loaded else { return }
-        loaded = true
+        // Read existing local body without going through the .onChange dirty path.
         draft = LetterStore(context: context).letter(for: shakti.position).body
+        // Only flip `loaded` after the assignment so the .onChange this triggers
+        // is ignored — initial load is not an edit.
+        loaded = true
     }
 
-    private func dismissAndSave() {
-        save()
-        dismiss()
+    private func scheduleAutoSave() {
+        saveTask?.cancel()
+        saveTask = Task {
+            try? await Task.sleep(for: .seconds(5))
+            if !Task.isCancelled {
+                await MainActor.run { saveIfNeeded() }
+            }
+        }
     }
 
-    private func save() {
+    private func saveIfNeeded() {
+        guard dirty else { return }
+        saveTask?.cancel()
+
         let store = LetterStore(context: context)
         let letter = store.letter(for: shakti.position)
         store.save(letter, body: draft)
+        dirty = false
+
+        // Fire-and-forget Airtable PATCH. Failure is silent; queued for retry.
+        let s = shakti
+        let body = draft
+        Task {
+            await AirtableService.shared.saveLetter(shakti: s, body: body)
+        }
+    }
+
+    private func dismissAndSave() {
+        saveTask?.cancel()
+        saveIfNeeded()
+        dismiss()
     }
 }

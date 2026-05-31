@@ -9,7 +9,8 @@ struct BinduMandalaApp: App {
         AppFont.audit()
         do {
             container = try ModelContainer(
-                for: Shakti.self, RecognitionEntry.self, ShaktiLetter.self
+                for: Shakti.self, RecognitionEntry.self, ShaktiLetter.self,
+                     Avarana.self, NityaDevi.self
             )
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
@@ -27,6 +28,9 @@ struct BinduMandalaApp: App {
 
 /// Wraps RootView and gates the Homecoming screen on first launch.
 private struct AppRoot: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var showHomecoming: Bool = {
         let args = ProcessInfo.processInfo.arguments
         if args.contains("FORCE_HOMECOMING") { return true }
@@ -45,6 +49,24 @@ private struct AppRoot: View {
         .animation(.easeInOut(duration: 0.8), value: showHomecoming)
         .onReceive(NotificationCenter.default.publisher(for: HomecomingView.reEnterNotification)) { _ in
             showHomecoming = true
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Drain any queued recognition writes whenever the app returns to active.
+            if newPhase == .active {
+                Task { await AirtableService.shared.flushPending(context: context) }
+            }
+        }
+        .task(id: scenePhase) {
+            // Periodic background re-sync while the app is foregrounded, so
+            // Airtable edits made elsewhere show up without a relaunch. The
+            // task is cancelled and reissued on every scenePhase change, so
+            // backgrounding cleanly stops the loop.
+            guard scenePhase == .active else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(300))
+                if Task.isCancelled { return }
+                await AirtableService.shared.sync(context: context)
+            }
         }
     }
 }

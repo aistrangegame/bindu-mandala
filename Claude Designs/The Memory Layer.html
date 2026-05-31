@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phase 6 — The Memory Layer</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #060104; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
+    #root { width: 100vw; height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,150,63,0.22); border-radius: 2px; }
+
+    @keyframes moteRise {
+      0%   { transform: translate(0,0); opacity: 0; }
+      8%   { opacity: 1; }
+      50%  { transform: translate(calc(var(--drift)*.5), -420px); }
+      92%  { opacity: 0.5; }
+      100% { transform: translate(var(--drift), -880px); opacity: 0; }
+    }
+
+    /* Portrait petals — gentle breathing per status */
+    @keyframes portraitEmbodied  { 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.18);} }
+    @keyframes portraitActive    { 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.10);} }
+    @keyframes portraitExploring { 0%,100%{filter:brightness(0.95);} 50%{filter:brightness(1.04);} }
+    @keyframes portraitMapped    { 0%,100%{filter:brightness(0.92);} 50%{filter:brightness(0.99);} }
+    .portrait-petal-embodied  { animation: portraitEmbodied  4.5s ease-in-out infinite; }
+    .portrait-petal-active    { animation: portraitActive    6s   ease-in-out infinite; }
+    .portrait-petal-exploring { animation: portraitExploring 8s   ease-in-out infinite; }
+    .portrait-petal-mapped    { animation: portraitMapped    11s  ease-in-out infinite; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="memory.jsx"></script>
+
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function App() {
+  return (
+    <DesignCanvas background="#060104" title="Phase VI · The Memory Layer">
+
+      {/* ─────────────────────────────────────────────────────────────
+          INSTRUMENT 1 — THE PORTRAIT MANDALA
+          The home yantra reflecting you back.
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="portrait" title="① The Portrait Mandala"
+        subtitle="The home yantra, lit by your memory · each petal's brightness is your relationship density with her">
+
+        <DCArtboard id="portrait-screen" label="Your Spiritual Fingerprint · 264 days, 1,418 recognitions" width={390} height={844}>
+          <PortraitMandalaScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          INSTRUMENT 2 — THE PETAL BIOGRAPHY
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="biography" title="② The Petal Biography"
+        subtitle="Tap a petal · open her full story with you · first catch · last catch · the moments she was here">
+
+        <DCArtboard id="bio-sparsha" label="Sparśākarṣiṇī · biography (Active)" width={390} height={844}>
+          <PetalBiographyScreen idx={4}/>
+        </DCArtboard>
+        <DCArtboard id="bio-atma" label="Ātmākarṣiṇī · biography (Embodied)" width={390} height={844}>
+          <PetalBiographyScreen idx={13}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          INSTRUMENT 3 — THE THRESHOLD TIMELINE
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="thresholds" title="③ The Threshold Timeline"
+        subtitle="Moments of crossing · when she moved from mapped → exploring → active → embodied · each crossing a sacred event">
+
+        <DCArtboard id="thresholds-screen" label="Your Six Crossings · this year" width={390} height={844}>
+          <ThresholdTimelineScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          INSTRUMENT 4 — THE CLUSTER GARDEN
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="cluster-garden" title="④ The Cluster Garden"
+        subtitle="Five gardens · one per cluster · how thoroughly each lineage has bloomed in you">
+
+        <DCArtboard id="cluster-screen" label="The Five Lineages · bloom-meters per cluster" width={390} height={844}>
+          <ClusterGardenScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          INSTRUMENT 5 — THE DENSITY ATLAS
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="density-atlas" title="⑤ The Density Atlas"
+        subtitle="Two views · trailing year (day-precision) · lifetime (year-precision) · the practice has no expiration">
+
+        <DCArtboard id="atlas-current" label="Trailing Year · 9 months × 31 days · day precision" width={390} height={844}>
+          <DensityAtlasScreen mode="current"/>
+        </DCArtboard>
+        <DCArtboard id="atlas-lifetime" label="Lifetime · 5 years × 12 months · the whole arc" width={390} height={844}>
+          <DensityAtlasScreen mode="lifetime"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          INSTRUMENT 7 — THE LIFETIME SPIRAL (Phase 6.1)
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="lifetime-spiral" title="⑦ The Lifetime Spiral"
+        subtitle="Every year of practice as a concentric ring of the same yantra · the practice has no expiration">
+
+        <DCArtboard id="lifetime-spiral-screen" label="Five years inside the same yantra" width={390} height={844}>
+          <LifetimeSpiralScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          INSTRUMENT 6 — FIRST WORD · LAST WORD
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="first-last" title="⑥ First Word · Last Word"
+        subtitle="The span of each relationship · the day she first arrived · the day she was last present">
+
+        <DCArtboard id="first-last-screen" label="Sixteen Relationships · each as a span of time" width={390} height={844}>
+          <FirstLastScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

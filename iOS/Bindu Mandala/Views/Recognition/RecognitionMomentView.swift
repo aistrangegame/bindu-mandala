@@ -8,6 +8,7 @@ import SwiftData
 struct RecognitionMomentView: View {
     let shakti: Shakti
     @Binding var isPresented: Bool
+    var source: AirtableService.RecognitionSource = .today
 
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -18,7 +19,7 @@ struct RecognitionMomentView: View {
     @State private var act2Visible = false
     @State private var noteCardVisible = false
     @State private var act1Time: Date = .now
-    @State private var act2Time: Date = .now.addingTimeInterval(3)
+    @State private var act2Time: Date? = nil   // captured when Act 2 actually appears
     @State private var note: String = ""
     @State private var hasLogged = false
 
@@ -82,7 +83,7 @@ struct RecognitionMomentView: View {
                 Text("she was felt here · \(timeString(act1Time))".uppercased())
                     .font(.system(size: 11))
                     .tracking(1.8)
-                    .foregroundStyle(Color.cream.opacity(0.35))
+                    .foregroundStyle(Color.cream.opacity(0.55))
                     .padding(.bottom, 10)
                     .opacity(act1Visible ? 1 : 0)
 
@@ -93,8 +94,10 @@ struct RecognitionMomentView: View {
                     .padding(.bottom, 10)
                     .opacity(act2Visible ? 1 : 0)
 
-                // Act 2 — and she felt you back
-                Text("and she felt you back · \(timeStringWithSeconds(act2Time))")
+                // Act 2 — and she felt you back. Timestamp is captured at the
+                // moment Act 2 becomes visible, not pre-computed — so it reads
+                // the real time the practitioner received the reciprocity.
+                Text("and she felt you back · \(timeStringWithSeconds(act2Time ?? act1Time.addingTimeInterval(3)))")
                     .font(.custom(AppFont.cormorantItalic, size: 14))
                     .foregroundStyle(Color.gold)
                     .tracking(0.7)
@@ -112,7 +115,7 @@ struct RecognitionMomentView: View {
                 Text("Tap anywhere to close".uppercased())
                     .font(.system(size: 10))
                     .tracking(2)
-                    .foregroundStyle(Color.cream.opacity(0.18))
+                    .foregroundStyle(Color.cream.opacity(0.40))
                     .padding(.bottom, 36)
             }
         }
@@ -133,14 +136,13 @@ struct RecognitionMomentView: View {
         guard !hasLogged else { return }
         hasLogged = true
         act1Time = .now
-        act2Time = act1Time.addingTimeInterval(3)
 
         let store = RecognitionLogStore(context: context)
         store.record(position: shakti.shaktiPositionValue, gesture: .felt)
 
         if reduceMotion {
             nameVisible = true; phraseVisible = true
-            act1Visible = true; act2Visible = true
+            act1Visible = true; act2Visible = true; act2Time = .now
             noteCardVisible = true
             return
         }
@@ -148,20 +150,43 @@ struct RecognitionMomentView: View {
         withAnimation(.easeInOut(duration: 1.8).delay(0.3)) { nameVisible = true }
         withAnimation(.easeInOut(duration: 1.8).delay(0.9)) { phraseVisible = true }
         withAnimation(.easeOut(duration: 1.0).delay(2.6))  { act1Visible = true }
-        withAnimation(.easeInOut(duration: 1.4).delay(4.1)) {
-            act2Visible = true
-            noteCardVisible = true
+
+        // Act 2 — capture timestamp at the moment it actually appears so the
+        // "she felt you back · h:mm:ss" reflects the practitioner's real time,
+        // not a pre-computed Act1 + 3s offset.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.1) {
+            act2Time = .now
+            withAnimation(.easeInOut(duration: 1.4)) { act2Visible = true }
+        }
+
+        // Note card lands one second after reciprocity, alone — never
+        // simultaneously, so "and she felt you back" gets to land in stillness.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.1) {
+            withAnimation(.easeInOut(duration: 1.4)) { noteCardVisible = true }
         }
     }
 
     private func dismiss() {
-        // Persist note if user wrote anything.
-        if !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        // Persist note locally if user wrote anything.
+        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
             let store = RecognitionLogStore(context: context)
             if let latest = store.latest(), latest.shaktiPosition == shakti.shaktiPositionValue {
                 latest.note = note
                 try? context.save()
             }
+        }
+        // Fire-and-forget Airtable write with the full note. Failure is silent —
+        // AirtableService queues for retry. Ceremony has already completed; the
+        // visual "and she felt you back" was driven by local write success.
+        let noteToSend: String? = trimmed.isEmpty ? nil : trimmed
+        let s = shakti
+        let ctx = context
+        let src = source
+        Task {
+            await AirtableService.shared.recordRecognition(
+                shakti: s, note: noteToSend, source: src, context: ctx
+            )
         }
         isPresented = false
     }
@@ -188,7 +213,7 @@ private struct NoteCard: View {
             if text.isEmpty && !focused {
                 Text("What did you notice?")
                     .font(.custom(AppFont.cormorantItalic, size: 13))
-                    .foregroundStyle(Color.cream.opacity(0.3))
+                    .foregroundStyle(Color.cream.opacity(0.50))
                     .tracking(0.5)
             }
             TextField("", text: $text, axis: .vertical)

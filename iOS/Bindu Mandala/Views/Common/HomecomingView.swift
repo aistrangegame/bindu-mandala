@@ -49,7 +49,7 @@ struct HomecomingView: View {
                 Text("tap to enter".uppercased())
                     .font(.system(size: 10))
                     .tracking(2.8)
-                    .foregroundStyle(Color.cream.opacity(0.18))
+                    .foregroundStyle(Color.cream.opacity(0.40))
                     .padding(.bottom, 40)
                     .opacity(hintVisible ? 1 : 0)
             }

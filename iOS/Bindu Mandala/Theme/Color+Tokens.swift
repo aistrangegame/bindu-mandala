@@ -33,6 +33,7 @@ extension Color {
     // Primary
     static let gold       = Color(hex: "#C9963F")
     static let goldDeep   = Color(hex: "#A07830")
+    static let goldWarm   = Color(hex: "#CF9443")  // Bhūpura / Ring 1 amber
     static let cream      = Color(hex: "#F2E8D9")
     static let accentRed  = Color(hex: "#8B1A2A")
 

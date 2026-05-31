@@ -1,6 +1,8 @@
 import SwiftUI
 
 /// One expanding gold ring. Four of these are stacked on the Recognition Moment.
+/// Each ring runs exactly 3 expand/fade cycles, then settles into stillness —
+/// the ceremony stops pulsing once it has been received.
 struct RippleRingView: View {
     var delay: Double = 0
     var color: Color = .gold
@@ -18,7 +20,7 @@ struct RippleRingView: View {
                 guard !reduceMotion else { return }
                 withAnimation(
                     .easeOut(duration: 4)
-                    .repeatForever(autoreverses: false)
+                    .repeatCount(3, autoreverses: false)
                     .delay(delay)
                 ) {
                     animating = true

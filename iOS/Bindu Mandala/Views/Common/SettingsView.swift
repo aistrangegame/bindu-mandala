@@ -31,12 +31,6 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundStyle(Color.gold)
-                }
-            }
             .toolbarBackground(Color.ground, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
@@ -96,7 +90,7 @@ struct SettingsView: View {
 
                 Text("She does not pull you toward the app. She only arrives with her rhythm.")
                     .font(.custom(AppFont.cormorantItalic, size: 13))
-                    .foregroundStyle(Color.cream.opacity(0.4))
+                    .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
         }
@@ -113,7 +107,7 @@ struct SettingsView: View {
                          hint: "Holds her frequency.")
                 Text("These names appear on each Śakti's Detail screen and may be edited freely. They are personal to this practitioner.")
                     .font(.custom(AppFont.cormorantItalic, size: 13))
-                    .foregroundStyle(Color.cream.opacity(0.4))
+                    .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
         }
@@ -123,7 +117,7 @@ struct SettingsView: View {
         sectionShell("Bīja") {
             Text("Bīja values follow Airtable when connected. When offline, the cached syllables are used. Tap any bīja in a Śakti's Detail screen to hear her tone.")
                 .font(.custom(AppFont.cormorantItalic, size: 14))
-                .foregroundStyle(Color.cream.opacity(0.55))
+                .foregroundStyle(Color.cream.opacity(0.65))
                 .lineSpacing(5)
         }
     }
@@ -146,7 +140,7 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
                 Text("She will greet you again, as on the first day.")
                     .font(.custom(AppFont.cormorantItalic, size: 13))
-                    .foregroundStyle(Color.cream.opacity(0.4))
+                    .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
         }
@@ -166,7 +160,7 @@ struct SettingsView: View {
             Text(title.uppercased())
                 .font(.system(size: 10))
                 .tracking(2.2)
-                .foregroundStyle(Color.gold.opacity(0.7))
+                .foregroundStyle(Color.gold.opacity(0.85))
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -179,7 +173,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func fieldRow(position: Int, defaultName: String, hint: String) -> some View {
-        if let shakti = shaktis.first(where: { $0.position == position }) {
+        if let shakti = shaktis.first(where: { $0.position == position && ($0.ringNumber ?? 2) == 2 }) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
                     Circle()
@@ -196,7 +190,7 @@ struct SettingsView: View {
                 )
                 Text(hint)
                     .font(.custom(AppFont.cormorantItalic, size: 12))
-                    .foregroundStyle(Color.cream.opacity(0.35))
+                    .foregroundStyle(Color.cream.opacity(0.55))
             }
         }
     }
@@ -242,7 +236,7 @@ private struct FieldNameField: View {
                     try? context.save()
                 }
             ),
-            prompt: Text(placeholder).foregroundStyle(Color.cream.opacity(0.3))
+            prompt: Text(placeholder).foregroundStyle(Color.cream.opacity(0.45))
         )
         .font(.custom(AppFont.cormorant, size: 18))
         .foregroundStyle(Color.cream)
