@@ -2,15 +2,14 @@ import SwiftUI
 import SwiftData
 
 /// Settings — daily rhythm + field connections + bīja note.
-/// Entered via a small gear icon in the Today header.
+/// Entered via the hamburger menu.
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Shakti.position) private var shaktis: [Shakti]
 
-    @AppStorage("notifications_enabled") private var notificationsEnabled = false
-    @AppStorage("notifications_start_hour") private var startHour: Int = 7
-    @AppStorage("notifications_interval_hours") private var intervalHours: Int = 3
+    @AppStorage("daily_summons_enabled") private var summonsEnabled = true
+    @AppStorage("daily_summons_hour")    private var summonsHour: Int = DailySummons.defaultHour
 
     var body: some View {
         NavigationStack {
@@ -42,53 +41,36 @@ struct SettingsView: View {
     private var rhythmSection: some View {
         sectionShell("Daily Rhythm") {
             VStack(alignment: .leading, spacing: 18) {
-                Toggle(isOn: $notificationsEnabled) {
+                Toggle(isOn: $summonsEnabled) {
                     Text("Let her arrive")
                         .font(.custom(AppFont.cormorant, size: 18))
                         .foregroundStyle(Color.cream)
                 }
                 .tint(Color.gold)
-                .onChange(of: notificationsEnabled) { _, newValue in
-                    Task { await applyNotificationChange(enabled: newValue) }
+                .onChange(of: summonsEnabled) { _, newValue in
+                    Task { await applySummonsChange(enabled: newValue) }
                 }
 
-                if notificationsEnabled {
+                if summonsEnabled {
                     HStack {
-                        Text("First arrival")
+                        Text("She arrives")
                             .font(.system(size: 14))
                             .foregroundStyle(Color.cream.opacity(0.7))
                         Spacer()
-                        Picker("", selection: $startHour) {
-                            ForEach(5..<12) { hour in
+                        Picker("", selection: $summonsHour) {
+                            ForEach(5..<23) { hour in
                                 Text(formatHour(hour)).tag(hour)
                             }
                         }
                         .pickerStyle(.menu)
                         .tint(Color.gold)
                     }
-                    .onChange(of: startHour) { _, _ in
-                        Task { await rescheduleIfEnabled() }
-                    }
-
-                    HStack {
-                        Text("Cadence")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color.cream.opacity(0.7))
-                        Spacer()
-                        Picker("", selection: $intervalHours) {
-                            Text("Every 3 hours").tag(3)
-                            Text("Every 4 hours").tag(4)
-                            Text("Every 6 hours").tag(6)
-                        }
-                        .pickerStyle(.menu)
-                        .tint(Color.gold)
-                    }
-                    .onChange(of: intervalHours) { _, _ in
-                        Task { await rescheduleIfEnabled() }
+                    .onChange(of: summonsHour) { _, newHour in
+                        Task { await DailySummons.reschedule(enabled: true, hour: newHour) }
                     }
                 }
 
-                Text("She does not pull you toward the app. She only arrives with her rhythm.")
+                Text("Once a day, never twice. If the rite is already done, she lets the evening pass in stillness.")
                     .font(.custom(AppFont.cormorantItalic, size: 13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
@@ -202,22 +184,24 @@ struct SettingsView: View {
         return f.string(from: d)
     }
 
-    private func applyNotificationChange(enabled: Bool) async {
-        if enabled {
-            let granted = await NotificationsService.requestAuthorization()
-            if !granted {
-                notificationsEnabled = false
-                return
-            }
-            await NotificationsService.reschedule(startHour: startHour, intervalHours: intervalHours)
-        } else {
-            NotificationsService.cancelAll()
+    private func applySummonsChange(enabled: Bool) async {
+        guard enabled else {
+            await DailySummons.cancelAll()
+            return
         }
-    }
-
-    private func rescheduleIfEnabled() async {
-        guard notificationsEnabled else { return }
-        await NotificationsService.reschedule(startHour: startHour, intervalHours: intervalHours)
+        switch await DailySummons.authorizationStatus() {
+        case .authorized, .provisional:
+            await DailySummons.reschedule(enabled: true, hour: summonsHour)
+        case .notDetermined:
+            if await DailySummons.requestAuthorization() {
+                await DailySummons.reschedule(enabled: true, hour: summonsHour)
+            } else {
+                summonsEnabled = false
+            }
+        default:
+            // Denied at system level — reflect that in the toggle.
+            summonsEnabled = false
+        }
     }
 }
 

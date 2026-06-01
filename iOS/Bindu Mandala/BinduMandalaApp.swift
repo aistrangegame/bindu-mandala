@@ -31,6 +31,9 @@ private struct AppRoot: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
 
+    @AppStorage("daily_summons_enabled") private var summonsEnabled = true
+    @AppStorage("daily_summons_hour")    private var summonsHour: Int = DailySummons.defaultHour
+
     @State private var showHomecoming: Bool = {
         let args = ProcessInfo.processInfo.arguments
         if args.contains("FORCE_HOMECOMING") { return true }
@@ -52,8 +55,31 @@ private struct AppRoot: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             // Drain any queued recognition writes whenever the app returns to active.
+            // Also reschedule the rolling summons window so dates ahead stay primed
+            // and today's slot is dropped if the rite was already done.
             if newPhase == .active {
                 Task { await AirtableService.shared.flushPending(context: context) }
+                Task { await DailySummons.reschedule(enabled: summonsEnabled, hour: summonsHour) }
+            }
+        }
+        .task {
+            // First-launch authorization for the default-on summons. Silent
+            // once the system has a decision; only runs while still
+            // .notDetermined, so the practitioner sees the prompt at most once.
+            guard summonsEnabled else { return }
+            let status = await DailySummons.authorizationStatus()
+            switch status {
+            case .notDetermined:
+                let ok = await DailySummons.requestAuthorization()
+                if ok {
+                    await DailySummons.reschedule(enabled: true, hour: summonsHour)
+                } else {
+                    summonsEnabled = false
+                }
+            case .authorized, .provisional:
+                await DailySummons.reschedule(enabled: true, hour: summonsHour)
+            default:
+                summonsEnabled = false
             }
         }
         .task(id: scenePhase) {

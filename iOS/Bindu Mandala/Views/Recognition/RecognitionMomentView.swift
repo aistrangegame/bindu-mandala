@@ -143,6 +143,8 @@ struct RecognitionMomentView: View {
             ringNumber: shakti.ringNumber ?? 2,
             gesture: .felt
         )
+        // The rite is complete — silence the evening summons. Never twice.
+        DailySummons.markRiteCompleted(at: act1Time)
 
         if reduceMotion {
             nameVisible = true; phraseVisible = true

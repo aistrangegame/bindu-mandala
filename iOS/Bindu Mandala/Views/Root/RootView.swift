@@ -9,15 +9,16 @@ struct RootView: View {
     @State private var menuOpen = false
     @State private var settingsPresented = false
 
-    enum Destination { case mandala, today, well, the102, memory }
+    enum Destination { case mandala, rite, well, the102, memory }
 
     private static func initialDestination() -> Destination {
         let args = ProcessInfo.processInfo.arguments
-        if args.contains("START_TAB=today")  { return .today }
-        if args.contains("START_TAB=well")   { return .well }
-        if args.contains("START_TAB=102")    { return .the102 }
-        if args.contains("START_TAB=memory") { return .memory }
-        return .mandala
+        if args.contains("START_TAB=mandala") { return .mandala }
+        if args.contains("START_TAB=rite")    { return .rite }
+        if args.contains("START_TAB=well")    { return .well }
+        if args.contains("START_TAB=102")     { return .the102 }
+        if args.contains("START_TAB=memory")  { return .memory }
+        return .rite
     }
 
     var body: some View {
@@ -35,8 +36,8 @@ struct RootView: View {
                             // Phase 6: present Silence screen.
                         }
                     )
-                case .today:
-                    TodayView()
+                case .rite:
+                    DailyRiteView()
                 case .well:
                     WellView()
                 case .the102:

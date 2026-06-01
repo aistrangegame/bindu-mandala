@@ -32,7 +32,7 @@ struct HamburgerMenuView: View {
 
             VStack(spacing: 22) {
                 item("The Mandala", active: destination == .mandala) { select(.mandala) }
-                item("Today",       active: destination == .today)   { select(.today) }
+                item("The Rite",    active: destination == .rite)    { select(.rite) }
                 item("The Well",    active: destination == .well)    { select(.well) }
                 item("The 102",     active: destination == .the102)  { select(.the102) }
                 item("Settings",    active: false) {

@@ -283,7 +283,7 @@ final class AirtableService {
             // Airtable's `somaticSignature` is poetic signature text (e.g.
             // "Awareness that becomes smaller than thought…"), not a prompt
             // question. It populates Detail's Somatic Signature section
-            // (`somaticPoetry`). The prompt (`somatic`, shown in TodayView)
+            // (`somaticPoetry`). The prompt (`somatic`, shown in DailyRiteView)
             // is sourced only from the bootstrap and intentionally not
             // overwritten by sync.
             if let v = row.fields.somaticSignature, !v.isEmpty   { shakti.somaticPoetry = v }

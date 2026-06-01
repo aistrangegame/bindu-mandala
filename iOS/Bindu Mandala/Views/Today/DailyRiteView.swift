@@ -1,9 +1,9 @@
 import SwiftUI
 import SwiftData
 
-/// The Today screen — the daily companion.
-/// Two variants per DESIGN_SPEC: V1 with body outline · V2 with bīja texture.
-struct TodayView: View {
+/// The Daily Rite — the small, returnable loop. Opens to her.
+/// Two variants: V1 body outline · V2 bīja texture.
+struct DailyRiteView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Shakti.position) private var shaktis: [Shakti]
@@ -299,6 +299,6 @@ struct TodayView: View {
     }
 }
 
-private extension TodayView.Variant {
+private extension DailyRiteView.Variant {
     var storage: String { self == .body ? "body" : "bija" }
 }
