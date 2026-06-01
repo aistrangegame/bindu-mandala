@@ -61,6 +61,12 @@ struct RingThreeWorldView: View {
             .ignoresSafeArea()
             .allowsHitTesting(false)
 
+            // Dust motes — every other ring world had these; Ring 3 was
+            // missing them, which made the air feel dead even with the
+            // plumes lit.
+            DustMotesView(count: 7)
+                .allowsHitTesting(false)
+
             GeometryReader { geo in
                 let cx = geo.size.width / 2
                 let cy: CGFloat = min(392, geo.size.height * 0.46)
@@ -167,41 +173,70 @@ struct RingThreeWorldView: View {
         let scale: Double = isActive ? 1.06 : (gather ? 1.0 : 1.18)
         let blurRadius: Double = gather ? 5.5 : 10.0
         let drift: Double = gather ? 0 : 24
-        let brightness: Double = {
-            if isActive { return 0.15 }
-            if unified  { return 0.10 }
-            if gather   { return 0.05 }
-            return -0.10
+
+        // Brightness ladder — *screened* warm overlay rather than additive
+        // `.brightness()`. The original JSX used CSS `filter: brightness(1.5)`
+        // (multiplicative). SwiftUI's `.brightness()` is additive and only
+        // lightens by a trace, so plumes never glowed. A screen-blended warm
+        // overlay recovers the original lift.
+        //   active brightest → unified → gathered → scattered dimmest
+        let glowAmount: Double = {
+            if isActive { return 0.65 }
+            if unified  { return 0.45 }
+            if gather   { return 0.18 }
+            return 0.0
         }()
 
-        AnangaPlume(outerR: 116, innerR: 30, halfW: 52)
-            .rotation(.degrees(angle))
-            .fill(
-                RadialGradient(
-                    gradient: Gradient(stops: [
-                        .init(color: warm.opacity(0.90), location: 0),
-                        .init(color: rose.opacity(0.50), location: 0.55),
-                        .init(color: Color.accentRed.opacity(0), location: 1.0)
-                    ]),
-                    center: UnitPoint(x: 0.5, y: 0.38),
-                    startRadius: 0, endRadius: 92
+        ZStack {
+            // Base plume — warm gradient body
+            AnangaPlume(outerR: 116, innerR: 30, halfW: 52)
+                .rotation(.degrees(angle))
+                .fill(
+                    RadialGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: warm.opacity(0.90), location: 0),
+                            .init(color: rose.opacity(0.50), location: 0.55),
+                            .init(color: Color.accentRed.opacity(0), location: 1.0)
+                        ]),
+                        center: UnitPoint(x: 0.5, y: 0.38),
+                        // Reach the plume's tip (outerR) instead of stopping
+                        // at 92 — at 92 the form's edge was unpainted muddy.
+                        startRadius: 0, endRadius: 116
+                    )
                 )
-            )
-            .frame(width: 232, height: 232)
-            .offset(y: -drift)
-            .scaleEffect(scale)
-            .opacity(opacity)
-            .blur(radius: blurRadius)
-            .brightness(brightness)
-            .animation(.easeInOut(duration: 1.1), value: gather)
-            .animation(.easeInOut(duration: 1.1), value: unified)
-            .animation(.easeInOut(duration: 1.1), value: active)
-            .position(x: cx, y: cy)
-            .contentShape(
+
+            // Glow overlay — keyed to state; nil when scattered.
+            if glowAmount > 0 {
                 AnangaPlume(outerR: 116, innerR: 30, halfW: 52)
                     .rotation(.degrees(angle))
-            )
-            .onTapGesture { touch(i) }
+                    .fill(
+                        RadialGradient(
+                            gradient: Gradient(stops: [
+                                .init(color: warm.opacity(glowAmount), location: 0),
+                                .init(color: warm.opacity(glowAmount * 0.4), location: 0.5),
+                                .init(color: .clear, location: 1.0)
+                            ]),
+                            center: UnitPoint(x: 0.5, y: 0.38),
+                            startRadius: 0, endRadius: 116
+                        )
+                    )
+                    .blendMode(.screen)
+            }
+        }
+        .frame(width: 232, height: 232)
+        .offset(y: -drift)
+        .scaleEffect(scale)
+        .opacity(opacity)
+        .blur(radius: blurRadius)
+        .animation(.easeInOut(duration: 1.1), value: gather)
+        .animation(.easeInOut(duration: 1.1), value: unified)
+        .animation(.easeInOut(duration: 1.1), value: active)
+        .position(x: cx, y: cy)
+        .contentShape(
+            AnangaPlume(outerR: 116, innerR: 30, halfW: 52)
+                .rotation(.degrees(angle))
+        )
+        .onTapGesture { touch(i) }
     }
 
     // MARK: - Seed

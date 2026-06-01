@@ -23,7 +23,7 @@ struct RingSevenWorldView: View {
     @State private var ringsCenter: CGPoint = .zero
     @State private var ringsColor: Color = .clear
 
-    private let orbitR: CGFloat = 140
+    private let orbitR: CGFloat = 158
 
     /// Vāk-devatā frequencies, from `Claude Designs/ring-worlds.jsx` VAK_FREQS.
     private struct Vak {
@@ -105,7 +105,7 @@ struct RingSevenWorldView: View {
                 // Sound rings (drawn behind the Vāk circles)
                 soundRings()
 
-                // 8 Vāk circles
+                // 12 Vāk circles
                 ForEach(0..<vaks.count, id: \.self) { i in
                     vakNode(at: i, cx: cx, cy: cy)
                 }
@@ -166,7 +166,11 @@ struct RingSevenWorldView: View {
     }
 
     private func vakPosition(at i: Int, cx: CGFloat, cy: CGFloat) -> CGPoint {
-        let theta = (Double(i) * 45 - 90) * .pi / 180
+        // 12 voices on the ring — 360°/12 = 30° spacing. (Pre-Session D this
+        // was 45° for 8 voices; when the Vāks extended to twelve, voices 9–12
+        // landed exactly on top of voices 1–4 because the spacing wasn't
+        // updated. Widening orbitR to 158 keeps tap-targets comfortable.)
+        let theta = (Double(i) * 30 - 90) * .pi / 180
         return CGPoint(x: cx + orbitR * cos(theta), y: cy + orbitR * sin(theta))
     }
 

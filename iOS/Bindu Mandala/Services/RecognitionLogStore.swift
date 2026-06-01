@@ -3,30 +3,46 @@ import SwiftData
 
 /// Thin façade over the SwiftData ModelContext for recognition entries.
 /// Local-only by construction — the type exists nowhere else.
+///
+/// Phase 2: the store reads and writes the new Khaḍgamālā key. Pre-Phase-2
+/// entries written under the legacy `shaktiPosition` key are picked up by
+/// `RecognitionMigrator.backfillIfNeeded` at startup, so by the time any
+/// reader queries this store, every entry has a valid `khadgamalaPosition`.
 @MainActor
 struct RecognitionLogStore {
     let context: ModelContext
 
-    /// Record a "she was felt here" moment.
+    /// Record a "she was felt here" moment. Caller supplies the global
+    /// Khaḍgamālā position (1-102) and the ring (1-9, denormalized for
+    /// fast per-ring queries from the Portrait).
     @discardableResult
-    func record(position: Int, note: String? = nil, gesture: RecognitionEntry.Gesture = .felt) -> RecognitionEntry {
-        let entry = RecognitionEntry(timestamp: .now, shaktiPosition: position, note: note, gesture: gesture)
+    func record(khadgamalaPosition: Int,
+                ringNumber: Int,
+                note: String? = nil,
+                gesture: RecognitionEntry.Gesture = .felt) -> RecognitionEntry {
+        let entry = RecognitionEntry(
+            timestamp: .now,
+            khadgamalaPosition: khadgamalaPosition,
+            ringNumber: ringNumber,
+            note: note,
+            gesture: gesture
+        )
         context.insert(entry)
         try? context.save()
         return entry
     }
 
-    /// All entries for one Shakti, newest first.
-    func entries(for position: Int) -> [RecognitionEntry] {
+    /// All entries for one Śakti by global position, newest first.
+    func entries(forKhadgamala position: Int) -> [RecognitionEntry] {
         var d = FetchDescriptor<RecognitionEntry>(
-            predicate: #Predicate { $0.shaktiPosition == position },
+            predicate: #Predicate { $0.khadgamalaPosition == position },
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
         d.fetchLimit = 200
         return (try? context.fetch(d)) ?? []
     }
 
-    /// Most recent entry across all Shaktis.
+    /// Most recent entry across all Śaktis.
     func latest() -> RecognitionEntry? {
         var d = FetchDescriptor<RecognitionEntry>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
         d.fetchLimit = 1

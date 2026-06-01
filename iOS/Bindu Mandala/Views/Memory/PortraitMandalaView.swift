@@ -95,13 +95,16 @@ struct PortraitMandalaView: View {
     }
 
     /// Per-Ring-2-position recognition stats, computed from the local log.
-    /// Recognition entries are keyed by per-ring `position` (1–16 for Ring 2).
+    /// Phase 2: entries are keyed by `khadgamalaPosition` (1–102) +
+    /// `ringNumber`. Ring 2 occupies Khaḍgamālā 29–44; we filter to
+    /// `ringNumber == 2` and map back to local 1–16 for the lotus petals.
+    /// (Phase 5 will elevate the Portrait to render all 102.)
     private var ring2Stats: [Int: PortraitStats] {
-        // Group entries by position. Filter to ring-2-shaped positions (1–16);
-        // recognitions only fire on Ring 2 today, but this guard is cheap.
         var grouped: [Int: [Date]] = [:]
-        for entry in allEntries where (1...16).contains(entry.shaktiPosition) {
-            grouped[entry.shaktiPosition, default: []].append(entry.timestamp)
+        for entry in allEntries where entry.ringNumber == 2 {
+            let localPos = entry.khadgamalaPosition - 28
+            guard (1...16).contains(localPos) else { continue }
+            grouped[localPos, default: []].append(entry.timestamp)
         }
         var stats: [Int: PortraitStats] = [:]
         let now = Date()
@@ -119,10 +122,14 @@ struct PortraitMandalaView: View {
         return stats
     }
 
+    /// Count of distinct Ring-2 Śaktis ever felt. Will broaden to the full
+    /// 102 once Phase 5 elevates the Portrait.
     private func countMet() -> Int {
         var seen = Set<Int>()
-        for entry in allEntries where (1...16).contains(entry.shaktiPosition) {
-            seen.insert(entry.shaktiPosition)
+        for entry in allEntries where entry.ringNumber == 2 {
+            let localPos = entry.khadgamalaPosition - 28
+            guard (1...16).contains(localPos) else { continue }
+            seen.insert(localPos)
         }
         return seen.count
     }

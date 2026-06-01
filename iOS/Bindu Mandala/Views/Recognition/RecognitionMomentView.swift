@@ -138,7 +138,11 @@ struct RecognitionMomentView: View {
         act1Time = .now
 
         let store = RecognitionLogStore(context: context)
-        store.record(position: shakti.shaktiPositionValue, gesture: .felt)
+        store.record(
+            khadgamalaPosition: shakti.khadgamalaPositionOrFallback,
+            ringNumber: shakti.ringNumber ?? 2,
+            gesture: .felt
+        )
 
         if reduceMotion {
             nameVisible = true; phraseVisible = true
@@ -171,7 +175,8 @@ struct RecognitionMomentView: View {
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
             let store = RecognitionLogStore(context: context)
-            if let latest = store.latest(), latest.shaktiPosition == shakti.shaktiPositionValue {
+            if let latest = store.latest(),
+               latest.khadgamalaPosition == shakti.khadgamalaPositionOrFallback {
                 latest.note = note
                 try? context.save()
             }
@@ -240,6 +245,11 @@ private struct NoteCard: View {
 }
 
 private extension Shakti {
-    /// Convenience so RecognitionMomentView can record without typing `.position` everywhere.
-    var shaktiPositionValue: Int { position }
+    /// Phase-2 convenience: prefer the synced Khaḍgamālā position, fall back
+    /// to deriving from the legacy `position` field for Ring 2 entries that
+    /// haven't been seeded by Airtable yet (Bootstrap sets both; this guard
+    /// covers any edge case where a Shakti exists pre-sync).
+    var khadgamalaPositionOrFallback: Int {
+        khadgamalaPosition ?? (position + 28)
+    }
 }

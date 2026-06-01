@@ -53,10 +53,12 @@ struct RingSixWorldView: View {
             GeometryReader { geo in
                 let cx = geo.size.width / 2
                 let cy: CGFloat = min(392, geo.size.height * 0.46)
+                // Orbit widened from 96 → 120 so the ten triangles have room
+                // to breathe alongside Hit.min tap targets.
                 let positions = (0..<10).map { i -> (a: Double, p: CGPoint, up: Bool) in
                     let a = (Double(i) / 10.0) * 2 * .pi - .pi / 2
-                    let p = CGPoint(x: cx + 96 * CGFloat(cos(a)),
-                                    y: cy + 96 * CGFloat(sin(a)))
+                    let p = CGPoint(x: cx + 120 * CGFloat(cos(a)),
+                                    y: cy + 120 * CGFloat(sin(a)))
                     return (a, p, i % 2 == 0)
                 }
 
@@ -215,11 +217,12 @@ struct RingSixWorldView: View {
                 .frame(width: 3.6, height: 3.6)
                 .opacity(opacity)
         }
-        .frame(width: 32, height: 32)
+        // Visible glyph stays small; only the invisible hit area grows.
+        .frame(width: Hit.min, height: Hit.min)
         .contentShape(Rectangle())
         .position(point)
         .onTapGesture {
-            tap(index, distance: distance)
+            tap(index, near: near)
         }
         .animation(.easeOut(duration: 0.35), value: opacity)
     }
@@ -259,8 +262,12 @@ struct RingSixWorldView: View {
 
     // MARK: - Interactions
 
-    private func tap(_ i: Int, distance: CGFloat) {
-        guard distance <= revealRadius else { return }    // can't name what the light hasn't reached
+    private func tap(_ i: Int, near: Double) {
+        // Seeing and naming are the same threshold — anything the light has
+        // brought to visibility (`near > 0.3`) can be named. The old gate
+        // (distance <= revealRadius AND a tiny visible triangle) was three
+        // precision tests at once; this is one.
+        guard near > 0.3 else { return }
         Haptics.light()
         whisperKey = UUID()
         withAnimation(.easeInOut(duration: 0.4)) {

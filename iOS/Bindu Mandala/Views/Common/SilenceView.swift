@@ -253,10 +253,16 @@ struct SilenceView: View {
         let duration = Date().timeIntervalSince(entered)
         if duration >= 1.0 {
             let store = RecognitionLogStore(context: context)
-            // Use today's Ring 2 position so this entry groups with her log even
-            // though the gesture is .silence (the model requires a position).
+            // Use today's Ring 2 position so the entry groups with her log
+            // even though the gesture is .silence. Convert per-ring position
+            // (1-16) into the global Khaḍgamālā key (29-44) so Phase 2's
+            // 102-aware Portrait can see every Silence dwell.
             let pos = LunarPhaseService.todayPosition()
-            store.record(position: pos, gesture: .silence)
+            store.record(
+                khadgamalaPosition: pos + 28,
+                ringNumber: 2,
+                gesture: .silence
+            )
 
             // Fire-and-forget Airtable write. Failure is silent; queued for retry.
             Task {

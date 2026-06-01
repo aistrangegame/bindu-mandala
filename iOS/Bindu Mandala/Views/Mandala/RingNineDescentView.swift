@@ -1,5 +1,4 @@
 import SwiftUI
-import SwiftData
 
 /// Ring 9 — Praveśa, the Endless Indwelling.
 ///
@@ -9,7 +8,6 @@ import SwiftData
 /// recognition arrives — *"You did not arrive. You were the arriving."*
 struct RingNineDescentView: View {
     @Environment(\.dismiss) private var dismiss
-    @Query private var avaranas: [Avarana]
 
     @State private var holding: Bool = false
     @State private var heldTime: Double = 0
@@ -24,10 +22,6 @@ struct RingNineDescentView: View {
 
     private var recognition: Double {
         max(0, min(1, (heldTime - Self.recognitionThreshold) / 2.2))
-    }
-
-    private var ring9Avarana: Avarana? {
-        avaranas.first(where: { $0.ringNumber == 9 })
     }
 
     var body: some View {
@@ -268,23 +262,6 @@ struct RingNineDescentView: View {
                     .foregroundStyle(Color.gold.opacity(0.82))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-
-                // If Airtable has a Personal Connection for Ring 9, include it
-                // beneath the recognition as a quieter undertone.
-                if let conn = ring9Avarana?.personalConnection?.trimmingCharacters(in: .whitespaces),
-                   !conn.isEmpty,
-                   r > 0.6 {
-                    Text(conn)
-                        .font(.custom(AppFont.cormorantItalic, size: 14))
-                        .tracking(0.2)
-                        .lineSpacing(7)
-                        .foregroundStyle(Color.cream.opacity(0.55))
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 22)
-                        .padding(.horizontal, 12)
-                        .opacity((r - 0.6) / 0.4)
-                }
             }
             .offset(y: 8 * (1 - r))
             .opacity(r)

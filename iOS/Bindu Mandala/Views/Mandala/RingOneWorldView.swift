@@ -129,10 +129,12 @@ struct RingOneWorldView: View {
 
             GeometryReader { geo in
                 let cx = geo.size.width / 2
-                let cy: CGFloat = min(348, geo.size.height * 0.41)
-                let outerHalf: CGFloat = 150
-                let midHalf: CGFloat = 110
-                let innerHalf: CGFloat = 72
+                // Center sits a hair higher than before so the larger figure
+                // still clears the encounter block and family legend below.
+                let cy: CGFloat = min(372, geo.size.height * 0.44)
+                let outerHalf: CGFloat = 170    // was 150 — give the 28 lights more room
+                let midHalf: CGFloat = 128      // was 110
+                let innerHalf: CGFloat = 90     // was 72 — tightest band needed the most relief
                 let gateOut: CGFloat = 18
                 let outerPoints = squarePoints(half: outerHalf, n: 10,
                                                 center: CGPoint(x: cx, y: cy))
@@ -370,9 +372,9 @@ struct RingOneWorldView: View {
         let color = Family.siddhi.color
 
         ZStack {
-            // Hit area
+            // Hit area — comfortable thumb target.
             Color.clear
-                .frame(width: 36, height: 36)
+                .frame(width: Hit.min, height: Hit.min)
 
             // Stem
             Path { p in
@@ -451,7 +453,8 @@ struct RingOneWorldView: View {
                     .frame(width: radius * 0.84, height: radius * 0.84)
             }
         }
-        .frame(width: 26, height: 26)
+        // Visible dot stays small; only the invisible hit area grows.
+        .frame(width: Hit.min, height: Hit.min)
         .contentShape(Circle())
         .position(point)
         .onTapGesture {

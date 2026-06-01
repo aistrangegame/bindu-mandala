@@ -279,7 +279,7 @@ struct ShaktiDetailView: View {
     private var herMomentsSection: some View {
         section("Her Moments") {
             HerMomentsList(
-                position: shakti.position,
+                khadgamalaPosition: shakti.khadgamalaPosition ?? (shakti.position + 28),
                 clusterColor: shakti.cluster.color,
                 airtableRecordId: shakti.airtableRecordId
             )
@@ -398,7 +398,7 @@ struct ShaktiDetailView: View {
 }
 
 private struct HerMomentsList: View {
-    let position: Int
+    let khadgamalaPosition: Int
     let clusterColor: Color
     let airtableRecordId: String?
     @Environment(\.modelContext) private var context
@@ -407,7 +407,8 @@ private struct HerMomentsList: View {
     @State private var airtableLoaded = false
 
     var body: some View {
-        let localEntries = RecognitionLogStore(context: context).entries(for: position)
+        let localEntries = RecognitionLogStore(context: context)
+            .entries(forKhadgamala: khadgamalaPosition)
 
         VStack(alignment: .leading, spacing: 0) {
             // Once Airtable has answered with anything, it becomes the authoritative
