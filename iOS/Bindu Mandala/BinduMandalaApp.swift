@@ -10,7 +10,7 @@ struct BinduMandalaApp: App {
         do {
             container = try ModelContainer(
                 for: Shakti.self, RecognitionEntry.self, ShaktiLetter.self,
-                     Avarana.self, NityaDevi.self
+                     Avarana.self, NityaDevi.self, DescentState.self
             )
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")

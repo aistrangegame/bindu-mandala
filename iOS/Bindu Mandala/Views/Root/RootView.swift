@@ -68,6 +68,7 @@ struct RootView: View {
         }
         .task {
             ShaktiBootstrap.seedIfNeeded(context: context)
+            ShaktiBootstrap.seedDescentIfNeeded(context: context)
             RecognitionMigrator.backfillIfNeeded(context: context)
             await AirtableService.shared.sync(context: context)
         }

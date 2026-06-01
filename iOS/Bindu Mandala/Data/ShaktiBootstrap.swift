@@ -286,4 +286,18 @@ enum ShaktiBootstrap {
         }
         try? context.save()
     }
+
+    /// Seed the single DescentState row if missing. Starts at the practitioner's
+    /// home (Ring 2) — Bhūpura is assumed already-passed for anyone who has
+    /// opened the app, since Ring 2 is the lived "home" of the present design.
+    @MainActor
+    static func seedDescentIfNeeded(context: ModelContext) {
+        let descriptor = FetchDescriptor<DescentState>()
+        let existing = (try? context.fetchCount(descriptor)) ?? 0
+        guard existing == 0 else { return }
+        let state = DescentState(currentRing: 2, deepestReached: 2,
+                                 crossings: [], enteredCurrentAt: .now)
+        context.insert(state)
+        try? context.save()
+    }
 }

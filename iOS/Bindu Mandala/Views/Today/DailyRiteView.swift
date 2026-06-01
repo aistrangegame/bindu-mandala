@@ -9,6 +9,7 @@ struct DailyRiteView: View {
     @Query(sort: \Shakti.position) private var shaktis: [Shakti]
     @Query(sort: \NityaDevi.tithiPosition) private var nityas: [NityaDevi]
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
+    @Query private var descentStates: [DescentState]
 
     enum Variant { case body, bija }
     @AppStorage("today_variant_raw") private var variantRaw: String = Variant.body.storage
@@ -21,9 +22,24 @@ struct DailyRiteView: View {
     @State private var showRecognition = ProcessInfo.processInfo.arguments.contains("AUTO_RECOGNIZE")
     @State private var nityaDetailFor: NityaSlot?
 
+    /// Today's Śakti follows the descent. The lunar day indexes into the
+    /// practitioner's currentRing; if that ring has no Śaktis yet (still
+    /// becoming), fall back to Ring 2 — the perennial home.
     var today: Shakti? {
-        let pos = LunarPhaseService.todayPosition()
-        return shaktis.first(where: { $0.position == pos && ($0.ringNumber ?? 2) == 2 }) ?? shaktis.first
+        let ring = descentStates.first?.currentRing ?? 2
+        let pull = LunarPhaseService.todayPosition()   // 1–16
+        if let inRing = shaktiInRing(ring: ring, lunarPull: pull) { return inRing }
+        if ring != 2, let home = shaktiInRing(ring: 2, lunarPull: pull) { return home }
+        return shaktis.first
+    }
+
+    private func shaktiInRing(ring: Int, lunarPull: Int) -> Shakti? {
+        let inRing = shaktis.filter { ($0.ringNumber ?? 0) == ring }
+        guard !inRing.isEmpty else { return nil }
+        let sorted = inRing.sorted { $0.position < $1.position }
+        // Lunar pull 1–16 → index into the ring, modulo the ring's count.
+        let idx = (lunarPull - 1) % sorted.count
+        return sorted[idx]
     }
 
     var body: some View {
