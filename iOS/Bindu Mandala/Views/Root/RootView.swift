@@ -66,6 +66,14 @@ struct RootView: View {
         .sheet(isPresented: $settingsPresented) {
             SettingsView()
         }
+        .onReceive(NotificationCenter.default.publisher(
+            for: RecognitionMomentView.didSettleNotification)) { _ in
+            // She has been felt. Settle into the Portrait — the practitioner
+            // sees the newly-lit point in the field of their attention.
+            withAnimation(.easeInOut(duration: 0.9)) {
+                destination = .memory
+            }
+        }
         .task {
             ShaktiBootstrap.seedIfNeeded(context: context)
             ShaktiBootstrap.seedDescentIfNeeded(context: context)

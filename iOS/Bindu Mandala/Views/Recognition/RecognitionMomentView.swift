@@ -5,7 +5,12 @@ import SwiftData
 /// Two acts, separated by a thin gold hairline:
 ///   Act 1: "she was felt here · [time]"      (muted, sans, uppercase)
 ///   Act 2: "and she felt you back · [time+3s]" (italic Cormorant, gold)
+///
+/// On dismiss, posts `didSettleNotification` — RootView listens and
+/// navigates to the Portrait, where the newly-lit point glows briefly.
 struct RecognitionMomentView: View {
+    static let didSettleNotification = Notification.Name("RecognitionMomentDidSettle")
+
     let shakti: Shakti
     @Binding var isPresented: Bool
     var source: AirtableService.RecognitionSource = .today
@@ -196,6 +201,9 @@ struct RecognitionMomentView: View {
             )
         }
         isPresented = false
+        // She settles into the Portrait — the practitioner sees the newly-lit
+        // point in the field of their attention. RootView listens for this.
+        NotificationCenter.default.post(name: Self.didSettleNotification, object: nil)
     }
 
     private func timeString(_ d: Date) -> String {
