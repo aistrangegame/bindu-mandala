@@ -77,21 +77,45 @@ struct RootView: View {
 private struct HamburgerButton: View {
     var action: () -> Void
 
+    @AppStorage("hamburger_first_run_seen") private var hasSeen: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var breathPhase: CGFloat = 0   // 0 → 1 → 0 across one pulse
+
     var body: some View {
         Button {
             Haptics.light()
+            if !hasSeen { hasSeen = true }
             action()
         } label: {
             VStack(spacing: 5) {
                 ForEach(0..<3, id: \.self) { _ in
                     Rectangle()
-                        .fill(Color.gold.opacity(0.45))
+                        .fill(Color.gold.opacity(0.45 + 0.45 * Double(breathPhase)))
                         .frame(width: 18, height: 1)
+                        .shadow(color: Color.gold.opacity(0.7 * Double(breathPhase)),
+                                radius: 6 * Double(breathPhase))
                 }
             }
             .frame(width: 44, height: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onAppear(perform: emitFirstRunBreath)
+    }
+
+    private func emitFirstRunBreath() {
+        guard !hasSeen, !reduceMotion else { return }
+        // One slow pulse — found once, then forgotten. Mark seen on the way
+        // up so a quick first tap still cancels the rest of the breath
+        // gracefully (and never breathes again).
+        withAnimation(.easeInOut(duration: 1.6).delay(0.6)) {
+            breathPhase = 1
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+            withAnimation(.easeInOut(duration: 1.6)) {
+                breathPhase = 0
+            }
+            hasSeen = true
+        }
     }
 }

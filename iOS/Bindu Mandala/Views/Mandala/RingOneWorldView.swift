@@ -185,7 +185,7 @@ struct RingOneWorldView: View {
 
                     // Hint
                     Text("TAP A LIGHT TO MEET HER · A GATE TO LET THE WORLD IN")
-                        .font(.system(size: 8.5))
+                        .font(.system(size: 11))
                         .tracking(2.6)
                         .foregroundStyle(Color.cream.opacity(0.40))
                         .position(x: cx, y: geo.size.height - 96)
@@ -259,7 +259,7 @@ struct RingOneWorldView: View {
                 .foregroundStyle(Family.siddhi.color.opacity(0.78))
                 .multilineTextAlignment(.center)
             Text("28 FORCES · THE OUTER GROUND")
-                .font(.system(size: 10))
+                .font(.system(size: 11))
                 .tracking(3.0)
                 .foregroundStyle(Color.cream.opacity(0.45))
         }
@@ -482,7 +482,7 @@ struct RingOneWorldView: View {
                     .foregroundStyle(Color.cream)
                     .multilineTextAlignment(.center)
                 Text("\(fam.label.uppercased()) · \(extractAccent(fam.english))")
-                    .font(.system(size: 9.5))
+                    .font(.system(size: 11))
                     .tracking(3.0)
                     .foregroundStyle(fam.color.opacity(0.85))
                 Text(canonicalQualities[safeIndex: metPos - 1] ?? shakti.quality)
@@ -502,7 +502,7 @@ struct RingOneWorldView: View {
                     .tracking(2.0)
                     .foregroundStyle(fam.color)
                 Text(fam.english.uppercased())
-                    .font(.system(size: 9.5))
+                    .font(.system(size: 11))
                     .tracking(2.8)
                     .foregroundStyle(Color.cream.opacity(0.55))
                 Text(fam.lived)
@@ -524,7 +524,7 @@ struct RingOneWorldView: View {
                     .foregroundStyle(Color.cream.opacity(0.78))
                     .multilineTextAlignment(.center)
                 Text("THE WHOLE GROUND, ALIGHT")
-                    .font(.system(size: 9))
+                    .font(.system(size: 11))
                     .tracking(3.0)
                     .foregroundStyle(Color.cream.opacity(0.55))
             }

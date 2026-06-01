@@ -9,6 +9,9 @@ struct ShaktiDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var bijaPulse: CGFloat = 0        // 0…1 pulse for tap-to-hear
+    @State private var advanceProgress: CGFloat = 0  // 0…1 during the held beat
+    @State private var breathPhase: CGFloat = 0      // soft breath when ready
+    @State private var goDeeperExpanded: Bool = false
 
     var body: some View {
         ZStack {
@@ -19,18 +22,17 @@ struct ShaktiDetailView: View {
                 header
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
+                        // The soul, leading.
                         devanagariSection
-                        qualitySection
+                        codexPortraitSection
                         somaticSection
                         appreciationPhraseSection
+                        qualitySection
                         bijaSection
-                        iconographySection
-                        codexPortraitSection
-                        lineageSection
-                        cosmicFunctionSection
-                        tattvaSection
                         if shakti.hasFieldConnection { fieldConnectionSection }
                         herMomentsSection
+                        // Reference matter, folded.
+                        goDeeperSection
                         Color.clear.frame(height: 32)
                     }
                     .padding(.horizontal, 26)
@@ -74,17 +76,8 @@ struct ShaktiDetailView: View {
                 .font(.custom(AppFont.cormorant, size: 34))
                 .tracking(2.0)
                 .foregroundStyle(Color.cream)
-                .padding(.bottom, 6)
+                .padding(.bottom, 10)
                 .accessibilityLabel("\(shakti.phonetic), \(shakti.quality)")
-
-            if let etym = shakti.etymology, !etym.isEmpty {
-                Text(etym)
-                    .font(.custom(AppFont.cormorantItalic, size: 12.5))
-                    .lineSpacing(5)
-                    .foregroundStyle(Color.cream.opacity(0.55))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.bottom, 10)
-            }
 
             Text(shakti.phonetic.uppercased())
                 .font(.system(size: 11))
@@ -111,17 +104,99 @@ struct ShaktiDetailView: View {
         .overlay(Rectangle().fill(Color.gold.opacity(0.10)).frame(height: 0.5), alignment: .bottom)
     }
 
-    /// Display-only since Phase 6 — status advances through recognition count thresholds
-    /// in `AirtableService`, never through a tap on this pill.
+    /// Phase 3.5: readiness is sensed (recognition count grows); crossing is
+    /// always chosen (press-and-hold the pill). If the practitioner hasn't
+    /// felt her often enough yet, the pill is plain — it reads as state, not
+    /// as something to push.
     private var statusPill: some View {
-        let color = pillColor(for: shakti.status)
-        return Text(shakti.status.label.uppercased())
+        let cur = shakti.status
+        let color = pillColor(for: cur)
+        let label = cur.label.uppercased()
+        return Group {
+            if let target = nextStatusIfReady {
+                advancePillBody(label: label, color: color, target: target)
+            } else {
+                plainPillBody(label: label, color: color)
+            }
+        }
+    }
+
+    private func plainPillBody(label: String, color: Color) -> some View {
+        Text(label)
             .font(.system(size: 10))
             .tracking(1.6)
             .foregroundStyle(color)
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
             .background(Capsule().stroke(color, lineWidth: 1))
+    }
+
+    private func advancePillBody(label: String, color: Color, target: ShaktiStatus) -> some View {
+        let breath = 0.55 + 0.45 * Double(breathPhase)
+        return Text(label)
+            .font(.system(size: 10))
+            .tracking(1.6)
+            .foregroundStyle(color)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+            .background(
+                ZStack {
+                    Capsule()
+                        .stroke(color, lineWidth: 1)
+                        .blur(radius: 4)
+                        .opacity(breath * 0.45)
+                    Capsule().stroke(color, lineWidth: 1)
+                    Capsule().fill(color.opacity(0.22 * Double(advanceProgress)))
+                }
+            )
+            .scaleEffect(1 + Double(advanceProgress) * 0.03)
+            .contentShape(Capsule())
+            .onLongPressGesture(
+                minimumDuration: 0.7,
+                maximumDistance: 40,
+                perform: { performAdvance(to: target) },
+                onPressingChanged: { pressing in
+                    if pressing {
+                        Haptics.soft()
+                        withAnimation(.linear(duration: 0.7)) { advanceProgress = 1 }
+                    } else {
+                        withAnimation(.easeOut(duration: 0.25)) { advanceProgress = 0 }
+                    }
+                }
+            )
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("\(shakti.status.label). Hold to cross into \(target.label).")
+            .onAppear {
+                guard !reduceMotion else { breathPhase = 0.5; return }
+                withAnimation(.easeInOut(duration: 1.9).repeatForever(autoreverses: true)) {
+                    breathPhase = 1
+                }
+            }
+    }
+
+    /// Readiness thresholds — sensed from recognition count.
+    /// Mapped → Exploring at 1, → Active at 3, → Embodied at 7.
+    private var nextStatusIfReady: ShaktiStatus? {
+        let count = shakti.serverRecognitionCount ?? 0
+        let cur = shakti.status
+        let threshold: Int
+        switch cur {
+        case .mapped:    threshold = 1
+        case .exploring: threshold = 3
+        case .active:    threshold = 7
+        case .embodied:  return nil
+        }
+        return count >= threshold ? cur.advanced() : nil
+    }
+
+    private func performAdvance(to target: ShaktiStatus) {
+        Haptics.medium()
+        advanceProgress = 0
+        let s = shakti
+        let ctx = context
+        Task {
+            await AirtableService.shared.advanceStatus(shakti: s, to: target, context: ctx)
+        }
     }
 
     private func pillColor(for status: ShaktiStatus) -> Color {
@@ -375,6 +450,67 @@ struct ShaktiDetailView: View {
                     .foregroundStyle(Color.cream.opacity(0.58))
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var etymologySection: some View {
+        if let v = shakti.etymology, !v.isEmpty {
+            section("Etymology") {
+                Text(v)
+                    .font(.custom(AppFont.cormorantItalic, size: 14))
+                    .lineSpacing(7)
+                    .foregroundStyle(Color.cream.opacity(0.58))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    /// A single fold for the reference matter — iconography, lineage, cosmic
+    /// function, tattva, etymology. Closed by default; the soul leads.
+    @ViewBuilder
+    private var goDeeperSection: some View {
+        let hasContent = (shakti.iconography?.isEmpty == false)
+            || (shakti.shaktiFamilyRaw?.isEmpty == false)
+            || (shakti.shaktiFunction?.isEmpty == false)
+            || !shakti.tattva.isEmpty
+            || (shakti.etymology?.isEmpty == false)
+        if hasContent {
+            VStack(alignment: .leading, spacing: 0) {
+                Button {
+                    Haptics.light()
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        goDeeperExpanded.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 12) {
+                        Text(goDeeperExpanded ? "less" : "go deeper")
+                            .font(.custom(AppFont.cormorantItalic, size: 14))
+                            .tracking(1.4)
+                            .foregroundStyle(Color.gold.opacity(0.78))
+                        Rectangle()
+                            .fill(Color.gold.opacity(0.22))
+                            .frame(height: 0.5)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 28)
+
+                if goDeeperExpanded {
+                    VStack(alignment: .leading, spacing: 0) {
+                        iconographySection
+                        lineageSection
+                        cosmicFunctionSection
+                        tattvaSection
+                        etymologySection
+                    }
+                    .transition(.opacity)
+                }
             }
         }
     }

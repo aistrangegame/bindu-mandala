@@ -595,14 +595,14 @@ extension AirtableService {
         guard let token = pat else { return false }
         do {
             try await createRecognitionRow(token: token, item: item)
-            let newStatusRaw = try await patchShaktiAfterRecognition(
+            try await patchShaktiAfterRecognition(
                 token: token,
                 shaktiRecordId: item.shaktiRecordId,
                 feltAt: item.feltAt
             )
-            updateLocalShakti(
+            mirrorLocalCount(
                 recordId: item.shaktiRecordId,
-                statusRaw: newStatusRaw,
+                increment: 1,
                 context: context
             )
             return true
@@ -640,12 +640,13 @@ extension AirtableService {
         }
     }
 
-    /// GET the Shakti row to read the server's current count + status, compute
-    /// new count + status (advance-only), PATCH. Returns the new status rawValue
-    /// so the caller can mirror it locally.
+    /// GET the Shakti row to read the server's current count, compute the new
+    /// count, PATCH. Status is intentionally **not** touched here — readiness
+    /// is sensed (count grows); advancing is chosen (deliberate gesture on the
+    /// Detail status pill, which calls `advanceStatus` separately).
     private func patchShaktiAfterRecognition(token: String,
                                               shaktiRecordId: String,
-                                              feltAt: Date) async throws -> String {
+                                              feltAt: Date) async throws {
         // GET
         var getReq = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)/\(shaktiRecordId)")!)
         getReq.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -658,10 +659,8 @@ extension AirtableService {
             let fields: Fields
             struct Fields: Decodable {
                 let recognitionCount: Int?
-                let status: String?
                 enum CodingKeys: String, CodingKey {
                     case recognitionCount = "Recognition Count"
-                    case status           = "Status"
                 }
             }
         }
@@ -669,23 +668,11 @@ extension AirtableService {
         let currentCount = parsed.fields.recognitionCount ?? 0
         let newCount = currentCount + 1
 
-        // Status advance-only against the server's current status
-        let order: [ShaktiStatus] = [.mapped, .exploring, .active, .embodied]
-        let serverStatus = parseStatus(parsed.fields.status) ?? .mapped
-        var newStatus = serverStatus
-        if newCount >= 7      { newStatus = .embodied }
-        else if newCount >= 3 { newStatus = .active }
-        else if newCount >= 1 { newStatus = .exploring }
-        let serverIdx = order.firstIndex(of: serverStatus) ?? 0
-        let newIdx    = order.firstIndex(of: newStatus) ?? 0
-        if newIdx < serverIdx { newStatus = serverStatus }
-
-        // PATCH
+        // PATCH — count + lastFelt only.
         let iso = ISO8601DateFormatter()
         let fields: [String: Any] = [
             Self.fldLastFelt:         iso.string(from: feltAt),
-            Self.fldRecognitionCount: newCount,
-            Self.fldStatus:           newStatus.rawValue.capitalized
+            Self.fldRecognitionCount: newCount
         ]
         let body: [String: Any] = ["fields": fields, "typecast": true]
         let data = try JSONSerialization.data(withJSONObject: body)
@@ -700,24 +687,52 @@ extension AirtableService {
         guard let httpPatch = patchResp as? HTTPURLResponse, (200..<300).contains(httpPatch.statusCode) else {
             throw URLError(.badServerResponse)
         }
-
-        return newStatus.rawValue
     }
 
-    /// Mirror the new status onto the local Shakti so the Detail screen reflects
-    /// the change without waiting for the next reconcile. Advance-only locally too.
-    private func updateLocalShakti(recordId: String,
-                                    statusRaw: String,
-                                    context: ModelContext) {
+    /// Mirror the server's recognitionCount onto the local Shakti so the Detail
+    /// screen senses readiness without waiting for the next reconcile.
+    private func mirrorLocalCount(recordId: String,
+                                   increment: Int,
+                                   context: ModelContext) {
         guard let all = try? context.fetch(FetchDescriptor<Shakti>()),
               let local = all.first(where: { $0.airtableRecordId == recordId }) else { return }
-        guard let parsed = ShaktiStatus(rawValue: statusRaw.lowercased()) else { return }
-        let order: [ShaktiStatus] = [.mapped, .exploring, .active, .embodied]
-        let li = order.firstIndex(of: local.status) ?? 0
-        let ri = order.firstIndex(of: parsed) ?? 0
-        local.status = order[max(li, ri)]
+        local.serverRecognitionCount = (local.serverRecognitionCount ?? 0) + increment
         local.lastSyncedAt = .now
         try? context.save()
+    }
+
+    /// PATCH a new status to Airtable and mirror it locally. Called from the
+    /// Detail screen's deliberate "advance" gesture — never automatic.
+    /// Advance-only: a request to go backwards is silently ignored.
+    func advanceStatus(shakti: Shakti,
+                       to newStatus: ShaktiStatus,
+                       context: ModelContext) async {
+        let order: [ShaktiStatus] = [.mapped, .exploring, .active, .embodied]
+        guard let cur = order.firstIndex(of: shakti.status),
+              let next = order.firstIndex(of: newStatus),
+              next > cur else { return }
+
+        // Update local first so the UI breathes immediately.
+        shakti.status = newStatus
+        shakti.lastSyncedAt = .now
+        try? context.save()
+
+        guard let token = pat,
+              let recordId = shakti.airtableRecordId, !recordId.isEmpty else { return }
+
+        let body: [String: Any] = [
+            "fields": [Self.fldStatus: newStatus.rawValue.capitalized],
+            "typecast": true
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: body) else { return }
+        var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)/\(recordId)")!)
+        req.httpMethod = "PATCH"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = data
+        _ = try? await session.data(for: req)
+        // Failure is silent — the next reconcile will reassert the local
+        // advance through the existing advance-only sync rule.
     }
 
     // MARK: - Pending queue (UserDefaults-backed)

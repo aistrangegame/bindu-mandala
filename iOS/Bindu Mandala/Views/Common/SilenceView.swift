@@ -51,7 +51,9 @@ struct SilenceView: View {
                 let cx = geo.size.width / 2
                 let cy = geo.size.height / 2
                 ZStack {
-                    // 16 Ring 2 names — outer orbital at 156pt
+                    // 16 Ring 2 names — outer orbital at 156pt.
+                    // Deliberate sub-floor: these are a felt shimmer around
+                    // the Bindu, not a roll-call to be read.
                     ForEach(Array(ring2Shaktis.enumerated()), id: \.offset) { (i, s) in
                         let angle = (Double(i) * 22.5 - 90) * .pi / 180
                         let r: CGFloat = 156
@@ -67,7 +69,8 @@ struct SilenceView: View {
                             .shadow(color: Color.gold.opacity(0.15), radius: 6)
                     }
 
-                    // 8 Ring 3 Anaṅga names — inner orbital at 108pt
+                    // 8 Ring 3 Anaṅga names — inner orbital at 108pt.
+                    // Same deliberate sub-floor as the outer ring — texture, not labels.
                     ForEach(Array(ring3Shaktis.prefix(8).enumerated()), id: \.offset) { (i, s) in
                         let angle = (Double(i) * 45 - 90) * .pi / 180
                         let r: CGFloat = 108
@@ -122,7 +125,7 @@ struct SilenceView: View {
 
                     // Tap to return hint — quiet, but findable in daylight.
                     Text("Tap to return".uppercased())
-                        .font(.system(size: 10))
+                        .font(.system(size: 11))
                         .tracking(2.8)
                         .foregroundStyle(Color.cream.opacity(0.40))
                         .position(x: cx, y: geo.size.height - 38)

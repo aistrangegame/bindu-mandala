@@ -246,7 +246,7 @@ private struct Ring2Layer: View {
         let lop = min(0.82, opacity + 0.18)
         let center = (344 / 2) * scale
         return Text(shortName)
-            .font(.custom(AppFont.cormorant, size: 7.5 * scale))
+            .font(.custom(AppFont.cormorant, size: 11 * scale))
             .foregroundStyle(color.opacity(lop))
             .position(
                 x: center + labelR * cos(theta),
