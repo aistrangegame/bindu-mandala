@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// The Portrait Mandala — the practitioner's years-long mirror of attention.
 ///
@@ -18,6 +19,7 @@ struct PortraitMandalaView: View {
     private let diameter: CGFloat = 344
     @State private var settleHighlight: Int? = nil  // khadgamalaPosition to glow
     @State private var settlePhase: CGFloat = 0
+    @State private var exportedImage: Image? = nil  // stretch: long-press to hold
 
     private var variant: TimeVariant { LunarPhaseService.currentTimeVariant() }
 
@@ -36,6 +38,31 @@ struct PortraitMandalaView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear(perform: settleIfRecent)
+        .sheet(isPresented: Binding(
+            get: { exportedImage != nil },
+            set: { if !$0 { exportedImage = nil } }
+        )) {
+            if let img = exportedImage {
+                ShareSheetView(image: img)
+            }
+        }
+    }
+
+    /// Long-press the Portrait to hold it — render to high resolution and
+    /// offer it as something to keep or print. No app branding, no numbers.
+    @MainActor
+    private func holdToExport() {
+        Haptics.medium()
+        let exportSize: CGFloat = 1500
+        let artwork = portraitArtwork(diameter: exportSize)
+            .frame(width: exportSize, height: exportSize)
+            .background(variant.bg)
+            .environment(\.colorScheme, .dark)
+        let renderer = ImageRenderer(content: artwork)
+        renderer.scale = 1.0  // exportSize is already at full image resolution
+        if let ui = renderer.uiImage {
+            exportedImage = Image(uiImage: ui)
+        }
     }
 
     // MARK: - Background
@@ -91,6 +118,15 @@ struct PortraitMandalaView: View {
     // MARK: - Mandala
 
     private var mandala: some View {
+        portraitArtwork(diameter: diameter)
+            .onLongPressGesture(minimumDuration: 0.9) { holdToExport() }
+    }
+
+    /// The mandala itself, free of any chrome — used both for the on-screen
+    /// rendering and for the exported image. Diameter is parameterised so the
+    /// exporter can render at high resolution.
+    @ViewBuilder
+    private func portraitArtwork(diameter: CGFloat) -> some View {
         ZStack {
             PortraitGeometryLayer(diameter: diameter, variant: variant)
             PortraitFieldLayer(
@@ -486,6 +522,53 @@ private struct PortraitPetalShape: Shape {
         )
         p.closeSubpath()
         return p
+    }
+}
+
+// MARK: - Share sheet (stretch — exportable Portrait)
+
+private struct ShareSheetView: View {
+    let image: Image
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 24) {
+            image
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 280, maxHeight: 280)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .shadow(color: Color.gold.opacity(0.18), radius: 18)
+                .padding(.top, 24)
+
+            Text("a portrait of your attention")
+                .font(.custom(AppFont.cormorantItalic, size: 16))
+                .tracking(0.4)
+                .foregroundStyle(Color.cream.opacity(0.60))
+
+            ShareLink(item: image, preview: SharePreview("Bindu Mandala Portrait", image: image)) {
+                Text("hold this image".uppercased())
+                    .font(.system(size: 11))
+                    .tracking(2.4)
+                    .foregroundStyle(Color.cream)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 14)
+                    .background(Capsule().fill(Color.accentRed))
+            }
+            .buttonStyle(.plain)
+
+            Button("close") { dismiss() }
+                .font(.custom(AppFont.cormorantItalic, size: 14))
+                .foregroundStyle(Color.cream.opacity(0.55))
+                .padding(.top, 4)
+                .buttonStyle(.plain)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.ground.ignoresSafeArea())
+        .presentationDetents([.medium, .large])
+        .preferredColorScheme(.dark)
     }
 }
 

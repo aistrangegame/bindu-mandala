@@ -10,6 +10,7 @@ struct SettingsView: View {
 
     @AppStorage("daily_summons_enabled") private var summonsEnabled = true
     @AppStorage("daily_summons_hour")    private var summonsHour: Int = DailySummons.defaultHour
+    @State private var filmPresented = false
 
     var body: some View {
         NavigationStack {
@@ -21,11 +22,15 @@ struct SettingsView: View {
                         rhythmSection
                         fieldConnectionsSection
                         bijaSection
+                        wayBehindSection
                         homecomingSection
                         Color.clear.frame(height: 40)
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 8)
+                }
+                .fullScreenCover(isPresented: $filmPresented) {
+                    DescentFilmView()
                 }
             }
             .navigationTitle("Settings")
@@ -101,6 +106,33 @@ struct SettingsView: View {
                 .font(.custom(AppFont.cormorantItalic, size: 14))
                 .foregroundStyle(Color.cream.opacity(0.65))
                 .lineSpacing(5)
+        }
+    }
+
+    private var wayBehindSection: some View {
+        sectionShell("The Way Behind") {
+            VStack(alignment: .leading, spacing: 14) {
+                Button {
+                    Haptics.soft()
+                    filmPresented = true
+                } label: {
+                    Text("Remember the descent")
+                        .font(.custom(AppFont.cormorant, size: 18))
+                        .tracking(0.6)
+                        .foregroundStyle(Color.gold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(Color.gold.opacity(0.5), lineWidth: 0.6)
+                        )
+                }
+                .buttonStyle(.plain)
+                Text("Each ring you have crossed, opening one by one.")
+                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .foregroundStyle(Color.cream.opacity(0.55))
+                    .lineSpacing(4)
+            }
         }
     }
 
