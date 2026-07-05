@@ -63,6 +63,9 @@ final class AirtableService {
             try reconcileShaktis(sk, context: context)
             try reconcileAvaranas(av, context: context)
             try reconcileNityas(nt, context: context)
+            // After the field data is local, rebuild the recognition log if the
+            // device has none — the path home after a reinstall/recovery.
+            await restoreRecognitionsIfLocalEmpty(context: context)
             logVerification(shaktis: sk.count, avaranas: av.count, nityas: nt.count, context: context)
         } catch {
             log.error("Sync failed: \(error.localizedDescription, privacy: .public)")
@@ -134,6 +137,7 @@ final class AirtableService {
         let shaktiFamily: String?
         let lastFelt: String?
         let recognitionCount: Int?
+        let letter: String?
 
         // CodingKeys are Airtable field IDs (verified May 31 2026 via Airtable Omni).
         // Read with `returnFieldsByFieldId=true` so the response is keyed by ID.
@@ -158,6 +162,7 @@ final class AirtableService {
             case shaktiFamily       = "fldYAlclWH7CfJhOg"
             case lastFelt           = "fldWT0dGqdUQrdRGT"
             case recognitionCount   = "flddp0tLpf8iuxyt4"
+            case letter             = "fldgASyV031Hr4sHp"
         }
     }
 
@@ -201,38 +206,6 @@ final class AirtableService {
         }
     }
 
-    // MARK: - Position helpers
-
-    private func ringNumber(forKhadgamala kp: Int) -> Int {
-        switch kp {
-        case 1...28:   return 1
-        case 29...44:  return 2
-        case 45...52:  return 3
-        case 53...66:  return 4
-        case 67...76:  return 5
-        case 77...86:  return 6
-        case 87...98:  return 7
-        case 99...101: return 8
-        case 102:      return 9
-        default:       return 0
-        }
-    }
-
-    private func ringStartOffset(_ ring: Int) -> Int {
-        switch ring {
-        case 1: return 0
-        case 2: return 28
-        case 3: return 44
-        case 4: return 52
-        case 5: return 66
-        case 6: return 76
-        case 7: return 86
-        case 8: return 98
-        case 9: return 101
-        default: return 0
-        }
-    }
-
     // MARK: - Reconcile
 
     private func reconcileShaktis(_ rows: [ShaktiRow], context: ModelContext) throws {
@@ -240,9 +213,9 @@ final class AirtableService {
 
         for row in rows {
             guard let kp = row.fields.khadgamalaPosition, (1...102).contains(kp) else { continue }
-            let ring = ringNumber(forKhadgamala: kp)
+            let ring = KhadgamalaMap.ringNumber(forKhadgamala: kp)
             guard ring > 0 else { continue }
-            let perRing = kp - ringStartOffset(ring)
+            let perRing = KhadgamalaMap.perRingIndex(forKhadgamala: kp)
 
             let shakti: Shakti
             if let m = existing.first(where: { $0.khadgamalaPosition == kp }) {
@@ -318,9 +291,89 @@ final class AirtableService {
                 let ri = order.firstIndex(of: remote) ?? 0
                 shakti.status = order[max(li, ri)]
             }
+
+            // Restore a Ring-2 letter from Airtable when none exists locally.
+            // The Well is offline-first and Ring-2 only (ShaktiLetter is keyed
+            // 1–16), so we seed only when the practitioner has no local draft —
+            // never overwriting a newer local edit.
+            if ring == 2,
+               let remoteLetter = row.fields.letter?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !remoteLetter.isEmpty {
+                seedLetterIfMissing(position: perRing, body: remoteLetter, context: context)
+            }
+
             shakti.lastSyncedAt = .now
         }
         try context.save()
+    }
+
+    /// Insert a `ShaktiLetter` only when the practitioner has none for this
+    /// Ring-2 position — the local draft always wins.
+    private func seedLetterIfMissing(position: Int, body: String, context: ModelContext) {
+        let d = FetchDescriptor<ShaktiLetter>(
+            predicate: #Predicate { $0.shaktiPosition == position }
+        )
+        if let existing = try? context.fetch(d), !existing.isEmpty { return }
+        context.insert(ShaktiLetter(shaktiPosition: position, body: body))
+    }
+
+    /// Rebuild the local recognition log from Airtable when it is empty — the
+    /// path home after a reinstall or a store recovery. Guarded on emptiness so
+    /// it can never duplicate existing history. Silent on any failure.
+    func restoreRecognitionsIfLocalEmpty(context: ModelContext) async {
+        let existing = (try? context.fetch(FetchDescriptor<RecognitionEntry>())) ?? []
+        guard existing.isEmpty else { return }
+        guard let token = pat else { return }
+
+        // Airtable record id → (Khaḍgamālā position, ring) from local Shaktis.
+        let shaktis = (try? context.fetch(FetchDescriptor<Shakti>())) ?? []
+        var byRecord: [String: (kp: Int, ring: Int)] = [:]
+        for s in shaktis {
+            guard let rec = s.airtableRecordId, let kp = s.khadgamalaPosition else { continue }
+            byRecord[rec] = (kp, s.ringNumber ?? KhadgamalaMap.ringNumber(forKhadgamala: kp))
+        }
+        guard !byRecord.isEmpty else { return }
+
+        struct RecRow: Decodable {
+            let id: String
+            let fields: Fields
+            struct Fields: Decodable {
+                let feltAt: String?
+                let notes: String?
+                let ofShakti: [String]?
+                enum CodingKeys: String, CodingKey {
+                    case feltAt   = "fldk4BdikzJQOautw"
+                    case notes    = "fld1HR38cQAtEicFc"
+                    case ofShakti = "fldaDjmaPvu57sJVg"
+                }
+            }
+        }
+
+        do {
+            let rows: [RecRow] = try await fetch(
+                token: token,
+                filter: "{fldw33m8YqrINlvrN}='Recognition'",
+                sort: [("fldk4BdikzJQOautw", "asc")]
+            )
+            let iso = ISO8601DateFormatter()
+            var inserted = 0
+            for r in rows {
+                guard let rec = r.fields.ofShakti?.first, let map = byRecord[rec] else { continue }
+                let ts = r.fields.feltAt.flatMap { iso.date(from: $0) } ?? Date()
+                context.insert(RecognitionEntry(
+                    timestamp: ts,
+                    khadgamalaPosition: map.kp,
+                    ringNumber: map.ring,
+                    note: r.fields.notes,
+                    gesture: .felt
+                ))
+                inserted += 1
+            }
+            if inserted > 0 { try? context.save() }
+            log.notice("Recognition restore: inserted \(inserted) from Airtable")
+        } catch {
+            log.error("Recognition restore failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func reconcileAvaranas(_ rows: [AvaranaRow], context: ModelContext) throws {

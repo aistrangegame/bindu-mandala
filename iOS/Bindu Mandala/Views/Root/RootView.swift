@@ -75,11 +75,31 @@ struct RootView: View {
             }
         }
         .task {
+            guard !AppRuntime.isUnitTesting else { return }
             ShaktiBootstrap.seedIfNeeded(context: context)
             ShaktiBootstrap.seedDescentIfNeeded(context: context)
             RecognitionMigrator.backfillIfNeeded(context: context)
+            DailySummons.migrateDefaultHourIfNeeded()
+            primeSummons()                     // name mornings from seeded (16) data
             await AirtableService.shared.sync(context: context)
+            primeSummons()                     // refresh with the full 102
+            await DailySummons.reschedule()     // upcoming mornings now named
         }
+    }
+
+    /// Build the morning-greeting map (Khaḍgamālā position → title + line) from
+    /// the local store and hand it to `DailySummons`, so each 6am summons can
+    /// name the energy who presides that day.
+    private func primeSummons() {
+        let shaktis = (try? context.fetch(FetchDescriptor<Shakti>())) ?? []
+        var map: [Int: (title: String, body: String)] = [:]
+        for s in shaktis {
+            guard let kp = s.khadgamalaPosition else { continue }
+            let quality = s.quality.trimmingCharacters(in: .whitespacesAndNewlines)
+            let body = quality.isEmpty ? "She greets you this morning." : quality
+            map[kp] = (title: s.name, body: body)
+        }
+        DailySummons.greetingProvider = { map[$0] }
     }
 }
 

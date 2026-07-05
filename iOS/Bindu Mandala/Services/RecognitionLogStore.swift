@@ -32,13 +32,15 @@ struct RecognitionLogStore {
         return entry
     }
 
-    /// All entries for one Śakti by global position, newest first.
-    func entries(forKhadgamala position: Int) -> [RecognitionEntry] {
+    /// All entries for one Śakti by global position, newest first. The limit is
+    /// a display bound the caller opts into — the store itself never silently
+    /// drops a lifetime of moments (pass `nil`, the default, for the full log).
+    func entries(forKhadgamala position: Int, limit: Int? = nil) -> [RecognitionEntry] {
         var d = FetchDescriptor<RecognitionEntry>(
             predicate: #Predicate { $0.khadgamalaPosition == position },
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
-        d.fetchLimit = 200
+        if let limit { d.fetchLimit = limit }
         return (try? context.fetch(d)) ?? []
     }
 

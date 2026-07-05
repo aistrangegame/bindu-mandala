@@ -9,7 +9,6 @@ struct DailyRiteView: View {
     @Query(sort: \Shakti.position) private var shaktis: [Shakti]
     @Query(sort: \NityaDevi.tithiPosition) private var nityas: [NityaDevi]
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
-    @Query private var descentStates: [DescentState]
 
     enum Variant { case body, bija }
     @AppStorage("today_variant_raw") private var variantRaw: String = Variant.body.storage
@@ -22,24 +21,54 @@ struct DailyRiteView: View {
     @State private var showRecognition = ProcessInfo.processInfo.arguments.contains("AUTO_RECOGNIZE")
     @State private var nityaDetailFor: NityaSlot?
 
-    /// Today's Śakti follows the descent. The lunar day indexes into the
-    /// practitioner's currentRing; if that ring has no Śaktis yet (still
-    /// becoming), fall back to Ring 2 — the perennial home.
+    /// Today's energy is any one of the 102, chosen by `DailyEnergyService` and
+    /// turning over at 6am — the same energy the morning summons names. Before
+    /// the first Airtable sync only the 16 bootstrap Karṣiṇīs are loaded, so we
+    /// greet from whatever pool is present rather than ever showing a spinner.
     var today: Shakti? {
-        let ring = descentStates.first?.currentRing ?? 2
-        let pull = LunarPhaseService.todayPosition()   // 1–16
-        if let inRing = shaktiInRing(ring: ring, lunarPull: pull) { return inRing }
-        if ring != 2, let home = shaktiInRing(ring: 2, lunarPull: pull) { return home }
-        return shaktis.first
+        guard !shaktis.isEmpty else { return nil }
+
+        // Debug override for verification/screenshots: ENERGY_POS=<1–102> pins
+        // today's greeting to a specific Khaḍgamālā position.
+        if let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("ENERGY_POS=") }),
+           let pos = Int(arg.dropFirst("ENERGY_POS=".count)),
+           let s = shaktis.first(where: { $0.khadgamalaPosition == pos }) {
+            return s
+        }
+
+        let hasFull = shaktis.contains { ($0.khadgamalaPosition ?? 0) > 0 }
+        if hasFull {
+            let pos = DailyEnergyService.todaysPosition()   // 1–102
+            if let s = shaktis.first(where: { $0.khadgamalaPosition == pos }) { return s }
+        }
+
+        // Fallback: rotate deterministically within the loaded pool.
+        let sorted = shaktis.sorted {
+            ($0.khadgamalaPosition ?? $0.position) < ($1.khadgamalaPosition ?? $1.position)
+        }
+        let idx = DailyEnergyService.todaysPosition(count: sorted.count) - 1
+        return sorted[min(max(0, idx), sorted.count - 1)]
     }
 
-    private func shaktiInRing(ring: Int, lunarPull: Int) -> Shakti? {
-        let inRing = shaktis.filter { ($0.ringNumber ?? 0) == ring }
-        guard !inRing.isEmpty else { return nil }
-        let sorted = inRing.sorted { $0.position < $1.position }
-        // Lunar pull 1–16 → index into the ring, modulo the ring's count.
-        let idx = (lunarPull - 1) % sorted.count
-        return sorted[idx]
+    /// The prompt shown beneath her quality. Only the 16 bootstrap Karṣiṇīs
+    /// carry a `somatic` prompt question; for the other 86 fall back to her
+    /// somatic poetry, then to a universal invitation — never an empty quote.
+    private func promptText(for s: Shakti) -> String {
+        let somatic = s.somatic.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !somatic.isEmpty { return somatic }
+        let poetry = s.somaticPoetry.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let first = poetry.split(whereSeparator: \.isNewline).first.map(String.init),
+           !first.isEmpty {
+            return first.trimmingCharacters(in: .whitespaces)
+        }
+        return "Where do you feel her, right now?"
+    }
+
+    /// VoiceOver name — her phonetic when present, else her Sanskrit name.
+    /// The 86 non-Karṣiṇīs have no bootstrap phonetic.
+    private func spokenName(for s: Shakti) -> String {
+        let p = s.phonetic.trimmingCharacters(in: .whitespacesAndNewlines)
+        return p.isEmpty ? s.name : p
     }
 
     var body: some View {
@@ -112,13 +141,15 @@ struct DailyRiteView: View {
                     .opacity(nameVisible ? 1 : 0)
                     .offset(y: nameVisible ? 0 : 8)
                     .padding(.bottom, variant == .bija ? 12 : 10)
-                    .accessibilityLabel("\(s.phonetic), \(s.quality)")
+                    .accessibilityLabel("\(spokenName(for: s)), \(s.quality)")
 
-                Text(s.phonetic.uppercased())
-                    .font(.system(size: 12, weight: .regular))
-                    .tracking(2.4)
-                    .foregroundStyle(Color.cream.opacity(0.45))
-                    .padding(.bottom, variant == .bija ? 22 : 18)
+                if !s.phonetic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(s.phonetic.uppercased())
+                        .font(.system(size: 12, weight: .regular))
+                        .tracking(2.4)
+                        .foregroundStyle(Color.cream.opacity(0.45))
+                        .padding(.bottom, variant == .bija ? 22 : 18)
+                }
 
                 Text(s.quality)
                     .font(.custom(AppFont.cormorant, size: variant == .bija ? 22 : 20))
@@ -133,7 +164,7 @@ struct DailyRiteView: View {
                     .frame(width: 48, height: 0.5)
                     .padding(.bottom, variant == .bija ? 28 : 20)
 
-                Text("\u{201C}\(s.somatic)\u{201D}")
+                Text("\u{201C}\(promptText(for: s))\u{201D}")
                     .font(.custom(AppFont.cormorantItalic, size: variant == .bija ? 20 : 19))
                     .foregroundStyle(Color.cream.opacity(0.78))
                     .tracking(0.4)
@@ -144,7 +175,11 @@ struct DailyRiteView: View {
                     .offset(y: promptVisible ? 0 : 6)
                     .padding(.bottom, variant == .bija ? 36 : 28)
 
-                if variant == .body {
+                // The body outline anchors a somatic location. Only the Ring 2
+                // Karṣiṇīs carry one; when she has no bodily location (the other
+                // 86), fall through to her bīja rather than an empty body + label.
+                if variant == .body,
+                   !s.bodilyLocation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     BodyOutlineView(clusterColor: s.cluster.color, size: 90)
                         .opacity(0.9)
                         .padding(.bottom, 8)
@@ -153,7 +188,7 @@ struct DailyRiteView: View {
                         .tracking(1.8)
                         .foregroundStyle(Color.cream.opacity(0.55))
                         .padding(.bottom, 12)
-                } else {
+                } else if !s.bija.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(s.bija)
                         .font(.custom(AppFont.cormorant, size: 42))
                         .foregroundStyle(Color.gold.opacity(0.85))
@@ -178,12 +213,14 @@ struct DailyRiteView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("I feel her — record recognition of \(s.phonetic)")
+                .accessibilityLabel("I feel her — record recognition of \(spokenName(for: s))")
 
-                Text("Today's Bīja \u{2014} \(s.bija)")
-                    .font(.system(size: 11))
-                    .tracking(1.65)
-                    .foregroundStyle(Color.cream.opacity(0.50))
+                if !s.bija.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Today's Bīja \u{2014} \(s.bija)")
+                        .font(.system(size: 11))
+                        .tracking(1.65)
+                        .foregroundStyle(Color.cream.opacity(0.50))
+                }
 
                 RingPositionIndicatorView()
             }

@@ -16,7 +16,6 @@ struct VeilView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
     @Query private var descentStates: [DescentState]
-    @Query private var allShaktis: [Shakti]
     @State private var dragStart: CGFloat?
     @State private var dragMoved: CGFloat = 0
     @State private var crossingMessage: String? = nil
@@ -34,8 +33,9 @@ struct VeilView: View {
     private var descent: DescentState? { descentStates.first }
     private var currentRing: Int { descent?.currentRing ?? 2 }
     private var deepestReached: Int { descent?.deepestReached ?? 2 }
-    /// Top-most ring rendered in the ladder. Always shows reached + next.
-    private var maxRenderedRing: Int { min(9, deepestReached + 1) }
+    /// The instrument is fully open — every one of the nine āvaraṇas is walkable
+    /// from the first launch. The ladder always renders all nine.
+    private var maxRenderedRing: Int { 9 }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -208,25 +208,12 @@ struct VeilView: View {
         avaranas.first(where: { $0.ringNumber == ring })
     }
 
-    /// What kind of row this ring should render as, given current descent state.
+    /// The instrument is fully open: the ring you're in reads as home, every
+    /// other is open and immediately enterable on a tap. `DescentState` still
+    /// records where you've been — it feeds the Portrait and the Descent Film —
+    /// but it never gates entry. No thresholds, no hold-to-cross, nothing unseen.
     private func kind(for ring: Int) -> DescentRowKind {
-        if ring == currentRing                       { return .home }
-        if ring <= deepestReached                    { return .open }
-        if ring == deepestReached + 1 {
-            return contentReady(ring: ring) ? .threshold : .becoming
-        }
-        return .unseen  // unreachable given maxRenderedRing, but defensive
-    }
-
-    /// A ring opens once every one of its Śaktis carries both a somatic prompt
-    /// and a recognition phrase. Until then she is still becoming words.
-    private func contentReady(ring: Int) -> Bool {
-        let inRing = allShaktis.filter { ($0.ringNumber ?? 0) == ring }
-        guard !inRing.isEmpty else { return false }
-        return inRing.allSatisfy {
-            !$0.somatic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-            !$0.recognitionPhrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }
+        ring == currentRing ? .home : .open
     }
 
     /// Visiting a ring already inside the descent — no crossing, just re-entry.

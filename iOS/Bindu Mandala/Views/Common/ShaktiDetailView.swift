@@ -12,6 +12,7 @@ struct ShaktiDetailView: View {
     @State private var advanceProgress: CGFloat = 0  // 0…1 during the held beat
     @State private var breathPhase: CGFloat = 0      // soft breath when ready
     @State private var goDeeperExpanded: Bool = false
+    @State private var showRecognition = false
 
     var body: some View {
         ZStack {
@@ -38,11 +39,43 @@ struct ShaktiDetailView: View {
                     .padding(.horizontal, 26)
                 }
                 .overlay(alignment: .bottom) { BottomScrollFade() }
+                recognitionFooter
             }
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .enableSwipeBack()
+        .fullScreenCover(isPresented: $showRecognition) {
+            RecognitionMomentView(shakti: shakti,
+                                  isPresented: $showRecognition,
+                                  source: .mandala)
+        }
+    }
+
+    /// She can be recognized from anywhere she is met — not only on the day she
+    /// happens to preside. The same red gesture as the Daily Rite; `source`
+    /// distinguishes where the recognition arose.
+    private var recognitionFooter: some View {
+        Button {
+            Haptics.medium()
+            showRecognition = true
+        } label: {
+            Text("I feel her")
+                .font(.custom(AppFont.cormorant, size: 20))
+                .tracking(2.4)
+                .foregroundStyle(Color.cream)
+                .frame(maxWidth: .infinity)
+                .frame(height: 54)
+                .background(
+                    Capsule().fill(Color.accentRed)
+                        .shadow(color: Color.accentRed.opacity(0.40), radius: 24, y: 3)
+                )
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 26)
+        .padding(.top, 8)
+        .padding(.bottom, 14)
+        .accessibilityLabel("I feel her — record recognition of \(shakti.phonetic.isEmpty ? shakti.name : shakti.phonetic)")
     }
 
     // MARK: - Sections
@@ -544,7 +577,7 @@ private struct HerMomentsList: View {
 
     var body: some View {
         let localEntries = RecognitionLogStore(context: context)
-            .entries(forKhadgamala: khadgamalaPosition)
+            .entries(forKhadgamala: khadgamalaPosition, limit: 200)
 
         VStack(alignment: .leading, spacing: 0) {
             // Once Airtable has answered with anything, it becomes the authoritative

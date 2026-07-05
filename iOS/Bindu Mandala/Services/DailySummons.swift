@@ -2,21 +2,42 @@ import Foundation
 import UserNotifications
 
 /// One tender summons per day, ever. She arrives at a practitioner-chosen
-/// hour (default 6 PM). If the rite was already done today, today's summons
-/// is dropped — never a second nudge. No sound, no badge, no count.
+/// hour (default 6 AM — the morning greeting). Each morning names the energy
+/// presiding that day (via `DailyEnergyService`). If the rite was already done
+/// today, today's summons is dropped — never a second nudge. No sound, no
+/// badge, no count.
 ///
 /// Persistence:
 ///   • `daily_summons_enabled` (AppStorage) — toggle, default true.
-///   • `daily_summons_hour`    (AppStorage) — 0–23, default 18.
+///   • `daily_summons_hour`    (AppStorage) — 0–23, default 6.
 ///   • `daily_summons_last_rite_completed` (UserDefaults, TimeInterval) —
 ///     read here to skip today's summons when the rite is already done.
 @MainActor
 enum DailySummons {
 
-    static let defaultHour = 18
+    static let defaultHour = 6
     static let idPrefix = "summons."
 
     private static let lastRiteKey = "daily_summons_last_rite_completed"
+    private static let hourMigrationKey = "summons_hour_migrated_to_6am"
+
+    /// Maps a Khaḍgamālā position (1–102) to the notification's title + body.
+    /// Set by the app layer from SwiftData (`primeSummons`) so the scheduler,
+    /// which is otherwise store-free, can name each morning's energy. Nil until
+    /// primed → the summons falls back to the wordless "She is waiting."
+    static var greetingProvider: ((Int) -> (title: String, body: String)?)?
+
+    // MARK: - One-time migration
+
+    /// The summons used to arrive in the evening (18:00). Move existing installs
+    /// to the 6 AM morning greeting exactly once; after that the practitioner's
+    /// own choice in Settings is respected.
+    static func migrateDefaultHourIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: hourMigrationKey) else { return }
+        defaults.set(defaultHour, forKey: "daily_summons_hour")
+        defaults.set(true, forKey: hourMigrationKey)
+    }
 
     // MARK: - Authorization
 
@@ -107,8 +128,16 @@ enum DailySummons {
             if cal.isDateInToday(when) && riteCompletedToday(calendar: cal) { continue }
 
             let content = UNMutableNotificationContent()
-            content.title = "She is waiting."
-            // No body, no sound, no badge — the title is the whole gesture.
+            // Name the energy who greets this morning. `todaysPosition(for: when)`
+            // resolves the same energy the app will show that day (both turn over
+            // at the 6am boundary). No sound, no badge — quiet by design.
+            if let greeting = greetingProvider?(DailyEnergyService.todaysPosition(for: when)) {
+                content.title = greeting.title
+                let body = greeting.body.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !body.isEmpty { content.body = body }
+            } else {
+                content.title = "She is waiting."
+            }
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
             let id = "\(idPrefix)\(comps.year ?? 0)-\(comps.month ?? 0)-\(comps.day ?? 0)"

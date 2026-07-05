@@ -1,20 +1,24 @@
 import SwiftUI
 import SwiftData
 
+/// Runtime facts the app consults at launch.
+enum AppRuntime {
+    /// True when the process is hosting an XCTest bundle. Launch-time side
+    /// effects (network sync, the periodic re-sync loop, notification
+    /// authorization) are skipped so unit tests run against a quiet host.
+    static let isUnitTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+}
+
 @main
 struct BinduMandalaApp: App {
     let container: ModelContainer
 
     init() {
         AppFont.audit()
-        do {
-            container = try ModelContainer(
-                for: Shakti.self, RecognitionEntry.self, ShaktiLetter.self,
-                     Avarana.self, NityaDevi.self, DescentState.self
-            )
-        } catch {
-            fatalError("Failed to create ModelContainer: \(error)")
-        }
+        // Never crash the launch on a store failure — recover the container,
+        // preserving any existing store aside. The recognition log and letters
+        // then restore from Airtable on the next sync.
+        container = PersistenceRecovery.makeContainer()
     }
 
     var body: some Scene {
@@ -57,12 +61,13 @@ private struct AppRoot: View {
             // Drain any queued recognition writes whenever the app returns to active.
             // Also reschedule the rolling summons window so dates ahead stay primed
             // and today's slot is dropped if the rite was already done.
-            if newPhase == .active {
+            if newPhase == .active && !AppRuntime.isUnitTesting {
                 Task { await AirtableService.shared.flushPending(context: context) }
                 Task { await DailySummons.reschedule(enabled: summonsEnabled, hour: summonsHour) }
             }
         }
         .task {
+            guard !AppRuntime.isUnitTesting else { return }
             // First-launch authorization for the default-on summons. Silent
             // once the system has a decision; only runs while still
             // .notDetermined, so the practitioner sees the prompt at most once.
@@ -87,7 +92,7 @@ private struct AppRoot: View {
             // Airtable edits made elsewhere show up without a relaunch. The
             // task is cancelled and reissued on every scenePhase change, so
             // backgrounding cleanly stops the loop.
-            guard scenePhase == .active else { return }
+            guard scenePhase == .active, !AppRuntime.isUnitTesting else { return }
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(300))
                 if Task.isCancelled { return }

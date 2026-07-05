@@ -28,6 +28,14 @@ struct RecognitionMomentView: View {
     @State private var note: String = ""
     @State private var hasLogged = false
 
+    /// Her appreciation line: the bootstrap `recognitionPhrase` when present,
+    /// else the Airtable `appreciationPhrase`, else empty (phrase is hidden).
+    private var phraseText: String {
+        let r = shakti.recognitionPhrase.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !r.isEmpty { return r }
+        return (shakti.appreciationPhrase ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var body: some View {
         ZStack {
             Color.darkVeil.ignoresSafeArea()
@@ -62,20 +70,25 @@ struct RecognitionMomentView: View {
                     .padding(.horizontal, 44)
                     .padding(.bottom, 28)
 
-                Rectangle()
-                    .fill(Color.gold.opacity(0.5))
-                    .frame(width: 32, height: 0.5)
-                    .opacity(phraseVisible ? 1 : 0)
-                    .padding(.bottom, 28)
+                // The 16 Karṣiṇīs carry a bootstrap recognition phrase; the other
+                // 86 offer their Airtable appreciation phrase. When neither
+                // exists, the divider + phrase simply don't appear.
+                if !phraseText.isEmpty {
+                    Rectangle()
+                        .fill(Color.gold.opacity(0.5))
+                        .frame(width: 32, height: 0.5)
+                        .opacity(phraseVisible ? 1 : 0)
+                        .padding(.bottom, 28)
 
-                Text(shakti.recognitionPhrase)
-                    .font(.custom(AppFont.cormorantItalic, size: 24))
-                    .foregroundStyle(Color.cream)
-                    .tracking(0.5)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(8)
-                    .padding(.horizontal, 44)
-                    .opacity(phraseVisible ? 1 : 0)
+                    Text(phraseText)
+                        .font(.custom(AppFont.cormorantItalic, size: 24))
+                        .foregroundStyle(Color.cream)
+                        .tracking(0.5)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(8)
+                        .padding(.horizontal, 44)
+                        .opacity(phraseVisible ? 1 : 0)
+                }
 
                 Spacer()
             }
