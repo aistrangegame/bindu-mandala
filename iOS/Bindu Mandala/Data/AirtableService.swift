@@ -613,6 +613,7 @@ extension AirtableService {
         await flushPendingRecognitions(context: context)
         await flushPendingSilences()
         await flushPendingLetters()
+        await flushPendingActivities()
     }
 
     private func flushPendingRecognitions(context: ModelContext) async {
@@ -648,7 +649,7 @@ extension AirtableService {
         guard let token = pat else { return false }
         do {
             try await createRecognitionRow(token: token, item: item)
-            try await patchShaktiAfterRecognition(
+            let previousCount = try await patchShaktiAfterRecognition(
                 token: token,
                 shaktiRecordId: item.shaktiRecordId,
                 feltAt: item.feltAt
@@ -658,11 +659,32 @@ extension AirtableService {
                 increment: 1,
                 context: context
             )
+            // Threshold crossing for the shared ledger: the *first* time this
+            // Śakti is ever felt. `previousCount` is the server's count read
+            // *before* the increment PATCH, so `wasFirst` is per-Śakti — it
+            // fires once for each of the 102, not only the first Śakti ever.
+            let wasFirst = (previousCount == 0)
+            if wasFirst {
+                let name = shaktiName(recordId: item.shaktiRecordId, context: context)
+                await logActivity(
+                    type: Self.activityShaktiRecognized,
+                    linkedShaktiRecordId: item.shaktiRecordId,
+                    activityName: "\(name) — first recognition",
+                    detail: "Felt here for the first time · \(item.moonPhase)"
+                )
+            }
             return true
         } catch {
             log.error("Recognition write failed: \(error.localizedDescription, privacy: .public)")
             return false
         }
+    }
+
+    /// Local Śakti display name for a record id, or a quiet fallback.
+    private func shaktiName(recordId: String, context: ModelContext) -> String {
+        let all = (try? context.fetch(FetchDescriptor<Shakti>())) ?? []
+        let name = all.first(where: { $0.airtableRecordId == recordId })?.name ?? ""
+        return name.isEmpty ? "A Śakti" : name
     }
 
     private func createRecognitionRow(token: String, item: PendingRecognition) async throws {
@@ -697,9 +719,13 @@ extension AirtableService {
     /// count, PATCH. Status is intentionally **not** touched here — readiness
     /// is sensed (count grows); advancing is chosen (deliberate gesture on the
     /// Detail status pill, which calls `advanceStatus` separately).
+    /// Returns the server's recognition count *before* this recognition (0 on
+    /// the very first felt), so the caller can detect the first-recognition
+    /// threshold without a second round-trip.
+    @discardableResult
     private func patchShaktiAfterRecognition(token: String,
                                               shaktiRecordId: String,
-                                              feltAt: Date) async throws {
+                                              feltAt: Date) async throws -> Int {
         // GET
         var getReq = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)/\(shaktiRecordId)")!)
         getReq.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -718,8 +744,9 @@ extension AirtableService {
             }
         }
         let parsed = try JSONDecoder().decode(GetResponse.self, from: getData)
-        let currentCount = parsed.fields.recognitionCount ?? 0
-        let newCount = currentCount + 1
+        // The server's count *before* this recognition. 0 ⇒ never felt before.
+        let previousCount = parsed.fields.recognitionCount ?? 0
+        let newCount = previousCount + 1
 
         // PATCH — count + lastFelt only.
         let iso = ISO8601DateFormatter()
@@ -740,6 +767,7 @@ extension AirtableService {
         guard let httpPatch = patchResp as? HTTPURLResponse, (200..<300).contains(httpPatch.statusCode) else {
             throw URLError(.badServerResponse)
         }
+        return previousCount
     }
 
     /// Mirror the server's recognitionCount onto the local Shakti so the Detail
@@ -948,6 +976,23 @@ extension AirtableService {
         if !success {
             enqueueLetter(item)
         }
+
+        // Threshold crossing for the shared ledger: the first time a letter is
+        // written for this Śakti (empty → non-empty). The `ledgeredLetters` set
+        // guards it to once per Śakti, so autosaves and later sessions never
+        // re-log. The milestone is the act of writing (already saved locally),
+        // so it fires regardless of the Airtable letter PATCH result.
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, !Self.hasLedgeredLetter(recordId) {
+            Self.markLetterLedgered(recordId)
+            let name = shakti.name.isEmpty ? "a Śakti" : shakti.name
+            await logActivity(
+                type: Self.activityLetterWritten,
+                linkedShaktiRecordId: recordId,
+                activityName: "A letter to \(name)",
+                detail: "First letter written"
+            )
+        }
     }
 
     private func processLetter(_ item: PendingLetter) async -> Bool {
@@ -1032,5 +1077,156 @@ extension AirtableService {
         queue.append(item)
         savePendingLetters(queue)
         log.notice("Letter queued for \(item.shaktiRecordId, privacy: .public) (queue size: \(queue.count))")
+    }
+}
+
+// MARK: - Cross-app App Activity ledger
+
+/// A milestone written to the shared **App Activity** table (`tblJlBeiHnqGpYrL7`,
+/// same base as Mandala). Only genuine threshold crossings land here — the first
+/// recognition of a Śakti and the first letter written for her — never per-tap
+/// recognitions or silences. Fire-and-forget with the same offline-first queue
+/// pattern as the other writes; a ledger failure never affects the gesture.
+extension AirtableService {
+
+    // App Activity table + field names (write API accepts field names, matching
+    // the existing writes). Values verified live via the Airtable schema.
+    private static let activityTableId = "tblJlBeiHnqGpYrL7"
+    private static let fldActSourceApp   = "Source App"
+    private static let fldActType        = "Activity Type"
+    private static let fldActName        = "Activity Name"
+    private static let fldActDetail      = "Detail"
+    private static let fldActDate        = "Activity Date"
+    private static let fldActLinkMandala = "Link to Mandala"
+
+    private static let sourceAppMandala        = "Mandala"
+    static let activityShaktiRecognized        = "Shakti Recognized"
+    static let activityLetterWritten           = "Letter Written"
+
+    private static let pendingActivityKey = "pendingActivities"
+    private static let ledgeredLettersKey = "ledgeredLetters"
+
+    private struct PendingActivity: Codable {
+        let type: String
+        let linkRecordId: String
+        let name: String
+        let detail: String
+        let at: Date
+        var failCount: Int = 0
+    }
+
+    /// Write one milestone to the shared ledger. Fire-and-forget; on failure the
+    /// item is queued in UserDefaults and drained by `flushPending`.
+    func logActivity(type: String,
+                     linkedShaktiRecordId: String,
+                     activityName: String,
+                     detail: String) async {
+        let item = PendingActivity(type: type,
+                                   linkRecordId: linkedShaktiRecordId,
+                                   name: activityName,
+                                   detail: detail,
+                                   at: .now)
+        if await processActivity(item) == false {
+            enqueueActivity(item)
+        }
+    }
+
+    private func processActivity(_ item: PendingActivity) async -> Bool {
+        guard let token = pat else { return false }
+        do {
+            try await createActivityRow(token: token, item: item)
+            return true
+        } catch {
+            log.error("Activity write failed: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    private func createActivityRow(token: String, item: PendingActivity) async throws {
+        let dateFmt = DateFormatter()
+        dateFmt.calendar = Calendar(identifier: .gregorian)
+        dateFmt.locale = Locale(identifier: "en_US_POSIX")
+        dateFmt.dateFormat = "yyyy-MM-dd"
+
+        let fields: [String: Any] = [
+            Self.fldActSourceApp:   Self.sourceAppMandala,
+            Self.fldActType:        item.type,
+            Self.fldActLinkMandala: [item.linkRecordId],
+            Self.fldActName:        item.name,
+            Self.fldActDetail:      item.detail,
+            Self.fldActDate:        dateFmt.string(from: item.at)
+        ]
+        let body: [String: Any] = ["fields": fields, "typecast": true]
+        let data = try JSONSerialization.data(withJSONObject: body)
+
+        var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.activityTableId)")!)
+        req.httpMethod = "POST"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = data
+
+        let (_, response) = try await session.data(for: req)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    private func flushPendingActivities() async {
+        let queue = loadPendingActivities()
+        guard !queue.isEmpty else { return }
+        log.notice("Activity queue: flushing \(queue.count) item(s)")
+        var remaining: [PendingActivity] = []
+        var dropped = 0
+        for item in queue {
+            if await processActivity(item) { continue }
+            var bumped = item
+            bumped.failCount += 1
+            if bumped.failCount >= Self.maxFailures {
+                dropped += 1
+                log.notice("Activity dropped after \(bumped.failCount) failures: \(item.type, privacy: .public)")
+            } else {
+                remaining.append(bumped)
+            }
+        }
+        savePendingActivities(remaining)
+    }
+
+    private func loadPendingActivities() -> [PendingActivity] {
+        guard let data = UserDefaults.standard.data(forKey: Self.pendingActivityKey),
+              let queue = try? JSONDecoder().decode([PendingActivity].self, from: data) else {
+            return []
+        }
+        return queue
+    }
+
+    private func savePendingActivities(_ queue: [PendingActivity]) {
+        if queue.isEmpty {
+            UserDefaults.standard.removeObject(forKey: Self.pendingActivityKey)
+            return
+        }
+        if let data = try? JSONEncoder().encode(queue) {
+            UserDefaults.standard.set(data, forKey: Self.pendingActivityKey)
+        }
+    }
+
+    private func enqueueActivity(_ item: PendingActivity) {
+        var queue = loadPendingActivities()
+        queue.append(item)
+        savePendingActivities(queue)
+        log.notice("Activity queued: \(item.type, privacy: .public) (queue size: \(queue.count))")
+    }
+
+    // MARK: Letter-Written dedup (once per Śakti, ever)
+
+    static func hasLedgeredLetter(_ recordId: String) -> Bool {
+        let ids = UserDefaults.standard.stringArray(forKey: ledgeredLettersKey) ?? []
+        return ids.contains(recordId)
+    }
+
+    static func markLetterLedgered(_ recordId: String) {
+        var ids = UserDefaults.standard.stringArray(forKey: ledgeredLettersKey) ?? []
+        guard !ids.contains(recordId) else { return }
+        ids.append(recordId)
+        UserDefaults.standard.set(ids, forKey: ledgeredLettersKey)
     }
 }
