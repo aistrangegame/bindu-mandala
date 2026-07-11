@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bindu Mandala — The Living Rite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #161013; }
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  a { color: #C9963F; }
+  a:hover { color: #F2E8D9; }
+  button { -webkit-tap-highlight-color: transparent; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  textarea::placeholder { color: rgba(242,232,217,0.4); font-style: italic; }
+
+  @keyframes lrRise {
+    0%   { transform: translateY(24px); opacity: 0; }
+    12%  { opacity: 0.6; }
+    88%  { opacity: 0.35; }
+    100% { transform: translateY(-110px); opacity: 0; }
+  }
+  @keyframes lrDrift {
+    0%   { transform: translate(0, 0); }
+    50%  { transform: translate(34px, -14px); }
+    100% { transform: translate(0, 0); }
+  }
+  @keyframes lrFall {
+    0%   { transform: translateY(-16px); opacity: 0; }
+    15%  { opacity: 0.5; }
+    85%  { opacity: 0.25; }
+    100% { transform: translateY(70px); opacity: 0; }
+  }
+  @keyframes lrStill {
+    0%, 100% { opacity: 0.18; }
+    50%      { opacity: 0.42; }
+  }
+  @keyframes lrTwinkle {
+    0%, 100% { opacity: 0.12; transform: scale(0.8); }
+    50%      { opacity: 0.55; transform: scale(1.15); }
+  }
+  @keyframes lrRipple {
+    0%   { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(34); opacity: 0; }
+  }
+  @keyframes lrRippleRise {
+    0%   { transform: translateY(0) scale(1); opacity: 0.55; }
+    100% { transform: translateY(-120px) scale(30); opacity: 0; }
+  }
+  @keyframes lrRippleWide {
+    0%   { transform: scale(1); opacity: 0.5; }
+    100% { transform: scaleX(52) scaleY(20); opacity: 0; }
+  }
+  /* Recognition responses — how she moves when she is felt back */
+  @keyframes lrRespFlare   { 0%,100% { transform: translateY(0) scale(1); opacity: 0.32; } 50% { transform: translateY(-16px) scale(1.06); opacity: 0.58; } }
+  @keyframes lrRespPool    { 0%,100% { transform: scale(1); opacity: 0.4; }               50% { transform: scale(1.07); opacity: 0.58; } }
+  @keyframes lrRespDisperse{ 0%,100% { transform: translateX(0) scale(1); opacity: 0.3; }  50% { transform: translateX(20px) scale(1.04); opacity: 0.52; } }
+  @keyframes lrRespBloom   { 0% { transform: scale(0.9); opacity: 0.3; }                    100% { transform: scale(1.16); opacity: 0.6; } }
+  @keyframes lrRespSettle  { 0%,100% { transform: scale(1); opacity: 0.34; }               50% { transform: scale(1.015); opacity: 0.46; } }
+  @keyframes lrRespRadiate { 0%,100% { transform: scale(1); opacity: 0.4; }                50% { transform: scale(1.05); opacity: 0.72; } }
+  @keyframes lrBijaPulse {
+    0%   { text-shadow: 0 0 40px rgba(201,150,63,0.3); transform: scale(1); }
+    30%  { text-shadow: 0 0 90px rgba(201,150,63,0.8); transform: scale(1.05); }
+    100% { text-shadow: 0 0 40px rgba(201,150,63,0.3); transform: scale(1); }
+  }
+  @keyframes lrBijaRing {
+    0%   { transform: scale(0.7); opacity: 0.55; }
+    100% { transform: scale(3.4); opacity: 0; }
+  }
+  @keyframes lrCollapse {
+    0%   { transform: scale(1.5); opacity: 0; }
+    30%  { opacity: 0.6; }
+    100% { transform: scale(0.14); opacity: 0; }
+  }
+  @keyframes syTwinkle { 0%,100% { opacity: 0.15; } 50% { opacity: 0.7; } }
+  @keyframes syPulse   { 0%,100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+  @keyframes syRing    { 0% { transform: scale(0.7); opacity: 0.6; } 100% { transform: scale(2.4); opacity: 0; } }
+  @keyframes syCardUp  { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes syBreath  { 0%,100% { transform: scale(1); } 50% { transform: scale(1.22); } }
+  @keyframes syFlare   { 0% { opacity: 0; transform: scale(0.7); } 6% { opacity: 0.55; } 22% { opacity: 0; transform: scale(3); } 100% { opacity: 0; transform: scale(3); } }
+  @keyframes syShimmer { 0%,100% { opacity: 0.82; } 50% { opacity: 1; } }
+  @keyframes syBinduBreath { 0%,100% { transform: scale(1); opacity: 0.75; } 50% { transform: scale(1.28); opacity: 1; } }
+  @keyframes syThread { from { stroke-dashoffset: 1; opacity: 0; } to { stroke-dashoffset: 0; opacity: 0.5; } }
+  @keyframes syDescendBloom { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.05); } 34% { opacity: 1; } 100% { opacity: 0.55; transform: translate(-50%,-50%) scale(1); } }
+  @keyframes syPresenceIn { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
+  @keyframes syEmerge { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes syOrbit { to { transform: rotate(360deg); } }
+  @keyframes syRingFlash { 0% { opacity: 0; } 18% { opacity: 0.85; } 100% { opacity: 0; } }
+  @keyframes lrVeilIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes lrSpinCW  { from { transform: translate(-50%,-50%) rotate(0deg); }   to { transform: translate(-50%,-50%) rotate(360deg); } }
+  @keyframes lrSpinCCW { from { transform: translate(-50%,-50%) rotate(0deg); }   to { transform: translate(-50%,-50%) rotate(-360deg); } }
+  @keyframes lrPillBreath { 0%,100% { box-shadow: 0 0 0 rgba(201,150,63,0); } 50% { box-shadow: 0 0 16px rgba(201,150,63,0.3); } }
+  @keyframes lrSheetUp { from { transform: translateY(40px); } to { transform: translateY(0); } }
+  /* Screen transitions */
+  @keyframes lrScreenIn     { from { opacity: 0; transform: scale(1.015); } to { opacity: 1; transform: scale(1); } }
+  @keyframes lrScreenRise   { from { opacity: 0; transform: translateY(22px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes lrScreenBloom  { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: scale(1); } }
+  @keyframes lrScreenSettle { from { opacity: 0; transform: scale(0.965); } to { opacity: 1; transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+  }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+<script>
+  // shakti-data.js declares these as top-level consts; surface them on window
+  // so the Babel-scoped screens can reach them uniformly.
+  window.SHAKTIS = SHAKTIS;
+  window.CLUSTER_INFO = CLUSTER_INFO;
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="living-rite-core.jsx"></script>
+<script type="text/babel" src="living-rite-more.jsx"></script>
+<script type="text/babel" src="living-rite-mandala.jsx"></script>
+<script type="text/babel" src="living-rite-today.jsx"></script>
+<script type="text/babel" src="living-rite-detail.jsx"></script>
+<script type="text/babel" src="living-rite-field.jsx"></script>
+<script type="text/babel" src="living-rite-app.jsx"></script>
+</body>
+</html>
