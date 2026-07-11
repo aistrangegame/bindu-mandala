@@ -177,3 +177,32 @@ enum TimeVariant: String, CaseIterable, Hashable {
         }
     }
 }
+
+// MARK: - Atmosphere modulation (Living Rite · re-light the SAME Śakti by the hour)
+
+extension TimeVariant {
+    /// The hue/sat/lum *deltas* the Atmosphere engine applies over a per-Śakti
+    /// seed (ported from `LR_TIME_VARIANTS` / `lrApplyTime`). This is deliberately
+    /// separate from the absolute palette above (bg, petalSat, triStroke, …),
+    /// which stays byte-unchanged so the held-yantra rendering is untouched.
+    struct Modulation {
+        let dh: Double        // hue rotation (degrees)
+        let lAdd: Double      // lightness delta
+        let sMul: Double      // saturation multiplier
+        let glowMul: Double   // glow-alpha multiplier
+        let moteMul: Double   // dust-mote density multiplier
+    }
+
+    var modulation: Modulation {
+        switch self {
+        case .dawn:  return .init(dh:  8, lAdd:  6, sMul: 1.02, glowMul: 1.15, moteMul: 1.0)
+        case .noon:  return .init(dh: -5, lAdd: 13, sMul: 0.88, glowMul: 0.80, moteMul: 0.7)
+        case .dusk:  return .init(dh:  3, lAdd:  2, sMul: 1.16, glowMul: 1.25, moteMul: 1.15)
+        case .night: return .init(dh: -7, lAdd: -9, sMul: 1.06, glowMul: 1.05, moteMul: 1.3)
+        // Invention-by-design: the prototype has no new-moon variant. Derived from
+        // the absolute new-moon feel (deepest, darkest, near-invisible) — the most
+        // negative lightness, slightly richer, dimmer glow, fewest motes.
+        case .newmoon: return .init(dh: -7, lAdd: -16, sMul: 1.12, glowMul: 0.85, moteMul: 0.4)
+        }
+    }
+}
