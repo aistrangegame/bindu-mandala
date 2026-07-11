@@ -66,6 +66,7 @@ final class AirtableService {
             // After the field data is local, rebuild the recognition log if the
             // device has none — the path home after a reinstall/recovery.
             await restoreRecognitionsIfLocalEmpty(context: context)
+            await restoreDescentIfLocalEmpty(context: context)
             logVerification(shaktis: sk.count, avaranas: av.count, nityas: nt.count, context: context)
         } catch {
             log.error("Sync failed: \(error.localizedDescription, privacy: .public)")
@@ -376,6 +377,48 @@ final class AirtableService {
         }
     }
 
+    /// Rebuild the descent timeline from Airtable when the local one is empty —
+    /// the path home for `DescentState.crossings` after a reinstall/recovery
+    /// (Ruling 8). Guarded on empty crossings so it never overwrites a live
+    /// timeline; zero Crossing rows leave the bootstrap floor (2/2) untouched.
+    func restoreDescentIfLocalEmpty(context: ModelContext) async {
+        let states = (try? context.fetch(FetchDescriptor<DescentState>())) ?? []
+        guard let state = states.first, state.crossings.isEmpty else { return }
+        guard let token = pat else { return }
+
+        struct CrossRow: Decodable {
+            let fields: Fields
+            struct Fields: Decodable {
+                let ring: Int?
+                let feltAt: String?
+                enum CodingKeys: String, CodingKey {
+                    case ring   = "fld225xgYl2Rs3TP6"   // Descent Ring
+                    case feltAt = "fldk4BdikzJQOautw"   // Felt At
+                }
+            }
+        }
+
+        do {
+            let rows: [CrossRow] = try await fetch(
+                token: token,
+                filter: "{fldw33m8YqrINlvrN}='Crossing'",
+                sort: [("fldk4BdikzJQOautw", "asc")]
+            )
+            let iso = ISO8601DateFormatter()
+            let restored: [(ring: Int, date: Date)] = rows.compactMap { r in
+                guard let ring = r.fields.ring, (1...9).contains(ring) else { return nil }
+                let d = r.fields.feltAt.flatMap { iso.date(from: $0) } ?? Date()
+                return (ring, d)
+            }
+            guard !restored.isEmpty else { return }   // zero rows → floor untouched
+            state.restore(from: restored)
+            try? context.save()
+            log.notice("Descent restore: rebuilt \(restored.count) crossing(s), deepest ring \(state.deepestReached)")
+        } catch {
+            log.error("Descent restore failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     private func reconcileAvaranas(_ rows: [AvaranaRow], context: ModelContext) throws {
         let existing = try context.fetch(FetchDescriptor<Avarana>())
 
@@ -614,6 +657,7 @@ extension AirtableService {
         await flushPendingSilences()
         await flushPendingLetters()
         await flushPendingActivities()
+        await flushPendingCrossings()
     }
 
     private func flushPendingRecognitions(context: ModelContext) async {
@@ -948,6 +992,106 @@ extension AirtableService {
         queue.append(item)
         savePendingSilences(queue)
         log.notice("Silence queued (queue size: \(queue.count))")
+    }
+
+    // MARK: - Living Rite · Descent crossing writes (mirror of DescentState.crossings)
+
+    private struct PendingCrossing: Codable {
+        let ring: Int
+        let feltAt: Date
+        var failCount: Int = 0
+    }
+
+    private static let pendingCrossingKey = "pendingCrossings"
+    private static let fldDescentRing = "Descent Ring"   // fld225xgYl2Rs3TP6
+
+    /// Mirror one *new-deepest* descent crossing to Airtable. Called only when
+    /// `DescentState.enter(ring:)` returns true, so it fires once per ring. The
+    /// local `DescentState` is the source of truth; Airtable is the backup that
+    /// `restoreDescentIfLocalEmpty` reads. `typecast: true` creates the `Crossing`
+    /// Row-Type option on first write (the option is not pre-created — see PR-0).
+    func recordCrossing(ring: Int) async {
+        let item = PendingCrossing(ring: ring, feltAt: .now)
+        if !(await processCrossing(item)) { enqueueCrossing(item) }
+    }
+
+    private func processCrossing(_ item: PendingCrossing) async -> Bool {
+        guard let token = pat else { return false }
+        do {
+            try await createCrossingRow(token: token, item: item)
+            return true
+        } catch {
+            log.error("Crossing write failed: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
+    private func createCrossingRow(token: String, item: PendingCrossing) async throws {
+        let iso = ISO8601DateFormatter()
+        let fields: [String: Any] = [
+            Self.fldRowType:     "Crossing",
+            Self.fldDescentRing: item.ring,
+            Self.fldFeltAt:      iso.string(from: item.feltAt),
+            Self.fldSource:      "Mandala"
+        ]
+        let body: [String: Any] = ["fields": fields, "typecast": true]
+        let data = try JSONSerialization.data(withJSONObject: body)
+
+        var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)")!)
+        req.httpMethod = "POST"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = data
+
+        let (_, response) = try await session.data(for: req)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
+
+    private func flushPendingCrossings() async {
+        let queue = loadPendingCrossings()
+        guard !queue.isEmpty else { return }
+        log.notice("Crossing queue: flushing \(queue.count) item(s)")
+        var remaining: [PendingCrossing] = []
+        var dropped = 0
+        for item in queue {
+            if await processCrossing(item) { continue }
+            var bumped = item
+            bumped.failCount += 1
+            if bumped.failCount >= Self.maxFailures {
+                dropped += 1
+                log.notice("Crossing dropped after \(bumped.failCount) failures (ring \(item.ring))")
+            } else {
+                remaining.append(bumped)
+            }
+        }
+        savePendingCrossings(remaining)
+    }
+
+    private func loadPendingCrossings() -> [PendingCrossing] {
+        guard let data = UserDefaults.standard.data(forKey: Self.pendingCrossingKey),
+              let queue = try? JSONDecoder().decode([PendingCrossing].self, from: data) else {
+            return []
+        }
+        return queue
+    }
+
+    private func savePendingCrossings(_ queue: [PendingCrossing]) {
+        if queue.isEmpty {
+            UserDefaults.standard.removeObject(forKey: Self.pendingCrossingKey)
+            return
+        }
+        if let data = try? JSONEncoder().encode(queue) {
+            UserDefaults.standard.set(data, forKey: Self.pendingCrossingKey)
+        }
+    }
+
+    private func enqueueCrossing(_ item: PendingCrossing) {
+        var queue = loadPendingCrossings()
+        queue.append(item)
+        savePendingCrossings(queue)
+        log.notice("Crossing queued (queue size: \(queue.count))")
     }
 
     // MARK: - Phase 8 · Letter writes
