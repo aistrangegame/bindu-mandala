@@ -1,8 +1,11 @@
 import SwiftUI
 import SwiftData
 
-/// The Daily Rite — the small, returnable loop. Opens to her.
-/// Two variants: V1 body outline · V2 bīja texture.
+/// The Daily Rite — she generates her own arrival. Her element chooses one of six
+/// compositions (ascension / descent / horizon / veil / foundation / radiance);
+/// her ring the geometry; the Atmosphere engine her whole palette, re-lit by the
+/// hour. Nothing is hand-picked; nothing renders blank for the 86. Her name is a
+/// door; "I feel her" opens the recognition ceremony.
 struct DailyRiteView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -10,39 +13,25 @@ struct DailyRiteView: View {
     @Query(sort: \NityaDevi.tithiPosition) private var nityas: [NityaDevi]
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
 
-    enum Variant { case body, bija }
-    @AppStorage("today_variant_raw") private var variantRaw: String = Variant.body.storage
-    private var variant: Variant {
-        get { variantRaw == Variant.bija.storage ? .bija : .body }
-    }
-
-    @State private var nameVisible = false
-    @State private var promptVisible = false
+    @State private var arrived = false
     @State private var showRecognition = ProcessInfo.processInfo.arguments.contains("AUTO_RECOGNIZE")
     @State private var nityaDetailFor: NityaSlot?
+    @State private var detailFor: Shakti?
 
-    /// Today's energy is any one of the 102, chosen by `DailyEnergyService` and
-    /// turning over at 6am — the same energy the morning summons names. Before
-    /// the first Airtable sync only the 16 bootstrap Karṣiṇīs are loaded, so we
-    /// greet from whatever pool is present rather than ever showing a spinner.
+    // MARK: - Today's energy (all 102, 6am boundary — unchanged)
+
     var today: Shakti? {
         guard !shaktis.isEmpty else { return nil }
-
-        // Debug override for verification/screenshots: ENERGY_POS=<1–102> pins
-        // today's greeting to a specific Khaḍgamālā position.
         if let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("ENERGY_POS=") }),
            let pos = Int(arg.dropFirst("ENERGY_POS=".count)),
            let s = shaktis.first(where: { $0.khadgamalaPosition == pos }) {
             return s
         }
-
         let hasFull = shaktis.contains { ($0.khadgamalaPosition ?? 0) > 0 }
         if hasFull {
-            let pos = DailyEnergyService.todaysPosition()   // 1–102
+            let pos = DailyEnergyService.todaysPosition()
             if let s = shaktis.first(where: { $0.khadgamalaPosition == pos }) { return s }
         }
-
-        // Fallback: rotate deterministically within the loaded pool.
         let sorted = shaktis.sorted {
             ($0.khadgamalaPosition ?? $0.position) < ($1.khadgamalaPosition ?? $1.position)
         }
@@ -50,61 +39,23 @@ struct DailyRiteView: View {
         return sorted[min(max(0, idx), sorted.count - 1)]
     }
 
-    /// The prompt shown beneath her quality. Only the 16 bootstrap Karṣiṇīs
-    /// carry a `somatic` prompt question; for the other 86 fall back to her
-    /// somatic poetry, then to a universal invitation — never an empty quote.
-    private func promptText(for s: Shakti) -> String {
-        let somatic = s.somatic.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !somatic.isEmpty { return somatic }
-        let poetry = s.somaticPoetry.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let first = poetry.split(whereSeparator: \.isNewline).first.map(String.init),
-           !first.isEmpty {
-            return first.trimmingCharacters(in: .whitespaces)
-        }
-        return "Where do you feel her, right now?"
-    }
-
-    /// VoiceOver name — her phonetic when present, else her Sanskrit name.
-    /// The 86 non-Karṣiṇīs have no bootstrap phonetic.
-    private func spokenName(for s: Shakti) -> String {
-        let p = s.phonetic.trimmingCharacters(in: .whitespacesAndNewlines)
-        return p.isEmpty ? s.name : p
-    }
-
     var body: some View {
         ZStack {
-            Color.ground.ignoresSafeArea()
-
-            // Warm crimson radial behind the name
-            RadialGradient(
-                gradient: Gradient(colors: [Color.accentRed.opacity(0.18), Color.clear]),
-                center: UnitPoint(x: 0.5, y: 0.38),
-                startRadius: 0, endRadius: 320
-            )
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-
-            // V2 bīja background texture
-            if let s = today, variant == .bija {
-                Text(s.bija)
-                    .font(.custom(AppFont.cormorant, size: 280))
-                    .foregroundStyle(Color.gold.opacity(0.07))
-                    .tracking(-12)
-                    .offset(y: -8)
-                    .allowsHitTesting(false)
-            }
-
-            DustMotesView(count: 9)
-
             if let s = today {
-                content(for: s)
+                rite(for: s)
             } else {
+                Color.ground.ignoresSafeArea()
                 ProgressView().tint(Color.gold)
             }
         }
-        .onAppear(perform: animateIn)
+        .onAppear {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 1.2)) { arrived = true }
+        }
         .fullScreenCover(isPresented: $showRecognition) {
             if let s = today { RecognitionMomentView(shakti: s, isPresented: $showRecognition) }
+        }
+        .fullScreenCover(item: $detailFor) { shakti in
+            NavigationStack { ShaktiDetailView(shakti: shakti) }
         }
         .sheet(item: $nityaDetailFor) { slot in
             NityaDetailView(slot: slot)
@@ -113,169 +64,190 @@ struct DailyRiteView: View {
         }
     }
 
-    private func content(for s: Shakti) -> some View {
-        VStack(spacing: 0) {
-            // Moon at top
-            MoonPhaseView()
-                .padding(.top, 8)
-                .padding(.bottom, 12)
+    // MARK: - The composed rite
 
-            // Nityā — compact card just below the moon.
-            // Hidden entirely when no data resolves (.unknown).
-            nityaCardLayer
+    @ViewBuilder
+    private func rite(for s: Shakti) -> some View {
+        let atmo = Atmosphere.derive(from: s, at: LunarPhaseService.currentTimeVariant())
+        let comp = RiteComposition.derive(kp: s.khadgamalaPosition ?? s.position, element: s.element)
+        let plan = RitePlan.forElement(comp.element)
+        let content = RiteContent(shakti: s, avaranaSubtitle: avaranaSubtitle(for: s))
 
-            // Center column
+        ZStack {
+            AtmosphereBackground(atmosphere: atmo)
+
+            sigilLayer(atmo: atmo, plan: plan, comp: comp, ring: content.ring)
+                .opacity(arrived ? 0.7 : 0)
+
+            if plan.veilName { veilName(content, atmo: atmo, onOpen: { detailFor = s }) }
+
+            DustMotesView(count: 12).allowsHitTesting(false)
+
             VStack(spacing: 0) {
+                celestialStrip(atmo: atmo)
                 Spacer(minLength: 0)
-
-                ClusterDotView(cluster: s.cluster)
-                    .padding(.bottom, variant == .bija ? 20 : 16)
-
-                Text(s.name)
-                    .font(.custom(AppFont.cormorant, size: variant == .bija ? 48 : 44))
-                    .foregroundStyle(Color.cream)
-                    .tracking(3.4)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
-                    .padding(.horizontal, 24)
-                    .opacity(nameVisible ? 1 : 0)
-                    .offset(y: nameVisible ? 0 : 8)
-                    .padding(.bottom, variant == .bija ? 12 : 10)
-                    .accessibilityLabel("\(spokenName(for: s)), \(s.quality)")
-
-                if !s.phonetic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text(s.phonetic.uppercased())
-                        .font(.system(size: 12, weight: .regular))
-                        .tracking(2.4)
-                        .foregroundStyle(Color.cream.opacity(0.45))
-                        .padding(.bottom, variant == .bija ? 22 : 18)
-                }
-
-                Text(s.quality)
-                    .font(.custom(AppFont.cormorant, size: variant == .bija ? 22 : 20))
-                    .foregroundStyle(Color.gold)
-                    .tracking(0.8)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, variant == .bija ? 28 : 20)
-
-                Rectangle()
-                    .fill(Color.gold.opacity(0.4))
-                    .frame(width: 48, height: 0.5)
-                    .padding(.bottom, variant == .bija ? 28 : 20)
-
-                Text("\u{201C}\(promptText(for: s))\u{201D}")
-                    .font(.custom(AppFont.cormorantItalic, size: variant == .bija ? 20 : 19))
-                    .foregroundStyle(Color.cream.opacity(0.78))
-                    .tracking(0.4)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(6)
-                    .padding(.horizontal, 32)
-                    .opacity(promptVisible ? 1 : 0)
-                    .offset(y: promptVisible ? 0 : 6)
-                    .padding(.bottom, variant == .bija ? 36 : 28)
-
-                // The body outline anchors a somatic location. Only the Ring 2
-                // Karṣiṇīs carry one; when she has no bodily location (the other
-                // 86), fall through to her bīja rather than an empty body + label.
-                if variant == .body,
-                   !s.bodilyLocation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    BodyOutlineView(clusterColor: s.cluster.color, size: 90)
-                        .opacity(0.9)
-                        .padding(.bottom, 8)
-                    Text(bodyLocationLabel(s.bodilyLocation).uppercased())
-                        .font(.system(size: 10))
-                        .tracking(1.8)
-                        .foregroundStyle(Color.cream.opacity(0.55))
-                        .padding(.bottom, 12)
-                } else if !s.bija.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text(s.bija)
-                        .font(.custom(AppFont.cormorant, size: 42))
-                        .foregroundStyle(Color.gold.opacity(0.85))
-                        .tracking(2)
-                }
-
+                centerStack(s: s, content: content, atmo: atmo, plan: plan, comp: comp)
+                    .allowsHitTesting(!plan.veilName)   // the veil name is the door
                 Spacer(minLength: 0)
+                foot(s: s, content: content, atmo: atmo)
             }
-
-            // I feel her — primary CTA
-            VStack(spacing: 12) {
-                Button(action: triggerRecognition) {
-                    Text("I feel her")
-                        .font(.custom(AppFont.cormorant, size: 20))
-                        .tracking(2.4)
-                        .foregroundStyle(Color.cream)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(
-                            Capsule().fill(Color.accentRed)
-                                .shadow(color: Color.accentRed.opacity(0.45), radius: 32, y: 4)
-                        )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("I feel her — record recognition of \(spokenName(for: s))")
-
-                if !s.bija.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("Today's Bīja \u{2014} \(s.bija)")
-                        .font(.system(size: 11))
-                        .tracking(1.65)
-                        .foregroundStyle(Color.cream.opacity(0.50))
-                }
-
-                RingPositionIndicatorView()
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            .opacity(arrived ? 1 : 0)
+            .offset(y: arrived ? 0 : 8)
         }
     }
 
-    // MARK: - Nityā layer (Phase 9)
+    // MARK: - Sigil placement (per plan)
 
-    /// What presides over today, resolved at view evaluation time. New moon
-    /// (waning day 15 → mirror position 0) wraps to Nityā 1 per brief's
-    /// "New moon day → Kāmeśvarī" verification rule.
+    @ViewBuilder
+    private func sigilLayer(atmo: Atmosphere, plan: RitePlan, comp: RiteComposition, ring: Int) -> some View {
+        let base: CGFloat = plan.sigil == .bottomBig ? 760 : plan.sigil == .centerBig ? 560 : 620
+        let size = base * plan.sigilScale * comp.sigilScale
+        let sigil = RiteSigil(atmosphere: atmo, ring: ring, size: size, spin: comp.spin, reduceMotion: reduceMotion)
+        switch plan.sigil {
+        case .bottom:
+            sigil.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).offset(y: 60)
+        case .bottomWide:
+            sigil.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).offset(y: 150)
+        case .bottomBig:
+            sigil.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).offset(y: 230)
+        case .side:
+            sigil.frame(maxWidth: .infinity, maxHeight: .infinity,
+                        alignment: comp.flip ? .leading : .trailing)
+                .offset(x: comp.flip ? -220 : 220)
+        case .center, .centerBig:
+            sigil
+        }
+    }
+
+    private func veilName(_ content: RiteContent, atmo: Atmosphere, onOpen: @escaping () -> Void) -> some View {
+        Button(action: { Haptics.light(); onOpen() }) {
+            Text(content.name)
+                .font(.custom(AppFont.cormorant, size: min(content.nameSize(cap: 120, nudge: 0) * 1.7, 150)))
+                .fontWeight(.light)
+                .lineSpacing(-6)
+                .foregroundStyle(atmo.accentFaint)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.5)
+                .padding(24)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .opacity(arrived ? 1 : 0)
+        .accessibilityLabel("\(content.name) — open her presence")
+    }
+
+    // MARK: - Celestial strip (moon + Nityā — unchanged behavior)
+
+    private func celestialStrip(atmo: Atmosphere) -> some View {
+        VStack(spacing: 0) {
+            MoonPhaseView().padding(.top, 8).padding(.bottom, 10)
+            nityaCardLayer
+        }
+        .opacity(arrived ? 1 : 0)
+    }
+
+    // MARK: - Center stack (plan-ordered blocks)
+
+    private func centerStack(s: Shakti, content: RiteContent, atmo: Atmosphere,
+                             plan: RitePlan, comp: RiteComposition) -> some View {
+        let lean = plan.align == .lean
+        let leadingEdge = !comp.flip
+        let hAlign: HorizontalAlignment = lean ? (leadingEdge ? .leading : .trailing) : .center
+        let tAlign: TextAlignment = lean ? (leadingEdge ? .leading : .trailing) : .center
+        let nameSize = content.nameSize(cap: plan.nameCap, nudge: comp.nameSizeNudge)
+
+        let ctx = RiteRenderContext(
+            content: content, atmosphere: atmo, plan: plan, nameSize: nameSize,
+            align: hAlign, textAlign: tAlign, leadingEdge: leadingEdge,
+            onOpenDetail: { Haptics.light(); detailFor = s }
+        )
+
+        return VStack(alignment: hAlign, spacing: 0) {
+            ForEach(Array(plan.order.enumerated()), id: \.offset) { _, block in
+                RiteBlockView(kind: block, ctx: ctx)
+            }
+        }
+        .frame(maxWidth: lean ? 320 : 360, alignment: alignment(hAlign))
+        .padding(.horizontal, lean ? 26 : 28)
+        .frame(maxWidth: .infinity, alignment: alignment(hAlign))
+    }
+
+    // MARK: - Foot (I feel her + position)
+
+    private func foot(s: Shakti, content: RiteContent, atmo: Atmosphere) -> some View {
+        VStack(spacing: 14) {
+            Button(action: triggerRecognition) {
+                Text("I feel her")
+                    .font(.custom(AppFont.cormorant, size: 23))
+                    .tracking(2.0)
+                    .foregroundStyle(Color.cream)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 60)
+                    .background(
+                        Capsule()
+                            .fill(LinearGradient(colors: [Color.accentRed,
+                                                          Color.accentRed.opacity(0.7)],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .shadow(color: atmo.glow, radius: 30, y: 4)
+                            .shadow(color: Color.accentRed.opacity(0.5), radius: 26, y: 4)
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("I feel her — record recognition of \(content.spokenName)")
+
+            Text("\(content.kp) of 102" + (content.bija.map { " · bīja \($0)" } ?? ""))
+                .font(.system(size: 11))
+                .tracking(1.6)
+                .foregroundStyle(Color.cream.opacity(0.44))
+        }
+        .padding(.horizontal, 26)
+        .padding(.bottom, 20)
+        .opacity(arrived ? 1 : 0)
+    }
+
+    // MARK: - Helpers
+
+    private func avaranaSubtitle(for s: Shakti) -> String? {
+        avaranas.first(where: { $0.ringNumber == (s.ringNumber ?? 2) })?.subtitle
+    }
+
+    private func alignment(_ h: HorizontalAlignment) -> Alignment {
+        switch h {
+        case .leading:  return .leading
+        case .trailing: return .trailing
+        default:        return .center
+        }
+    }
+
+    private func triggerRecognition() {
+        Haptics.medium()
+        showRecognition = true
+    }
+
+    // MARK: - Nityā layer (unchanged)
+
     private var nityaSlot: NityaSlot {
         let f = LunarPhaseService.phaseFraction()
-
-        // Full moon window — Lalitā via the Ring 9 Avaraṇa
         if f >= 0.47 && f <= 0.53 {
-            if let ring9 = avaranas.first(where: { $0.ringNumber == 9 }) {
-                return .lalita(ring9)
-            }
+            if let ring9 = avaranas.first(where: { $0.ringNumber == 9 }) { return .lalita(ring9) }
             return .unknown
         }
-
-        // Daily tithi → Nityā position (waxing direct, waning mirror)
         let day = LunarPhaseService.currentDay()
-        let position: Int
-        if day <= 15 {
-            position = day                    // waxing 1→1 … 15→15
-        } else {
-            position = 15 - (day - 15)        // waning 16→14 … 29→1; 30→0
-        }
+        let position = day <= 15 ? day : 15 - (day - 15)
         let resolved = position >= 1 ? position : 1
-        if let nitya = nityas.first(where: { $0.tithiPosition == resolved }) {
-            return .nitya(nitya)
-        }
+        if let nitya = nityas.first(where: { $0.tithiPosition == resolved }) { return .nitya(nitya) }
         return .unknown
     }
 
     @ViewBuilder
     private var nityaCardLayer: some View {
         let slot = nityaSlot
-        if case .unknown = slot {
-            EmptyView()
-        } else {
-            nityaCard(slot)
-                .padding(.bottom, 12)
-        }
+        if case .unknown = slot { EmptyView() } else { nityaCard(slot).padding(.bottom, 6) }
     }
 
     private func nityaCard(_ slot: NityaSlot) -> some View {
         let display = nityaCardDisplay(slot)
-        return Button {
-            nityaDetailFor = slot
-        } label: {
+        return Button { nityaDetailFor = slot } label: {
             VStack(spacing: 4) {
                 Text(display.name)
                     .font(.custom(AppFont.cormorantItalic, size: 17))
@@ -295,63 +267,13 @@ struct DailyRiteView: View {
         .buttonStyle(.plain)
     }
 
-    private struct NityaCardDisplay {
-        let name: String
-        let epithet: String
-    }
+    private struct NityaCardDisplay { let name: String; let epithet: String }
 
     private func nityaCardDisplay(_ slot: NityaSlot) -> NityaCardDisplay {
         switch slot {
-        case .nitya(let n):
-            return NityaCardDisplay(name: n.sanskritName,
-                                    epithet: n.quality ?? "")
-        case .lalita(_):
-            // Pūrṇimā = Lalitā, named directly. Ring 9's sanskritName is the
-            // chakra ("Sarvānandamaya Chakra"), not the presiding goddess.
-            return NityaCardDisplay(name: "Lalitā Mahātripurasundarī",
-                                    epithet: "Pūrṇimā · Full Moon")
-        case .unknown:
-            return NityaCardDisplay(name: "", epithet: "")
+        case .nitya(let n): return NityaCardDisplay(name: n.sanskritName, epithet: n.quality ?? "")
+        case .lalita: return NityaCardDisplay(name: "Lalitā Mahātripurasundarī", epithet: "Pūrṇimā · Full Moon")
+        case .unknown: return NityaCardDisplay(name: "", epithet: "")
         }
     }
-
-    // MARK: - Recognition
-
-    private func triggerRecognition() {
-        Haptics.medium()
-        showRecognition = true
-    }
-
-    private func animateIn() {
-        let nameAnim: Animation = reduceMotion ? .linear(duration: 0.01)
-                                               : .easeInOut(duration: 1.4)
-        let promptAnim: Animation = reduceMotion ? .linear(duration: 0.01)
-                                                 : .easeInOut(duration: 1.4)
-        withAnimation(nameAnim) { nameVisible = true }
-        withAnimation(promptAnim.delay(reduceMotion ? 0 : 0.55)) { promptVisible = true }
-    }
-
-    private func bodyLocationLabel(_ raw: String) -> String {
-        switch raw.lowercased() {
-        case "skin":   return "Skin Surface"
-        case "heart":  return "Heart Center"
-        case "head":   return "Head"
-        case "solar":  return "Solar Plexus"
-        case "ears":   return "Ears"
-        case "eyes":   return "Eyes"
-        case "tongue": return "Tongue"
-        case "nose":   return "Nose"
-        case "whole":  return "Whole Body"
-        case "spine":  return "Spine"
-        case "temples":return "Temples"
-        case "throat": return "Throat"
-        case "sacrum": return "Sacrum"
-        case "crown":  return "Crown"
-        default:       return raw.capitalized
-        }
-    }
-}
-
-private extension DailyRiteView.Variant {
-    var storage: String { self == .body ? "body" : "bija" }
 }
