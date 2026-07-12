@@ -219,8 +219,9 @@ struct VeilView: View {
     /// Visiting a ring already inside the descent — no crossing, just re-entry.
     private func handleOpen(ring: Int) {
         Haptics.light()
-        descent?.enter(ring: ring)
+        let crossed = descent?.enter(ring: ring) ?? false
         try? context.save()
+        if crossed { Task { await AirtableService.shared.recordCrossing(ring: ring) } }
         onEntry(ring)
     }
 
@@ -230,8 +231,9 @@ struct VeilView: View {
         guard let d = descent else { return }
         Haptics.medium()
         let invitation = avarana(for: ring)?.subtitle ?? "The way opens."
-        d.enter(ring: ring)
+        let crossed = d.enter(ring: ring)
         try? context.save()
+        if crossed { Task { await AirtableService.shared.recordCrossing(ring: ring) } }
 
         let appearDur: Double = reduceMotion ? 0.01 : 0.9
         let holdDur:   Double = reduceMotion ? 0.01 : 1.6

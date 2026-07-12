@@ -33,16 +33,38 @@ final class DescentState {
     /// Mark that the practitioner has crossed into `ring`. Idempotent:
     /// re-entering a previously-reached ring just updates currentRing and the
     /// timestamp. Crossing into a *new* ring appends a date and lifts the floor.
-    func enter(ring: Int) {
+    ///
+    /// Returns `true` only when this is a genuinely new deepest crossing — the
+    /// caller uses that to mirror the crossing to Airtable exactly once
+    /// (Ruling 8), never on a shallower re-entry.
+    @discardableResult
+    func enter(ring: Int) -> Bool {
         let now = Date()
+        var newCrossing = false
         if ring > deepestReached {
-            // A new crossing — record the moment.
             crossings.append(now)
             deepestReached = ring
+            newCrossing = true
         }
         if ring != currentRing {
             currentRing = ring
             enteredCurrentAt = now
         }
+        return newCrossing
+    }
+
+    /// Rebuild the descent timeline from crossings restored out of Airtable
+    /// (after a reinstall / store recovery). Pure and testable — no network.
+    ///
+    /// Zero rows leaves the bootstrap floor (2 / 2) untouched — a fresh device
+    /// with no crossings on the server must never regress or invent a descent.
+    /// `deepestReached`/`currentRing` never drop below the floor of 2.
+    func restore(from restored: [(ring: Int, date: Date)]) {
+        guard !restored.isEmpty else { return }
+        let deepest = max(2, restored.map(\.ring).max() ?? 2)
+        crossings = restored.map(\.date)
+        deepestReached = deepest
+        currentRing = deepest
+        enteredCurrentAt = restored.last?.date ?? Date()
     }
 }

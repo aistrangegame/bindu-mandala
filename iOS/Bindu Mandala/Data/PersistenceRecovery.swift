@@ -19,25 +19,33 @@ private let log = Logger(subsystem: "com.ashrey.bindu-mandala", category: "persi
 ///   3. As a last resort, an in-memory store, so the instrument still opens.
 enum PersistenceRecovery {
 
-    private static let models: [any PersistentModel.Type] = [
-        Shakti.self, RecognitionEntry.self, ShaktiLetter.self,
-        Avarana.self, NityaDevi.self, DescentState.self
-    ]
+    /// Build the container. `storeURL` is injectable purely so tests can drive the
+    /// real recovery path against a hermetic temp store (the app always passes nil
+    /// → SwiftData's default location). The versioned `BinduMigrationPlan` is what
+    /// keeps an additive, defaulted model change opening in place instead of
+    /// throwing — so the preserve-and-recover path fires only on true corruption.
+    static func makeContainer(storeURL: URL? = nil) -> ModelContainer {
+        let schema = Schema(BinduSchemaV1.models)
+        func configuration() -> ModelConfiguration {
+            if let storeURL { return ModelConfiguration(schema: schema, url: storeURL) }
+            return ModelConfiguration(schema: schema)
+        }
 
-    static func makeContainer() -> ModelContainer {
-        let schema = Schema(models)
-
-        // 1 — the normal on-disk store.
+        // 1 — the normal on-disk store, migrated by the versioned plan.
         do {
-            return try ModelContainer(for: schema)
+            return try ModelContainer(for: schema,
+                                      migrationPlan: BinduMigrationPlan.self,
+                                      configurations: configuration())
         } catch {
             log.error("Primary store failed: \(error.localizedDescription, privacy: .public) — recovering")
         }
 
         // 2 — preserve the old store aside, open a fresh on-disk store.
-        preserveExistingStore()
+        preserveExistingStore(storeURL: storeURL)
         do {
-            return try ModelContainer(for: schema)
+            return try ModelContainer(for: schema,
+                                      migrationPlan: BinduMigrationPlan.self,
+                                      configurations: configuration())
         } catch {
             log.error("Fresh store failed: \(error.localizedDescription, privacy: .public) — falling back to in-memory")
         }
@@ -54,21 +62,29 @@ enum PersistenceRecovery {
         }
     }
 
-    /// Move the default SwiftData store (and its -wal/-shm sidecars) to a
-    /// timestamped backup alongside it, so a corrupt or unmigratable store is
-    /// set aside rather than lost.
-    private static func preserveExistingStore() {
+    /// Move the SwiftData store (and its -wal/-shm sidecars) to a timestamped
+    /// backup alongside it, so a corrupt or unmigratable store is set aside rather
+    /// than lost. Operates on the injected store when present, else the default.
+    private static func preserveExistingStore(storeURL: URL?) {
         let fm = FileManager.default
-        guard let appSupport = try? fm.url(for: .applicationSupportDirectory,
-                                           in: .userDomainMask,
-                                           appropriateFor: nil, create: false) else { return }
+        let base: URL
+        if let storeURL {
+            base = storeURL
+        } else {
+            guard let appSupport = try? fm.url(for: .applicationSupportDirectory,
+                                               in: .userDomainMask,
+                                               appropriateFor: nil, create: false) else { return }
+            base = appSupport.appendingPathComponent("default.store")
+        }
+        let dir = base.deletingLastPathComponent()
+        let name = base.lastPathComponent
         let stamp = Int(Date().timeIntervalSince1970)
-        for suffix in ["store", "store-wal", "store-shm"] {
-            let src = appSupport.appendingPathComponent("default.\(suffix)")
+        for suffix in ["", "-wal", "-shm"] {
+            let src = dir.appendingPathComponent(name + suffix)
             guard fm.fileExists(atPath: src.path) else { continue }
-            let dst = appSupport.appendingPathComponent("default.corrupt-\(stamp).\(suffix)")
+            let dst = dir.appendingPathComponent("\(name).corrupt-\(stamp)\(suffix)")
             try? fm.moveItem(at: src, to: dst)
         }
-        log.notice("Preserved existing store aside as default.corrupt-\(stamp).*")
+        log.notice("Preserved existing store aside as \(name).corrupt-\(stamp).*")
     }
 }
