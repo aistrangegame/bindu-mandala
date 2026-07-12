@@ -157,6 +157,17 @@ final class RingAudioService {
         }
     }
 
+    /// A soft bell as an enclosure is crossed inward in the living Mandala.
+    /// Deeper enclosures ring lower; the Bindu is the ground tone. Opt-in — the
+    /// caller only invokes this when the practitioner has enabled ring chimes, and
+    /// only on inward crossings (silent on the way out).
+    nonisolated func ringChime(_ ring: Int) {
+        let clamped = max(1, min(9, ring))
+        // Ring 1 (outer) brightest, falling ~a whole tone per enclosure inward.
+        let freq = 528.0 * pow(0.917, Double(clamped - 1))
+        playSteppedNote(freq: freq, duration: 1.5, volume: 0.06)
+    }
+
     // MARK: - Ring 8 · Triad collapse (3 sines glide between targets)
 
     enum R8Target {

@@ -28,14 +28,7 @@ struct RootView: View {
             Group {
                 switch destination {
                 case .mandala:
-                    MandalaScreenView(
-                        onPetalTap: { _ in
-                            // Phase 5: present Shakti Detail.
-                        },
-                        onBinduTap: {
-                            // Phase 6: present Silence screen.
-                        }
-                    )
+                    LivingMandalaView()
                 case .rite:
                     DailyRiteView()
                 case .well:

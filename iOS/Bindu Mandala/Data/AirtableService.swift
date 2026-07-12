@@ -899,8 +899,11 @@ extension AirtableService {
     private static let fldDuration = "Duration (sec)"   // fldlBReoX5yvo1eY7
 
     /// Fire-and-forget single-row POST. Failure is silent; the item is queued
-    /// in UserDefaults for retry. The caller (SilenceView) is responsible for
-    /// the 1.0s minimum-duration gate.
+    /// in UserDefaults for retry. Retired in the living-Mandala rebuild — the
+    /// silence-dwell view was replaced by the Bindu→Lalitā finale, which records
+    /// recognition through the explicit "I feel her" path. Kept (uncalled) as a
+    /// valid Airtable capability; queued rows still flush. Slated for removal in
+    /// the PR-9 cleanup pass.
     func recordSilence(durationSec: Double) async {
         let item = PendingSilence(durationSec: durationSec, feltAt: .now)
         let success = await processSilence(item)

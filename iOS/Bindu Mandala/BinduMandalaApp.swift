@@ -11,6 +11,15 @@ enum AppRuntime {
     /// Debug: skip the first-launch notification-authorization prompt so it never
     /// obscures screenshots. Pass `SKIP_SUMMONS` as a launch argument.
     static let skipsSummons = ProcessInfo.processInfo.arguments.contains("SKIP_SUMMONS")
+
+    /// Debug: pin today's energy to a fixed khaḍgamālā position (1–102) so the
+    /// Rite and the Mandala highlight a chosen Śakti in screenshots. Pass
+    /// `ENERGY_POS=<n>` as a launch argument.
+    static let pinnedEnergyPosition: Int? = {
+        guard let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("ENERGY_POS=") }),
+              let pos = Int(arg.dropFirst("ENERGY_POS=".count)) else { return nil }
+        return pos
+    }()
 }
 
 @main
