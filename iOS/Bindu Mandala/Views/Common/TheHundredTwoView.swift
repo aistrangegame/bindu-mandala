@@ -27,7 +27,7 @@ struct TheHundredTwoView: View {
         NavigationStack {
             content
                 .navigationDestination(item: $detailFor) { shakti in
-                    ShaktiDetailView(shakti: shakti)
+                    ShaktiDetailView(shakti: shakti, backLabel: "the field")
                 }
                 .navigationDestination(item: $thresholdFor) { avarana in
                     AvaranaThresholdView(avarana: avarana)
