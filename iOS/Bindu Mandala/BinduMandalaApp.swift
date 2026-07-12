@@ -7,6 +7,10 @@ enum AppRuntime {
     /// effects (network sync, the periodic re-sync loop, notification
     /// authorization) are skipped so unit tests run against a quiet host.
     static let isUnitTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
+    /// Debug: skip the first-launch notification-authorization prompt so it never
+    /// obscures screenshots. Pass `SKIP_SUMMONS` as a launch argument.
+    static let skipsSummons = ProcessInfo.processInfo.arguments.contains("SKIP_SUMMONS")
 }
 
 @main
@@ -67,7 +71,7 @@ private struct AppRoot: View {
             }
         }
         .task {
-            guard !AppRuntime.isUnitTesting else { return }
+            guard !AppRuntime.isUnitTesting, !AppRuntime.skipsSummons else { return }
             // First-launch authorization for the default-on summons. Silent
             // once the system has a decision; only runs while still
             // .notDetermined, so the practitioner sees the prompt at most once.

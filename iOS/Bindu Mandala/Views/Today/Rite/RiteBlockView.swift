@@ -1,0 +1,141 @@
+import SwiftUI
+
+/// Everything the Rite's blocks need to render, gathered once per day.
+struct RiteRenderContext {
+    let content: RiteContent
+    let atmosphere: Atmosphere
+    let plan: RitePlan
+    let nameSize: Double
+    let align: HorizontalAlignment
+    let textAlign: TextAlignment
+    let leadingEdge: Bool          // for lean: name/hairline hug this edge
+    let onOpenDetail: () -> Void
+}
+
+/// One block of the Daily Rite. The *set* of blocks is constant; the plan decides
+/// their order, alignment, and weight — so a fire Śakti and a water Śakti are
+/// structurally different, not the same layout re-skinned.
+struct RiteBlockView: View {
+    let kind: RiteBlock
+    let ctx: RiteRenderContext
+
+    private var atmo: Atmosphere { ctx.atmosphere }
+    private var c: RiteContent { ctx.content }
+
+    var body: some View {
+        switch kind {
+        case .kicker:      kicker
+        case .name:        name(size: ctx.nameSize)
+        case .nameSmall:   name(size: 27)
+        case .phon:        phon
+        case .know:        know
+        case .rule:        rule
+        case .quality:     quality
+        case .prompt:      prompt
+        }
+    }
+
+    // MARK: - Blocks
+
+    private var kicker: some View {
+        HStack(spacing: 10) {
+            if c.hasCluster {
+                Circle().fill(atmo.accent).frame(width: 8, height: 8)
+            }
+            Text(kickerLabel.uppercased())
+                .font(.system(size: 11.5, weight: .regular))
+                .tracking(3.0)
+                .foregroundStyle(atmo.accentBright)
+        }
+        .padding(.bottom, 22)
+        .frame(maxWidth: .infinity, alignment: alignment)
+    }
+
+    private var kickerLabel: String {
+        let base = "\(RiteContent.ordinal(c.ring).capitalized) Āvaraṇa"
+        if c.hasCluster, let cl = c.cluster { return "\(base) · \(cl.label)" }
+        return base
+    }
+
+    private func name(size: Double) -> some View {
+        Button(action: ctx.onOpenDetail) {
+            Text(c.name)
+                .font(.custom(AppFont.cormorant, size: size))
+                .fontWeight(.light)
+                .tracking(size * 0.05)
+                .lineSpacing(2)
+                .foregroundStyle(Color.cream)
+                .shadow(color: atmo.glow, radius: 26)
+                .multilineTextAlignment(ctx.textAlign)
+                .lineLimit(3)
+                .minimumScaleFactor(0.55)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: alignment)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(c.spokenName) — open her presence")
+    }
+
+    @ViewBuilder private var phon: some View {
+        if let p = c.phonetic {
+            Text(p.uppercased())
+                .font(.system(size: 12.5, weight: .regular))
+                .tracking(3.0)
+                .foregroundStyle(Color.cream.opacity(0.5))
+                .padding(.top, 12)
+                .frame(maxWidth: .infinity, alignment: alignment)
+        }
+    }
+
+    private var know: some View {
+        Button(action: ctx.onOpenDetail) {
+            Text("know her ›")
+                .font(.custom(AppFont.cormorantItalic, size: 15))
+                .tracking(0.9)
+                .foregroundStyle(atmo.accentBright.opacity(0.92))
+                .padding(.vertical, 6)
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 10)
+        .frame(maxWidth: .infinity, alignment: alignment)
+    }
+
+    private var rule: some View {
+        Rectangle()
+            .fill(atmo.accentSoft)
+            .frame(width: 54, height: 0.6)
+            .padding(.vertical, 24)
+            .frame(maxWidth: .infinity, alignment: alignment)
+    }
+
+    @ViewBuilder private var quality: some View {
+        if !c.quality.isEmpty {
+            Text(c.quality)
+                .font(.custom(AppFont.cormorant, size: 25))
+                .lineSpacing(4)
+                .foregroundStyle(atmo.accentBright)
+                .multilineTextAlignment(ctx.textAlign)
+                .frame(maxWidth: 330, alignment: alignment)
+                .frame(maxWidth: .infinity, alignment: alignment)
+        }
+    }
+
+    private var prompt: some View {
+        Text("\u{201C}\(c.prompt)\u{201D}")
+            .font(.custom(AppFont.cormorantItalic, size: 20))
+            .lineSpacing(6)
+            .foregroundStyle(Color.cream.opacity(0.82))
+            .multilineTextAlignment(ctx.textAlign)
+            .frame(maxWidth: 310, alignment: alignment)
+            .padding(.top, 20)
+            .frame(maxWidth: .infinity, alignment: alignment)
+    }
+
+    private var alignment: Alignment {
+        switch ctx.align {
+        case .leading:  return .leading
+        case .trailing: return .trailing
+        default:        return .center
+        }
+    }
+}
