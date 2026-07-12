@@ -39,6 +39,9 @@ iOS/Bindu Mandala/Secrets.plist
 *.env
 .env.local
 
+# Stray archives (design exports, etc.)
+*.zip
+
 # Editor
 .idea/
 .vscode/
