@@ -1,0 +1,119 @@
+import SwiftUI
+
+/// The card that blooms up when a seat is focused — her name, quality, the family
+/// she is threaded to, her bīja to sound, and the way into her full presence.
+/// Reads every color from her Atmosphere, so the 86 are lit by their own light
+/// and never the false `.inner` gold (Ruling 7 / R3).
+struct SignificanceCard: View {
+    let shakti: Shakti
+    let atmo: Atmosphere
+    let familyCount: Int
+    let familyLabel: String
+    var onSound: () -> Void
+    var onOpenDetail: () -> Void
+    var onClose: () -> Void
+
+    private var phonetic: String? {
+        let p = shakti.phonetic.trimmingCharacters(in: .whitespaces)
+        return p.isEmpty ? nil : p
+    }
+    private var bijaSyllable: String? {
+        let raw = shakti.bija.trimmingCharacters(in: .whitespaces)
+        guard !raw.isEmpty else { return nil }
+        return raw.components(separatedBy: " — ").first ?? raw
+    }
+    private var significance: String? {
+        let q = shakti.qualityDescription.trimmingCharacters(in: .whitespaces)
+        if !q.isEmpty { return q }
+        let poem = shakti.somaticPoetry.trimmingCharacters(in: .whitespaces)
+        return poem.isEmpty ? nil : poem
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text(familyLabel.uppercased())
+                    .font(.system(size: 9.5))
+                    .tracking(2.4)
+                    .foregroundStyle(atmo.accentBright)
+                Spacer()
+                Button(action: onClose) {
+                    Text("×").font(.system(size: 22, weight: .light)).foregroundStyle(Color.cream.opacity(0.5))
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.bottom, 8)
+
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(shakti.name)
+                        .font(.custom(AppFont.cormorant, size: 30))
+                        .foregroundStyle(Color.cream)
+                    if let phonetic {
+                        Text(phonetic.uppercased())
+                            .font(.system(size: 10)).tracking(2)
+                            .foregroundStyle(Color.cream.opacity(0.5))
+                            .padding(.top, 7)
+                    }
+                    if !shakti.quality.trimmingCharacters(in: .whitespaces).isEmpty {
+                        Text(shakti.quality)
+                            .font(.custom(AppFont.cormorant, size: 18))
+                            .foregroundStyle(atmo.accentBright)
+                            .padding(.top, 9)
+                    }
+                    if familyCount > 0 {
+                        Text("threaded to \(familyCount) \(familyCount == 1 ? "sister" : "sisters")")
+                            .font(.custom(AppFont.cormorantItalic, size: 13))
+                            .foregroundStyle(Color.cream.opacity(0.5))
+                            .padding(.top, 8)
+                    }
+                }
+                Spacer(minLength: 0)
+                if let bijaSyllable {
+                    Button(action: onSound) {
+                        VStack(spacing: 4) {
+                            Text(bijaSyllable)
+                                .font(.custom(AppFont.cormorant, size: 40))
+                                .foregroundStyle(Color.gold)
+                                .shadow(color: atmo.glow, radius: 18)
+                            Text("SOUND HER")
+                                .font(.system(size: 8)).tracking(1.8)
+                                .foregroundStyle(Color.cream.opacity(0.42))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if let significance {
+                Text(significance)
+                    .font(.custom(AppFont.cormorantItalic, size: 14))
+                    .lineSpacing(4)
+                    .foregroundStyle(Color.cream.opacity(0.72))
+                    .lineLimit(3)
+                    .padding(.top, 12)
+            }
+
+            Button(action: onOpenDetail) {
+                Text("enter her presence")
+                    .font(.custom(AppFont.cormorant, size: 17))
+                    .tracking(1.6)
+                    .foregroundStyle(Color.cream)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(Capsule().fill(Color.accentRed))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 14)
+        }
+        .padding(EdgeInsets(top: 18, leading: 20, bottom: 16, trailing: 20))
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.ground.opacity(0.92))
+                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(atmo.accentSoft, lineWidth: 1))
+                .shadow(color: atmo.glow, radius: 30, y: 8)
+        )
+    }
+}
