@@ -2,7 +2,12 @@ import Foundation
 import SwiftData
 
 /// A single moment of recognition — "she was felt here · [time]".
-/// Local-only. Never synced. Never analyzed. The archive belongs to her.
+///
+/// Private-facing, not surveilled (Ruling 4): the archive belongs to her and is
+/// never shown as a score — but it *is* mirrored to Airtable (`recordRecognition`)
+/// and the first felt of each Śakti is written to the cross-app App Activity ledger
+/// (`logActivity` "Shakti Recognized"). SwiftData stays the read-time source of
+/// truth; `serverRecognitionCount` is the durable readiness signal for embodiment.
 ///
 /// Phase-2 schema:
 /// - `khadgamalaPosition` is the authoritative key (1-102, globally unique).
