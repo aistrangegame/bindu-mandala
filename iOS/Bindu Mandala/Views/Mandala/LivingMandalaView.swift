@@ -160,17 +160,22 @@ struct LivingMandalaView: View {
         .buttonStyle(.plain)
     }
 
+    @ViewBuilder
     private var lalita: some View {
-        LalitaSourceView(
-            lalita: lalitaShakti, seats: seats,
-            onEnter: { detailFor = lalitaShakti },
-            onReturn: { ascend() })
-        .transition(.opacity)
-        .zIndex(40)
+        if let l = lalitaShakti {
+            LalitaSourceView(
+                lalita: l, seats: seats,
+                onEnter: { detailFor = l },
+                onReturn: { ascend() })
+            .transition(.opacity)
+            .zIndex(40)
+        }
     }
 
-    private var lalitaShakti: Shakti {
-        shaktis.first { ($0.ringNumber ?? 2) == 9 } ?? shaktis.last ?? shaktis[0]
+    /// The Bindu's Śakti (ring 9), or the deepest one present — nil only if the
+    /// field is momentarily empty (mid-resync), in which case the descent no-ops.
+    private var lalitaShakti: Shakti? {
+        shaktis.first { ($0.ringNumber ?? 2) == 9 } ?? shaktis.last
     }
 
     // MARK: Gestures
@@ -248,6 +253,7 @@ struct LivingMandalaView: View {
     }
 
     private func openDescent() {
+        guard lalitaShakti != nil else { return }   // nothing to arrive at yet
         Haptics.medium()
         focus = nil
         constellation = 0
