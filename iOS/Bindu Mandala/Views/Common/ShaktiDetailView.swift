@@ -14,6 +14,29 @@ struct ShaktiDetailView: View {
     @State private var goDeeperExpanded: Bool = false
     @State private var showRecognition = false
 
+    /// Ruling 7 / R3: cluster is a Ring-2-only taxonomy. The 86 carry `.inner`
+    /// as `clusterRaw`'s default — never surface it as a color or a family label.
+    /// Every seat-color here routes through the Atmosphere for the 86.
+    private var hasCluster: Bool { (shakti.ringNumber ?? 2) == 2 }
+
+    /// Her seat color — the cluster family for the 16, her own Atmosphere for the 86.
+    private var seatColor: Color {
+        hasCluster ? shakti.cluster.color : SeatLighting.accent(for: shakti)
+    }
+
+    /// VoiceOver header — her phonetic + quality when present, else just her name
+    /// (the 86 carry neither), never a bare ", ".
+    private var headerSpokenLabel: String {
+        let p = shakti.phonetic.trimmingCharacters(in: .whitespaces)
+        let q = shakti.quality.trimmingCharacters(in: .whitespaces)
+        switch (p.isEmpty, q.isEmpty) {
+        case (false, false): return "\(p), \(q)"
+        case (false, true):  return p
+        case (true, false):  return "\(shakti.name), \(q)"
+        case (true, true):   return shakti.name
+        }
+    }
+
     var body: some View {
         ZStack {
             Color.ground.ignoresSafeArea()
@@ -92,9 +115,9 @@ struct ShaktiDetailView: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            // Isolated mini-petal
+            // Isolated mini-petal — lit by her seat color (never the .inner default).
             PetalShape(outerRatio: 0.42, innerRatio: 0.08, halfWidthRatio: 0.13)
-                .fill(shakti.cluster.color.opacity(0.85))
+                .fill(seatColor.opacity(0.85))
                 .frame(width: 28, height: 36)
         }
         .padding(.horizontal, 20)
@@ -110,16 +133,27 @@ struct ShaktiDetailView: View {
                 .tracking(2.0)
                 .foregroundStyle(Color.cream)
                 .padding(.bottom, 10)
-                .accessibilityLabel("\(shakti.phonetic), \(shakti.quality)")
+                .accessibilityLabel(headerSpokenLabel)
 
-            Text(shakti.phonetic.uppercased())
-                .font(.system(size: 11))
-                .tracking(2.0)
-                .foregroundStyle(Color.cream.opacity(0.4))
-                .padding(.bottom, 12)
+            if !shakti.phonetic.trimmingCharacters(in: .whitespaces).isEmpty {
+                Text(shakti.phonetic.uppercased())
+                    .font(.system(size: 11))
+                    .tracking(2.0)
+                    .foregroundStyle(Color.cream.opacity(0.4))
+                    .padding(.bottom, 12)
+            }
 
             HStack(alignment: .center, spacing: 10) {
-                ClusterDotView(cluster: shakti.cluster)
+                // The 16 wear their family; the 86 wear only their own light — never
+                // the false "INNER INSTRUMENT" the .inner default would print.
+                if hasCluster {
+                    ClusterDotView(cluster: shakti.cluster)
+                } else {
+                    Circle()
+                        .fill(seatColor)
+                        .frame(width: 7, height: 7)
+                        .shadow(color: SeatLighting.glow(for: shakti), radius: 4)
+                }
                 statusPill
                 Spacer()
                 if let kp = shakti.khadgamalaPosition {
@@ -241,28 +275,42 @@ struct ShaktiDetailView: View {
         }
     }
 
+    /// The 86 carry no quality — hide the section rather than print an empty header.
+    @ViewBuilder
     private var qualitySection: some View {
-        section("Quality") {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(shakti.quality)
-                    .font(.custom(AppFont.cormorant, size: 19))
-                    .tracking(0.4)
-                    .foregroundStyle(Color.gold)
-                Text(shakti.qualityDescription)
-                    .font(.system(size: 14))
-                    .lineSpacing(6)
-                    .foregroundStyle(Color.cream.opacity(0.65))
+        let quality = shakti.quality.trimmingCharacters(in: .whitespaces)
+        let desc = shakti.qualityDescription.trimmingCharacters(in: .whitespaces)
+        if !quality.isEmpty || !desc.isEmpty {
+            section("Quality") {
+                VStack(alignment: .leading, spacing: 10) {
+                    if !quality.isEmpty {
+                        Text(shakti.quality)
+                            .font(.custom(AppFont.cormorant, size: 19))
+                            .tracking(0.4)
+                            .foregroundStyle(Color.gold)
+                    }
+                    if !desc.isEmpty {
+                        Text(shakti.qualityDescription)
+                            .font(.system(size: 14))
+                            .lineSpacing(6)
+                            .foregroundStyle(Color.cream.opacity(0.65))
+                    }
+                }
             }
         }
     }
 
+    /// The 86 carry no somatic poetry — hide rather than print an empty header.
+    @ViewBuilder
     private var somaticSection: some View {
-        section("Somatic Signature") {
-            Text(shakti.somaticPoetry)
-                .font(.custom(AppFont.cormorantItalic, size: 17))
-                .lineSpacing(8)
-                .foregroundStyle(Color.cream.opacity(0.75))
-                .frame(maxWidth: .infinity, alignment: .leading)
+        if !shakti.somaticPoetry.trimmingCharacters(in: .whitespaces).isEmpty {
+            section("Somatic Signature") {
+                Text(shakti.somaticPoetry)
+                    .font(.custom(AppFont.cormorantItalic, size: 17))
+                    .lineSpacing(8)
+                    .foregroundStyle(Color.cream.opacity(0.75))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 
@@ -280,7 +328,16 @@ struct ShaktiDetailView: View {
         return (syllable, description.isEmpty ? nil : description)
     }
 
+    /// The 86 carry no bīja — hide rather than render an empty syllable + a
+    /// play button that would sound nothing.
+    @ViewBuilder
     private var bijaSection: some View {
+        if !shakti.bija.trimmingCharacters(in: .whitespaces).isEmpty {
+            bijaSectionBody
+        }
+    }
+
+    private var bijaSectionBody: some View {
         let parsed = parsedBija
         return section("Bīja Syllable · Tap to Hear", alignment: .center) {
             VStack(spacing: 12) {
@@ -337,22 +394,25 @@ struct ShaktiDetailView: View {
         withAnimation(.easeOut(duration: 1.4)) { bijaPulse = 1 }
     }
 
+    @ViewBuilder
     private var tattvaSection: some View {
-        section("Esoteric Tattva") {
-            HStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .fill(shakti.cluster.color.opacity(0.15))
-                    Circle()
-                        .stroke(shakti.cluster.color.opacity(0.3), lineWidth: 1)
-                    Circle()
-                        .fill(shakti.cluster.color.opacity(0.8))
-                        .frame(width: 10, height: 10)
+        if !shakti.tattva.trimmingCharacters(in: .whitespaces).isEmpty {
+            section("Esoteric Tattva") {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle()
+                            .fill(seatColor.opacity(0.15))
+                        Circle()
+                            .stroke(seatColor.opacity(0.3), lineWidth: 1)
+                        Circle()
+                            .fill(seatColor.opacity(0.8))
+                            .frame(width: 10, height: 10)
+                    }
+                    .frame(width: 28, height: 28)
+                    Text(shakti.tattva)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.cream.opacity(0.7))
                 }
-                .frame(width: 28, height: 28)
-                Text(shakti.tattva)
-                    .font(.system(size: 15))
-                    .foregroundStyle(Color.cream.opacity(0.7))
             }
         }
     }
@@ -372,11 +432,11 @@ struct ShaktiDetailView: View {
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(shakti.cluster.color.opacity(0.07))
+                .fill(seatColor.opacity(0.07))
         )
         .overlay(
             Rectangle()
-                .fill(shakti.cluster.color.opacity(0.35))
+                .fill(seatColor.opacity(0.35))
                 .frame(width: 2),
             alignment: .leading
         )
@@ -388,7 +448,7 @@ struct ShaktiDetailView: View {
         section("Her Moments") {
             HerMomentsList(
                 khadgamalaPosition: shakti.khadgamalaPosition ?? (shakti.position + 28),
-                clusterColor: shakti.cluster.color,
+                clusterColor: seatColor,
                 airtableRecordId: shakti.airtableRecordId
             )
         }
