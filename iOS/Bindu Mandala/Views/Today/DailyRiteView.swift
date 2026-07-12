@@ -55,7 +55,7 @@ struct DailyRiteView: View {
             if let s = today { RecognitionMomentView(shakti: s, isPresented: $showRecognition) }
         }
         .fullScreenCover(item: $detailFor) { shakti in
-            NavigationStack { ShaktiDetailView(shakti: shakti) }
+            NavigationStack { ShaktiDetailView(shakti: shakti, backLabel: "today") }
         }
         .sheet(item: $nityaDetailFor) { slot in
             NityaDetailView(slot: slot)

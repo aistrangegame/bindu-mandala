@@ -5,11 +5,14 @@ import SwiftData
 /// The yantra fills the surface. The hamburger is the minimum concession.
 struct RootView: View {
     @Environment(\.modelContext) private var context
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("last_destination") private var lastDestinationRaw: String = ""
+    @AppStorage("last_destination_day") private var lastDestinationDay: Int = -1
     @State private var destination: Destination = Self.initialDestination()
     @State private var menuOpen = false
     @State private var settingsPresented = false
 
-    enum Destination { case mandala, rite, well, the102, memory }
+    enum Destination: String { case mandala, rite, well, the102, memory }
 
     private static func initialDestination() -> Destination {
         let args = ProcessInfo.processInfo.arguments
@@ -18,14 +21,36 @@ struct RootView: View {
         if args.contains("START_TAB=well")    { return .well }
         if args.contains("START_TAB=102")     { return .the102 }
         if args.contains("START_TAB=memory")  { return .memory }
+        // Same-day restore: return to where the practitioner last was *within this
+        // practice-day*. On a new day the Rite greets them with today's fresh
+        // energy — the daily ritual is never skipped.
+        let savedDay = UserDefaults.standard.integer(forKey: "last_destination_day")
+        if savedDay == DailyEnergyService.practiceDayIndex(),
+           let saved = UserDefaults.standard.string(forKey: "last_destination"),
+           let d = Destination(rawValue: saved) {
+            return d
+        }
         return .rite
+    }
+
+    /// Each room arrives in its own way — the cosmos blooms, the Rite eases in,
+    /// the lists rise, the Portrait settles into place (prototype's lrScreen*).
+    private var screenTransition: AnyTransition {
+        let insertion: AnyTransition
+        switch destination {
+        case .mandala: insertion = .opacity.combined(with: .scale(scale: 1.06))
+        case .rite:    insertion = .opacity.combined(with: .scale(scale: 1.015))
+        case .well, .the102: insertion = .opacity.combined(with: .scale(scale: 0.98, anchor: .top))
+        case .memory:  insertion = .opacity.combined(with: .scale(scale: 0.965))
+        }
+        return .asymmetric(insertion: insertion, removal: .opacity)
     }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Color.ground.ignoresSafeArea()
 
-            Group {
+            ZStack {
                 switch destination {
                 case .mandala:
                     LivingMandalaView()
@@ -39,6 +64,9 @@ struct RootView: View {
                     PortraitMandalaView()
                 }
             }
+            .id(destination)
+            .transition(screenTransition)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.5), value: destination)
 
             HamburgerButton {
                 withAnimation(.easeInOut(duration: 0.3)) { menuOpen = true }
@@ -58,6 +86,10 @@ struct RootView: View {
         }
         .sheet(isPresented: $settingsPresented) {
             SettingsView()
+        }
+        .onChange(of: destination, initial: true) { _, new in
+            lastDestinationRaw = new.rawValue
+            lastDestinationDay = DailyEnergyService.practiceDayIndex()
         }
         .onReceive(NotificationCenter.default.publisher(
             for: RecognitionMomentView.didSettleNotification)) { _ in

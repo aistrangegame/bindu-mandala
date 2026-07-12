@@ -4,6 +4,9 @@ import SwiftData
 /// The Śakti Detail screen — reached by tapping a petal in the Mandala.
 struct ShaktiDetailView: View {
     @Bindable var shakti: Shakti
+    /// Where she was opened from — names the back button ("today", "the field",
+    /// "mandala"), matching the prototype's `backLabel`.
+    var backLabel: String = "mandala"
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -138,7 +141,7 @@ struct ShaktiDetailView: View {
             Button(action: { dismiss() }) {
                 HStack(spacing: 6) {
                     Text("‹").font(.system(size: 22, weight: .light))
-                    Text("Mandala")
+                    Text(backLabel)
                         .font(.custom(AppFont.cormorantItalic, size: 16))
                         .tracking(0.4)
                 }
