@@ -95,6 +95,63 @@ final class BijaSoundService {
         }
     }
 
+    /// Her seed-syllable's own tone: a soft drone (fundamental + fifth + octave)
+    /// pitched deterministically from the syllable's characters onto a low
+    /// pentatonic scale, so each syllable sounds like herself (ported from the
+    /// prototype's `lrPlayBija`). When she carries no bīja (most of the 86), the
+    /// tone is seeded off `seed` (her khaḍgamālā position) so it is still unique
+    /// per Śakti — never the old per-ring collision.
+    func playBija(_ bija: String, seed: Int, duration: TimeInterval = 3.2) {
+        // A bundled human-voice sample (by unique position) still wins if present.
+        if playVoiceFile(forPosition: seed) { return }
+        let syllable = bija.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Low pentatonic register (~131–294 Hz) — a grounded, meditative drone.
+        let scale: [Double] = [130.81, 146.83, 164.81, 196.00, 220.00, 246.94, 293.66]
+        let source = syllable.isEmpty ? "kp\(seed)" : syllable
+        var h = 2166136261
+        for u in source.unicodeScalars { h = (h ^ Int(u.value)) &* 16777619 & 0x7fffffff }
+        let freq = scale[h % scale.count]
+        playDrone(frequency: freq, duration: duration)
+    }
+
+    /// A slow devotional drone — fundamental + a fifth + an octave, swelling in and
+    /// out. Richer than the bare sine of `play(frequency:)`.
+    private func playDrone(frequency: Double, duration: TimeInterval, volume: Double = 0.16) {
+        do {
+            try configureIfNeeded()
+            let sampleRate: Double = 44_100
+            let frameCount = AVAudioFrameCount(sampleRate * duration)
+            let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return }
+            buffer.frameLength = frameCount
+
+            let channel = buffer.floatChannelData![0]
+            let twoPi = 2.0 * Double.pi
+            let total = Int(frameCount)
+            let attack = Int(sampleRate * 0.55)
+            let release = Int(sampleRate * 1.1)
+            for i in 0..<total {
+                let t = Double(i) / sampleRate
+                var sample = sin(twoPi * frequency * t)
+                sample += 0.6 * sin(twoPi * frequency * 1.5 * t)   // a fifth
+                sample += 0.4 * sin(twoPi * frequency * 2.0 * t)   // an octave
+                if i < attack {
+                    sample *= Double(i) / Double(attack)
+                } else if i > total - release {
+                    sample *= Double(total - i) / Double(release)
+                }
+                channel[i] = Float(sample * volume / 2.0)
+            }
+
+            if player.isPlaying { player.stop() }
+            player.scheduleBuffer(buffer, at: nil, options: [.interrupts])
+            if !engine.isRunning { try engine.start() }
+            player.play()
+        } catch {
+            // silent — the drone is a delight, not a guarantee
+        }
+    }
+
     // MARK: - Vāk Chamber (Ring 7)
 
     /// Plays a single Vāk-devatā bīja — fundamental sine + 2nd harmonic for warmth.

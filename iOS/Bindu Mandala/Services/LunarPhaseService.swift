@@ -108,9 +108,13 @@ enum LunarPhaseService {
         phase(at: date).label
     }
 
-    /// 1–15 within the current fortnight. Used by Phase 9 Nityā mapping.
-    /// Synodic day 1–15 = waxing tithi 1–15. Synodic day 16–30 = waning
-    /// tithi 1–15 (i.e. currentDay − 15).
+    /// The astronomical tithi 1–15 within the current fortnight. Synodic day
+    /// 1–15 = waxing tithi 1–15; synodic day 16–30 = waning tithi 1–15 (currentDay − 15).
+    ///
+    /// NOTE: this is the *tithi within the fortnight*, NOT the Nityā position.
+    /// The Nityā mapping (see `DailyRiteView.nityaSlot`) mirrors the waning
+    /// fortnight back down — `15 − (day − 15)`, reusing the 15 Nityās in reverse,
+    /// per the prototype's `lrMoon`. Do not wire this method into Nityā resolution.
     static func currentTithi(at date: Date = .now) -> Int {
         let day = currentDay(at: date)
         return day <= 15 ? day : (day - 15)

@@ -125,7 +125,7 @@ struct LalitaSourceView: View {
             emerge(delay: 1.2) {
                 Button {
                     Haptics.soft()
-                    BijaSoundService.shared.play(forPosition: lalita.position)
+                    BijaSoundService.shared.playBija(lalita.bija, seed: lalita.khadgamalaPosition ?? lalita.position)
                     sounded = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { sounded = false }
                 } label: {

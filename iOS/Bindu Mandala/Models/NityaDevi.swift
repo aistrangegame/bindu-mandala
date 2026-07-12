@@ -18,4 +18,20 @@ final class NityaDevi {
         self.airtableRecordId = airtableRecordId
         self.sanskritName = sanskritName
     }
+
+    /// The fifteen tithi names, indexed 1…15. Canonical and stable — the source
+    /// of truth for the tithi label, since the `tithiName` column isn't seeded.
+    static let tithiNames = [
+        "Pratipadā", "Dvitīyā", "Tṛtīyā", "Caturthī", "Pañcamī",
+        "Ṣaṣṭhī", "Saptamī", "Aṣṭamī", "Navamī", "Daśamī",
+        "Ekādaśī", "Dvādaśī", "Trayodaśī", "Caturdaśī", "Pūrṇimā",
+    ]
+
+    /// The canonical Sanskrit tithi name for this Nityā's position. Prefers a
+    /// synced `tithiName` if one ever lands, else the stable table.
+    var tithiDisplayName: String {
+        if let t = tithiName?.trimmingCharacters(in: .whitespaces), !t.isEmpty { return t }
+        guard tithiPosition >= 1, tithiPosition <= Self.tithiNames.count else { return "this tithi" }
+        return Self.tithiNames[tithiPosition - 1]
+    }
 }

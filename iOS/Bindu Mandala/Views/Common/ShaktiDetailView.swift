@@ -388,7 +388,7 @@ struct ShaktiDetailView: View {
 
     private func soundBija() {
         Haptics.soft()
-        BijaSoundService.shared.play(forPosition: shakti.position)
+        BijaSoundService.shared.playBija(shakti.bija, seed: shakti.khadgamalaPosition ?? shakti.position)
         guard !reduceMotion else { return }
         bijaPulse = 0
         withAnimation(.easeOut(duration: 1.4)) { bijaPulse = 1 }
