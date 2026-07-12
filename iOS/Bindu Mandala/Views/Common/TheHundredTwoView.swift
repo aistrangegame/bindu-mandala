@@ -27,7 +27,7 @@ struct TheHundredTwoView: View {
             Color.ground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Text("The 102")
+                Text("The Field")
                     .font(.custom(AppFont.cormorantItalic, size: 18))
                     .tracking(0.6)
                     .foregroundStyle(Color.gold)
@@ -104,20 +104,24 @@ struct TheHundredTwoView: View {
             detailFor = s
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
+                // Each seat lit by her own Atmosphere accent — never the false
+                // `.inner` default the 86 carry. Today's seat glows.
                 Circle()
-                    .fill(s.cluster.color)
-                    .frame(width: 5, height: 5)
+                    .fill(SeatLighting.accent(for: s))
+                    .frame(width: isToday(s) ? 7 : 5, height: isToday(s) ? 7 : 5)
+                    .shadow(color: isToday(s) ? SeatLighting.glow(for: s) : .clear,
+                            radius: isToday(s) ? 5 : 0)
                     .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] }
                 Text(s.name)
                     .font(.custom(AppFont.cormorant, size: 16))
-                    .foregroundStyle(Color.cream)
-                    .accessibilityLabel("\(s.phonetic), \(s.quality)")
+                    .foregroundStyle(Color.cream.opacity(isToday(s) ? 1 : 0.92))
+                    .accessibilityLabel("\(spokenName(s)), \(s.quality)")
                 Spacer(minLength: 12)
                 if let dev = s.devanagari, !dev.isEmpty {
                     Text(dev)
                         .font(.system(size: 17))
                         .foregroundStyle(Color.cream.opacity(0.65))
-                        .accessibilityLabel("Devanagari: \(s.phonetic)")
+                        .accessibilityLabel("Devanagari: \(spokenName(s))")
                 }
             }
             .padding(.horizontal, 24)
@@ -130,6 +134,20 @@ struct TheHundredTwoView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    /// Today's energy — the same all-102 selection the Rite shows (Ruling 3).
+    private var todayPos: Int { DailyEnergyService.todaysPosition() }
+    private func isToday(_ s: Shakti) -> Bool {
+        guard let kp = s.khadgamalaPosition else { return false }
+        return kp == todayPos
+    }
+
+    /// VoiceOver name — her phonetic when present, else her Sanskrit name (the 86
+    /// have no phonetic).
+    private func spokenName(_ s: Shakti) -> String {
+        let p = s.phonetic.trimmingCharacters(in: .whitespacesAndNewlines)
+        return p.isEmpty ? s.name : p
     }
 
     private func avaranaHeader(ring: Int, name: String?) -> String {
