@@ -27,6 +27,20 @@ struct RecognitionMomentView: View {
     @State private var act2Time: Date? = nil   // captured when Act 2 actually appears
     @State private var note: String = ""
     @State private var hasLogged = false
+    @State private var respPhase: CGFloat = 0   // her element's slow response pulse
+    @State private var closing = false          // collapse-into-the-point on exit
+
+    /// Her atmosphere — the ceremony is lit by the same day-palette as everywhere else.
+    private var atmo: Atmosphere {
+        Atmosphere.derive(from: shakti, at: LunarPhaseService.currentTimeVariant())
+    }
+    private var recog: RecogElement { RecogElement.forElement(atmo.element) }
+
+    /// The bare bīja syllable (before any " — description").
+    private var bijaSyllable: String {
+        shakti.bija.components(separatedBy: " — ").first?
+            .trimmingCharacters(in: .whitespaces) ?? ""
+    }
 
     /// Her appreciation line: the bootstrap `recognitionPhrase` when present,
     /// else the Airtable `appreciationPhrase`, else empty (phrase is hidden).
@@ -37,35 +51,122 @@ struct RecognitionMomentView: View {
     }
 
     var body: some View {
+        GeometryReader { geo in
+            let focal = CGPoint(x: geo.size.width * 0.5, y: geo.size.height * recog.focalY)
+            let scale = min(geo.size.width, geo.size.height) / 390
+            ZStack {
+                // Her light pools where her element lives, over a deepening ground.
+                atmosphereBackground(focalUnit: UnitPoint(x: 0.5, y: recog.focalY))
+
+                // Her ring's geometry + ghost bīja + ripples, all at the focal,
+                // responding in the manner of her element.
+                focalLayer(focal: focal, scale: scale)
+
+                DustMotesView(count: recog.motes, element: atmo.element, accent: atmo.accentBright)
+                    .allowsHitTesting(false)
+
+                ceremonyText
+                    .opacity(closing ? 0 : 1)
+                    .scaleEffect(closing ? 0.84 : 1)
+                    .animation(.easeIn(duration: 0.6), value: closing)
+
+                if closing { collapseCircle(at: focal) }
+            }
+            .ignoresSafeArea()
+        }
+        .background(Color(red: 5/255, green: 2/255, blue: 3/255).ignoresSafeArea())
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // Don't allow dismissing the ceremony before her name has arrived —
+            // the recognition has already been logged in stage(), so an early
+            // tap would cost the user the visual without changing the record.
+            guard nameVisible else { return }
+            beginClose()
+        }
+        .onAppear(perform: stage)
+        .preferredColorScheme(.dark)
+        .statusBarHidden()
+    }
+
+    // MARK: - Atmosphere layers
+
+    private func atmosphereBackground(focalUnit: UnitPoint) -> some View {
         ZStack {
-            Color.darkVeil.ignoresSafeArea()
+            LinearGradient(colors: [atmo.groundDeep, Color(red: 5/255, green: 2/255, blue: 3/255)],
+                           startPoint: .top, endPoint: .bottom)
+            RadialGradient(gradient: Gradient(colors: [atmo.glow, .clear]),
+                           center: focalUnit, startRadius: 0, endRadius: 520)
+        }
+        .allowsHitTesting(false)
+    }
 
-            // Giant bīja behind everything
-            Text(shakti.bija)
-                .font(.custom(AppFont.cormorant, size: 360))
-                .foregroundStyle(Color.gold.opacity(0.065))
-                .offset(y: -8)
-                .allowsHitTesting(false)
-
-            // Ripple rings (4, staggered)
-            ForEach(0..<4, id: \.self) { i in
-                let delays: [Double] = [0, 1.1, 2.2, 3.3]
-                let opacities: [Double] = [0.35, 0.29, 0.23, 0.17]
-                RippleRingView(
-                    delay: delays[i],
-                    color: Color.gold.opacity(opacities[i])
-                )
+    /// Sigil + ghost bīja + element ripples, gathered at the focal. All breathe
+    /// with `respPhase` in the amplitude/tempo of her element.
+    private func focalLayer(focal: CGPoint, scale: CGFloat) -> some View {
+        let respScale = 1 + (recog.respScale - 1) * Double(respPhase)
+        return ZStack {
+            // Element ripples of recognition, emanating from the focal.
+            ForEach(0..<recog.rippleN, id: \.self) { i in
+                FocalRipple(color: atmo.accentSoft,
+                            duration: recog.rippleDur,
+                            delay: Double(i) * recog.rippleDur / Double(recog.rippleN),
+                            wide: atmo.element == .air,
+                            reduceMotion: reduceMotion)
+                    .position(focal)
             }
 
+            // Her ring's geometry, spinning, at the focal.
+            RiteSigil(atmosphere: atmo, ring: shakti.ringNumber ?? 2,
+                      size: 480 * scale, spin: sigilSpin, reduceMotion: reduceMotion)
+                .opacity(0.55 * (nameVisible ? 1 : 0))
+                .scaleEffect(respScale)
+                .position(focal)
+
+            // Ghost bīja — enormous, faint, staged in with the phrase.
+            if !bijaSyllable.isEmpty {
+                Text(bijaSyllable)
+                    .font(.custom(AppFont.cormorant, size: 300 * scale))
+                    .foregroundStyle(atmo.accentFaint)
+                    .opacity(0.5 * (phraseVisible ? 1 : 0))
+                    .scaleEffect(respScale)
+                    .position(focal)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var sigilSpin: Double {
+        (shakti.khadgamalaPosition ?? shakti.position) % 2 == 0 ? 1 : -1
+    }
+
+    /// The collapse — the ceremony gathers into the point, handing to the Portrait.
+    private func collapseCircle(at focal: CGPoint) -> some View {
+        Circle()
+            .fill(RadialGradient(
+                gradient: Gradient(colors: [atmo.accentBright, atmo.glow, .clear]),
+                center: .center, startRadius: 0, endRadius: 150))
+            .frame(width: 300, height: 300)
+            .scaleEffect(closing ? 0.14 : 1.5)
+            .opacity(closing ? 0 : 0.6)
+            .position(focal)
+            .allowsHitTesting(false)
+    }
+
+    // MARK: - Text (name + phrase + two acts)
+
+    private var ceremonyText: some View {
+        ZStack {
             // Center: name + divider + appreciation phrase
             VStack(spacing: 0) {
                 Spacer()
 
                 Text(shakti.name)
-                    .font(.custom(AppFont.cormorant, size: 38))
+                    .font(.custom(AppFont.cormorant, size: 40))
                     .foregroundStyle(Color.cream)
-                    .tracking(3.8)
+                    .tracking(3.2)
                     .multilineTextAlignment(.center)
+                    .shadow(color: atmo.glow, radius: 50)
+                    .minimumScaleFactor(0.6)
                     .opacity(nameVisible ? 1 : 0)
                     .padding(.horizontal, 44)
                     .padding(.bottom, 28)
@@ -75,7 +176,7 @@ struct RecognitionMomentView: View {
                 // exists, the divider + phrase simply don't appear.
                 if !phraseText.isEmpty {
                     Rectangle()
-                        .fill(Color.gold.opacity(0.5))
+                        .fill(atmo.accentSoft)
                         .frame(width: 32, height: 0.5)
                         .opacity(phraseVisible ? 1 : 0)
                         .padding(.bottom, 28)
@@ -86,6 +187,7 @@ struct RecognitionMomentView: View {
                         .tracking(0.5)
                         .multilineTextAlignment(.center)
                         .lineSpacing(8)
+                        .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 44)
                         .opacity(phraseVisible ? 1 : 0)
                 }
@@ -101,13 +203,13 @@ struct RecognitionMomentView: View {
                 Text("she was felt here · \(timeString(act1Time))".uppercased())
                     .font(.system(size: 11))
                     .tracking(1.8)
-                    .foregroundStyle(Color.cream.opacity(0.55))
+                    .foregroundStyle(Color.cream.opacity(0.6))
                     .padding(.bottom, 10)
                     .opacity(act1Visible ? 1 : 0)
 
                 // Hairline divider between acts
                 Rectangle()
-                    .fill(Color.gold.opacity(0.4))
+                    .fill(atmo.accentSoft)
                     .frame(width: 22, height: 0.5)
                     .padding(.bottom, 10)
                     .opacity(act2Visible ? 1 : 0)
@@ -116,8 +218,8 @@ struct RecognitionMomentView: View {
                 // moment Act 2 becomes visible, not pre-computed — so it reads
                 // the real time the practitioner received the reciprocity.
                 Text("and she felt you back · \(timeStringWithSeconds(act2Time ?? act1Time.addingTimeInterval(3)))")
-                    .font(.custom(AppFont.cormorantItalic, size: 14))
-                    .foregroundStyle(Color.gold)
+                    .font(.custom(AppFont.cormorantItalic, size: 15))
+                    .foregroundStyle(atmo.accentBright)
                     .tracking(0.7)
                     .padding(.bottom, 22)
                     .opacity(act2Visible ? 1 : 0)
@@ -137,17 +239,6 @@ struct RecognitionMomentView: View {
                     .padding(.bottom, 36)
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            // Don't allow dismissing the ceremony before her name has arrived —
-            // the recognition has already been logged in stage(), so an early
-            // tap would cost the user the visual without changing the record.
-            guard nameVisible else { return }
-            dismiss()
-        }
-        .onAppear(perform: stage)
-        .preferredColorScheme(.dark)
-        .statusBarHidden()
     }
 
     private func stage() {
@@ -168,7 +259,13 @@ struct RecognitionMomentView: View {
             nameVisible = true; phraseVisible = true
             act1Visible = true; act2Visible = true; act2Time = .now
             noteCardVisible = true
+            respPhase = 0.5
             return
+        }
+
+        // Her element's response — a slow breath at her element's tempo/amplitude.
+        withAnimation(.easeInOut(duration: recog.respDur).repeatForever(autoreverses: true)) {
+            respPhase = 1
         }
 
         withAnimation(.easeInOut(duration: 1.8).delay(0.3)) { nameVisible = true }
@@ -190,7 +287,16 @@ struct RecognitionMomentView: View {
         }
     }
 
-    private func dismiss() {
+    /// The ceremony gathers into the point, then hands off to the Portrait. The
+    /// record was already written in `stage()`; this is purely the closing rite.
+    private func beginClose() {
+        guard !closing else { return }
+        if reduceMotion { finishClose(); return }
+        withAnimation(.easeIn(duration: 0.62)) { closing = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.62) { finishClose() }
+    }
+
+    private func finishClose() {
         // Persist note locally if user wrote anything.
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
@@ -274,5 +380,55 @@ private extension Shakti {
     /// covers any edge case where a Shakti exists pre-sync).
     var khadgamalaPositionOrFallback: Int {
         khadgamalaPosition ?? (position + 28)
+    }
+}
+
+/// Per-element recognition physics — where her light pools, how many motes and
+/// ripples move, and the amplitude/tempo of her response when she is felt back.
+/// Ported from the prototype's `LR_RECOG` + its response keyframes.
+private struct RecogElement {
+    let focalY: Double     // vertical focal (x is always centred)
+    let motes: Int
+    let rippleN: Int
+    let rippleDur: Double
+    let respScale: Double  // peak of the response breath
+    let respDur: Double    // one breath's period
+
+    static func forElement(_ e: Element) -> RecogElement {
+        switch e {
+        case .fire:  return .init(focalY: 0.60, motes: 12, rippleN: 4, rippleDur: 4.6, respScale: 1.06,  respDur: 5.5)
+        case .water: return .init(focalY: 0.50, motes: 10, rippleN: 4, rippleDur: 6.4, respScale: 1.07,  respDur: 6.5)
+        case .air:   return .init(focalY: 0.44, motes: 14, rippleN: 5, rippleDur: 4.0, respScale: 1.04,  respDur: 6.0)
+        case .ether: return .init(focalY: 0.45, motes: 10, rippleN: 3, rippleDur: 5.6, respScale: 1.16,  respDur: 4.8)
+        case .earth: return .init(focalY: 0.54, motes: 6,  rippleN: 2, rippleDur: 7.6, respScale: 1.015, respDur: 7.5)
+        case .light: return .init(focalY: 0.44, motes: 12, rippleN: 5, rippleDur: 3.6, respScale: 1.05,  respDur: 3.8)
+        }
+    }
+}
+
+/// A single ripple of recognition, expanding forever from a point at her
+/// element's tempo. `wide` disperses horizontally more than vertically — air's way.
+private struct FocalRipple: View {
+    let color: Color
+    let duration: Double
+    let delay: Double
+    var wide: Bool = false
+    let reduceMotion: Bool
+    @State private var animating = false
+
+    var body: some View {
+        Circle()
+            .stroke(color, lineWidth: 0.8)
+            .frame(width: 12, height: 12)
+            .scaleEffect(x: animating ? (wide ? 52 : 30) : 0.6,
+                         y: animating ? (wide ? 20 : 30) : 0.6)
+            .opacity(animating ? 0 : 0.5)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeOut(duration: duration).repeatForever(autoreverses: false).delay(delay)) {
+                    animating = true
+                }
+            }
+            .allowsHitTesting(false)
     }
 }
