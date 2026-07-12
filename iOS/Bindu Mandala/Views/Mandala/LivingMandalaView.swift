@@ -64,7 +64,10 @@ struct LivingMandalaView: View {
                 }
                 gestureCatcher
                 header
-                if focus != nil { controls }
+                // Controls are always reachable — the sound toggle governs the ring
+                // chimes that fire during unfocused navigation, so it can't be
+                // hidden behind a focused seat.
+                controls
                 if let seat = focus { card(for: seat) }
                 if descent { lalita }
             }
@@ -127,7 +130,7 @@ struct LivingMandalaView: View {
             SignificanceCard(
                 shakti: seat.shakti, atmo: a,
                 familyCount: familyKp.count, familyLabel: familyLabel(for: seat),
-                onSound: { Haptics.soft(); BijaSoundService.shared.play(forPosition: seat.shakti.position) },
+                onSound: { Haptics.soft(); BijaSoundService.shared.playBija(seat.shakti.bija, seed: seat.shakti.khadgamalaPosition ?? seat.shakti.position) },
                 onOpenDetail: { Haptics.medium(); detailFor = seat.shakti },
                 onClose: { closeFocus() })
             .padding(.horizontal, 12)

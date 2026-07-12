@@ -98,10 +98,13 @@ struct DailyRiteView: View {
 
     // MARK: - Sigil placement (per plan)
 
+    /// Reference width the prototype's sigil sizes / offsets were tuned against
+    /// (a standard iPhone). Everything scales off this so the sigil is the same
+    /// *proportion* of the screen on every device.
+    private static let sigilReferenceWidth: CGFloat = 390
+
     private func sigilLayer(atmo: Atmosphere, plan: RitePlan, comp: RiteComposition, ring: Int) -> some View {
         let base: CGFloat = plan.sigil == .bottomBig ? 760 : plan.sigil == .centerBig ? 560 : 620
-        let size = base * plan.sigilScale * comp.sigilScale
-        let sigil = RiteSigil(atmosphere: atmo, ring: ring, size: size, spin: comp.spin, reduceMotion: reduceMotion)
 
         let alignment: Alignment
         let dx: CGFloat, dy: CGFloat
@@ -114,17 +117,22 @@ struct DailyRiteView: View {
         case .center, .centerBig: alignment = .center; dx = 0; dy = 0
         }
 
-        // The sigil pins a fixed width/height (up to ~811pt — wider than the
-        // phone). Placed directly it would report that oversized size up through
-        // rite() → RootView's ZStack, which the window then centers, pushing
-        // RootView's top-trailing hamburger off the physical screen edge — the app
-        // then has no reachable menu. Overlaying it on a flexible `Color.clear`
-        // pins the reported size to the screen while the sigil still overdraws to
-        // its full size, so the visual is unchanged. (`.frame(maxWidth:.infinity)`
-        // does NOT clamp here — a flexible frame grows to fit an oversized child.)
-        return Color.clear
-            .overlay(alignment: alignment) { sigil.offset(x: dx, y: dy) }
-            .allowsHitTesting(false)
+        // Device-responsive: the base sizes (620–760) and offsets (±220/+230) were
+        // absolute points tuned for one ~390pt frame, so the sigil dominated small
+        // phones and drifted on large ones ("zoomed"). Scale everything by the
+        // device's shorter side ÷ the reference width so it holds the same
+        // proportion everywhere. Overlaying on a flexible `Color.clear` pins the
+        // *reported* size to the screen while the sigil overdraws to its full size,
+        // so it never inflates RootView's stack and pushes the hamburger off-edge.
+        return GeometryReader { geo in
+            let scale = min(geo.size.width, geo.size.height) / Self.sigilReferenceWidth
+            let size = base * plan.sigilScale * comp.sigilScale * scale
+            let sigil = RiteSigil(atmosphere: atmo, ring: ring, size: size, spin: comp.spin,
+                                  reduceMotion: reduceMotion)
+            Color.clear
+                .overlay(alignment: alignment) { sigil.offset(x: dx * scale, y: dy * scale) }
+        }
+        .allowsHitTesting(false)
     }
 
     private func veilName(_ content: RiteContent, atmo: Atmosphere, onOpen: @escaping () -> Void) -> some View {
@@ -279,7 +287,7 @@ struct DailyRiteView: View {
 
     private func nityaCardDisplay(_ slot: NityaSlot) -> NityaCardDisplay {
         switch slot {
-        case .nitya(let n): return NityaCardDisplay(name: n.sanskritName, epithet: n.quality ?? "")
+        case .nitya(let n): return NityaCardDisplay(name: n.sanskritName, epithet: n.tithiDisplayName)
         case .lalita: return NityaCardDisplay(name: "Lalitā Mahātripurasundarī", epithet: "Pūrṇimā · Full Moon")
         case .unknown: return NityaCardDisplay(name: "", epithet: "")
         }

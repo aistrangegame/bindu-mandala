@@ -43,22 +43,26 @@ struct NityaDetailView: View {
                         .fill(Color.gold.opacity(0.4))
                         .frame(width: 32, height: 0.5)
 
-                    if !display.quality.isEmpty {
-                        Text(display.quality)
-                            .font(.custom(AppFont.cormorantItalic, size: 22))
-                            .tracking(0.5)
+                    // The framing line — generated from the tithi, always present.
+                    // (The design shows this italic line unconditionally; it never
+                    //  depended on the null-in-seed `quality` field.)
+                    if !display.framing.isEmpty {
+                        Text(display.framing)
+                            .font(.custom(AppFont.cormorantItalic, size: 21))
+                            .tracking(0.3)
+                            .lineSpacing(4)
                             .foregroundStyle(Color.gold)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    if !display.description.isEmpty {
-                        Text(display.description)
-                            .font(.custom(AppFont.cormorant, size: 16))
-                            .tracking(0.2)
-                            .lineSpacing(6)
-                            .foregroundStyle(Color.cream.opacity(0.75))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    // The fixed devotional prose — what a Nityā *is*. Always shown,
+                    // per the prototype (rendered outside its full-moon branch).
+                    Text(display.body)
+                        .font(.custom(AppFont.cormorant, size: 16.5))
+                        .tracking(0.2)
+                        .lineSpacing(6)
+                        .foregroundStyle(Color.cream.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 32)
                 .padding(.vertical, 24)
@@ -71,33 +75,43 @@ struct NityaDetailView: View {
     private struct Display {
         let name: String
         let tithiLabel: String
-        let quality: String
-        let description: String
+        let framing: String   // the italic line beneath the hairline
+        let body: String      // the fixed devotional prose
     }
+
+    /// The fixed prose that names what a Nityā *is* — shown for every day,
+    /// full moon included (ported verbatim from the prototype's NityaSheet).
+    private static let bodyProse =
+        "The Nityā is the mood of the day itself — the goddess of this moon-phase, "
+        + "presiding above whichever of the 102 arrives to be felt. She frames the "
+        + "encounter without competing with it."
 
     private var display: Display {
         switch slot {
         case .nitya(let n):
+            let tithi = n.tithiDisplayName
+            // Śukla (waxing) vs Kṛṣṇa (waning) — the paksha the day sits in.
+            let paksha = LunarPhaseService.currentDay() <= 15 ? "ŚUKLA" : "KṚṢṆA"
             return Display(
                 name: n.sanskritName,
-                tithiLabel: "TITHI \(n.tithiPosition)",
-                quality: n.quality ?? "",
-                description: n.qualityDescription ?? ""
+                tithiLabel: "\(paksha) · \(tithi.uppercased())",
+                framing: "She presides over \(tithi) — one of the fifteen Nityā Devīs "
+                    + "who turn the lunar fortnight.",
+                body: Self.bodyProse
             )
-        case .lalita(let a):
+        case .lalita:
             // Pūrṇimā belongs to Lalitā Mahātripurasundarī, who resides in the
             // Bindu. Ring 9's sanskritName ("Sarvānandamaya Chakra") is the
             // chakra name, not the presiding goddess — so we name her directly.
-            let quality = (a.subtitle?.trimmingCharacters(in: .whitespaces))
-                .flatMap { $0.isEmpty ? nil : $0 } ?? "Sarvānanda · All-Bliss"
             return Display(
                 name: "Lalitā Mahātripurasundarī",
                 tithiLabel: "PŪRṆIMĀ",
-                quality: quality,
-                description: a.personalConnection ?? ""
+                framing: "Pūrṇimā — the full moon belongs to Lalitā, seated in the "
+                    + "Bindu, from whom the whole yantra breathes.",
+                body: Self.bodyProse
             )
         case .unknown:
-            return Display(name: "", tithiLabel: "", quality: "", description: "")
+            return Display(name: "", tithiLabel: "", framing: "", body: "")
         }
     }
 }
