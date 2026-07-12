@@ -34,7 +34,7 @@ struct HamburgerMenuView: View {
                 item("The Mandala", active: destination == .mandala) { select(.mandala) }
                 item("The Rite",    active: destination == .rite)    { select(.rite) }
                 item("The Well",    active: destination == .well)    { select(.well) }
-                item("The 102",     active: destination == .the102)  { select(.the102) }
+                item("The Field",   active: destination == .the102)  { select(.the102) }
                 item("Settings",    active: false) {
                     Haptics.light()
                     onSettings()

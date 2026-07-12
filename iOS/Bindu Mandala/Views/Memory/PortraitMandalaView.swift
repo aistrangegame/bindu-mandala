@@ -189,7 +189,9 @@ struct PortraitMandalaView: View {
                 ring: ring,
                 position: s.position,
                 ringSize: max(ringTotals[ring] ?? 0, 1),
-                stats: stats
+                stats: stats,
+                accent: SeatLighting.accent(for: s),
+                accentBright: SeatLighting.accentBright(for: s)
             )
         }
     }
@@ -250,6 +252,9 @@ struct PortraitPoint: Identifiable {
     let position: Int
     let ringSize: Int
     let stats: PortraitStats
+    /// Her own Atmosphere accent, and its bright form for the recency channel.
+    let accent: Color
+    let accentBright: Color
     var id: Int { khadgamalaPosition }
 
     /// Radius from centre on the 344-diameter base.
@@ -367,9 +372,9 @@ private struct PortraitFieldLayer: View {
         let baseOpacity = 0.10 + intensity * 0.65
         let modulated = baseOpacity * variant.petalBrightness
 
-        let warm = warmColor(for: variant)
-        let cool = coolColor(for: variant)
-        let color = blend(warm: warm, cool: cool, warmFactor: warmth)
+        // Her own accent, brightening toward her bright form when felt recently
+        // (the explicit recency channel: accent ↔ accentBright).
+        let color = blend(warm: pt.accentBright, cool: pt.accent, warmFactor: warmth)
 
         // Halo — wider when felt more / more recently
         let haloR: CGFloat = 4 + CGFloat(intensity) * 6 + CGFloat(warmth) * 2
@@ -389,26 +394,6 @@ private struct PortraitFieldLayer: View {
         let core = Path(ellipseIn: CGRect(x: x - coreR, y: y - coreR,
                                           width: coreR * 2, height: coreR * 2))
         ctx.fill(core, with: .color(color.opacity(modulated)))
-    }
-
-    private func warmColor(for variant: TimeVariant) -> Color {
-        switch variant {
-        case .dawn:    return Color(red: 232/255, green: 150/255, blue: 80/255)
-        case .noon:    return Color(red: 240/255, green: 200/255, blue: 100/255)
-        case .dusk:    return Color(red: 199/255, green: 110/255, blue: 80/255)
-        case .night:   return Color(red: 210/255, green: 170/255, blue: 120/255)
-        case .newmoon: return Color(red: 199/255, green: 80/255, blue: 80/255)
-        }
-    }
-
-    private func coolColor(for variant: TimeVariant) -> Color {
-        switch variant {
-        case .dawn:    return Color(red: 180/255, green: 150/255, blue: 110/255)
-        case .noon:    return Color(red: 190/255, green: 170/255, blue: 130/255)
-        case .dusk:    return Color(red: 150/255, green: 130/255, blue: 100/255)
-        case .night:   return Color(red: 140/255, green: 160/255, blue: 190/255)
-        case .newmoon: return Color(red: 110/255, green: 80/255, blue: 90/255)
-        }
     }
 
     private func blend(warm: Color, cool: Color, warmFactor: Double) -> Color {
@@ -478,7 +463,7 @@ private struct PortraitPetalLayer: View {
     private func petal(at i: Int) -> some View {
         if let shakti = shaktis.first(where: { $0.position == i + 1 }) {
             let angle = Double(i) * 22.5
-            let cluster = shakti.cluster.color
+            let seat = SeatLighting.accent(for: shakti)
             let s = stats[shakti.position] ?? .empty
             let mod = variant.petalBrightness
 
@@ -486,13 +471,13 @@ private struct PortraitPetalLayer: View {
                 // Glow halo behind — blurred, soft, intensity-driven
                 PortraitPetalShape(outerR: sOR, innerR: sIR, halfW: sHW)
                     .rotation(.degrees(angle))
-                    .fill(cluster.opacity(s.glowOpacity * mod))
+                    .fill(seat.opacity(s.glowOpacity * mod))
                     .blur(radius: CGFloat(s.glowBlur))
 
                 // Main petal — opacity scales with intensity
                 PortraitPetalShape(outerR: sOR, innerR: sIR, halfW: sHW)
                     .rotation(.degrees(angle))
-                    .fill(cluster.opacity(s.petalOpacity * mod))
+                    .fill(seat.opacity(s.petalOpacity * mod))
             }
         }
     }
