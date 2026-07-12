@@ -364,7 +364,7 @@ struct LivingMandalaView: View {
         if let arg = args.first(where: { $0.hasPrefix("OPEN_DETAIL=") }),
            let pos = Int(arg.dropFirst("OPEN_DETAIL=".count)),
            let seat = seats.first(where: { kp($0) == pos }) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { flyTo(seat) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { detailFor = seat.shakti }
         }
         if let arg = args.first(where: { $0.hasPrefix("OPEN_RING=") }),
            let ring = Int(arg.dropFirst("OPEN_RING=".count)),

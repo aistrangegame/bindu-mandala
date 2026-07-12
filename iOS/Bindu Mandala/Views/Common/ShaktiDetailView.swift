@@ -37,32 +37,39 @@ struct ShaktiDetailView: View {
         }
     }
 
-    var body: some View {
-        ZStack {
-            Color.ground.ignoresSafeArea()
+    /// Her atmosphere — the same day-lit palette every other screen reads, so the
+    /// Detail inherits the day's light rather than sitting on flat ground.
+    private var atmo: Atmosphere {
+        Atmosphere.derive(from: shakti, at: LunarPhaseService.currentTimeVariant())
+    }
 
-            VStack(spacing: 0) {
-                navBar
-                header
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        // The soul, leading.
-                        devanagariSection
-                        codexPortraitSection
-                        somaticSection
-                        appreciationPhraseSection
-                        qualitySection
-                        bijaSection
-                        if shakti.hasFieldConnection { fieldConnectionSection }
-                        herMomentsSection
-                        // Reference matter, folded.
-                        goDeeperSection
-                        Color.clear.frame(height: 32)
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                atmosphereLayer(side: min(geo.size.width, geo.size.height))
+
+                VStack(spacing: 0) {
+                    navBar
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 0) {
+                            // The hero leads, then the soul.
+                            heroSection
+                            codexPortraitSection
+                            somaticSection
+                            bijaSection
+                            appreciationPhraseSection
+                            embodimentSection
+                            if shakti.hasFieldConnection { fieldConnectionSection }
+                            herMomentsSection
+                            // Reference matter, folded.
+                            goDeeperSection
+                            Color.clear.frame(height: 32)
+                        }
+                        .padding(.horizontal, 26)
                     }
-                    .padding(.horizontal, 26)
+                    .overlay(alignment: .bottom) { BottomScrollFade() }
+                    recognitionFooter
                 }
-                .overlay(alignment: .bottom) { BottomScrollFade() }
-                recognitionFooter
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -73,6 +80,25 @@ struct ShaktiDetailView: View {
                                   isPresented: $showRecognition,
                                   source: .mandala)
         }
+    }
+
+    /// Background + a crowning counter-rotating sigil + element motes + depth —
+    /// the same four-layer atmosphere the Rite and Field wear. The sigil is
+    /// clamped onto a flexible `Color.clear` so its overdraw never inflates layout.
+    private func atmosphereLayer(side: CGFloat) -> some View {
+        ZStack {
+            AtmosphereBackground(atmosphere: atmo)
+            Color.clear.overlay(alignment: .top) {
+                RiteSigil(atmosphere: atmo, ring: shakti.ringNumber ?? 2,
+                          size: side * 1.5, spin: -1, reduceMotion: reduceMotion)
+                    .opacity(0.55)
+                    .offset(y: -side * 0.62)   // crowns above the fold, mostly off-screen
+            }
+            DustMotesView(count: 10, element: atmo.element, accent: atmo.accentBright)
+            DepthOverlay()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
 
     /// She can be recognized from anywhere she is met — not only on the day she
@@ -88,10 +114,14 @@ struct ShaktiDetailView: View {
                 .tracking(2.4)
                 .foregroundStyle(Color.cream)
                 .frame(maxWidth: .infinity)
-                .frame(height: 54)
+                .frame(height: 56)
                 .background(
-                    Capsule().fill(Color.accentRed)
-                        .shadow(color: Color.accentRed.opacity(0.40), radius: 24, y: 3)
+                    Capsule()
+                        .fill(LinearGradient(
+                            colors: [Color.accentRed, atmo.accent.opacity(0.55)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .shadow(color: atmo.glow, radius: 34, y: 3)
+                        .shadow(color: Color.accentRed.opacity(0.35), radius: 20, y: 3)
                 )
         }
         .buttonStyle(.plain)
@@ -106,139 +136,242 @@ struct ShaktiDetailView: View {
     private var navBar: some View {
         HStack {
             Button(action: { dismiss() }) {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     Text("‹").font(.system(size: 22, weight: .light))
-                    Text("Mandala").tracking(0.8)
+                    Text("Mandala")
+                        .font(.custom(AppFont.cormorantItalic, size: 16))
+                        .tracking(0.4)
                 }
                 .foregroundStyle(Color.gold)
-                .font(.system(size: 14))
             }
             .buttonStyle(.plain)
             Spacer()
-            // Isolated mini-petal — lit by her seat color (never the .inner default).
-            PetalShape(outerRatio: 0.42, innerRatio: 0.08, halfWidthRatio: 0.13)
-                .fill(seatColor.opacity(0.85))
-                .frame(width: 28, height: 36)
+            if let kp = shakti.khadgamalaPosition {
+                Text("\(kp) · 102")
+                    .font(.system(size: 11))
+                    .tracking(1.6)
+                    .foregroundStyle(Color.cream.opacity(0.45))
+            }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 22)
         .padding(.top, 6)
-        .padding(.bottom, 12)
-        .overlay(Rectangle().fill(Color.gold.opacity(0.12)).frame(height: 0.5), alignment: .bottom)
+        .padding(.bottom, 10)
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 0) {
+    /// The hero — centred and glowing, the way one meets a presence. Kicker →
+    /// name (with her glow) → script → phonetic → hairline → quality → cluster.
+    private var heroSection: some View {
+        VStack(spacing: 0) {
+            Text(heroKicker)
+                .font(.system(size: 11))
+                .tracking(3.0)
+                .foregroundStyle(atmo.accentBright)
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 18)
+
             Text(shakti.name)
-                .font(.custom(AppFont.cormorant, size: 34))
-                .tracking(2.0)
+                .font(.custom(AppFont.cormorant, size: 44))
+                .fontWeight(.light)
+                .tracking(1.5)
                 .foregroundStyle(Color.cream)
-                .padding(.bottom, 10)
+                .shadow(color: atmo.glow, radius: 44)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.55)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel(headerSpokenLabel)
+
+            if let dev = shakti.devanagari, !dev.isEmpty {
+                Text(dev)
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.cream.opacity(0.7))
+                    .padding(.top, 12)
+            }
 
             if !shakti.phonetic.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(shakti.phonetic.uppercased())
-                    .font(.system(size: 11))
-                    .tracking(2.0)
-                    .foregroundStyle(Color.cream.opacity(0.4))
-                    .padding(.bottom, 12)
+                    .font(.system(size: 12))
+                    .tracking(2.6)
+                    .foregroundStyle(Color.cream.opacity(0.48))
+                    .padding(.top, 12)
             }
 
-            HStack(alignment: .center, spacing: 10) {
-                // The 16 wear their family; the 86 wear only their own light — never
-                // the false "INNER INSTRUMENT" the .inner default would print.
-                if hasCluster {
-                    ClusterDotView(cluster: shakti.cluster)
-                } else {
+            Rectangle()
+                .fill(atmo.accentSoft)
+                .frame(width: 54, height: 0.6)
+                .padding(.top, 22)
+
+            let quality = shakti.quality.trimmingCharacters(in: .whitespaces)
+            if !quality.isEmpty {
+                Text(shakti.quality)
+                    .font(.custom(AppFont.cormorant, size: 23))
+                    .tracking(0.4)
+                    .foregroundStyle(atmo.accentBright)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 22)
+            }
+
+            let qDesc = shakti.qualityDescription.trimmingCharacters(in: .whitespaces)
+            if !qDesc.isEmpty {
+                Text(shakti.qualityDescription)
+                    .font(.system(size: 14))
+                    .lineSpacing(6)
+                    .foregroundStyle(Color.cream.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 12)
+                    .padding(.horizontal, 6)
+            }
+
+            // The 16 wear their family; the 86 wear only their own light — never
+            // the false "INNER INSTRUMENT" the .inner default would print.
+            if hasCluster {
+                HStack(spacing: 8) {
                     Circle()
                         .fill(seatColor)
                         .frame(width: 7, height: 7)
-                        .shadow(color: SeatLighting.glow(for: shakti), radius: 4)
+                        .shadow(color: seatColor.opacity(0.7), radius: 4)
+                    Text(shakti.cluster.label.uppercased())
+                        .font(.system(size: 11))
+                        .tracking(1.8)
+                        .foregroundStyle(Color.cream.opacity(0.5))
                 }
-                statusPill
-                Spacer()
-                if let kp = shakti.khadgamalaPosition {
-                    Text("\(kp) · 102")
-                        .font(.system(size: 10))
-                        .tracking(0.8)
-                        .foregroundStyle(Color.cream.opacity(0.50))
-                }
+                .padding(.top, 16)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 26)
-        .padding(.top, 18)
-        .padding(.bottom, 16)
-        .overlay(Rectangle().fill(Color.gold.opacity(0.10)).frame(height: 0.5), alignment: .bottom)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 22)
+        .padding(.bottom, 8)
     }
 
-    /// Phase 3.5: readiness is sensed (recognition count grows); crossing is
-    /// always chosen (press-and-hold the pill). If the practitioner hasn't
-    /// felt her often enough yet, the pill is plain — it reads as state, not
-    /// as something to push.
-    private var statusPill: some View {
-        let cur = shakti.status
-        let color = pillColor(for: cur)
-        let label = cur.label.uppercased()
-        return Group {
-            if let target = nextStatusIfReady {
-                advancePillBody(label: label, color: color, target: target)
-            } else {
-                plainPillBody(label: label, color: color)
+    /// "First Āvaraṇa" … "Ninth Āvaraṇa" from her ring, mirroring the prototype
+    /// hero kicker. (Her ring's *form* is added by T2.4 once the Avaraṇa model
+    /// carries it.)
+    private var heroKicker: String {
+        let ordinals = ["First", "Second", "Third", "Fourth", "Fifth",
+                        "Sixth", "Seventh", "Eighth", "Ninth"]
+        let ring = shakti.ringNumber ?? 0
+        guard ring >= 1, ring <= ordinals.count else { return "The Śrī Yantra" }
+        return "\(ordinals[ring - 1]) Āvaraṇa"
+    }
+
+    /// She deepens as she is felt. A four-node track shows how far she has been
+    /// embodied; the pill beneath it is a chosen crossing (press-and-hold), lit
+    /// only when enough recognitions have made her ready. Ported from the
+    /// prototype's `EmbodimentPill`, keeping our server-backed advance.
+    private var embodimentSection: some View {
+        section("Embodiment", alignment: .center) {
+            VStack(spacing: 14) {
+                embodimentTrack
+                embodimentPill
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// Palette per level, mirroring the prototype: cream → soft → accent → bright.
+    private func nodeColor(_ index: Int) -> Color {
+        switch index {
+        case 0:  return Color.cream.opacity(0.4)
+        case 1:  return atmo.accentSoft
+        case 2:  return atmo.accent
+        default: return atmo.accentBright
+        }
+    }
+
+    private var currentLevel: Int {
+        ShaktiStatus.allCases.firstIndex(of: shakti.status) ?? 0
+    }
+
+    private var embodimentTrack: some View {
+        let level = currentLevel
+        return HStack(spacing: 7) {
+            ForEach(Array(ShaktiStatus.allCases.enumerated()), id: \.element) { i, _ in
+                if i > 0 {
+                    Rectangle()
+                        .fill(i <= level ? atmo.accent : Color.cream.opacity(0.14))
+                        .frame(width: 18, height: 1)
+                }
+                Circle()
+                    .fill(i <= level ? nodeColor(i) : .clear)
+                    .overlay(Circle().stroke(i > level ? Color.cream.opacity(0.22) : .clear, lineWidth: 1))
+                    .frame(width: i == level ? 9 : 6, height: i == level ? 9 : 6)
+                    .shadow(color: i == level ? atmo.accentBright.opacity(0.8) : .clear, radius: 5)
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel("Embodiment: \(shakti.status.label), level \(level + 1) of \(ShaktiStatus.allCases.count)")
+    }
+
+    @ViewBuilder
+    private var embodimentPill: some View {
+        if let target = nextStatusIfReady {
+            crossingPill(target: target)
+        } else {
+            let color = pillColor(for: shakti.status)
+            VStack(spacing: 8) {
+                Text(shakti.status.label.uppercased())
+                    .font(.system(size: 10.5))
+                    .tracking(2.0)
+                    .foregroundStyle(color)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .background(Capsule().stroke(color, lineWidth: 1))
+                Text(shakti.status == .embodied ? "she lives in you" : "felt into being")
+                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .foregroundStyle(Color.cream.opacity(0.42))
             }
         }
     }
 
-    private func plainPillBody(label: String, color: Color) -> some View {
-        Text(label)
-            .font(.system(size: 10))
-            .tracking(1.6)
-            .foregroundStyle(color)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 4)
-            .background(Capsule().stroke(color, lineWidth: 1))
-    }
-
-    private func advancePillBody(label: String, color: Color, target: ShaktiStatus) -> some View {
+    private func crossingPill(target: ShaktiStatus) -> some View {
+        let color = nodeColor(currentLevel)
         let breath = 0.55 + 0.45 * Double(breathPhase)
-        return Text(label)
-            .font(.system(size: 10))
-            .tracking(1.6)
-            .foregroundStyle(color)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 4)
-            .background(
-                ZStack {
-                    Capsule()
-                        .stroke(color, lineWidth: 1)
-                        .blur(radius: 4)
-                        .opacity(breath * 0.45)
-                    Capsule().stroke(color, lineWidth: 1)
-                    Capsule().fill(color.opacity(0.22 * Double(advanceProgress)))
-                }
-            )
-            .scaleEffect(1 + Double(advanceProgress) * 0.03)
-            .contentShape(Capsule())
-            .onLongPressGesture(
-                minimumDuration: 0.7,
-                maximumDistance: 40,
-                perform: { performAdvance(to: target) },
-                onPressingChanged: { pressing in
-                    if pressing {
-                        Haptics.soft()
-                        withAnimation(.linear(duration: 0.7)) { advanceProgress = 1 }
-                    } else {
-                        withAnimation(.easeOut(duration: 0.25)) { advanceProgress = 0 }
+        return VStack(spacing: 8) {
+            Text(shakti.status.label.uppercased())
+                .font(.system(size: 10.5))
+                .tracking(2.0)
+                .foregroundStyle(color)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(
+                    ZStack {
+                        Capsule().stroke(color, lineWidth: 1).blur(radius: 4).opacity(breath * 0.5)
+                        Capsule().stroke(color, lineWidth: 1)
+                        GeometryReader { g in
+                            Capsule().fill(atmo.accent.opacity(0.22))
+                                .frame(width: g.size.width * Double(advanceProgress))
+                        }
+                    }
+                )
+                .scaleEffect(1 + Double(advanceProgress) * 0.03)
+                .contentShape(Capsule())
+                .onLongPressGesture(
+                    minimumDuration: 0.75,
+                    maximumDistance: 40,
+                    perform: { performAdvance(to: target) },
+                    onPressingChanged: { pressing in
+                        if pressing {
+                            Haptics.soft()
+                            withAnimation(.linear(duration: 0.75)) { advanceProgress = 1 }
+                        } else {
+                            withAnimation(.easeOut(duration: 0.25)) { advanceProgress = 0 }
+                        }
+                    }
+                )
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel("\(shakti.status.label). Hold to cross into \(target.label).")
+                .onAppear {
+                    guard !reduceMotion else { breathPhase = 0.5; return }
+                    withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
+                        breathPhase = 1
                     }
                 }
-            )
-            .accessibilityAddTraits(.isButton)
-            .accessibilityLabel("\(shakti.status.label). Hold to cross into \(target.label).")
-            .onAppear {
-                guard !reduceMotion else { breathPhase = 0.5; return }
-                withAnimation(.easeInOut(duration: 1.9).repeatForever(autoreverses: true)) {
-                    breathPhase = 1
-                }
-            }
+            Text("hold to cross into \(target.label.lowercased())")
+                .font(.custom(AppFont.cormorantItalic, size: 13))
+                .foregroundStyle(Color.cream.opacity(0.5))
+        }
     }
 
     /// Readiness thresholds — sensed from recognition count.
@@ -272,31 +405,6 @@ struct ShaktiDetailView: View {
         case .exploring: return Color.gold.opacity(0.55)
         case .active:    return Color.gold
         case .embodied:  return Color.clusterInner
-        }
-    }
-
-    /// The 86 carry no quality — hide the section rather than print an empty header.
-    @ViewBuilder
-    private var qualitySection: some View {
-        let quality = shakti.quality.trimmingCharacters(in: .whitespaces)
-        let desc = shakti.qualityDescription.trimmingCharacters(in: .whitespaces)
-        if !quality.isEmpty || !desc.isEmpty {
-            section("Quality") {
-                VStack(alignment: .leading, spacing: 10) {
-                    if !quality.isEmpty {
-                        Text(shakti.quality)
-                            .font(.custom(AppFont.cormorant, size: 19))
-                            .tracking(0.4)
-                            .foregroundStyle(Color.gold)
-                    }
-                    if !desc.isEmpty {
-                        Text(shakti.qualityDescription)
-                            .font(.system(size: 14))
-                            .lineSpacing(6)
-                            .foregroundStyle(Color.cream.opacity(0.65))
-                    }
-                }
-            }
         }
     }
 
@@ -455,19 +563,6 @@ struct ShaktiDetailView: View {
     }
 
     // MARK: - Phase 2 sections
-
-    @ViewBuilder
-    private var devanagariSection: some View {
-        if let v = shakti.devanagari, !v.isEmpty {
-            Text(v)
-                .font(.system(size: 44))
-                .foregroundStyle(Color.cream)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 22)
-                .accessibilityLabel("Devanagari script: \(shakti.phonetic)")
-        }
-    }
 
     @ViewBuilder
     private var appreciationPhraseSection: some View {
