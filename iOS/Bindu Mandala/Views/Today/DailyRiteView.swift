@@ -98,25 +98,33 @@ struct DailyRiteView: View {
 
     // MARK: - Sigil placement (per plan)
 
-    @ViewBuilder
     private func sigilLayer(atmo: Atmosphere, plan: RitePlan, comp: RiteComposition, ring: Int) -> some View {
         let base: CGFloat = plan.sigil == .bottomBig ? 760 : plan.sigil == .centerBig ? 560 : 620
         let size = base * plan.sigilScale * comp.sigilScale
         let sigil = RiteSigil(atmosphere: atmo, ring: ring, size: size, spin: comp.spin, reduceMotion: reduceMotion)
+
+        let alignment: Alignment
+        let dx: CGFloat, dy: CGFloat
         switch plan.sigil {
-        case .bottom:
-            sigil.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).offset(y: 60)
-        case .bottomWide:
-            sigil.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).offset(y: 150)
-        case .bottomBig:
-            sigil.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).offset(y: 230)
-        case .side:
-            sigil.frame(maxWidth: .infinity, maxHeight: .infinity,
-                        alignment: comp.flip ? .leading : .trailing)
-                .offset(x: comp.flip ? -220 : 220)
-        case .center, .centerBig:
-            sigil
+        case .bottom:     alignment = .bottom; dx = 0; dy = 60
+        case .bottomWide: alignment = .bottom; dx = 0; dy = 150
+        case .bottomBig:  alignment = .bottom; dx = 0; dy = 230
+        case .side:       alignment = comp.flip ? .leading : .trailing
+                          dx = comp.flip ? -220 : 220; dy = 0
+        case .center, .centerBig: alignment = .center; dx = 0; dy = 0
         }
+
+        // The sigil pins a fixed width/height (up to ~811pt — wider than the
+        // phone). Placed directly it would report that oversized size up through
+        // rite() → RootView's ZStack, which the window then centers, pushing
+        // RootView's top-trailing hamburger off the physical screen edge — the app
+        // then has no reachable menu. Overlaying it on a flexible `Color.clear`
+        // pins the reported size to the screen while the sigil still overdraws to
+        // its full size, so the visual is unchanged. (`.frame(maxWidth:.infinity)`
+        // does NOT clamp here — a flexible frame grows to fit an oversized child.)
+        return Color.clear
+            .overlay(alignment: alignment) { sigil.offset(x: dx, y: dy) }
+            .allowsHitTesting(false)
     }
 
     private func veilName(_ content: RiteContent, atmo: Atmosphere, onOpen: @escaping () -> Void) -> some View {
