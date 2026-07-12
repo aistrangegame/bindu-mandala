@@ -81,7 +81,9 @@ struct DailyRiteView: View {
 
             if plan.veilName { veilName(content, atmo: atmo, onOpen: { detailFor = s }) }
 
-            DustMotesView(count: 12).allowsHitTesting(false)
+            DustMotesView(count: 16, element: atmo.element, accent: atmo.accentBright)
+                .allowsHitTesting(false)
+            DepthOverlay()
 
             VStack(spacing: 0) {
                 celestialStrip(atmo: atmo)
@@ -152,14 +154,53 @@ struct DailyRiteView: View {
         .accessibilityLabel("\(content.name) — open her presence")
     }
 
-    // MARK: - Celestial strip (moon + Nityā — unchanged behavior)
+    // MARK: - Celestial strip (moon · tithi · Nityā, one tappable line)
 
+    /// One line — the moon glyph, today's tithi, and who presides — tapping opens
+    /// the Nityā sheet. Ported from the prototype's celestial strip.
     private func celestialStrip(atmo: Atmosphere) -> some View {
-        VStack(spacing: 0) {
-            MoonPhaseView().padding(.top, 8).padding(.bottom, 10)
-            nityaCardLayer
+        let slot = nityaSlot
+        return VStack(spacing: 7) {
+            MoonPhaseView().padding(.top, 8)
+            if let label = celestialLabel(slot) {
+                Button {
+                    Haptics.light()
+                    nityaDetailFor = slot
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(label)
+                            .font(.system(size: 11.5))
+                            .tracking(1.0)
+                            .foregroundStyle(Color.cream.opacity(0.62))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        Text("›")
+                            .font(.system(size: 12))
+                            .foregroundStyle(atmo.accentBright.opacity(0.75))
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 2)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
         }
+        .frame(maxWidth: .infinity)
         .opacity(arrived ? 1 : 0)
+    }
+
+    /// "Śukla Dvitīyā · Bhagamālinī" — paksha + tithi + who presides. Nil pre-sync
+    /// (no Nityā resolved), where only the moon glyph shows.
+    private func celestialLabel(_ slot: NityaSlot) -> String? {
+        switch slot {
+        case .nitya(let n):
+            let paksha = LunarPhaseService.currentDay() <= 15 ? "Śukla" : "Kṛṣṇa"
+            return "\(paksha) \(n.tithiDisplayName) · \(n.sanskritName)"
+        case .lalita:
+            return "Pūrṇimā · Lalitā Mahātripurasundarī"
+        case .unknown:
+            return nil
+        }
     }
 
     // MARK: - Center stack (plan-ordered blocks)
@@ -253,43 +294,5 @@ struct DailyRiteView: View {
         let resolved = position >= 1 ? position : 1
         if let nitya = nityas.first(where: { $0.tithiPosition == resolved }) { return .nitya(nitya) }
         return .unknown
-    }
-
-    @ViewBuilder
-    private var nityaCardLayer: some View {
-        let slot = nityaSlot
-        if case .unknown = slot { EmptyView() } else { nityaCard(slot).padding(.bottom, 6) }
-    }
-
-    private func nityaCard(_ slot: NityaSlot) -> some View {
-        let display = nityaCardDisplay(slot)
-        return Button { nityaDetailFor = slot } label: {
-            VStack(spacing: 4) {
-                Text(display.name)
-                    .font(.custom(AppFont.cormorantItalic, size: 17))
-                    .tracking(1.2)
-                    .foregroundStyle(Color.gold)
-                if !display.epithet.isEmpty {
-                    Text(display.epithet.uppercased())
-                        .font(.system(size: 10))
-                        .tracking(2.4)
-                        .foregroundStyle(Color.cream.opacity(0.55))
-                }
-            }
-            .padding(.vertical, 6)
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private struct NityaCardDisplay { let name: String; let epithet: String }
-
-    private func nityaCardDisplay(_ slot: NityaSlot) -> NityaCardDisplay {
-        switch slot {
-        case .nitya(let n): return NityaCardDisplay(name: n.sanskritName, epithet: n.tithiDisplayName)
-        case .lalita: return NityaCardDisplay(name: "Lalitā Mahātripurasundarī", epithet: "Pūrṇimā · Full Moon")
-        case .unknown: return NityaCardDisplay(name: "", epithet: "")
-        }
     }
 }
