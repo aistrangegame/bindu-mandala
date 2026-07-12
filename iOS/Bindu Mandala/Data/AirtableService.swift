@@ -407,7 +407,10 @@ final class AirtableService {
             let iso = ISO8601DateFormatter()
             let restored: [(ring: Int, date: Date)] = rows.compactMap { r in
                 guard let ring = r.fields.ring, (1...9).contains(ring) else { return nil }
-                let d = r.fields.feltAt.flatMap { iso.date(from: $0) } ?? Date()
+                // Skip rows with a missing/unparseable timestamp rather than
+                // coercing to `.now` — a stray row must not rewrite a crossing's
+                // date and corrupt the descent timeline.
+                guard let raw = r.fields.feltAt, let d = iso.date(from: raw) else { return nil }
                 return (ring, d)
             }
             guard !restored.isEmpty else { return }   // zero rows → floor untouched
@@ -493,13 +496,16 @@ final class AirtableService {
         let allS = (try? context.fetch(FetchDescriptor<Shakti>())) ?? []
         for s in allS.sorted(by: { ($0.khadgamalaPosition ?? 0) < ($1.khadgamalaPosition ?? 0) }) {
             let portrait = String((s.codexPortrait ?? "").prefix(80))
-            log.notice("  \(s.khadgamalaPosition ?? 0) · ring \(s.ringNumber ?? 0) · \(s.name, privacy: .public) · \(s.devanagari ?? "—", privacy: .public) · \(portrait, privacy: .public)")
+            // Names/devanāgarī are catalog data; the codex portrait is reflective
+            // free-text and stays redacted so it never lands in the unified log.
+            log.notice("  \(s.khadgamalaPosition ?? 0) · ring \(s.ringNumber ?? 0) · \(s.name, privacy: .public) · \(s.devanagari ?? "—", privacy: .public) · \(portrait, privacy: .private)")
         }
         log.notice("[Phase 1] Avaranas fetched: \(avaranas)")
         let allA = (try? context.fetch(FetchDescriptor<Avarana>())) ?? []
         for a in allA.sorted(by: { $0.ringNumber < $1.ringNumber }) {
             let conn = String((a.personalConnection ?? "").prefix(80))
-            log.notice("  ring \(a.ringNumber) · \(a.sanskritName, privacy: .public) · \(conn, privacy: .public)")
+            // Personal connection is the practitioner's own reflection — redacted.
+            log.notice("  ring \(a.ringNumber) · \(a.sanskritName, privacy: .public) · \(conn, privacy: .private)")
         }
         log.notice("[Phase 1] Nityas fetched: \(nityas)")
         let allN = (try? context.fetch(FetchDescriptor<NityaDevi>())) ?? []
@@ -648,13 +654,13 @@ extension AirtableService {
         }
     }
 
-    /// Drain the Recognition, Silence, and Letter pending queues. Called at
-    /// the start of every `sync()` and on scene-phase `.active`. Items that
-    /// fail `maxFailures` times in a row are dropped silently — local SwiftData
-    /// is already canonical, so the only loss is the Airtable mirror.
+    /// Drain the Recognition and Letter pending queues plus the descent-crossing
+    /// and activity-ledger queues. Called at the start of every `sync()` and on
+    /// scene-phase `.active`. Items that fail `maxFailures` times in a row are
+    /// dropped silently — local SwiftData is already canonical, so the only loss
+    /// is the Airtable mirror.
     func flushPending(context: ModelContext) async {
         await flushPendingRecognitions(context: context)
-        await flushPendingSilences()
         await flushPendingLetters()
         await flushPendingActivities()
         await flushPendingCrossings()
@@ -885,116 +891,6 @@ extension AirtableService {
         queue.append(item)
         savePending(queue)
         log.notice("Recognition queued (queue size: \(queue.count))")
-    }
-
-    // MARK: - Phase 7 · Silence writes
-
-    private struct PendingSilence: Codable {
-        let durationSec: Double
-        let feltAt: Date
-        var failCount: Int = 0
-    }
-
-    private static let pendingSilenceKey = "pendingSilences"
-    private static let fldDuration = "Duration (sec)"   // fldlBReoX5yvo1eY7
-
-    /// Fire-and-forget single-row POST. Failure is silent; the item is queued
-    /// in UserDefaults for retry. Retired in the living-Mandala rebuild — the
-    /// silence-dwell view was replaced by the Bindu→Lalitā finale, which records
-    /// recognition through the explicit "I feel her" path. Kept (uncalled) as a
-    /// valid Airtable capability; queued rows still flush. Slated for removal in
-    /// the PR-9 cleanup pass.
-    func recordSilence(durationSec: Double) async {
-        let item = PendingSilence(durationSec: durationSec, feltAt: .now)
-        let success = await processSilence(item)
-        if !success {
-            enqueueSilence(item)
-        }
-    }
-
-    private func processSilence(_ item: PendingSilence) async -> Bool {
-        guard let token = pat else { return false }
-        do {
-            try await createSilenceRow(token: token, item: item)
-            return true
-        } catch {
-            log.error("Silence write failed: \(error.localizedDescription, privacy: .public)")
-            return false
-        }
-    }
-
-    private func createSilenceRow(token: String, item: PendingSilence) async throws {
-        let iso = ISO8601DateFormatter()
-        let fields: [String: Any] = [
-            Self.fldRowType:  "Silence",
-            Self.fldFeltAt:   iso.string(from: item.feltAt),
-            Self.fldDuration: item.durationSec,
-            Self.fldSource:   "Silence"
-        ]
-        let body: [String: Any] = ["fields": fields, "typecast": true]
-        let data = try JSONSerialization.data(withJSONObject: body)
-
-        var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)")!)
-        req.httpMethod = "POST"
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = data
-
-        let (_, response) = try await session.data(for: req)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
-    }
-
-    private func flushPendingSilences() async {
-        let queue = loadPendingSilences()
-        guard !queue.isEmpty else { return }
-        log.notice("Silence queue: flushing \(queue.count) item(s)")
-        var remaining: [PendingSilence] = []
-        var dropped = 0
-        for item in queue {
-            let success = await processSilence(item)
-            if success { continue }
-            var bumped = item
-            bumped.failCount += 1
-            if bumped.failCount >= Self.maxFailures {
-                dropped += 1
-                log.notice("Silence dropped after \(bumped.failCount) failures")
-            } else {
-                remaining.append(bumped)
-            }
-        }
-        savePendingSilences(remaining)
-        if remaining.isEmpty {
-            log.notice("Silence queue: drained (\(dropped) dropped)")
-        } else {
-            log.notice("Silence queue: \(remaining.count) still pending (\(dropped) dropped)")
-        }
-    }
-
-    private func loadPendingSilences() -> [PendingSilence] {
-        guard let data = UserDefaults.standard.data(forKey: Self.pendingSilenceKey),
-              let queue = try? JSONDecoder().decode([PendingSilence].self, from: data) else {
-            return []
-        }
-        return queue
-    }
-
-    private func savePendingSilences(_ queue: [PendingSilence]) {
-        if queue.isEmpty {
-            UserDefaults.standard.removeObject(forKey: Self.pendingSilenceKey)
-            return
-        }
-        if let data = try? JSONEncoder().encode(queue) {
-            UserDefaults.standard.set(data, forKey: Self.pendingSilenceKey)
-        }
-    }
-
-    private func enqueueSilence(_ item: PendingSilence) {
-        var queue = loadPendingSilences()
-        queue.append(item)
-        savePendingSilences(queue)
-        log.notice("Silence queued (queue size: \(queue.count))")
     }
 
     // MARK: - Living Rite · Descent crossing writes (mirror of DescentState.crossings)

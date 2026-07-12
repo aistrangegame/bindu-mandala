@@ -85,6 +85,23 @@ enum PersistenceRecovery {
             let dst = dir.appendingPathComponent("\(name).corrupt-\(stamp)\(suffix)")
             try? fm.moveItem(at: src, to: dst)
         }
+
+        // Keep only the two most recent preserved copies — a recovering store is
+        // a full (unencrypted) snapshot of every letter and recognition, so they
+        // must not pile up in Application Support indefinitely.
+        if let entries = try? fm.contentsOfDirectory(atPath: dir.path) {
+            let prefix = "\(name).corrupt-"
+            var stamps = Set<Int>()
+            for e in entries where e.hasPrefix(prefix) {
+                let digits = e.dropFirst(prefix.count).prefix { $0.isNumber }
+                if let s = Int(digits) { stamps.insert(s) }
+            }
+            for old in stamps.sorted(by: >).dropFirst(2) {
+                for suffix in ["", "-wal", "-shm"] {
+                    try? fm.removeItem(at: dir.appendingPathComponent("\(name).corrupt-\(old)\(suffix)"))
+                }
+            }
+        }
         log.notice("Preserved existing store aside as \(name).corrupt-\(stamp).*")
     }
 }
