@@ -23,10 +23,26 @@ struct WellView: View {
                    uniquingKeysWith: { first, _ in first })
     }
 
+    /// The Well wears today's light, like every other room.
+    private var dayAtmo: Atmosphere {
+        let pos = DailyEnergyService.todaysPosition()
+        if let t = allShaktis.first(where: { $0.khadgamalaPosition == pos }) {
+            return Atmosphere.derive(from: t, at: LunarPhaseService.currentTimeVariant())
+        }
+        return Atmosphere.derive(ring: 2, cluster: .inner, khadgamala: pos,
+                                 element: .ether, at: LunarPhaseService.currentTimeVariant())
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.ground.ignoresSafeArea()
+                LinearGradient(colors: [dayAtmo.ground, dayAtmo.groundDeep],
+                               startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+                RadialGradient(gradient: Gradient(colors: [dayAtmo.glow, .clear]),
+                               center: UnitPoint(x: 0.5, y: -0.05), startRadius: 0, endRadius: 440)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
 
                 VStack(spacing: 0) {
                     header
@@ -123,9 +139,19 @@ struct LetterEditorView: View {
     @State private var saveTask: Task<Void, Never>?
     @FocusState private var focused: Bool
 
+    /// Her own atmosphere — writing to her is lit by her light, kept calm (her
+    /// deep ground with only a whisper of glow, so the page stays legible).
+    private var atmo: Atmosphere { Atmosphere.derive(from: shakti) }
+
     var body: some View {
         ZStack(alignment: .top) {
-            Color.surface.ignoresSafeArea()
+            LinearGradient(colors: [atmo.ground, atmo.groundDeep],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            RadialGradient(gradient: Gradient(colors: [atmo.glow.opacity(0.5), .clear]),
+                           center: UnitPoint(x: 0.5, y: -0.02), startRadius: 0, endRadius: 360)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
 
             VStack(spacing: 0) {
                 header
@@ -144,7 +170,7 @@ struct LetterEditorView: View {
                         .foregroundStyle(Color.cream.opacity(0.92))
                         .tint(Color.gold)
                         .scrollContentBackground(.hidden)
-                        .background(Color.surface)
+                        .background(Color.clear)
                         .padding(.horizontal, 20)
                         .padding(.top, 10)
                         .onChange(of: draft) { _, _ in
