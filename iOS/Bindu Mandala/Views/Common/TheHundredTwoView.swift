@@ -232,7 +232,7 @@ private struct FieldRing: View {
         VStack(alignment: .leading, spacing: 0) {
             // Atmosphere caption — her ring's form / mental state, and the threshold.
             HStack(alignment: .center, spacing: 10) {
-                if let form = avarana?.form, !form.isEmpty {
+                if let form = avarana?.enclosureForm, !form.isEmpty {
                     Text(form.uppercased())
                         .font(.system(size: 10))
                         .tracking(2.4)

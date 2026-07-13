@@ -11,6 +11,7 @@ final class NityaDevi {
     var tithiName: String?
     var quality: String?                         // fldnwcu7zv7uV1ta2
     var qualityDescription: String?              // fldTwrtI5CyUnJV2F (polymorphic — Nityā context)
+    var bija: String?                            // her seed-syllable — populated when the Nitya table exposes it
     var lastSyncedAt: Date?
 
     init(tithiPosition: Int, airtableRecordId: String, sanskritName: String) {

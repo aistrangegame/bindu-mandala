@@ -64,6 +64,20 @@ struct AvaranaThresholdView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(ordinal(ring)) Āvaraṇa · \(avarana.enclosureForm)".uppercased())
+                    .font(.system(size: 10.5))
+                    .tracking(2.4)
+                    .foregroundStyle(Color.gold.opacity(0.75))
+                Text("\(avarana.shaktiCount) śakti\(avarana.shaktiCount == 1 ? "" : "s")")
+                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .foregroundStyle(Color.cream.opacity(0.5))
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .opacity(line1Visible ? 1 : 0)
+            .offset(y: line1Visible ? 0 : 7)
+            .padding(.bottom, 12)
+
             Text(avarana.sanskritName)
                 .font(.custom(AppFont.cormorant, size: 34))
                 .tracking(2.7)
@@ -155,8 +169,28 @@ struct AvaranaThresholdView: View {
                     .opacity(connectionVisible ? 1 : 0)
                     .offset(y: connectionVisible ? 0 : 7)
             }
+
+            // The gratitude offered on crossing this threshold.
+            if !avarana.appreciationPhrase.isEmpty {
+                Text("“\(avarana.appreciationPhrase)”")
+                    .font(.custom(AppFont.cormorantItalic, size: 17))
+                    .tracking(0.3)
+                    .lineSpacing(7)
+                    .foregroundStyle(Color.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(connectionVisible ? 1 : 0)
+                    .offset(y: connectionVisible ? 0 : 7)
+                    .padding(.top, 24)
+            }
         }
         .padding(.horizontal, 32)
+    }
+
+    /// "First" … "Ninth" for the āvaraṇa kicker.
+    private func ordinal(_ n: Int) -> String {
+        let names = ["", "First", "Second", "Third", "Fourth", "Fifth",
+                     "Sixth", "Seventh", "Eighth", "Ninth"]
+        return (1...9).contains(n) ? names[n] : "\(n)th"
     }
 
     // MARK: - Reveal ceremony
