@@ -135,7 +135,7 @@ struct LalitaSourceView: View {
                             .foregroundStyle(gold)
                             .shadow(color: sounded ? gold : .clear, radius: 22)
                         Text("SOUND THE SOURCE")
-                            .font(.system(size: 8)).tracking(2).foregroundStyle(Color.cream.opacity(0.4))
+                            .font(.system(size: 10)).tracking(2).foregroundStyle(Color.cream.opacity(0.5))
                     }
                 }
                 .buttonStyle(.plain)

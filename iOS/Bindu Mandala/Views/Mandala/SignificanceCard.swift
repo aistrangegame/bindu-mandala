@@ -39,7 +39,8 @@ struct SignificanceCard: View {
                 Spacer()
                 Button(action: onClose) {
                     Text("×").font(.system(size: 22, weight: .light)).foregroundStyle(Color.cream.opacity(0.5))
-                        .frame(width: 32, height: 32)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -78,7 +79,7 @@ struct SignificanceCard: View {
                                 .foregroundStyle(Color.gold)
                                 .shadow(color: atmo.glow, radius: 18)
                             Text("SOUND HER")
-                                .font(.system(size: 8)).tracking(1.8)
+                                .font(.system(size: 10)).tracking(1.8)
                                 .foregroundStyle(Color.cream.opacity(0.42))
                         }
                     }
