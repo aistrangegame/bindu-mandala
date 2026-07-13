@@ -13,6 +13,7 @@ import UIKit
 /// Reads `RecognitionLogStore` only. Offline-safe, never depends on Airtable.
 struct PortraitMandalaView: View {
     @Environment(\.modelContext) private var context
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var allEntries: [RecognitionEntry]
     @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
 
@@ -23,16 +24,20 @@ struct PortraitMandalaView: View {
 
     private var variant: TimeVariant { LunarPhaseService.currentTimeVariant() }
 
+    /// During a settle, the whole field rises from dark over the first ~45% of the
+    /// phase while her point flies out of the bindu; 1 (fully lit) on a normal visit.
+    private var fieldP: CGFloat { settleHighlight != nil ? min(1, settlePhase / 0.45) : 1 }
+
     var body: some View {
         ZStack {
             background
 
             VStack(spacing: 0) {
-                header
+                header.opacity(fieldP)
                 Spacer(minLength: 24)
                 mandala
                 Spacer(minLength: 24)
-                whisper
+                whisper.opacity(fieldP)
                 Spacer(minLength: 36)
             }
         }
@@ -128,22 +133,29 @@ struct PortraitMandalaView: View {
     @ViewBuilder
     private func portraitArtwork(diameter: CGFloat) -> some View {
         ZStack {
-            PortraitGeometryLayer(diameter: diameter, variant: variant)
-            PortraitFieldLayer(
-                points: points,
-                diameter: diameter,
-                variant: variant
-            )
-            PortraitPetalLayer(
-                shaktis: ring2Shaktis,
-                stats: ring2Stats,
-                diameter: diameter,
-                variant: variant
-            )
-            if let kp = settleHighlight, let pt = points.first(where: { $0.khadgamalaPosition == kp }) {
-                PortraitSettleHalo(point: pt, diameter: diameter, phase: settlePhase)
+            // The field rises from dark as her point flies out of the bindu.
+            Group {
+                PortraitGeometryLayer(diameter: diameter, variant: variant)
+                PortraitFieldLayer(
+                    points: points,
+                    diameter: diameter,
+                    variant: variant
+                )
+                PortraitPetalLayer(
+                    shaktis: ring2Shaktis,
+                    stats: ring2Stats,
+                    diameter: diameter,
+                    variant: variant
+                )
             }
+            .opacity(fieldP)
+
+            // The bindu is always lit — her point departs from it.
             PortraitBindu(diameter: diameter)
+
+            if let kp = settleHighlight, let pt = points.first(where: { $0.khadgamalaPosition == kp }) {
+                PortraitSettleFlight(point: pt, diameter: diameter, phase: settlePhase)
+            }
         }
         .frame(width: diameter, height: diameter)
     }
@@ -206,9 +218,18 @@ struct PortraitMandalaView: View {
         guard let latest = store.latest() else { return }
         guard Date().timeIntervalSince(latest.timestamp) < 60 else { return }
         settleHighlight = latest.khadgamalaPosition
+        // Reduce-motion: acknowledge the moment without translation — the field is
+        // simply already lit and her point rests at its seat.
+        if reduceMotion {
+            settlePhase = 1
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { settleHighlight = nil }
+            return
+        }
         settlePhase = 0
-        withAnimation(.easeOut(duration: 3.6)) { settlePhase = 1 }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+        // Linear ramp — the cubic ease lives inside the flight's `arrive`, so the
+        // fly-out (0–0.34) and halo bloom (0.34–1) stay correctly timed.
+        withAnimation(.linear(duration: 3.4)) { settlePhase = 1 }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.6) {
             settleHighlight = nil
         }
     }
@@ -407,33 +428,59 @@ private struct PortraitFieldLayer: View {
     }
 }
 
-// MARK: - Settle halo (newly-lit point glow)
+// MARK: - Settle flight (her point flies out of the bindu, then blooms)
 
-private struct PortraitSettleHalo: View {
+/// The recognition settles into the Portrait: her point flies out of the bindu
+/// along a gold thread to its seat (phase 0–0.34), then a gold halo blooms there
+/// (phase 0.34–1). Ported from the prototype's single-`settlePhase` choreography.
+private struct PortraitSettleFlight: View {
     let point: PortraitPoint
     let diameter: CGFloat
-    let phase: CGFloat   // 0 → 1 as the halo expands and fades
+    let phase: CGFloat
 
     private var scale: CGFloat { diameter / 344 }
 
     var body: some View {
-        let cx = diameter / 2
-        let cy = diameter / 2
-        let r = point.radiusBase * scale
-        let x = cx + r * CGFloat(cos(point.angleRadians))
-        let y = cy + r * CGFloat(sin(point.angleRadians))
-        let radius: CGFloat = 6 + 26 * phase
-        let opacity = Double(1 - phase) * 0.7
+        Canvas { ctx, size in
+            let c = CGPoint(x: size.width / 2, y: size.height / 2)
+            let r = point.radiusBase * scale
+            let sx = c.x + r * CGFloat(cos(point.angleRadians))
+            let sy = c.y + r * CGFloat(sin(point.angleRadians))
 
-        return Circle()
-            .stroke(Color.gold.opacity(opacity), lineWidth: 1)
-            .background(
-                Circle().fill(Color.gold.opacity(opacity * 0.18))
-                    .blur(radius: 6)
-            )
-            .frame(width: radius * 2, height: radius * 2)
-            .position(x: x, y: y)
-            .allowsHitTesting(false)
+            func ease(_ x: Double) -> Double { 1 - pow(1 - min(max(x, 0), 1), 3) }
+            let arrive = ease(Double(phase) / 0.34)
+            let hx = c.x + (sx - c.x) * arrive
+            let hy = c.y + (sy - c.y) * arrive
+
+            // Trailing gold thread from the bindu, fading as she arrives.
+            if arrive < 1 {
+                var thread = Path()
+                thread.move(to: c)
+                thread.addLine(to: CGPoint(x: hx, y: hy))
+                ctx.stroke(thread, with: .color(Color.gold.opacity((1 - arrive) * 0.5)),
+                           style: StrokeStyle(lineWidth: 1.1, lineCap: .round))
+            }
+
+            // The flying head — a gold point with a soft glow, while in flight.
+            if phase < 0.34 {
+                let gr: CGFloat = 9
+                ctx.fill(Path(ellipseIn: CGRect(x: hx - gr, y: hy - gr, width: gr * 2, height: gr * 2)),
+                         with: .radialGradient(Gradient(colors: [Color.gold.opacity(0.5), .clear]),
+                                               center: CGPoint(x: hx, y: hy), startRadius: 0, endRadius: gr))
+                let hr: CGFloat = 3
+                ctx.fill(Path(ellipseIn: CGRect(x: hx - hr, y: hy - hr, width: hr * 2, height: hr * 2)),
+                         with: .color(Color.gold))
+            }
+
+            // Halo bloom at the seat, once she has landed.
+            let haloP = min(max((Double(phase) - 0.34) / 0.66, 0), 1)
+            if haloP > 0 {
+                let hr = 6 + 30 * CGFloat(haloP)
+                ctx.stroke(Path(ellipseIn: CGRect(x: sx - hr, y: sy - hr, width: hr * 2, height: hr * 2)),
+                           with: .color(Color.gold.opacity((1 - haloP) * 0.8)), lineWidth: 1)
+            }
+        }
+        .allowsHitTesting(false)
     }
 }
 

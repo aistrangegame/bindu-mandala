@@ -29,6 +29,7 @@ struct LivingMandalaView: View {
     @State private var enteredRing = 0
     @State private var flash: MandalaCanvasLayer.RingFlash?
     @State private var constellation: Double = 0
+    @State private var constellationStart: TimeInterval?   // clock for the per-thread stagger
 
     // Gesture bases (incremental deltas so pan + pinch compose)
     @State private var lastDrag: CGSize = .zero
@@ -60,6 +61,7 @@ struct LivingMandalaView: View {
                         focusKp: focus.map(kp), familyKp: familyKp,
                         focusAccentBright: (focus.map { atmos[kp($0)]?.accentBright } ?? nil) ?? Color.gold,
                         countByKp: countByKp, flash: flash, constellation: constellation,
+                        constellationStart: constellationStart,
                         tier: camera.tier, reduceMotion: reduceMotion)
                 }
                 gestureCatcher
@@ -98,6 +100,22 @@ struct LivingMandalaView: View {
             .contentShape(Rectangle())
             .gesture(dragGesture)
             .simultaneousGesture(magnifyGesture)
+            .simultaneousGesture(doubleTapGesture)
+    }
+
+    /// Double-tap empty space to zoom in (1.7×) at that point — the prototype's
+    /// quick way to fall deeper. On a seat, the single-tap fly-to/focus governs.
+    private var doubleTapGesture: some Gesture {
+        SpatialTapGesture(count: 2)
+            .onEnded { v in
+                guard nearestSeat(to: v.location) == nil else { return }
+                Haptics.light()
+                animating = false
+                withAnimation(.easeOut(duration: 0.42)) {
+                    camera = camera.zoomed(at: v.location, factor: 1.7)
+                }
+                updateEntered()
+            }
     }
 
     private var header: some View {
@@ -252,6 +270,7 @@ struct LivingMandalaView: View {
         } completion: { animating = false }
         focus = seat
         constellation = 0
+        constellationStart = Date().timeIntervalSinceReferenceDate + 0.15
         withAnimation(.easeInOut(duration: 0.8).delay(0.15)) { constellation = 1 }
     }
 
@@ -260,6 +279,7 @@ struct LivingMandalaView: View {
         Haptics.medium()
         focus = nil
         constellation = 0
+        constellationStart = nil
         animating = true
         withAnimation(.easeIn(duration: 0.95)) {
             camera = .descentTarget(in: size)
@@ -274,12 +294,14 @@ struct LivingMandalaView: View {
         withAnimation(.easeInOut(duration: 0.5)) { descent = false }
         focus = nil
         constellation = 0
+        constellationStart = nil
         fitCamera()
     }
 
     private func closeFocus() {
         focus = nil
         constellation = 0
+        constellationStart = nil
         fitCamera()
     }
 
