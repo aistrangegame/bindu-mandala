@@ -250,6 +250,8 @@ private struct FieldRing: View {
                             .font(.custom(AppFont.cormorantItalic, size: 14))
                             .tracking(0.4)
                             .foregroundStyle(ringAtmo.accentBright)
+                            .padding(.vertical, 10)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }

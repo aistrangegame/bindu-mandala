@@ -148,6 +148,8 @@ struct ShaktiDetailView: View {
                         .tracking(0.4)
                 }
                 .foregroundStyle(Color.gold)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Spacer()
@@ -538,9 +540,9 @@ struct ShaktiDetailView: View {
     private var fieldConnectionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Field Connection — \(shakti.fieldName ?? "")".uppercased())
-                .font(.system(size: 9.5))
+                .font(.system(size: 11))
                 .tracking(2.0)
-                .foregroundStyle(Color.cream.opacity(0.3))
+                .foregroundStyle(Color.cream.opacity(0.5))
             Text(shakti.fieldNote ?? "")
                 .font(.custom(AppFont.cormorantItalic, size: 15))
                 .lineSpacing(7)

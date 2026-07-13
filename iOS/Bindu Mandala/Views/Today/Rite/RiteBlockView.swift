@@ -93,7 +93,8 @@ struct RiteBlockView: View {
                 .font(.custom(AppFont.cormorantItalic, size: 15))
                 .tracking(0.9)
                 .foregroundStyle(atmo.accentBright.opacity(0.92))
-                .padding(.vertical, 6)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .padding(.top, 10)

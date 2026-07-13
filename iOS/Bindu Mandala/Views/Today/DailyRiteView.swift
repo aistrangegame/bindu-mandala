@@ -179,7 +179,7 @@ struct DailyRiteView: View {
                             .foregroundStyle(atmo.accentBright.opacity(0.75))
                     }
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 2)
+                    .padding(.vertical, 12)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

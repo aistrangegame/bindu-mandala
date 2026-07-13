@@ -78,9 +78,9 @@ struct WellView: View {
                 .tracking(1.6)
                 .foregroundStyle(Color.gold)
             Text("Speak to her directly. She is listening.".uppercased())
-                .font(.system(size: 9))
+                .font(.system(size: 10))
                 .tracking(2.4)
-                .foregroundStyle(Color.cream.opacity(0.32))
+                .foregroundStyle(Color.cream.opacity(0.5))
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 18)
@@ -203,6 +203,8 @@ struct LetterEditorView: View {
                 }
                 .foregroundStyle(Color.gold)
                 .font(.system(size: 14))
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Spacer()

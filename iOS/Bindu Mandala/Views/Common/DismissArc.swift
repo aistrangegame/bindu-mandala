@@ -20,7 +20,7 @@ struct DismissArc: View {
                 )
                 ctx.stroke(
                     path,
-                    with: .color(.white.opacity(0.22)),
+                    with: .color(Color.cream.opacity(0.22)),
                     style: StrokeStyle(lineWidth: 0.7, lineCap: .round)
                 )
             }

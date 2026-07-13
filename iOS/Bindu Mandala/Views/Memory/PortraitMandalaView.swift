@@ -592,6 +592,8 @@ private struct ShareSheetView: View {
             Button("close") { dismiss() }
                 .font(.custom(AppFont.cormorantItalic, size: 14))
                 .foregroundStyle(Color.cream.opacity(0.55))
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
                 .padding(.top, 4)
                 .buttonStyle(.plain)
 
