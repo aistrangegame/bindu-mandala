@@ -50,6 +50,10 @@ struct DailyRiteView: View {
         }
         .onAppear {
             withAnimation(reduceMotion ? nil : .easeOut(duration: 1.2)) { arrived = true }
+            // Debug: `OPEN_NITYA` opens today's Nityā sheet directly.
+            if ProcessInfo.processInfo.arguments.contains("OPEN_NITYA") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { nityaDetailFor = nityaSlot }
+            }
         }
         .fullScreenCover(isPresented: $showRecognition) {
             if let s = today { RecognitionMomentView(shakti: s, isPresented: $showRecognition) }
