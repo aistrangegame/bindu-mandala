@@ -68,6 +68,14 @@ struct WellView: View {
             .navigationDestination(item: $openingFor) { shakti in
                 LetterEditorView(shakti: shakti)
             }
+            .onAppear {
+                // Debug: `OPEN_LETTER=<pos>` opens that Karṣiṇī's letter editor directly.
+                if let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("OPEN_LETTER=") }),
+                   let pos = Int(arg.dropFirst("OPEN_LETTER=".count)),
+                   let s = ring2Shaktis.first(where: { $0.position == pos }) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { openingFor = s }
+                }
+            }
         }
     }
 

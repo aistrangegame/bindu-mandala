@@ -32,6 +32,14 @@ struct TheHundredTwoView: View {
                 .navigationDestination(item: $thresholdFor) { avarana in
                     AvaranaThresholdView(avarana: avarana)
                 }
+                .onAppear {
+                    // Debug: `OPEN_THRESHOLD=<ring>` opens that ring's threshold directly.
+                    if let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("OPEN_THRESHOLD=") }),
+                       let ring = Int(arg.dropFirst("OPEN_THRESHOLD=".count)),
+                       let av = avaranas.first(where: { $0.ringNumber == ring }) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { thresholdFor = av }
+                    }
+                }
         }
     }
 

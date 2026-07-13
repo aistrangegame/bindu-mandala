@@ -246,6 +246,12 @@ struct RecognitionMomentView: View {
         hasLogged = true
         act1Time = .now
 
+        // Debug: `RECOGNIZE_AUTOCLOSE` closes the ceremony on its own after it lands,
+        // so the live close → didSettle → Portrait handoff can be exercised headlessly.
+        if ProcessInfo.processInfo.arguments.contains("RECOGNIZE_AUTOCLOSE") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) { beginClose() }
+        }
+
         let store = RecognitionLogStore(context: context)
         store.record(
             khadgamalaPosition: shakti.khadgamalaPositionOrFallback,
