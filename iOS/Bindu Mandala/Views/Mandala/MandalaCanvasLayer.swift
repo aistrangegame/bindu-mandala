@@ -18,7 +18,9 @@ struct MandalaCanvasLayer: View {
     let focusAccentBright: Color
     let countByKp: [Int: Int]
     let flash: RingFlash?
-    let constellation: Double        // 0…1 reveal of the family threads
+    let constellation: Double        // 0…1 reveal of the family threads (fallback / reduce-motion)
+    /// When the family threads began drawing, for the per-thread stagger. Nil when unfocused.
+    var constellationStart: TimeInterval? = nil
     let tier: Int
     let reduceMotion: Bool
 
@@ -33,8 +35,9 @@ struct MandalaCanvasLayer: View {
                 drawTodayRing(ctx, t: t)
                 drawFlash(ctx, t: t)
                 drawYantra(ctx)
-                drawConstellation(ctx)
+                drawConstellation(ctx, t: t)
                 drawSeats(ctx, t: t)
+                drawEnclosureNames(ctx)
                 drawBinduGlow(ctx, t: t)
             }
         }
@@ -67,6 +70,37 @@ struct MandalaCanvasLayer: View {
             guard r > 4 else { continue }
             ctx.stroke(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)),
                        with: .color(Color.gold.opacity(0.06)), lineWidth: 0.5)
+        }
+    }
+
+    // MARK: Enclosure names — the āvaraṇa titles, revealed at the mid zoom (tier 1+).
+
+    private static let ordinals = ["", "First", "Second", "Third", "Fourth", "Fifth",
+                                   "Sixth", "Seventh", "Eighth", "Ninth"]
+    /// The invariant Śrī-Yantra enclosure forms — exactly the prototype's `av.form`
+    /// values (all-shaktis-data.js), so the tier-1 labels read as designed.
+    private static let enclosureForms = [
+        "", "Bhūpura", "16-Petal Lotus", "8-Petal Lotus", "14 Triangles",
+        "10 Outer Triangles", "10 Inner Triangles", "Vāk Ring", "Mūla Trikoṇa", "Bindu",
+    ]
+
+    private func drawEnclosureNames(_ ctx: GraphicsContext) {
+        guard tier >= 1 else { return }
+        let c = p(.zero)
+        for ring in 1...9 {
+            guard ring < Self.ordinals.count, ring < Self.enclosureForms.count else { continue }
+            let rr = MandalaWorld.ringRadius(ring) * scale
+            let label = "\(Self.ordinals[ring]) · \(Self.enclosureForms[ring])"
+            // Above the ring; the Bindu (ring 9) sits just below centre.
+            let y = ring == 9 ? c.y + 18 : c.y - rr - 9
+            guard y > -20, y < size.height + 20 else { continue }
+            var text = ctx.resolve(
+                Text(label.uppercased())
+                    .font(.system(size: 9))
+                    .tracking(1.6)
+                    .foregroundStyle(Color.gold.opacity(0.6)))
+            text.shading = .color(Color.gold.opacity(0.6))
+            ctx.draw(text, at: CGPoint(x: c.x, y: y), anchor: .center)
         }
     }
 
@@ -123,19 +157,33 @@ struct MandalaCanvasLayer: View {
 
     // MARK: Constellation — her family threads, revealed as she is focused.
 
-    private func drawConstellation(_ ctx: GraphicsContext) {
+    private func drawConstellation(_ ctx: GraphicsContext, t: TimeInterval) {
         guard let focusKp,
               let focus = seats.first(where: { seatKp($0) == focusKp }),
               constellation > 0 else { return }
         let from = p(focus.point)
-        for seat in seats where familyKp.contains(seatKp(seat)) {
+        // Each thread draws in on its own slight delay (0.05 + i·0.035s over 0.7s),
+        // so the family lights up as a cascade rather than all at once. When
+        // reduce-motion is on (or no start time), fall back to the uniform reveal.
+        let family = seats.filter { familyKp.contains(seatKp($0)) }
+            .sorted { seatKp($0) < seatKp($1) }
+        for (i, seat) in family.enumerated() {
+            let prog: Double
+            if reduceMotion || constellationStart == nil {
+                prog = constellation
+            } else {
+                let raw = (t - constellationStart! - 0.05 - Double(i) * 0.035) / 0.7
+                let p01 = min(max(raw, 0), 1)
+                prog = 1 - pow(1 - p01, 3)
+            }
+            guard prog > 0 else { continue }
             let to = p(seat.point)
-            let end = CGPoint(x: from.x + (to.x - from.x) * constellation,
-                              y: from.y + (to.y - from.y) * constellation)
+            let end = CGPoint(x: from.x + (to.x - from.x) * prog,
+                              y: from.y + (to.y - from.y) * prog)
             var line = Path()
             line.move(to: from)
             line.addLine(to: end)
-            ctx.stroke(line, with: .color(focusAccentBright.opacity(0.55)), lineWidth: 1)
+            ctx.stroke(line, with: .color(focusAccentBright.opacity(0.55 * prog)), lineWidth: 1)
         }
     }
 
@@ -157,14 +205,35 @@ struct MandalaCanvasLayer: View {
 
             let dimmed = focusKp != nil && !isFocus && !inFamily
             let baseR: CGFloat = isFocus ? 7 : isToday ? 6 : inFamily ? 5.5 : felt ? 4 + min(CGFloat(n), 6) * 0.4 : 3
-            let breath = reduceMotion ? 0 : 0.12 * sin(t * (0.9 + Double(kp % 7) * 0.12) + Double(kp))
-            let dotR = baseR * min(max(scale, 0.7), 2.4) * (1 + breath)
+            // Today's seat pulses stronger (syPulse, →1.35×); everyone else sways (syBreath).
+            let pulse: Double
+            if reduceMotion { pulse = 0 }
+            else if isToday && !isFocus { pulse = 0.35 * (0.5 + 0.5 * sin(t * 2.4)) }
+            else { pulse = 0.12 * sin(t * (0.9 + Double(kp % 7) * 0.12) + Double(kp)) }
+            let dotR = baseR * min(max(scale, 0.7), 2.4) * (1 + pulse)
 
             let color: Color = (isToday || isFocus) ? .cream
                 : inFamily ? focusAccentBright
                 : felt ? a.accentBright : a.accent
             let lit = felt || isToday || isFocus || inFamily
             let alpha = dimmed ? 0.28 : (lit ? 1 : 0.55)
+
+            // periodic flare — every seat blooms softly on its own long cycle (syFlare),
+            // lit seats in their own light, the rest in her soft accent, so the whole
+            // field feels alive rather than static.
+            if !reduceMotion {
+                let fDur = 8.0 + Double(kp % 13)
+                let ph = (t + Double(kp) * 0.37).truncatingRemainder(dividingBy: fDur) / fDur
+                let flareO: Double = ph < 0.06 ? (ph / 0.06) * 0.55
+                    : ph < 0.22 ? (1 - (ph - 0.06) / 0.16) * 0.55 : 0
+                if flareO > 0.001 {
+                    let flareColor = lit ? color : a.accentSoft
+                    let fr = dotR * (0.7 + 2.3 * min(ph / 0.22, 1))
+                    ctx.fill(Path(ellipseIn: CGRect(x: screen.x - fr, y: screen.y - fr, width: fr * 2, height: fr * 2)),
+                             with: .radialGradient(Gradient(colors: [flareColor.opacity(flareO * alpha), .clear]),
+                                                   center: screen, startRadius: 0, endRadius: fr))
+                }
+            }
 
             // soft glow
             if lit {
@@ -176,11 +245,21 @@ struct MandalaCanvasLayer: View {
             ctx.fill(Path(ellipseIn: CGRect(x: screen.x - dotR, y: screen.y - dotR, width: dotR * 2, height: dotR * 2)),
                      with: .color(color.opacity(alpha)))
 
-            // today / focus halo ring
+            // today / focus halo — an expanding, fading ring (syRing); static under reduce-motion.
             if isToday || isFocus {
-                let hr = dotR + 5
-                ctx.stroke(Path(ellipseIn: CGRect(x: screen.x - hr, y: screen.y - hr, width: hr * 2, height: hr * 2)),
-                           with: .color(color.opacity(0.5)), lineWidth: 1)
+                if reduceMotion {
+                    let hr = dotR + 5
+                    ctx.stroke(Path(ellipseIn: CGRect(x: screen.x - hr, y: screen.y - hr, width: hr * 2, height: hr * 2)),
+                               with: .color(color.opacity(0.5)), lineWidth: 1)
+                } else {
+                    // A fixed-radius ring (like the prototype's 22px syRing) scaled by the
+                    // camera, so it emanates from the rim and reaches the designed extent.
+                    let q = (t / 2.6).truncatingRemainder(dividingBy: 1)
+                    let hbase = 11 * min(max(scale, 0.7), 2.4)
+                    let hr = hbase * (0.7 + 1.7 * q)
+                    ctx.stroke(Path(ellipseIn: CGRect(x: screen.x - hr, y: screen.y - hr, width: hr * 2, height: hr * 2)),
+                               with: .color(color.opacity(0.6 * (1 - q))), lineWidth: 1)
+                }
             }
 
             // name label — resolves at tier 1+, or when threaded / focused
@@ -194,6 +273,21 @@ struct MandalaCanvasLayer: View {
                         .foregroundStyle(Color.cream.opacity(lit ? 0.85 : 0.42)))
                 text.shading = .color(Color.cream.opacity(lit ? 0.85 : 0.42))
                 ctx.draw(text, at: CGPoint(x: screen.x, y: screen.y + dotR + 9), anchor: .center)
+
+                // bīja syllable at the deepest zoom — she names her seed (the 86
+                // without a bīja show nothing).
+                if tier >= 2 && !isFocus {
+                    let bija = seat.shakti.bija.trimmingCharacters(in: .whitespaces)
+                    if !bija.isEmpty {
+                        let syllable = bija.components(separatedBy: " — ").first ?? bija
+                        var bt = ctx.resolve(
+                            Text("bīja \(syllable)")
+                                .font(.custom(AppFont.cormorantItalic, size: 8))
+                                .foregroundStyle(a.accentBright.opacity(0.85)))
+                        bt.shading = .color(a.accentBright.opacity(0.85))
+                        ctx.draw(bt, at: CGPoint(x: screen.x, y: screen.y + dotR + 20), anchor: .center)
+                    }
+                }
             }
         }
     }
