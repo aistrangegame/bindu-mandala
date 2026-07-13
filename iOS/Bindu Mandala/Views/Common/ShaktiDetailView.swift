@@ -12,6 +12,8 @@ struct ShaktiDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var bijaPulse: CGFloat = 0        // 0…1 pulse for tap-to-hear
+    @State private var bijaSounding = false          // resonance rings while she sounds
+    @State private var bijaGen = 0                    // so a rapid re-tap's timer can't clear a later sounding
     @State private var advanceProgress: CGFloat = 0  // 0…1 during the held beat
     @State private var breathPhase: CGFloat = 0      // soft breath when ready
     @State private var goDeeperExpanded: Bool = false
@@ -264,7 +266,7 @@ struct ShaktiDetailView: View {
     /// only when enough recognitions have made her ready. Ported from the
     /// prototype's `EmbodimentPill`, keeping our server-backed advance.
     private var embodimentSection: some View {
-        section("Embodiment", alignment: .center) {
+        section("Embodiment", alignment: .center, divider: true) {
             VStack(spacing: 14) {
                 embodimentTrack
                 embodimentPill
@@ -415,7 +417,7 @@ struct ShaktiDetailView: View {
     @ViewBuilder
     private var somaticSection: some View {
         if !shakti.somaticPoetry.trimmingCharacters(in: .whitespaces).isEmpty {
-            section("Somatic Signature") {
+            section("Somatic Signature", divider: true) {
                 Text(shakti.somaticPoetry)
                     .font(.custom(AppFont.cormorantItalic, size: 17))
                     .lineSpacing(8)
@@ -450,39 +452,33 @@ struct ShaktiDetailView: View {
 
     private var bijaSectionBody: some View {
         let parsed = parsedBija
-        return section("Bīja Syllable · Tap to Hear", alignment: .center) {
-            VStack(spacing: 12) {
-                HStack(spacing: 24) {
-                    Spacer(minLength: 0)
-                    Text(parsed.syllable)
-                        .font(.custom(AppFont.cormorant, size: 64))
-                        .foregroundStyle(Color.gold)
-                        .shadow(color: Color.gold.opacity(0.4), radius: 20)
-                        .onTapGesture { soundBija() }
-                        .accessibilityLabel("Bija syllable: \(parsed.syllable). Tap to hear.")
-                        .accessibilityAddTraits(.isButton)
-                    ZStack {
-                        Circle()
-                            .stroke(Color.gold.opacity(0.55), lineWidth: 1)
-                            .background(Circle().fill(Color.gold.opacity(0.05)))
-                            .frame(width: 44, height: 44)
-                        Circle()
-                            .stroke(Color.gold.opacity(0.25), lineWidth: 0.5)
-                            .frame(width: 56, height: 56)
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.gold.opacity(0.85))
-                        Circle()
-                            .stroke(Color.gold.opacity(0.5), lineWidth: 1)
-                            .scaleEffect(1 + bijaPulse * 1.4)
-                            .opacity(Double(1 - bijaPulse))
-                            .frame(width: 44, height: 44)
+        return section("Bīja · Tap to Hear", alignment: .center, divider: true) {
+            VStack(spacing: 14) {
+                ZStack {
+                    // Resonance rings expanding while she sounds (prototype's lrBijaRing).
+                    if bijaSounding && !reduceMotion {
+                        ForEach(0..<3, id: \.self) { i in
+                            BijaResonanceRing(delay: Double(i) * 0.5, color: atmo.accentSoft)
+                        }
                     }
-                    .frame(width: 56, height: 56)
-                    .contentShape(Circle())
-                    .onTapGesture { soundBija() }
-                    Spacer(minLength: 0)
+                    Text(parsed.syllable)
+                        .font(.custom(AppFont.cormorant, size: 84))
+                        .fontWeight(.light)
+                        .foregroundStyle(Color.gold)
+                        .shadow(color: bijaSounding ? atmo.accent : atmo.glow,
+                                radius: bijaSounding ? 70 : 40)
+                        .scaleEffect(1 + bijaPulse * 0.05)
                 }
+                .frame(height: 118)
+                .contentShape(Rectangle())
+                .onTapGesture { soundBija() }
+                .accessibilityLabel("Bija syllable: \(parsed.syllable). Tap to hear.")
+                .accessibilityAddTraits(.isButton)
+
+                Text(bijaSounding ? "SOUNDING" : "TAP TO SOUND HER")
+                    .font(.system(size: 10))
+                    .tracking(2.2)
+                    .foregroundStyle(bijaSounding ? atmo.accentBright : Color.cream.opacity(0.4))
 
                 if let description = parsed.description {
                     Text(description)
@@ -499,10 +495,21 @@ struct ShaktiDetailView: View {
 
     private func soundBija() {
         Haptics.soft()
+        let dur: TimeInterval = 3.2   // matches BijaSoundService.playBija's drone duration
         BijaSoundService.shared.playBija(shakti.bija, seed: shakti.khadgamalaPosition ?? shakti.position)
+        // The "SOUNDING" caption tracks the drone regardless of motion settings; the
+        // resonance rings + pulse below are motion. The generation token ensures a
+        // rapid re-tap's earlier timer can't cut the later sounding short.
+        bijaGen += 1
+        let gen = bijaGen
+        bijaSounding = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + dur) {
+            if gen == bijaGen { bijaSounding = false }
+        }
         guard !reduceMotion else { return }
-        bijaPulse = 0
-        withAnimation(.easeOut(duration: 1.4)) { bijaPulse = 1 }
+        // A transient pulse that settles back to 1.0× (lrBijaPulse), not a permanent grow.
+        bijaPulse = 1
+        withAnimation(.easeOut(duration: 1.3)) { bijaPulse = 0 }
     }
 
     @ViewBuilder
@@ -556,7 +563,7 @@ struct ShaktiDetailView: View {
     }
 
     private var herMomentsSection: some View {
-        section("Her Moments") {
+        section("Her Moments", divider: true) {
             HerMomentsList(
                 khadgamalaPosition: shakti.khadgamalaPosition ?? (shakti.position + 28),
                 clusterColor: seatColor,
@@ -571,6 +578,11 @@ struct ShaktiDetailView: View {
     private var appreciationPhraseSection: some View {
         if let v = shakti.appreciationPhrase, !v.isEmpty {
             VStack(spacing: 14) {
+                Rectangle()
+                    .fill(Color.gold.opacity(0.14))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 1)
+                    .padding(.bottom, 8)
                 Rectangle()
                     .fill(Color.gold.opacity(0.3))
                     .frame(width: 32, height: 0.5)
@@ -606,14 +618,21 @@ struct ShaktiDetailView: View {
     @ViewBuilder
     private var codexPortraitSection: some View {
         if let v = shakti.codexPortrait, !v.isEmpty {
-            Text(v)
-                .font(.custom(AppFont.cormorantItalic, size: 16))
-                .tracking(0.2)
-                .lineSpacing(9)
-                .foregroundStyle(Color.gold)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 26)
+            VStack(alignment: .leading, spacing: 0) {
+                Rectangle()
+                    .fill(Color.gold.opacity(0.14))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 1)
+                    .padding(.bottom, 22)
+                Text(v)
+                    .font(.custom(AppFont.cormorantItalic, size: 16))
+                    .tracking(0.2)
+                    .lineSpacing(9)
+                    .foregroundStyle(Color.gold)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.top, 26)
         }
     }
 
@@ -660,13 +679,14 @@ struct ShaktiDetailView: View {
     }
 
     /// A single fold for the reference matter — iconography, lineage, cosmic
-    /// function, tattva, etymology. Closed by default; the soul leads.
+    /// function, tattva, bodily seat, etymology. Closed by default; the soul leads.
     @ViewBuilder
     private var goDeeperSection: some View {
         let hasContent = (shakti.iconography?.isEmpty == false)
             || (shakti.shaktiFamilyRaw?.isEmpty == false)
             || (shakti.shaktiFunction?.isEmpty == false)
             || !shakti.tattva.isEmpty
+            || !shakti.bodilyLocation.trimmingCharacters(in: .whitespaces).isEmpty
             || (shakti.etymology?.isEmpty == false)
         if hasContent {
             VStack(alignment: .leading, spacing: 0) {
@@ -698,6 +718,7 @@ struct ShaktiDetailView: View {
                         lineageSection
                         cosmicFunctionSection
                         tattvaSection
+                        bodilySeatSection
                         etymologySection
                     }
                     .transition(.opacity)
@@ -710,8 +731,18 @@ struct ShaktiDetailView: View {
 
     private func section<Content: View>(_ title: String,
                                         alignment: HorizontalAlignment = .leading,
+                                        divider: Bool = false,
                                         @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: alignment, spacing: 10) {
+            // A gold thread separating the mid-body sections (prototype's per-section
+            // 1px rgba(201,150,63,0.14) top border).
+            if divider {
+                Rectangle()
+                    .fill(Color.gold.opacity(0.14))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 1)
+                    .padding(.bottom, 12)
+            }
             Text(title.uppercased())
                 .font(.system(size: 10.5))
                 .tracking(2.0)
@@ -721,6 +752,43 @@ struct ShaktiDetailView: View {
                 .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)
         }
         .padding(.top, 22)
+    }
+
+    /// "Bodily seat" — where she is felt in the body (prototype's DeepRow). Hidden
+    /// when absent.
+    @ViewBuilder
+    private var bodilySeatSection: some View {
+        let loc = shakti.bodilyLocation.trimmingCharacters(in: .whitespaces)
+        if !loc.isEmpty {
+            section("Bodily Seat") {
+                Text(loc)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color.cream.opacity(0.7))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+}
+
+/// One expanding, fading ring of resonance around the bīja while she sounds
+/// (prototype's lrBijaRing: scale 0.7→3.4, opacity 0.55→0 over 3.6s).
+private struct BijaResonanceRing: View {
+    let delay: Double
+    let color: Color
+    @State private var animating = false
+
+    var body: some View {
+        Circle()
+            .stroke(color, lineWidth: 1)
+            .frame(width: 90, height: 90)
+            .scaleEffect(animating ? 3.4 : 0.7)
+            .opacity(animating ? 0 : 0.55)
+            .onAppear {
+                withAnimation(.easeOut(duration: 3.6).repeatForever(autoreverses: false).delay(delay)) {
+                    animating = true
+                }
+            }
+            .allowsHitTesting(false)
     }
 }
 
