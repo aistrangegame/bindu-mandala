@@ -38,6 +38,16 @@
                ReferencedContainer = "container:Bindu Mandala.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "F1DE00000000000000000003"
+               BuildableName = "Bindu MandalaUITests.xctest"
+               BlueprintName = "Bindu MandalaUITests"
+               ReferencedContainer = "container:Bindu Mandala.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
