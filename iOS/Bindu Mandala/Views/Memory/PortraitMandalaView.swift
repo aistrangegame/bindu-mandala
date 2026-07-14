@@ -75,18 +75,23 @@ struct PortraitMandalaView: View {
     private var background: some View {
         ZStack {
             variant.bg.ignoresSafeArea()
-            // Ambient warmth that breathes with the time of day.
+            // Ambient warmth that breathes with the time of day. The 600×540 glow
+            // is clamped onto a flexible Color.clear so its overdraw never inflates
+            // layout — a raw fixed frame here grows RootView's top-trailing ZStack
+            // past the screen and pushes the hamburger (the only exit) off-screen.
             let a = variant.ambient
-            EllipticalGradient(
-                gradient: Gradient(stops: [
-                    .init(color: a.inner, location: 0),
-                    .init(color: .clear, location: 0.75)
-                ]),
-                center: .center,
-                startRadiusFraction: 0,
-                endRadiusFraction: 1
-            )
-            .frame(width: 600, height: 540)
+            Color.clear.overlay {
+                EllipticalGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: a.inner, location: 0),
+                        .init(color: .clear, location: 0.75)
+                    ]),
+                    center: .center,
+                    startRadiusFraction: 0,
+                    endRadiusFraction: 1
+                )
+                .frame(width: 600, height: 540)
+            }
             .allowsHitTesting(false)
             DustMotesView(count: variant.motes)
                 .allowsHitTesting(false)
