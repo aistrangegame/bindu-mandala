@@ -3,9 +3,12 @@
 The design-fidelity remediation (Tiers 0–3) restored the atmospheric/ceremonial layer
 that the first rebuild thinned. This doc exists so it does not silently drift again.
 
-Source of truth for design: `Claude Design Round 2/prototype/living-rite-*.jsx` +
-`index.html` (keyframes) + `all-shaktis-data.js` / `shakti-data.js`. Palette and type
+Source of truth for design (look and motion only): `Claude Design Round 2/prototype/living-rite-*.jsx`
++ `index.html` (keyframes) + `shakti-data.js` (Ring-2 look reference). Palette and type
 (`#0D0508` / `#C9963F` / `#F2E8D9` / `#8B1A2A`, Cormorant-Light) already match.
+Source of truth for names and content: **Airtable**, for all 102 (Build Brief v2, Law 1). The
+prototype is never a data source; `all-shaktis-data.js` is a superseded draft roster, archived at
+`prototype/_superseded/` — never read it as data.
 
 ## Screen-by-screen fidelity checklist
 
@@ -27,15 +30,35 @@ but skipped the per-screen side-by-side, which is how the atmosphere got dropped
    `.frame(minHeight:44).contentShape(Rectangle())` or vertical padding to inline links).
 5. **Tokens, not literals** — grounds/accents/text come from `Color+Tokens`, `TimeVariant`,
    or the `Atmosphere`. No bespoke `Color(red:…)` for meaningful UI.
-6. **Graceful degradation (the 86)** — guard empties: the 86 non-Ring-2 Śaktis lack
-   phonetic (all), bīja (most), and a real cluster (all default `.inner`). Omit rows;
-   never print an empty label or the false "INNER INSTRUMENT".
+6. **Graceful degradation (the 86)** — content is complete for all 102: quality, somatic
+   poetry, tattva, function, etymology, iconography, appreciation phrase, codex portrait
+   (verified live in Airtable, Sept 2026; Brief v2 R14). Only three fields are Ring-2-only
+   *by design*: the 86 non-Ring-2 Śaktis lack phonetic (all), bīja (most), and a real
+   cluster (all default `.inner`). Guard exactly those three — omit the row; never print an
+   empty label or the false "INNER INSTRUMENT" — and never assume blank content for the
+   rest. A blank content field on device is sync staleness, not a data gap.
 7. **Verify on device** — screenshot on **iPhone 17 Pro Max** *and* a small sim
    (SE 3rd gen), driving the actual flow, compared to the prototype. Tests alone do not
    catch atmosphere/motion/timbre regressions.
 8. **Adversarial verify for zoom/animation-gated work** — where a change can't be
    screenshotted (deep-zoom labels, settle choreography), run a small multi-agent
    fidelity+regression panel over the diff against the prototype before merging.
+
+## Fidelity tiers (record)
+
+The remediation shipped in four tiers, each a merged PR on `main` (verified against `git log`):
+
+- **Tier 0 — correctness:** PR #12 (`6cf9dab`) — responsive Rite, reachable Mandala controls,
+  keyed bīja, restored Nityā prose.
+- **Tier 1 — the soul:** PRs #13–#16 (`e1a600f`, `464f6fa`, `75be342`, `8462462`) —
+  atmosphere-lit Detail + depth/mote primitives; the Recognition ceremony's element-response
+  layer; the Field's felt dimension + atmosphere-lit Well; shell transitions, same-day restore,
+  contextual back-label.
+- **Tier 2 — polish:** PRs #17–#20 (`27fe448`, `3890e2f`, `acb14d6`, `da92f92`) — Today's
+  atmosphere + celestial strip; Mandala tier labels/gestures + Portrait settle; Avaraṇa data
+  model + threshold; Detail finish (dividers, bodily seat, bīja rings).
+- **Tier 3 — process:** PR #21 (`06d7697`) — legibility + tap-target sweep, this checklist,
+  the stretch dispositions below. (This file was created in that PR.)
 
 ## Services / Data spine — audit owner
 
@@ -57,9 +80,12 @@ touching them must be reviewed against the prototype/rulings by whoever owns the
 
 Stated explicitly so they read as **decisions, not defects**:
 
-- **Ring-drone** (a sustained tone under the Mandala) — **not built.** Optional ambience.
-- **WidgetKit home-screen widget** — **not built.** Optional; no widget target exists.
-- **`.silence` recognition gesture** — the `RecognitionEntry.Gesture.silence` case is
-  **defined but never written** (both record sites use `.felt`; the Bindu/Silence dwell
-  was never wired to record it). A dormant hook, harmless — leave it until/unless a
-  silence-dwell recognition is designed, then wire `store.record(gesture: .silence)`.
+- **Ring-drone** (a sustained tone under the Mandala) — **superseded by the Homes' per-Śakti
+  carrier** (Build Brief v2 Phase 2.3 / Phase 6: "the ring drone (superseded by the Homes'
+  carrier)"). Not built as a drone and not to be; the carrier is its successor.
+- **WidgetKit home-screen widget** — **not built; stays parked.** Optional; no widget target exists.
+- **`.silence` recognition gesture** — **reborn as the dwelling** (Brief v2 R11), **wired in
+  Phase 3.6**: a dwell held past the first adaptation records a `RecognitionEntry` with
+  `gesture: .silence` (local + Airtable Source "Silence"), once per visit, never displayed.
+  Until 3.6 lands, the `RecognitionEntry.Gesture.silence` case stays defined and unwritten
+  (both record sites use `.felt`) — a dormant hook, harmless.
