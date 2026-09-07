@@ -8,6 +8,15 @@ enum AppRuntime {
     /// authorization) are skipped so unit tests run against a quiet host.
     static let isUnitTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
+    /// True when this process must never touch Airtable: the XCTest host, a
+    /// UI-test launch (`SYNC_OFF` argument), or an explicit `BINDU_SYNC_OFF=1`
+    /// environment. `AirtableService` returns early from sync, the flushes and
+    /// every write, so a tested app never enqueues or writes a row. Main-actor
+    /// isolated because every reader (the service, the scene) already is.
+    @MainActor static var syncDisabled: Bool = isUnitTesting
+        || ProcessInfo.processInfo.arguments.contains("SYNC_OFF")
+        || ProcessInfo.processInfo.environment["BINDU_SYNC_OFF"] == "1"
+
     /// Debug: skip the first-launch notification-authorization prompt so it never
     /// obscures screenshots. Pass `SKIP_SUMMONS` as a launch argument.
     static let skipsSummons = ProcessInfo.processInfo.arguments.contains("SKIP_SUMMONS")
@@ -71,12 +80,20 @@ private struct AppRoot: View {
             showHomecoming = true
         }
         .onChange(of: scenePhase) { _, newPhase in
-            // Drain any queued recognition writes whenever the app returns to active.
-            // Also reschedule the rolling summons window so dates ahead stay primed
-            // and today's slot is dropped if the rite was already done.
-            if newPhase == .active && !AppRuntime.isUnitTesting {
+            switch newPhase {
+            case .active:
+                // Drain any queued recognition writes whenever the app returns to active.
+                // Also reschedule the rolling summons window so dates ahead stay primed
+                // and today's slot is dropped if the rite was already done.
+                guard !AppRuntime.isUnitTesting else { return }
                 Task { await AirtableService.shared.flushPending(context: context) }
                 Task { await DailySummons.reschedule(enabled: summonsEnabled, hour: summonsHour) }
+            case .background:
+                // Ring-world voices must not keep sounding once the app leaves
+                // the foreground; every drone, triad and descent stops here.
+                RingAudioService.shared.stopAll()
+            default:
+                break
             }
         }
         .task {
