@@ -298,9 +298,9 @@ enum ActivityLedger {
     /// the second — the key the create wrote. Same key and match rule as the
     /// Mandala-table check (`RecognitionDedup.rowMatches`).
     static func rowMatches(_ row: Row, linkRecordId: String, feltAt: Date) -> Bool {
-        RecognitionDedup.rowMatches(ofShakti: row.fields.linkToMandala,
+        RecognitionDedup.rowMatches(links: row.fields.linkToMandala,
                                     feltAt: row.fields.feltAt,
-                                    shaktiRecordId: linkRecordId,
+                                    linkRecordId: linkRecordId,
                                     feltAt: feltAt)
     }
 

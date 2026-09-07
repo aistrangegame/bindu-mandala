@@ -130,20 +130,29 @@ final class AirtableService {
 
     // MARK: - Generic paged fetch
 
+    /// Every page of `table` (the Mandala table by default) matching `filter`.
+    /// The Mandala table is read by field *id* (`returnFieldsByFieldId`); the
+    /// App Activity ledger is read by field *name* (`byFieldId: false`),
+    /// matching its writes. `fields` narrows the response to those columns
+    /// (`fields[]`, in the same addressing); empty returns every field.
     private func fetch<Row: Decodable>(
         token: String,
+        table: String? = nil,
         filter: String,
-        sort: [(field: String, direction: String)]
+        sort: [(field: String, direction: String)],
+        fields: [String] = [],
+        byFieldId: Bool = true
     ) async throws -> [Row] {
         var all: [Row] = []
         var offset: String? = nil
         repeat {
-            var comps = URLComponents(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)")!
+            var comps = URLComponents(string: "https://api.airtable.com/v0/\(Self.baseId)/\(table ?? Self.tableId)")!
             var items: [URLQueryItem] = [
                 .init(name: "pageSize", value: "100"),
                 .init(name: "filterByFormula", value: filter),
-                .init(name: "returnFieldsByFieldId", value: "true"),
             ]
+            if byFieldId { items.append(.init(name: "returnFieldsByFieldId", value: "true")) }
+            for f in fields { items.append(.init(name: "fields[]", value: f)) }
             for (i, pair) in sort.enumerated() {
                 items.append(.init(name: "sort[\(i)][field]", value: pair.field))
                 items.append(.init(name: "sort[\(i)][direction]", value: pair.direction))
@@ -649,8 +658,8 @@ extension AirtableService {
 
 extension AirtableService {
 
-    /// Where the recognition gesture originated. Maps directly to the Airtable
-    /// `Source` singleSelect. Phase 6 only fires `.today`; others sit ready.
+    /// Where the recognition gesture originated. Maps directly to the ledger's
+    /// `Gesture Source` singleSelect (`ActivityLedger.GestureSource`).
     enum RecognitionSource: String {
         case today    = "Today"
         case mandala  = "Mandala"
@@ -658,10 +667,12 @@ extension AirtableService {
         case well     = "Well"
     }
 
-    /// One unfulfilled Recognition write held in UserDefaults until the network returns.
+    /// One unfulfilled recognition held in UserDefaults until the network returns.
     /// `failCount` is incremented per failed flush; items are dropped after
     /// `PendingQueuePolicy.maxFailures`. With no token nothing is bumped.
-    private struct PendingRecognition: Codable, PendingQueueItem {
+    /// The stored shape is build 36's, member for member — a queue written
+    /// before the ledger rewire still decodes and drains into App Activity.
+    private struct PendingRecognition: Codable, PendingQueueItem, RecognitionMoment {
         var id: String = UUID().uuidString
         let shaktiRecordId: String
         let note: String?
@@ -674,20 +685,14 @@ extension AirtableService {
 
     private static let pendingKey = "pendingRecognitions"
 
-    // MARK: Field IDs (write contract from brief §3)
-    private static let fldRowType          = "Row Type"
-    private static let fldOfShakti         = "Of Shakti"
-    private static let fldFeltAt           = "Felt At"
-    private static let fldNotes            = "Notes"
-    private static let fldLunarDay         = "Lunar Day"
-    private static let fldMoonPhase        = "Moon Phase"
-    private static let fldSource           = "Source"
+    // MARK: Shakti-row field names (the per-Śakti state PATCHes; brief §3)
     private static let fldLastFelt         = "Last Felt"
     private static let fldRecognitionCount = "Recognition Count"
     private static let fldStatus           = "Status"
 
-    /// Fire-and-forget. Two-step Airtable write (create Recognition row, then
-    /// GET + PATCH Shakti row). On any failure, the item is enqueued in
+    /// Fire-and-forget. The event lands in App Activity (one `Shakti Recognized`
+    /// row, her words in `Notes`), then her Shakti row is read and PATCHed
+    /// (Last Felt, Recognition Count). On any failure the item is enqueued in
     /// UserDefaults for retry on the next sync or scene-active transition.
     /// Pre-sync Shaktis (no `airtableRecordId`) silently skip — stays local only.
     func recordRecognition(shakti: Shakti,
@@ -761,100 +766,59 @@ extension AirtableService {
         }
     }
 
-    // MARK: - Two-step write
+    // MARK: - The recognition write (ledger row, then the Shakti-row PATCH)
 
+    /// Four round-trips, in this order: (1) is this exact moment already in the
+    /// ledger? (2) read her Shakti row's count and Last Felt; (3) POST the
+    /// `Shakti Recognized` row — first or "felt again" from the count read,
+    /// her words in `Notes` — skipped on a dedup hit; (4) PATCH the Shakti row
+    /// and mirror the count locally. A retry after a POST-succeeded /
+    /// PATCH-failed split therefore skips only the create — an existing row
+    /// says nothing about whether the PATCH or the local mirror ever landed,
+    /// and a retry exists precisely because one of them did not.
     private func processRecognition(_ item: PendingRecognition,
                                     context: ModelContext) async -> Bool {
         guard let token = pat else { return false }
         do {
-            // Idempotency: a retry after a create-succeeded / PATCH-failed split
-            // must not write her row twice. Only the create is skipped — an
-            // existing row says nothing about whether the count PATCH, the
-            // local mirror or the first-felt ledger row ever landed, and a
-            // retry exists precisely because one of them did not.
-            if await recognitionExistsOnServer(token: token, item: item) {
+            let exists = await activityExistsOnServer(
+                token: token,
+                type: ActivityLedger.ActivityType.shaktiRecognized,
+                linkRecordId: item.shaktiRecordId,
+                feltAt: item.feltAt
+            )
+            let state = try await readShaktiRecognitionState(token: token, recordId: item.shaktiRecordId)
+            // First vs return is decided from the count read *before* this
+            // gesture's PATCH — or, on a retry whose PATCH already landed, the
+            // count that includes her — so the first row is the milestone,
+            // once per Śakti, never twice.
+            let isFirst = ActivityLedger.wasFirst(
+                serverCount: state.count,
+                patchAlreadyLanded: RecognitionDedup.patchAlreadyLanded(lastFelt: state.lastFelt,
+                                                                        feltAt: item.feltAt)
+            )
+            if exists {
                 log.notice("Recognition row already on server — skipping create, completing the rest")
             } else {
-                try await createRecognitionRow(token: token, item: item)
+                let name = shaktiName(recordId: item.shaktiRecordId, context: context)
+                try await createActivityRow(
+                    token: token,
+                    item: ActivityLedger.recognition(item, shaktiName: name, isFirst: isFirst)
+                )
             }
-            let previousCount = try await patchShaktiAfterRecognition(
+            try await patchShaktiAfterRecognition(
                 token: token,
-                shaktiRecordId: item.shaktiRecordId,
-                feltAt: item.feltAt
+                recordId: item.shaktiRecordId,
+                feltAt: item.feltAt,
+                state: state
             )
             mirrorLocalCount(
                 recordId: item.shaktiRecordId,
                 increment: 1,
                 context: context
             )
-            // Threshold crossing for the shared ledger: the *first* time this
-            // Śakti is ever felt. `previousCount` is the server's count read
-            // *before* the increment PATCH (or, on a retry whose PATCH had
-            // already landed, the count that includes it — never 0), so
-            // `wasFirst` is per-Śakti and fires once for each of the 102, not
-            // only the first Śakti ever.
-            let wasFirst = (previousCount == 0)
-            if wasFirst {
-                let name = shaktiName(recordId: item.shaktiRecordId, context: context)
-                await logActivity(
-                    type: Self.activityShaktiRecognized,
-                    linkedShaktiRecordId: item.shaktiRecordId,
-                    activityName: "\(name) — first recognition",
-                    detail: "Felt here for the first time · \(item.moonPhase)"
-                )
-            }
             return true
         } catch {
             log.error("Recognition write failed: \(Self.describe(error), privacy: .public)")
-            return false
-        }
-    }
-
-    /// Is this exact moment already on the server? GET the Recognition rows
-    /// within ±60 s of `feltAt` (a handful at most, so one page suffices) and
-    /// look for one that is *hers and carries this `feltAt` to the second* —
-    /// the key the create wrote, which a queued retry repeats and a genuine
-    /// second recognition never can. Window, key and match live in
-    /// `RecognitionDedup`, pure and unit-tested. Fail-open: if the check
-    /// itself fails, the failure is logged with status + body and the create
-    /// proceeds — a broken check must never strand a recognition the way the
-    /// July pipe did.
-    private func recognitionExistsOnServer(token: String,
-                                           item: PendingRecognition) async -> Bool {
-        struct Row: Decodable {
-            let id: String
-            let fields: Fields
-            struct Fields: Decodable {
-                let ofShakti: [String]?
-                let feltAt: String?
-                enum CodingKeys: String, CodingKey {
-                    case ofShakti = "fldaDjmaPvu57sJVg"
-                    case feltAt   = "fldk4BdikzJQOautw"
-                }
-            }
-        }
-        var comps = URLComponents(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)")!
-        comps.queryItems = [
-            .init(name: "pageSize",              value: "100"),
-            .init(name: "filterByFormula",       value: RecognitionDedup.filterFormula(around: item.feltAt)),
-            .init(name: "returnFieldsByFieldId", value: "true"),
-            .init(name: "fields[]",              value: RecognitionDedup.ofShaktiFieldId),
-            .init(name: "fields[]",              value: RecognitionDedup.feltAtFieldId),
-        ]
-        var req = URLRequest(url: comps.url!)
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        do {
-            let (data, response) = try await session.data(for: req)
-            try Self.checkHTTP(response, data: data)
-            let page = try JSONDecoder().decode(Page<Row>.self, from: data)
-            return page.records.contains {
-                RecognitionDedup.rowMatches(ofShakti: $0.fields.ofShakti,
-                                            feltAt: $0.fields.feltAt,
-                                            shaktiRecordId: item.shaktiRecordId,
-                                            feltAt: item.feltAt)
-            }
-        } catch {
-            log.error("Recognition dedup check failed — proceeding with create: \(Self.describe(error), privacy: .public)")
             return false
         }
     }
@@ -866,50 +830,20 @@ extension AirtableService {
         return name.isEmpty ? "A Śakti" : name
     }
 
-    private func createRecognitionRow(token: String, item: PendingRecognition) async throws {
-        var fields: [String: Any] = [
-            Self.fldRowType:   "Recognition",
-            Self.fldOfShakti:  [item.shaktiRecordId],
-            Self.fldFeltAt:    RecognitionDedup.writtenFeltAt(item.feltAt),
-            Self.fldLunarDay:  item.lunarDay,
-            Self.fldMoonPhase: item.moonPhase,
-            Self.fldSource:    item.source
-        ]
-        if let note = item.note?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty {
-            fields[Self.fldNotes] = note
-        }
-        let body: [String: Any] = ["fields": fields, "typecast": true]
-        let data = try JSONSerialization.data(withJSONObject: body)
+    /// Her Shakti row's per-Śakti state as the server holds it now: the
+    /// `Recognition Count` *before* this recognition (0 ⇒ never felt before)
+    /// and `Last Felt` as the API returns it.
+    private typealias ShaktiRecognitionState = (count: Int, lastFelt: String?)
 
-        var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)")!)
-        req.httpMethod = "POST"
+    /// GET her Shakti row for its count and Last Felt. Read once per
+    /// recognition, before the ledger row is created, so first-vs-return and
+    /// the PATCH's idempotency guard see the same state.
+    private func readShaktiRecognitionState(token: String,
+                                            recordId: String) async throws -> ShaktiRecognitionState {
+        var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)/\(recordId)")!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = data
-
-        let (respData, response) = try await session.data(for: req)
-        try Self.checkHTTP(response, data: respData)
-    }
-
-    /// GET the Shakti row to read the server's current count, compute the new
-    /// count, PATCH. Status is intentionally **not** touched here — readiness
-    /// is sensed (count grows); advancing is chosen (deliberate gesture on the
-    /// Detail status pill, which calls `advanceStatus` separately).
-    /// Returns the server's recognition count *before* this recognition (0 on
-    /// the very first felt), so the caller can detect the first-recognition
-    /// threshold without a second round-trip. When the GET shows this very
-    /// gesture's PATCH already landed (a retry whose first response was lost)
-    /// nothing is written and the count returned already includes her — so the
-    /// threshold, already crossed on that first pass, cannot fire twice.
-    @discardableResult
-    private func patchShaktiAfterRecognition(token: String,
-                                              shaktiRecordId: String,
-                                              feltAt: Date) async throws -> Int {
-        // GET
-        var getReq = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)/\(shaktiRecordId)")!)
-        getReq.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        let (getData, getResp) = try await session.data(for: getReq)
-        try Self.checkHTTP(getResp, data: getData)
+        let (data, response) = try await session.data(for: req)
+        try Self.checkHTTP(response, data: data)
 
         struct GetResponse: Decodable {
             let fields: Fields
@@ -922,21 +856,28 @@ extension AirtableService {
                 }
             }
         }
-        let parsed = try JSONDecoder().decode(GetResponse.self, from: getData)
-        // The server's count *before* this recognition. 0 ⇒ never felt before.
-        let previousCount = parsed.fields.recognitionCount ?? 0
+        let parsed = try JSONDecoder().decode(GetResponse.self, from: data)
+        return (count: parsed.fields.recognitionCount ?? 0, lastFelt: parsed.fields.lastFelt)
+    }
 
-        // Idempotent on retry: `Last Felt` and the count go in one PATCH, so a
-        // `Last Felt` equal to this gesture's exact second means that PATCH
-        // already landed (its response was lost, not the write) — counting
-        // her again would be a lie. The count read above already includes it.
-        let writtenFeltAt = RecognitionDedup.writtenFeltAt(feltAt)
-        if let lastFelt = parsed.fields.lastFelt,
-           RecognitionDedup.normalizedServerFeltAt(lastFelt) == writtenFeltAt {
+    /// PATCH her Shakti row: `Last Felt` = this gesture's second, `Recognition
+    /// Count` = the count read + 1 — nothing else. Status is intentionally
+    /// **not** touched — readiness is sensed (count grows); advancing is
+    /// chosen (deliberate gesture on the Detail status pill, which calls
+    /// `advanceStatus` separately). Idempotent on retry: `Last Felt` and the
+    /// count go in one PATCH, so a `Last Felt` equal to this gesture's exact
+    /// second means that PATCH already landed (its response was lost, not the
+    /// write) — counting her again would be a lie, and nothing is written.
+    private func patchShaktiAfterRecognition(token: String,
+                                              recordId: String,
+                                              feltAt: Date,
+                                              state: ShaktiRecognitionState) async throws {
+        if RecognitionDedup.patchAlreadyLanded(lastFelt: state.lastFelt, feltAt: feltAt) {
             log.notice("Shakti PATCH already landed for this recognition — skipping")
-            return previousCount
+            return
         }
-        let newCount = previousCount + 1
+        let writtenFeltAt = RecognitionDedup.writtenFeltAt(feltAt)
+        let newCount = state.count + 1
 
         // PATCH — count + lastFelt only.
         let fields: [String: Any] = [
@@ -946,7 +887,7 @@ extension AirtableService {
         let body: [String: Any] = ["fields": fields, "typecast": true]
         let data = try JSONSerialization.data(withJSONObject: body)
 
-        var patchReq = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)/\(shaktiRecordId)")!)
+        var patchReq = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)/\(recordId)")!)
         patchReq.httpMethod = "PATCH"
         patchReq.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         patchReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -954,7 +895,6 @@ extension AirtableService {
 
         let (patchData, patchResp) = try await session.data(for: patchReq)
         try Self.checkHTTP(patchResp, data: patchData)
-        return previousCount
     }
 
     /// Mirror the server's recognitionCount onto the local Shakti so the Detail
@@ -1045,51 +985,42 @@ extension AirtableService {
     }
 
     private static let pendingCrossingKey = "pendingCrossings"
-    private static let fldDescentRing = "Descent Ring"   // fld225xgYl2Rs3TP6
 
-    /// Mirror one *new-deepest* descent crossing to Airtable. Called only when
+    /// Mirror one *new-deepest* descent crossing to the ledger as a `Ring
+    /// Crossed` row linked to the Avaraṇa. Called only when
     /// `DescentState.enter(ring:)` returns true, so it fires once per new depth —
     /// not once per ring: a 2→9 plunge crosses seven thresholds but mirrors a
     /// single row for ring 9, and re-entering a shallower ring never fires. The
     /// local `DescentState` is the source of truth; Airtable is the backup that
-    /// `restoreDescentIfLocalEmpty` reads. `typecast: true` creates the `Crossing`
-    /// Row-Type option on first write (the option is not pre-created — see PR-0).
+    /// `restoreDescentIfLocalEmpty` reads. `typecast: true` creates the
+    /// `Ring Crossed` Activity-Type option on first write (it is not pre-created).
     func recordCrossing(ring: Int) async {
         if syncIsDisabled() { return }
         let item = PendingCrossing(ring: ring, feltAt: .now)
         if !(await processCrossing(item)) { enqueueCrossing(item) }
     }
 
+    /// One ledger row per crossing. The same create-time check as a
+    /// recognition guards the retry path: a queued item repeats the original
+    /// `feltAt`, so a row already linking this Avaraṇa at this second *is*
+    /// this crossing, and nothing is written twice.
     private func processCrossing(_ item: PendingCrossing) async -> Bool {
         guard let token = pat else { return false }
+        let activity = ActivityLedger.crossing(ring: item.ring, feltAt: item.feltAt)
         do {
-            try await createCrossingRow(token: token, item: item)
+            if await activityExistsOnServer(token: token,
+                                            type: ActivityLedger.ActivityType.ringCrossed,
+                                            linkRecordId: activity.linkRecordId,
+                                            feltAt: item.feltAt) {
+                log.notice("Ring Crossed row already on server — skipping create")
+                return true
+            }
+            try await createActivityRow(token: token, item: activity)
             return true
         } catch {
             log.error("Crossing write failed: \(Self.describe(error), privacy: .public)")
             return false
         }
-    }
-
-    private func createCrossingRow(token: String, item: PendingCrossing) async throws {
-        let iso = ISO8601DateFormatter()
-        let fields: [String: Any] = [
-            Self.fldRowType:     "Crossing",
-            Self.fldDescentRing: item.ring,
-            Self.fldFeltAt:      iso.string(from: item.feltAt),
-            Self.fldSource:      "Mandala"
-        ]
-        let body: [String: Any] = ["fields": fields, "typecast": true]
-        let data = try JSONSerialization.data(withJSONObject: body)
-
-        var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)")!)
-        req.httpMethod = "POST"
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = data
-
-        let (respData, response) = try await session.data(for: req)
-        try Self.checkHTTP(response, data: respData)
     }
 
     private func flushPendingCrossings() async {
@@ -1184,7 +1115,7 @@ extension AirtableService {
             Self.markLetterLedgered(recordId)
             let name = shakti.name.isEmpty ? "a Śakti" : shakti.name
             await logActivity(
-                type: Self.activityLetterWritten,
+                type: ActivityLedger.ActivityType.letterWritten,
                 linkedShaktiRecordId: recordId,
                 activityName: "A letter to \(name)",
                 detail: "First letter written"
@@ -1278,54 +1209,39 @@ extension AirtableService {
     }
 }
 
-// MARK: - Cross-app App Activity ledger
+// MARK: - App Activity ledger (the writer)
 
-/// A milestone written to the shared **App Activity** table (`tblJlBeiHnqGpYrL7`,
-/// same base as Mandala). Only genuine threshold crossings land here — the first
-/// recognition of a Śakti and the first letter written for her — never per-tap
-/// recognitions or silences. Fire-and-forget with the same offline-first queue
-/// pattern as the other writes; a ledger failure never affects the gesture.
+/// Every practice event is one row in the shared **App Activity** table
+/// (`ActivityLedger.tableId`, same base as the Mandala) and nowhere else —
+/// recognitions from any screen, new-deepest ring crossings, the silence
+/// dwell, the first letter written. Vocabulary, payload and formulas are
+/// `ActivityLedger` (pure); this extension owns the HTTP: the one POST every
+/// event goes through, the create-time idempotency check, and the
+/// offline-first queue shared with the other writes. Fire-and-forget — a
+/// ledger failure never affects the gesture.
 extension AirtableService {
-
-    // App Activity table + field names (write API accepts field names, matching
-    // the existing writes). Values verified live via the Airtable schema.
-    private static let activityTableId = "tblJlBeiHnqGpYrL7"
-    private static let fldActSourceApp   = "Source App"
-    private static let fldActType        = "Activity Type"
-    private static let fldActName        = "Activity Name"
-    private static let fldActDetail      = "Detail"
-    private static let fldActDate        = "Activity Date"
-    private static let fldActLinkMandala = "Link to Mandala"
-
-    private static let sourceAppMandala        = "Mandala"
-    static let activityShaktiRecognized        = "Shakti Recognized"
-    static let activityLetterWritten           = "Letter Written"
 
     private static let pendingActivityKey = "pendingActivities"
     private static let ledgeredLettersKey = "ledgeredLetters"
 
-    private struct PendingActivity: Codable, PendingQueueItem {
-        var id: String = UUID().uuidString
-        let type: String
-        let linkRecordId: String
-        let name: String
-        let detail: String
-        let at: Date
-        var failCount: Int = 0
-    }
-
-    /// Write one milestone to the shared ledger. Fire-and-forget; on failure the
+    /// Write one event to the ledger by its parts — the shape `saveLetter`
+    /// uses (and the shape build 36 queued). Fire-and-forget; on failure the
     /// item is queued in UserDefaults and drained by `flushPending`.
     func logActivity(type: String,
                      linkedShaktiRecordId: String,
                      activityName: String,
                      detail: String) async {
+        await logActivity(PendingActivity(type: type,
+                                          linkRecordId: linkedShaktiRecordId,
+                                          name: activityName,
+                                          detail: detail,
+                                          at: .now))
+    }
+
+    /// Write one event to the ledger. Fire-and-forget; on failure the item is
+    /// queued in UserDefaults and drained by `flushPending`.
+    func logActivity(_ item: PendingActivity) async {
         if syncIsDisabled() { return }
-        let item = PendingActivity(type: type,
-                                   linkRecordId: linkedShaktiRecordId,
-                                   name: activityName,
-                                   detail: detail,
-                                   at: .now)
         if await processActivity(item) == false {
             enqueueActivity(item)
         }
@@ -1342,28 +1258,14 @@ extension AirtableService {
         }
     }
 
+    /// The one writer: POST `ActivityLedger.fields(for:)` to App Activity.
+    /// `typecast: true` lets a new `Activity Type` or `Gesture Source` option
+    /// be born on first write.
     private func createActivityRow(token: String, item: PendingActivity) async throws {
-        let dateFmt = DateFormatter()
-        dateFmt.calendar = Calendar(identifier: .gregorian)
-        dateFmt.locale = Locale(identifier: "en_US_POSIX")
-        // Activity Date is the practitioner's *local* calendar day, pinned
-        // deliberately to the device zone so a late-evening milestone is not
-        // filed under tomorrow's UTC date.
-        dateFmt.timeZone = TimeZone.current
-        dateFmt.dateFormat = "yyyy-MM-dd"
-
-        let fields: [String: Any] = [
-            Self.fldActSourceApp:   Self.sourceAppMandala,
-            Self.fldActType:        item.type,
-            Self.fldActLinkMandala: [item.linkRecordId],
-            Self.fldActName:        item.name,
-            Self.fldActDetail:      item.detail,
-            Self.fldActDate:        dateFmt.string(from: item.at)
-        ]
-        let body: [String: Any] = ["fields": fields, "typecast": true]
+        let body: [String: Any] = ["fields": ActivityLedger.fields(for: item), "typecast": true]
         let data = try JSONSerialization.data(withJSONObject: body)
 
-        var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.activityTableId)")!)
+        var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(ActivityLedger.tableId)")!)
         req.httpMethod = "POST"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1371,6 +1273,36 @@ extension AirtableService {
 
         let (respData, response) = try await session.data(for: req)
         try Self.checkHTTP(response, data: respData)
+    }
+
+    /// Is this exact event already in the ledger? GET the rows of `type`
+    /// within ±60 s of `feltAt` (a handful at most) and look for one that
+    /// links `linkRecordId` *and* carries this `feltAt` to the second — the
+    /// key the create wrote, which a queued retry repeats and a genuine second
+    /// event never can. Window, key and match live in `RecognitionDedup` and
+    /// `ActivityLedger`, pure and unit-tested. Fail-open: if the check itself
+    /// fails, the failure is logged with status + body and the create proceeds
+    /// — a broken check must never strand an event the way the July pipe did.
+    private func activityExistsOnServer(token: String,
+                                        type: String,
+                                        linkRecordId: String,
+                                        feltAt: Date) async -> Bool {
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.dedup(type: type, around: feltAt),
+                sort: [],
+                fields: RecognitionDedup.readFields,
+                byFieldId: false
+            )
+            return rows.contains {
+                ActivityLedger.rowMatches($0, linkRecordId: linkRecordId, feltAt: feltAt)
+            }
+        } catch {
+            log.error("Ledger dedup check (\(type, privacy: .public)) failed — proceeding with create: \(Self.describe(error), privacy: .public)")
+            return false
+        }
     }
 
     private func flushPendingActivities() async {
@@ -1464,39 +1396,21 @@ extension AirtableService {
     }
 
     /// One paged GET against App Activity: the Śakti record ids linked from
-    /// every `Letter Written` row. The ledger table is addressed by field
-    /// *names* throughout (matching its writes), so `fields[]` is by name too.
+    /// every `Letter Written` row. The ledger is read by field *name*,
+    /// matching its writes, and only the link column comes back.
     private func fetchLetterWrittenLinks(token: String) async throws -> Set<String> {
-        struct Row: Decodable {
-            let fields: Fields
-            struct Fields: Decodable {
-                let linkToMandala: [String]?
-                enum CodingKeys: String, CodingKey {
-                    case linkToMandala = "Link to Mandala"
-                }
-            }
-        }
+        let rows: [ActivityLedger.Row] = try await fetch(
+            token: token,
+            table: ActivityLedger.tableId,
+            filter: "{\(ActivityLedger.Field.activityType)}='\(ActivityLedger.ActivityType.letterWritten)'",
+            sort: [],
+            fields: [ActivityLedger.Field.linkToMandala],
+            byFieldId: false
+        )
         var linked = Set<String>()
-        var offset: String? = nil
-        repeat {
-            var comps = URLComponents(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.activityTableId)")!
-            var items: [URLQueryItem] = [
-                .init(name: "pageSize",        value: "100"),
-                .init(name: "filterByFormula", value: "{\(Self.fldActType)}='\(Self.activityLetterWritten)'"),
-                .init(name: "fields[]",        value: Self.fldActLinkMandala),
-            ]
-            if let offset { items.append(.init(name: "offset", value: offset)) }
-            comps.queryItems = items
-            var req = URLRequest(url: comps.url!)
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            let (data, response) = try await session.data(for: req)
-            try Self.checkHTTP(response, data: data)
-            let page = try JSONDecoder().decode(Page<Row>.self, from: data)
-            for r in page.records {
-                for id in r.fields.linkToMandala ?? [] { linked.insert(id) }
-            }
-            offset = page.offset
-        } while offset != nil
+        for r in rows {
+            for id in r.fields.linkToMandala ?? [] { linked.insert(id) }
+        }
         return linked
     }
 }
@@ -1668,25 +1582,26 @@ enum PendingQueuePolicy {
 
 // MARK: - Recognition idempotency (pure helpers)
 
-/// Before a Recognition row is created, the server is asked whether this exact
-/// moment is already there — the retry path after a create-succeeded /
-/// PATCH-failed split would otherwise write her twice. The key is the one the
-/// create wrote: her record id in `Of Shakti` plus `Felt At` to the second. A
-/// queued retry carries the original `feltAt`, so it matches; a genuine second
-/// recognition of the same Śakti never can (the ceremony alone outlasts a
-/// second). The ±60 s window is only the fetch — it keeps the page to a
-/// handful of rows. Everything here is pure so it is testable without a
-/// network. Nothing here touches Notes — that is the practitioner's text.
+/// Before an event row is created in App Activity, the ledger is asked whether
+/// this exact moment is already there — the retry path after a create-succeeded
+/// / PATCH-failed split would otherwise write it twice. The key is the one the
+/// create wrote: the record id in `Link to Mandala` (her Shakti row; the
+/// Avaraṇa row for a crossing) plus `Felt At` to the second. A queued retry
+/// carries the original `feltAt`, so it matches; a genuine second recognition
+/// of the same Śakti never can (the ceremony alone outlasts a second). The
+/// ±60 s window is only the fetch — it keeps the page to a handful of rows;
+/// the formula itself is `ActivityLedger.dedup`. The same second-precision key
+/// guards the Shakti-row PATCH (`patchAlreadyLanded`). Everything here is pure
+/// so it is testable without a network. Nothing here touches Notes — that is
+/// the practitioner's text.
 enum RecognitionDedup {
 
     /// Half-width of the fetch window.
     static let windowSeconds: TimeInterval = 60
 
-    /// `Of Shakti`, read with `returnFieldsByFieldId=true`.
-    static let ofShaktiFieldId = "fldaDjmaPvu57sJVg"
-
-    /// `Felt At`, read with `returnFieldsByFieldId=true`.
-    static let feltAtFieldId = "fldk4BdikzJQOautw"
+    /// The two ledger columns the check reads (`fields[]`, by name): the link
+    /// and `Felt At` — the whole key, nothing else.
+    static let readFields = [ActivityLedger.Field.linkToMandala, ActivityLedger.Field.feltAt]
 
     /// `Felt At` exactly as the create writes it: second precision, `Z`.
     static func writtenFeltAt(_ feltAt: Date) -> String {
@@ -1722,20 +1637,25 @@ enum RecognitionDedup {
                 upper: iso.string(from: feltAt.addingTimeInterval(windowSeconds)))
     }
 
-    /// The `filterByFormula` for the check. Formulas take field *names*.
-    static func filterFormula(around feltAt: Date) -> String {
-        let w = window(around: feltAt)
-        return "AND({Row Type}='Recognition', IS_AFTER({Felt At}, '\(w.lower)'), IS_BEFORE({Felt At}, '\(w.upper)'))"
+    /// Did this gesture's Shakti-row PATCH already land? `Last Felt` and the
+    /// count go in one PATCH, so a `Last Felt` equal to this gesture's exact
+    /// second means it did (its response was lost, not the write) — and the
+    /// count on the row already includes her. An absent or unreadable
+    /// `Last Felt` is never a match.
+    static func patchAlreadyLanded(lastFelt: String?, feltAt: Date) -> Bool {
+        guard let lastFelt, let server = normalizedServerFeltAt(lastFelt) else { return false }
+        return server == writtenFeltAt(feltAt)
     }
 
-    /// True only when the row is hers *and* carries this `feltAt` to the second
-    /// — the full client key. Same Śakti at another second is another moment.
-    static func rowMatches(ofShakti: [String]?,
+    /// True only when the row links `linkRecordId` *and* carries this `feltAt`
+    /// to the second — the full client key. The same link at another second
+    /// is another moment.
+    static func rowMatches(links: [String]?,
                            feltAt rowFeltAt: String?,
-                           shaktiRecordId: String,
+                           linkRecordId: String,
                            feltAt: Date) -> Bool {
-        guard let links = ofShakti, !shaktiRecordId.isEmpty,
-              links.contains(shaktiRecordId) else { return false }
+        guard let links, !linkRecordId.isEmpty,
+              links.contains(linkRecordId) else { return false }
         guard let raw = rowFeltAt, let server = normalizedServerFeltAt(raw) else { return false }
         return server == writtenFeltAt(feltAt)
     }
