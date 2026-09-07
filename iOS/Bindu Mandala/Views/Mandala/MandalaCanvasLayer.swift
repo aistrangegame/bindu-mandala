@@ -78,7 +78,7 @@ struct MandalaCanvasLayer: View {
     private static let ordinals = ["", "First", "Second", "Third", "Fourth", "Fifth",
                                    "Sixth", "Seventh", "Eighth", "Ninth"]
     /// The invariant Śrī-Yantra enclosure forms — exactly the prototype's `av.form`
-    /// values (all-shaktis-data.js), so the tier-1 labels read as designed.
+    /// values (the July prototype; Airtable is canon for names), so the tier-1 labels read as designed.
     private static let enclosureForms = [
         "", "Bhūpura", "16-Petal Lotus", "8-Petal Lotus", "14 Triangles",
         "10 Outer Triangles", "10 Inner Triangles", "Vāk Ring", "Mūla Trikoṇa", "Bindu",
