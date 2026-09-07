@@ -417,7 +417,8 @@ final class AirtableService {
     /// `Shakti Recognized` row comes back as a `.felt` entry and every
     /// `Silence Held` row as `.silence`, her words restored from `Notes`; the
     /// mapping is `ActivityLedger.recognitionEntries` (pure), which tolerates
-    /// a legacy milestone that predates `Felt At` and skips what it cannot
+    /// a legacy milestone that predates `Felt At` (folding it into its
+    /// migrated twin when one carries the same day) and skips what it cannot
     /// place. Guarded on emptiness so it can never duplicate existing history.
     /// Silent on any failure.
     func restoreRecognitionsIfLocalEmpty(context: ModelContext) async {
@@ -605,7 +606,8 @@ final class AirtableService {
 
 /// One `Shakti Recognized` row read from the ledger for a single Śakti's
 /// history. `feltAt` is `nil` for a legacy milestone written before `Felt At`
-/// existed — Her Moments renders those as a bare "she was felt here".
+/// existed and not folded into a migrated twin (`ActivityLedger.momentRows`)
+/// — Her Moments renders those as a bare "she was felt here".
 struct RecognitionAirtableRow: Identifiable, Equatable {
     let id: String
     let feltAt: Date?
@@ -620,17 +622,20 @@ extension AirtableService {
     /// link's primary field (`ActivityLedger.moments`; a blank name narrows
     /// nothing); names repeat across rings, so the record-id match stays
     /// client-side, paging by `offset` (100 a page, at most `momentPageCap`
-    /// pages) until `limit` rows link this record. Throws on network failure;
-    /// the caller keeps local SwiftData.
+    /// pages) until `limit` timestamped rows link this record. A backfill
+    /// milestone beside its migrated twin is one moment, shown once
+    /// (`ActivityLedger.momentRows`). Throws on network failure; the caller
+    /// keeps local SwiftData.
     func fetchRecognitions(forShaktiRecordId shaktiRecordId: String,
                            name shaktiName: String,
                            limit: Int = 5) async throws -> [RecognitionAirtableRow] {
         guard let token = pat else { return [] }
 
-        var matching: [RecognitionAirtableRow] = []
+        var matched: [ActivityLedger.Row] = []
+        var timestamped = 0
         var offset: String? = nil
         var pages = 0
-        repeat {
+        paging: repeat {
             let page: Page<ActivityLedger.Row> = try await fetchPage(
                 token: token,
                 table: ActivityLedger.tableId,
@@ -642,23 +647,29 @@ extension AirtableService {
             )
             for row in page.records
             where row.fields.linkToMandala?.contains(shaktiRecordId) == true {
-                matching.append(RecognitionAirtableRow(
-                    id: row.id,
-                    feltAt: ActivityLedger.serverDate(row.fields.feltAt),
-                    notes: row.fields.notes,
-                    moonPhase: row.fields.moonPhase
-                ))
-                if matching.count >= limit { return matching }
+                matched.append(row)
+                if ActivityLedger.serverDate(row.fields.feltAt) != nil { timestamped += 1 }
+                // `limit` timestamped rows are her newest `limit`; a legacy
+                // milestone is older than all of them and would not show.
+                if timestamped >= limit { break paging }
             }
             offset = page.offset
             pages += 1
         } while offset != nil && pages < Self.momentPageCap
-        return matching
+        return ActivityLedger.momentRows(matched, limit: limit).map { row in
+            RecognitionAirtableRow(
+                id: row.id,
+                feltAt: ActivityLedger.serverDate(row.fields.feltAt),
+                notes: row.fields.notes,
+                moonPhase: row.fields.moonPhase
+            )
+        }
     }
 
     /// The ledger columns Her Moments reads (`fields[]`, by name).
     private static let momentFields = [
         ActivityLedger.Field.feltAt,
+        ActivityLedger.Field.activityDate,
         ActivityLedger.Field.notes,
         ActivityLedger.Field.moonPhase,
         ActivityLedger.Field.linkToMandala,

@@ -316,11 +316,15 @@ enum ActivityLedger {
     /// skipped, as are rows of any other type. `Silence Held` → `.silence`,
     /// `Shakti Recognized` → `.felt`. A legacy milestone that predates
     /// `Felt At` is tolerated: its instant is noon of `Activity Date` in
-    /// `timeZone` (the day is true; the hour is not known). A row with
-    /// neither is skipped — never coerced to now.
+    /// `timeZone` (the day is true; the hour is not known) — unless a row of
+    /// the same type and link carries `Felt At` on that same day, in which
+    /// case the two are one moment written twice (`isShadowed`) and only the
+    /// timestamped row restores. A row with neither is skipped — never
+    /// coerced to now.
     static func recognitionEntries(from rows: [Row],
                                    byRecord: [String: (kp: Int, ring: Int)],
                                    timeZone: TimeZone = .current) -> [RestoredRecognition] {
+        let timestampedDays = timestampedDayKeys(in: rows, timeZone: timeZone)
         var out: [RestoredRecognition] = []
         for row in rows {
             let gesture: RecognitionEntry.Gesture
@@ -330,6 +334,7 @@ enum ActivityLedger {
             default:                            continue
             }
             guard let rec = row.fields.linkToMandala?.first, let map = byRecord[rec] else { continue }
+            guard !isShadowed(row, by: timestampedDays) else { continue }
             guard let ts = serverDate(row.fields.feltAt)
                     ?? legacyTimestamp(activityDate: row.fields.activityDate, timeZone: timeZone)
             else { continue }
@@ -354,6 +359,61 @@ enum ActivityLedger {
             return (ring: ring, date: date)
         }
         .sorted { $0.date < $1.date }
+    }
+
+    // MARK: - A legacy row beside its timestamped twin
+
+    /// The 2026-09-07 backfill wrote the ledger's milestone rows with
+    /// `Activity Date` only (`Felt At` did not exist yet); the migration then
+    /// brings the same recognitions in with their true instants. Both rows
+    /// stand for one moment, so a `Felt At`-less row is *shadowed* when a row
+    /// of the same type and link carries `Felt At` on the same day — the day
+    /// as the timestamped row states it (`Activity Date`) or as `timeZone`
+    /// reads its instant, so a device in another zone still knows the twin.
+    /// A legacy row whose day has no timestamped twin (a Śakti felt only
+    /// before sync-live, then felt again months later) is not shadowed and
+    /// keeps its noon restore: shadowing folds a duplicate, never history.
+
+    /// `type|link|yyyy-MM-dd` for every row with a readable `Felt At`.
+    static func timestampedDayKeys(in rows: [Row], timeZone: TimeZone) -> Set<String> {
+        var keys = Set<String>()
+        for row in rows {
+            guard let type = row.fields.activityType,
+                  let instant = serverDate(row.fields.feltAt) else { continue }
+            for link in row.fields.linkToMandala ?? [] {
+                keys.insert(dayKey(type, link, activityDate(instant, timeZone: timeZone)))
+                if let stated = row.fields.activityDate {
+                    keys.insert(dayKey(type, link, stated))
+                }
+            }
+        }
+        return keys
+    }
+
+    /// True for a `Felt At`-less row whose type, link and `Activity Date`
+    /// match a key from `timestampedDayKeys` — the same moment, already
+    /// carried with its instant.
+    static func isShadowed(_ row: Row, by keys: Set<String>) -> Bool {
+        guard serverDate(row.fields.feltAt) == nil,
+              let type = row.fields.activityType,
+              let day = row.fields.activityDate else { return false }
+        return (row.fields.linkToMandala ?? []).contains { keys.contains(dayKey(type, $0, day)) }
+    }
+
+    private static func dayKey(_ type: String, _ link: String, _ day: String) -> String {
+        "\(type)|\(link)|\(day)"
+    }
+
+    /// Her Moments: from the rows that matched one Śakti's record id, newest
+    /// first as the server sorted them, the rows to show — at most `limit`.
+    /// Timestamped rows lead; a `Felt At`-less milestone is dropped when
+    /// shadowed and otherwise follows them (her first recognition is the
+    /// oldest by construction).
+    static func momentRows(_ matched: [Row], limit: Int, timeZone: TimeZone = .current) -> [Row] {
+        let keys = timestampedDayKeys(in: matched, timeZone: timeZone)
+        let timestamped = matched.filter { serverDate($0.fields.feltAt) != nil }
+        let legacy = matched.filter { serverDate($0.fields.feltAt) == nil && !isShadowed($0, by: keys) }
+        return Array((timestamped + legacy).prefix(limit))
     }
 
     /// `Felt At` as the API returns it (`…Z` with or without milliseconds) → Date.

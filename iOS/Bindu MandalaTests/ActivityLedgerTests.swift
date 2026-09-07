@@ -444,6 +444,87 @@ final class ActivityLedgerTests: XCTestCase {
         XCTAssertEqual(e.first?.timestamp, utc(2026, 9, 6, 14, 34, 41))
     }
 
+    // MARK: restore — a backfill milestone beside its migrated twin
+
+    /// The 09-07 backfill's 38 milestone rows carry `Activity Date` only; the
+    /// migration brings the same first recognitions in with their instants.
+    /// One moment, one entry — at the true instant, with her words.
+    func testLegacyMilestoneBesideItsMigratedTwinRestoresOnceAtTheInstant() {
+        let milestone = row("milestone", type: "Shakti Recognized", link: ["recShakti"],
+                            activityDate: "2026-05-20")
+        let migrated = row("migrated", type: "Shakti Recognized", link: ["recShakti"],
+                           feltAt: "2026-05-21T01:12:00.000Z", activityDate: "2026-05-20",
+                           notes: "Atlas emergence")
+        let e = ActivityLedger.recognitionEntries(from: [milestone, migrated],
+                                                  byRecord: byRecord, timeZone: newYork)
+        XCTAssertEqual(e.count, 1)
+        XCTAssertEqual(e[0].timestamp, utc(2026, 5, 21, 1, 12, 0))
+        XCTAssertEqual(e[0].note, "Atlas emergence")
+        // The twin is known by the day the row states, so a device in a zone
+        // where 01:12Z is already the 21st still folds it…
+        XCTAssertEqual(ActivityLedger.recognitionEntries(from: [milestone, migrated],
+                                                         byRecord: byRecord, timeZone: utcZone).count, 1)
+        // …and by the instant's day in the zone when the twin states no day.
+        let unstated = row("migrated", type: "Shakti Recognized", link: ["recShakti"],
+                           feltAt: "2026-05-21T01:12:00.000Z", notes: "Atlas emergence")
+        XCTAssertEqual(ActivityLedger.recognitionEntries(from: [milestone, unstated],
+                                                         byRecord: byRecord, timeZone: newYork).count, 1)
+    }
+
+    /// kp35 and kp41 were felt only in May, before sync-live: their milestone
+    /// rows have no migrated twin. Felt again months later, the May first-felt
+    /// must still come home — a later instant shadows nothing but its own day.
+    func testLegacyMilestoneOnAnotherDayThanHerTimestampedRowsIsKept() {
+        let rows = [
+            row("milestone", type: "Shakti Recognized", link: ["recShakti"],
+                activityDate: "2026-05-20"),
+            row("later", type: "Shakti Recognized", link: ["recShakti"],
+                feltAt: "2026-09-06T14:34:41.000Z", activityDate: "2026-09-06"),
+        ]
+        let e = ActivityLedger.recognitionEntries(from: rows, byRecord: byRecord, timeZone: newYork)
+        XCTAssertEqual(e.map(\.timestamp), [utc(2026, 5, 20, 16, 0, 0), utc(2026, 9, 6, 14, 34, 41)],
+                       "May at noon EDT, then September at its instant")
+    }
+
+    /// Shadowing is per type and per link: a silence held that day, or another
+    /// Śakti felt that day, is not her milestone's twin.
+    func testOnlyHerOwnTimestampedRecognitionShadowsHerMilestone() {
+        let rows = [
+            row("milestone", type: "Shakti Recognized", link: ["recShakti"],
+                activityDate: "2026-05-20"),
+            row("silence", type: "Silence Held", link: ["recShakti"],
+                feltAt: "2026-05-20T16:00:00.000Z", activityDate: "2026-05-20"),
+            row("other", type: "Shakti Recognized", link: ["recDeep"],
+                feltAt: "2026-05-20T17:00:00.000Z", activityDate: "2026-05-20"),
+        ]
+        let e = ActivityLedger.recognitionEntries(from: rows, byRecord: byRecord, timeZone: newYork)
+        XCTAssertEqual(e.count, 3)
+        XCTAssertEqual(e.filter { $0.gesture == .felt && $0.kp == 40 }.count, 1, "her milestone survives")
+    }
+
+    // MARK: Her Moments — the rows to show
+
+    func testMomentRowsFoldTheShadowedMilestoneAndKeepTheUnshadowedOneLast() {
+        let newest = row("newest", type: "Shakti Recognized", link: ["recShakti"],
+                         feltAt: "2026-09-06T14:34:41.000Z", activityDate: "2026-09-06")
+        let migrated = row("migrated", type: "Shakti Recognized", link: ["recShakti"],
+                           feltAt: "2026-05-21T01:12:00.000Z", activityDate: "2026-05-20")
+        let milestone = row("milestone", type: "Shakti Recognized", link: ["recShakti"],
+                            activityDate: "2026-05-20")
+        XCTAssertEqual(ActivityLedger.momentRows([newest, migrated, milestone], limit: 5,
+                                                 timeZone: newYork).map(\.id),
+                       ["newest", "migrated"], "one moment, shown once")
+        XCTAssertEqual(ActivityLedger.momentRows([newest, milestone], limit: 5,
+                                                 timeZone: newYork).map(\.id),
+                       ["newest", "milestone"], "an unshadowed milestone shows, after the timestamped rows")
+        XCTAssertEqual(ActivityLedger.momentRows([milestone, newest], limit: 5,
+                                                 timeZone: newYork).map(\.id),
+                       ["newest", "milestone"], "wherever the server placed the blank")
+        XCTAssertEqual(ActivityLedger.momentRows([newest, milestone], limit: 1,
+                                                 timeZone: newYork).map(\.id),
+                       ["newest"], "limit cuts the oldest")
+    }
+
     func testRecognitionEntriesSkipWhatCannotBePlaced() {
         let rows = [
             row("letter", type: "Letter Written", link: ["recShakti"], feltAt: "2026-09-06T14:34:41.000Z"),
