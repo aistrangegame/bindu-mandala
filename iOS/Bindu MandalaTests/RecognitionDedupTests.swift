@@ -1,8 +1,9 @@
 import XCTest
 @testable import Bindu_Mandala
 
-/// The pure half of the create-time idempotency check: the ±60 s window in
-/// ISO8601 Z, the formula built from it, and the "is this row hers" match.
+/// The pure half of the create-time idempotency check: the ±60 s fetch window
+/// in ISO8601 Z, the formula built from it, the `Felt At` key in the form the
+/// create wrote it, and the "is this row this exact moment of hers" match.
 final class RecognitionDedupTests: XCTestCase {
 
     private func utc(_ year: Int, _ month: Int, _ day: Int,
@@ -58,27 +59,101 @@ final class RecognitionDedupTests: XCTestCase {
         )
     }
 
+    // MARK: key — Felt At as written and as the API returns it
+
+    func testWrittenFeltAtIsSecondPrecisionZ() {
+        let s = RecognitionDedup.writtenFeltAt(utc(2026, 9, 7, 12, 0, 37).addingTimeInterval(0.6))
+        XCTAssertEqual(s, "2026-09-07T12:00:37Z", "same form the create sends to Felt At")
+    }
+
+    func testServerFeltAtWithMillisecondsNormalizesToWrittenForm() {
+        // Airtable hands back `…:33.000Z`; the create wrote `…:33Z`.
+        XCTAssertEqual(RecognitionDedup.normalizedServerFeltAt("2026-07-13T21:25:33.000Z"),
+                       "2026-07-13T21:25:33Z")
+    }
+
+    func testServerFeltAtWithoutMillisecondsNormalizesToItself() {
+        XCTAssertEqual(RecognitionDedup.normalizedServerFeltAt("2026-07-13T21:25:33Z"),
+                       "2026-07-13T21:25:33Z")
+    }
+
+    func testUnreadableServerFeltAtIsNil() {
+        XCTAssertNil(RecognitionDedup.normalizedServerFeltAt(""))
+        XCTAssertNil(RecognitionDedup.normalizedServerFeltAt("yesterday"))
+        XCTAssertNil(RecognitionDedup.normalizedServerFeltAt("2026-07-13"))
+    }
+
     // MARK: match
 
-    func testRowMatchesOnlyWhenOfShaktiContainsTheId() {
-        XCTAssertTrue(RecognitionDedup.rowMatches(ofShakti: ["recA"], shaktiRecordId: "recA"))
-        XCTAssertTrue(RecognitionDedup.rowMatches(ofShakti: ["recOther", "recA"], shaktiRecordId: "recA"))
-        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recOther"], shaktiRecordId: "recA"))
-        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: [], shaktiRecordId: "recA"))
-        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: nil, shaktiRecordId: "recA"))
+    private let moment = Date(timeIntervalSince1970: 1_700_000_000)   // 2023-11-14T22:13:20Z
+
+    func testRowMatchesWhenHersAndSameSecond() {
+        XCTAssertTrue(RecognitionDedup.rowMatches(ofShakti: ["recA"],
+                                                  feltAt: "2023-11-14T22:13:20.000Z",
+                                                  shaktiRecordId: "recA", feltAt: moment))
+        XCTAssertTrue(RecognitionDedup.rowMatches(ofShakti: ["recOther", "recA"],
+                                                  feltAt: "2023-11-14T22:13:20Z",
+                                                  shaktiRecordId: "recA", feltAt: moment))
+    }
+
+    func testRetryWithSubSecondFeltAtStillMatchesTheRowItWrote() {
+        // The queued item carries the original Date, fractional part and all;
+        // the row holds what the create wrote from it — the truncated second.
+        let queued = moment.addingTimeInterval(0.84)
+        XCTAssertTrue(RecognitionDedup.rowMatches(ofShakti: ["recA"],
+                                                  feltAt: "2023-11-14T22:13:20.000Z",
+                                                  shaktiRecordId: "recA", feltAt: queued))
+    }
+
+    func testSameShaktiFortySecondsApartIsAnotherMoment() {
+        // Inside the fetch window, but not the same second: a genuine second
+        // recognition must not be mistaken for a retry.
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA"],
+                                                   feltAt: "2023-11-14T22:13:20.000Z",
+                                                   shaktiRecordId: "recA",
+                                                   feltAt: moment.addingTimeInterval(40)))
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA"],
+                                                   feltAt: "2023-11-14T22:13:20.000Z",
+                                                   shaktiRecordId: "recA",
+                                                   feltAt: moment.addingTimeInterval(1)))
+    }
+
+    func testRowDoesNotMatchAnotherShaktiAtTheSameSecond() {
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recOther"],
+                                                   feltAt: "2023-11-14T22:13:20.000Z",
+                                                   shaktiRecordId: "recA", feltAt: moment))
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: [],
+                                                   feltAt: "2023-11-14T22:13:20.000Z",
+                                                   shaktiRecordId: "recA", feltAt: moment))
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: nil,
+                                                   feltAt: "2023-11-14T22:13:20.000Z",
+                                                   shaktiRecordId: "recA", feltAt: moment))
     }
 
     func testRowMatchIsExactNotPrefix() {
-        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA1"], shaktiRecordId: "recA"))
-        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA"], shaktiRecordId: "recA1"))
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA1"], feltAt: "2023-11-14T22:13:20.000Z",
+                                                   shaktiRecordId: "recA", feltAt: moment))
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA"], feltAt: "2023-11-14T22:13:20.000Z",
+                                                   shaktiRecordId: "recA1", feltAt: moment))
     }
 
     func testEmptyIdNeverMatches() {
-        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: [""], shaktiRecordId: ""))
-        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA"], shaktiRecordId: ""))
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: [""], feltAt: "2023-11-14T22:13:20.000Z",
+                                                   shaktiRecordId: "", feltAt: moment))
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA"], feltAt: "2023-11-14T22:13:20.000Z",
+                                                   shaktiRecordId: "", feltAt: moment))
     }
 
-    func testOfShaktiFieldIdIsTheLinkField() {
+    func testRowWithoutReadableFeltAtNeverMatches() {
+        // Fail toward the create: an unreadable key cannot claim the moment.
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA"], feltAt: nil,
+                                                   shaktiRecordId: "recA", feltAt: moment))
+        XCTAssertFalse(RecognitionDedup.rowMatches(ofShakti: ["recA"], feltAt: "not a date",
+                                                   shaktiRecordId: "recA", feltAt: moment))
+    }
+
+    func testFieldIdsAreTheLinkAndFeltAtFields() {
         XCTAssertEqual(RecognitionDedup.ofShaktiFieldId, "fldaDjmaPvu57sJVg")
+        XCTAssertEqual(RecognitionDedup.feltAtFieldId, "fldk4BdikzJQOautw")
     }
 }

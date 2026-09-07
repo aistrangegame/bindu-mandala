@@ -237,7 +237,10 @@ struct LetterEditorView: View {
 
     private func load() {
         guard !loaded else { return }   // onAppear can fire again; never clobber the draft
-        let body = LetterStore(context: context).letter(for: shakti.position).body
+        // Read-only: no row is inserted for a letter never written. The insert
+        // belongs to `saveIfNeeded`, so opening leaves the store untouched and
+        // a blank row can never block her server letter from seeding.
+        let body = LetterStore(context: context).existingLetter(for: shakti.position)?.body ?? ""
         draft = LetterDraft(saved: body)   // text == saved, so this is not an edit
         loaded = true
     }
