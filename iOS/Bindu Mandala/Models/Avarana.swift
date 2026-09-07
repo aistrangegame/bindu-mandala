@@ -62,7 +62,13 @@ final class Avarana {
     private var idx: Int? { (1...9).contains(ringNumber) ? ringNumber - 1 : nil }
 
     /// The enclosure's form name — "Bhūpura" … "Bindu".
-    var enclosureForm: String { idx.map { Self.forms[$0] } ?? "" }
+    var enclosureForm: String { Self.enclosureForm(forRing: ringNumber) }
+
+    /// The form name for any ring 1…9 without a model row — the ledger's
+    /// `Ring Crossed` detail ("Fell inward to the Bindu"). `""` outside 1…9.
+    static func enclosureForm(forRing ring: Int) -> String {
+        (1...9).contains(ring) ? forms[ring - 1] : ""
+    }
     /// How many of the 102 are seated in this enclosure.
     var shaktiCount: Int { idx.map { Self.counts[$0] } ?? 0 }
     /// One line on the enclosure's geometry.

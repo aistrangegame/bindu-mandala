@@ -17,7 +17,9 @@ final class AirtableService {
 
     /// Avaraṇa record-id → ring number (from brief §3, confirmed live May 28, 2026).
     /// The Avaraṇa rows do not carry a Ring Number field, so we identify by record id.
-    private static let avaranaRingByRecordId: [String: Int] = [
+    /// Immutable and Sendable, so `nonisolated` — `ActivityLedger.crossing` reads
+    /// its inverse off the main actor.
+    nonisolated private static let avaranaRingByRecordId: [String: Int] = [
         "rec0XhDKfxW8UVyaB": 1,
         "recspOpR95DVcOEvn": 2,
         "recp4X5tuGdLuHCVw": 3,
@@ -28,6 +30,12 @@ final class AirtableService {
         "rec3sxt1ZQ3T036sZ": 8,
         "recqdC3D38TWFkf1M": 9,
     ]
+
+    /// Ring number → Avaraṇa record id: the inverse of `avaranaRingByRecordId`,
+    /// the `Link to Mandala` of a ledger `Ring Crossed` row. `nil` outside 1…9.
+    nonisolated static func avaranaRecordId(forRing ring: Int) -> String? {
+        avaranaRingByRecordId.first { $0.value == ring }?.key
+    }
 
     /// PAT loaded from Info.plist (`AIRTABLE_PAT`, fed by `Config.xcconfig`).
     /// Returns nil when missing — sync silently stays on local data.
