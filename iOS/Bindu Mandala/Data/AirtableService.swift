@@ -1040,7 +1040,9 @@ extension AirtableService {
     private static let fldDescentRing = "Descent Ring"   // fld225xgYl2Rs3TP6
 
     /// Mirror one *new-deepest* descent crossing to Airtable. Called only when
-    /// `DescentState.enter(ring:)` returns true, so it fires once per ring. The
+    /// `DescentState.enter(ring:)` returns true, so it fires once per new depth —
+    /// not once per ring: a 2→9 plunge crosses seven thresholds but mirrors a
+    /// single row for ring 9, and re-entering a shallower ring never fires. The
     /// local `DescentState` is the source of truth; Airtable is the backup that
     /// `restoreDescentIfLocalEmpty` reads. `typecast: true` creates the `Crossing`
     /// Row-Type option on first write (the option is not pre-created — see PR-0).

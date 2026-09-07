@@ -4,15 +4,19 @@ import SwiftData
 /// The practitioner's place on the descent. One row, by design — a single
 /// pilgrimage through the nine āvaraṇas.
 ///
+/// Memory, not a gate. The Mandala is an open instrument: every ring is
+/// reachable at any time and nothing is unlocked by crossing. This row only
+/// remembers where the practitioner has been — `LivingMandalaView` writes it
+/// via `enter(ring:)` as the viewport falls inward, and The Memory's descent
+/// film (`DescentFilmView`) reads it back as the visible timeline.
+///
 /// Semantics:
 ///   • `currentRing` is the ring she is inside *now* (1 = Bhūpura … 9 = Bindu).
-///   • `deepestReached` is the furthest ring ever crossed into. Reached rings
-///     stay revisitable; the Veil always offers them as open rows.
-///   • `crossings` records when each threshold was crossed. The Portrait
-///     may later show this as the visible timeline of the descent.
+///   • `deepestReached` is the furthest ring ever crossed into.
+///   • `crossings` records when each new-deepest threshold was crossed; each is
+///     mirrored to Airtable once (`AirtableService.recordCrossing`).
 ///   • `enteredCurrentAt` is the last time the practitioner stepped into
-///     `currentRing`. Readiness *hints* may consult it ("days dwelt"), but
-///     crossing remains a chosen act.
+///     `currentRing`. Nothing gates on it.
 @Model
 final class DescentState {
     var currentRing: Int

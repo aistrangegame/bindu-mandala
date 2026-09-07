@@ -11,7 +11,6 @@ struct TheHundredTwoView: View {
     @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
     @Query private var recognitions: [RecognitionEntry]
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var detailFor: Shakti?
     @State private var thresholdFor: Avarana?
@@ -70,7 +69,6 @@ struct TheHundredTwoView: View {
                                     todayRing: todayRing,
                                     countByKp: countByKp,
                                     open: effectiveOpen == ring,
-                                    reduceMotion: reduceMotion,
                                     onToggle: {
                                         Haptics.light()
                                         withAnimation(.easeInOut(duration: 0.34)) {
@@ -160,7 +158,6 @@ private struct FieldRing: View {
     let todayRing: Int
     let countByKp: [Int: Int]
     let open: Bool
-    let reduceMotion: Bool
     let onToggle: () -> Void
     let onOpenShakti: (Shakti) -> Void
     let onOpenThreshold: () -> Void
@@ -184,7 +181,7 @@ private struct FieldRing: View {
                         .fill(RadialGradient(gradient: Gradient(colors: [ringAtmo.accentFaint, .clear]),
                                              center: .center, startRadius: 0, endRadius: 24))
                     RiteSigil(atmosphere: ringAtmo, ring: ring, size: 44,
-                              spin: ring % 2 == 1 ? 1 : -1, reduceMotion: reduceMotion)
+                              spin: ring % 2 == 1 ? 1 : -1)
                         .opacity(open ? 0.9 : 0.5)
                 }
                 .frame(width: 48, height: 48)
@@ -277,7 +274,7 @@ private struct FieldRing: View {
             // The ring's geometry, faint, filling the room you've entered.
             Color.clear.overlay(
                 RiteSigil(atmosphere: ringAtmo, ring: ring, size: 340,
-                          spin: ring % 2 == 1 ? 1 : -1, reduceMotion: reduceMotion)
+                          spin: ring % 2 == 1 ? 1 : -1)
                     .opacity(0.4)
             )
             .clipped()
@@ -306,17 +303,14 @@ private struct FieldRing: View {
                     .font(.custom(AppFont.cormorant, size: 19))
                     .tracking(0.3)
                     .foregroundStyle(Color.cream.opacity(felt ? 1 : 0.82))
-                    .accessibilityLabel("\(spokenName(seat)), \(seat.quality)")
+                    // Law 2: a felt seat is warmer (dot, glow, full cream), never counted.
+                    .accessibilityLabel("\(spokenName(seat)), \(seat.quality)"
+                                        + (felt ? ", felt here" : ""))
                 Spacer(minLength: 10)
                 if isToday {
                     Text("today")
                         .font(.custom(AppFont.cormorantItalic, size: 13.5))
                         .foregroundStyle(sAtmo.accentBright)
-                } else if felt {
-                    Text("\(count)")
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(sAtmo.accentBright)
-                        .accessibilityLabel("felt \(count) time\(count == 1 ? "" : "s")")
                 }
             }
             .padding(.horizontal, 24)

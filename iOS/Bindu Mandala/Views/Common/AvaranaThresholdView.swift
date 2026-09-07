@@ -5,9 +5,9 @@ import SwiftData
 /// The territory names itself piece by piece, then the practitioner reads the
 /// Personal Connection — Ash's own lived encounter — by scrolling.
 ///
-/// Presented as a sheet (`.presentationDetents([.large])` +
-/// `.presentationDragIndicator(.visible)`) so the native iOS pull-down handles
-/// dismiss without competing with the ScrollView. No custom drag gestures.
+/// Pushed onto the Field's navigation stack (`TheHundredTwoView`'s
+/// `.navigationDestination(item:)`), so the native back swipe handles dismiss
+/// without competing with the ScrollView. No sheet, no custom drag gestures.
 struct AvaranaThresholdView: View {
     let avarana: Avarana
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

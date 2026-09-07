@@ -1,7 +1,9 @@
 import Foundation
 import SwiftData
 
-/// One of the 16 Karṣiṇī Śaktis of the 2nd Avaraṇa.
+/// One of the 102 Śaktis of the Khaḍgamālā — all nine āvaraṇas, not only the
+/// 16 Karṣiṇīs of Ring 2. Identity is `khadgamalaPosition` (1–102); `position`
+/// is the per-ring index and recurs across rings.
 /// Cached locally via SwiftData. Status is the only user-mutable field;
 /// everything else mirrors the Airtable source of truth.
 @Model
@@ -135,5 +137,15 @@ final class Shakti {
     var hasFieldConnection: Bool {
         guard let f = fieldName, !f.isEmpty else { return false }
         return true
+    }
+
+    /// Her bare seed syllable — the one place the bīja field is parsed.
+    /// Type-1 fields ("aṁ") are the syllable whole; Type-2 fields
+    /// ("Kaṃ — governs K-row …") are cut before the first " — " (space + em
+    /// dash + space). Trimmed; nil when she carries no bīja (most of the 86).
+    var bijaSyllable: String? {
+        let syllable = bija.components(separatedBy: " — ").first?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return syllable.isEmpty ? nil : syllable
     }
 }

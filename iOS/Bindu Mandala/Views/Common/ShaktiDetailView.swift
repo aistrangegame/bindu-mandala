@@ -95,7 +95,7 @@ struct ShaktiDetailView: View {
             AtmosphereBackground(atmosphere: atmo)
             Color.clear.overlay(alignment: .top) {
                 RiteSigil(atmosphere: atmo, ring: shakti.ringNumber ?? 2,
-                          size: side * 1.5, spin: -1, reduceMotion: reduceMotion)
+                          size: side * 1.5, spin: -1)
                     .opacity(0.55)
                     .offset(y: -side * 0.62)   // crowns above the fold, mostly off-screen
             }
@@ -432,13 +432,13 @@ struct ShaktiDetailView: View {
     /// Bīja field structure across the 102:
     /// - Type 1 — pure syllable ("aṁ", "Hrīm")
     /// - Type 2 — syllable + " — " + description ("Kaṃ — governs K-row …")
-    /// Parsed on the literal " — " (space + em dash + space). The description
-    /// rejoins any further " — " occurrences inside the body.
+    /// The syllable is `Shakti.bijaSyllable` — the one parse, shared by every
+    /// surface. Only this screen shows the description, so only here is the
+    /// remainder after the first " — " (space + em dash + space) rejoined.
     private var parsedBija: (syllable: String, description: String?) {
-        let raw = shakti.bija
-        let parts = raw.components(separatedBy: " — ")
-        guard parts.count > 1 else { return (raw, nil) }
-        let syllable = parts[0]
+        let syllable = shakti.bijaSyllable ?? ""
+        let parts = shakti.bija.components(separatedBy: " — ")
+        guard parts.count > 1 else { return (syllable, nil) }
         let description = parts[1...].joined(separator: " — ")
         return (syllable, description.isEmpty ? nil : description)
     }
@@ -447,7 +447,7 @@ struct ShaktiDetailView: View {
     /// play button that would sound nothing.
     @ViewBuilder
     private var bijaSection: some View {
-        if !shakti.bija.trimmingCharacters(in: .whitespaces).isEmpty {
+        if shakti.bijaSyllable != nil {
             bijaSectionBody
         }
     }
