@@ -40,10 +40,54 @@ final class AirtableService {
 
     private let session = URLSession(configuration: .ephemeral)
 
+    /// Re-entrancy latch for `flushPending`. Launch runs it twice concurrently
+    /// (RootView's first sync and the scene-phase `.active` hook), and two
+    /// drains of the same UserDefaults queue would double-write. Checked and
+    /// set on the main actor before the first `await`, so the second caller
+    /// always sees it.
+    private var flushInProgress = false
+
+    /// Says "Sync disabled by launch flag" once per process, not once per gesture.
+    private var loggedSyncDisabled = false
+
+    /// True when this process must never touch Airtable (`AppRuntime.syncDisabled`:
+    /// the XCTest host, `SYNC_OFF`, `BINDU_SYNC_OFF=1`). Logs the reason once.
+    private func syncIsDisabled() -> Bool {
+        guard AppRuntime.syncDisabled else { return false }
+        if !loggedSyncDisabled {
+            loggedSyncDisabled = true
+            log.notice("Sync disabled by launch flag")
+        }
+        return true
+    }
+
+    // MARK: - HTTP plumbing
+
+    /// Throw `AirtableHTTPError` (status + Airtable's error body) unless the
+    /// response is 2xx. Every Airtable call site funnels through here so no
+    /// failure is ever reduced to a bare "bad server response".
+    private static func checkHTTP(_ response: URLResponse, data: Data) throws {
+        guard let http = response as? HTTPURLResponse else {
+            throw AirtableHTTPError(status: 0, body: "non-HTTP response")
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw AirtableHTTPError(status: http.statusCode, data: data)
+        }
+    }
+
+    /// Log-ready description: status + body for an Airtable HTTP failure,
+    /// `localizedDescription` for anything else (transport, decoding).
+    private static func describe(_ error: Error) -> String {
+        if let http = error as? AirtableHTTPError { return http.description }
+        return error.localizedDescription
+    }
+
     // MARK: - Orchestration
 
     func sync(context: ModelContext) async {
+        if syncIsDisabled() { return }
         // Drain any pending recognitions first — they piggyback on every sync.
+        // Safe without a token: each queue holds its items and returns.
         await flushPending(context: context)
 
         guard let token = pat else {
@@ -63,13 +107,16 @@ final class AirtableService {
             try reconcileShaktis(sk, context: context)
             try reconcileAvaranas(av, context: context)
             try reconcileNityas(nt, context: context)
+            // Union the server's Letter-Written ledger into the local dedup set
+            // so a reinstall or second device never re-logs a letter (§0.6).
+            await reconcileLedgeredLetters(token: token, shaktis: sk)
             // After the field data is local, rebuild the recognition log if the
             // device has none — the path home after a reinstall/recovery.
             await restoreRecognitionsIfLocalEmpty(context: context)
             await restoreDescentIfLocalEmpty(context: context)
             logVerification(shaktis: sk.count, avaranas: av.count, nityas: nt.count, context: context)
         } catch {
-            log.error("Sync failed: \(error.localizedDescription, privacy: .public)")
+            log.error("Sync failed: \(Self.describe(error), privacy: .public)")
         }
     }
 
@@ -98,10 +145,7 @@ final class AirtableService {
             var req = URLRequest(url: comps.url!)
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             let (data, response) = try await session.data(for: req)
-            guard let http = response as? HTTPURLResponse,
-                  (200..<300).contains(http.statusCode) else {
-                throw URLError(.badServerResponse)
-            }
+            try Self.checkHTTP(response, data: data)
             let page = try JSONDecoder().decode(Page<Row>.self, from: data)
             all.append(contentsOf: page.records)
             offset = page.offset
@@ -308,13 +352,21 @@ final class AirtableService {
         try context.save()
     }
 
-    /// Insert a `ShaktiLetter` only when the practitioner has none for this
-    /// Ring-2 position — the local draft always wins.
+    /// Restore the server's letter for this Ring-2 position unless the
+    /// practitioner has written one — a local draft always wins. A row whose
+    /// body is blank is not a draft (an opened-but-never-written letter, or a
+    /// pre-fix build's write-on-open): it is filled in place rather than left
+    /// to block the restore forever, and never duplicated on the unique key.
     private func seedLetterIfMissing(position: Int, body: String, context: ModelContext) {
         let d = FetchDescriptor<ShaktiLetter>(
             predicate: #Predicate { $0.shaktiPosition == position }
         )
-        if let existing = try? context.fetch(d), !existing.isEmpty { return }
+        if let row = (try? context.fetch(d))?.first {
+            guard row.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+            row.body = body
+            row.updatedAt = .now
+            return
+        }
         context.insert(ShaktiLetter(shaktiPosition: position, body: body))
     }
 
@@ -373,7 +425,7 @@ final class AirtableService {
             if inserted > 0 { try? context.save() }
             log.notice("Recognition restore: inserted \(inserted) from Airtable")
         } catch {
-            log.error("Recognition restore failed: \(error.localizedDescription, privacy: .public)")
+            log.error("Recognition restore failed: \(Self.describe(error), privacy: .public)")
         }
     }
 
@@ -418,7 +470,7 @@ final class AirtableService {
             try? context.save()
             log.notice("Descent restore: rebuilt \(restored.count) crossing(s), deepest ring \(state.deepestReached)")
         } catch {
-            log.error("Descent restore failed: \(error.localizedDescription, privacy: .public)")
+            log.error("Descent restore failed: \(Self.describe(error), privacy: .public)")
         }
     }
 
@@ -565,10 +617,7 @@ extension AirtableService {
         var req = URLRequest(url: comps.url!)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let (data, response) = try await session.data(for: req)
-        guard let http = response as? HTTPURLResponse,
-              (200..<300).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
+        try Self.checkHTTP(response, data: data)
 
         struct Page: Decodable { let records: [Row] }
         let page = try JSONDecoder().decode(Page.self, from: data)
@@ -602,8 +651,10 @@ extension AirtableService {
     }
 
     /// One unfulfilled Recognition write held in UserDefaults until the network returns.
-    /// `failCount` is incremented per retry; items are dropped after `maxFailures`.
-    private struct PendingRecognition: Codable {
+    /// `failCount` is incremented per failed flush; items are dropped after
+    /// `PendingQueuePolicy.maxFailures`. With no token nothing is bumped.
+    private struct PendingRecognition: Codable, PendingQueueItem {
+        var id: String = UUID().uuidString
         let shaktiRecordId: String
         let note: String?
         let source: String
@@ -614,7 +665,6 @@ extension AirtableService {
     }
 
     private static let pendingKey = "pendingRecognitions"
-    private static let maxFailures = 3
 
     // MARK: Field IDs (write contract from brief §3)
     private static let fldRowType          = "Row Type"
@@ -636,6 +686,7 @@ extension AirtableService {
                            note: String?,
                            source: RecognitionSource,
                            context: ModelContext) async {
+        if syncIsDisabled() { return }
         guard let recordId = shakti.airtableRecordId, !recordId.isEmpty else {
             log.notice("Recognition: no airtableRecordId — skipping Airtable write")
             return
@@ -656,10 +707,18 @@ extension AirtableService {
 
     /// Drain the Recognition and Letter pending queues plus the descent-crossing
     /// and activity-ledger queues. Called at the start of every `sync()` and on
-    /// scene-phase `.active`. Items that fail `maxFailures` times in a row are
-    /// dropped silently — local SwiftData is already canonical, so the only loss
-    /// is the Airtable mirror.
+    /// scene-phase `.active`. Items that fail `PendingQueuePolicy.maxFailures`
+    /// times in a row are dropped — local SwiftData is already canonical, so the
+    /// only loss is the Airtable mirror. Without a token every queue holds.
+    /// Re-entrant calls (launch fires this twice at once) skip.
     func flushPending(context: ModelContext) async {
+        if syncIsDisabled() { return }
+        guard !flushInProgress else {
+            log.notice("Flush already in progress — skipping")
+            return
+        }
+        flushInProgress = true
+        defer { flushInProgress = false }
         await flushPendingRecognitions(context: context)
         await flushPendingLetters()
         await flushPendingActivities()
@@ -669,26 +728,28 @@ extension AirtableService {
     private func flushPendingRecognitions(context: ModelContext) async {
         let queue = loadPending()
         guard !queue.isEmpty else { return }
-        log.notice("Recognition queue: flushing \(queue.count) item(s)")
-        var remaining: [PendingRecognition] = []
-        var dropped = 0
-        for item in queue {
-            let success = await processRecognition(item, context: context)
-            if success { continue }
-            var bumped = item
-            bumped.failCount += 1
-            if bumped.failCount >= Self.maxFailures {
-                dropped += 1
-                log.notice("Recognition dropped after \(bumped.failCount) failures: \(item.shaktiRecordId, privacy: .public)")
-            } else {
-                remaining.append(bumped)
-            }
+        guard pat != nil else {
+            // No-PAT mode holds, never drops: the queue is left exactly as it is.
+            log.notice("Recognition queue: \(queue.count) waiting for a token")
+            return
         }
+        log.notice("Recognition queue: flushing \(queue.count) item(s)")
+        var succeeded: [Bool] = []
+        for item in queue {
+            succeeded.append(await processRecognition(item, context: context))
+        }
+        let update = PendingQueuePolicy.update(queue, hasToken: true, succeeded: succeeded)
+        for item in update.dropped {
+            log.notice("Recognition dropped after \(item.failCount) failures: \(item.shaktiRecordId, privacy: .public)")
+        }
+        // Anything enqueued while this drain awaited the network landed in the
+        // store behind the snapshot; the save must carry it, not erase it.
+        let remaining = PendingQueuePolicy.merge(remaining: update.remaining, drained: queue, stored: loadPending())
         savePending(remaining)
         if remaining.isEmpty {
-            log.notice("Recognition queue: drained (\(dropped) dropped)")
+            log.notice("Recognition queue: drained (\(update.dropped.count) dropped)")
         } else {
-            log.notice("Recognition queue: \(remaining.count) still pending (\(dropped) dropped)")
+            log.notice("Recognition queue: \(remaining.count) still pending (\(update.dropped.count) dropped)")
         }
     }
 
@@ -698,7 +759,16 @@ extension AirtableService {
                                     context: ModelContext) async -> Bool {
         guard let token = pat else { return false }
         do {
-            try await createRecognitionRow(token: token, item: item)
+            // Idempotency: a retry after a create-succeeded / PATCH-failed split
+            // must not write her row twice. Only the create is skipped — an
+            // existing row says nothing about whether the count PATCH, the
+            // local mirror or the first-felt ledger row ever landed, and a
+            // retry exists precisely because one of them did not.
+            if await recognitionExistsOnServer(token: token, item: item) {
+                log.notice("Recognition row already on server — skipping create, completing the rest")
+            } else {
+                try await createRecognitionRow(token: token, item: item)
+            }
             let previousCount = try await patchShaktiAfterRecognition(
                 token: token,
                 shaktiRecordId: item.shaktiRecordId,
@@ -711,8 +781,10 @@ extension AirtableService {
             )
             // Threshold crossing for the shared ledger: the *first* time this
             // Śakti is ever felt. `previousCount` is the server's count read
-            // *before* the increment PATCH, so `wasFirst` is per-Śakti — it
-            // fires once for each of the 102, not only the first Śakti ever.
+            // *before* the increment PATCH (or, on a retry whose PATCH had
+            // already landed, the count that includes it — never 0), so
+            // `wasFirst` is per-Śakti and fires once for each of the 102, not
+            // only the first Śakti ever.
             let wasFirst = (previousCount == 0)
             if wasFirst {
                 let name = shaktiName(recordId: item.shaktiRecordId, context: context)
@@ -725,7 +797,56 @@ extension AirtableService {
             }
             return true
         } catch {
-            log.error("Recognition write failed: \(error.localizedDescription, privacy: .public)")
+            log.error("Recognition write failed: \(Self.describe(error), privacy: .public)")
+            return false
+        }
+    }
+
+    /// Is this exact moment already on the server? GET the Recognition rows
+    /// within ±60 s of `feltAt` (a handful at most, so one page suffices) and
+    /// look for one that is *hers and carries this `feltAt` to the second* —
+    /// the key the create wrote, which a queued retry repeats and a genuine
+    /// second recognition never can. Window, key and match live in
+    /// `RecognitionDedup`, pure and unit-tested. Fail-open: if the check
+    /// itself fails, the failure is logged with status + body and the create
+    /// proceeds — a broken check must never strand a recognition the way the
+    /// July pipe did.
+    private func recognitionExistsOnServer(token: String,
+                                           item: PendingRecognition) async -> Bool {
+        struct Row: Decodable {
+            let id: String
+            let fields: Fields
+            struct Fields: Decodable {
+                let ofShakti: [String]?
+                let feltAt: String?
+                enum CodingKeys: String, CodingKey {
+                    case ofShakti = "fldaDjmaPvu57sJVg"
+                    case feltAt   = "fldk4BdikzJQOautw"
+                }
+            }
+        }
+        var comps = URLComponents(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)")!
+        comps.queryItems = [
+            .init(name: "pageSize",              value: "100"),
+            .init(name: "filterByFormula",       value: RecognitionDedup.filterFormula(around: item.feltAt)),
+            .init(name: "returnFieldsByFieldId", value: "true"),
+            .init(name: "fields[]",              value: RecognitionDedup.ofShaktiFieldId),
+            .init(name: "fields[]",              value: RecognitionDedup.feltAtFieldId),
+        ]
+        var req = URLRequest(url: comps.url!)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        do {
+            let (data, response) = try await session.data(for: req)
+            try Self.checkHTTP(response, data: data)
+            let page = try JSONDecoder().decode(Page<Row>.self, from: data)
+            return page.records.contains {
+                RecognitionDedup.rowMatches(ofShakti: $0.fields.ofShakti,
+                                            feltAt: $0.fields.feltAt,
+                                            shaktiRecordId: item.shaktiRecordId,
+                                            feltAt: item.feltAt)
+            }
+        } catch {
+            log.error("Recognition dedup check failed — proceeding with create: \(Self.describe(error), privacy: .public)")
             return false
         }
     }
@@ -738,11 +859,10 @@ extension AirtableService {
     }
 
     private func createRecognitionRow(token: String, item: PendingRecognition) async throws {
-        let iso = ISO8601DateFormatter()
         var fields: [String: Any] = [
             Self.fldRowType:   "Recognition",
             Self.fldOfShakti:  [item.shaktiRecordId],
-            Self.fldFeltAt:    iso.string(from: item.feltAt),
+            Self.fldFeltAt:    RecognitionDedup.writtenFeltAt(item.feltAt),
             Self.fldLunarDay:  item.lunarDay,
             Self.fldMoonPhase: item.moonPhase,
             Self.fldSource:    item.source
@@ -759,10 +879,8 @@ extension AirtableService {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = data
 
-        let (_, response) = try await session.data(for: req)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
+        let (respData, response) = try await session.data(for: req)
+        try Self.checkHTTP(response, data: respData)
     }
 
     /// GET the Shakti row to read the server's current count, compute the new
@@ -771,7 +889,10 @@ extension AirtableService {
     /// Detail status pill, which calls `advanceStatus` separately).
     /// Returns the server's recognition count *before* this recognition (0 on
     /// the very first felt), so the caller can detect the first-recognition
-    /// threshold without a second round-trip.
+    /// threshold without a second round-trip. When the GET shows this very
+    /// gesture's PATCH already landed (a retry whose first response was lost)
+    /// nothing is written and the count returned already includes her — so the
+    /// threshold, already crossed on that first pass, cannot fire twice.
     @discardableResult
     private func patchShaktiAfterRecognition(token: String,
                                               shaktiRecordId: String,
@@ -780,28 +901,38 @@ extension AirtableService {
         var getReq = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)/\(shaktiRecordId)")!)
         getReq.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let (getData, getResp) = try await session.data(for: getReq)
-        guard let httpGet = getResp as? HTTPURLResponse, (200..<300).contains(httpGet.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
+        try Self.checkHTTP(getResp, data: getData)
 
         struct GetResponse: Decodable {
             let fields: Fields
             struct Fields: Decodable {
                 let recognitionCount: Int?
+                let lastFelt: String?
                 enum CodingKeys: String, CodingKey {
                     case recognitionCount = "Recognition Count"
+                    case lastFelt         = "Last Felt"
                 }
             }
         }
         let parsed = try JSONDecoder().decode(GetResponse.self, from: getData)
         // The server's count *before* this recognition. 0 ⇒ never felt before.
         let previousCount = parsed.fields.recognitionCount ?? 0
+
+        // Idempotent on retry: `Last Felt` and the count go in one PATCH, so a
+        // `Last Felt` equal to this gesture's exact second means that PATCH
+        // already landed (its response was lost, not the write) — counting
+        // her again would be a lie. The count read above already includes it.
+        let writtenFeltAt = RecognitionDedup.writtenFeltAt(feltAt)
+        if let lastFelt = parsed.fields.lastFelt,
+           RecognitionDedup.normalizedServerFeltAt(lastFelt) == writtenFeltAt {
+            log.notice("Shakti PATCH already landed for this recognition — skipping")
+            return previousCount
+        }
         let newCount = previousCount + 1
 
         // PATCH — count + lastFelt only.
-        let iso = ISO8601DateFormatter()
         let fields: [String: Any] = [
-            Self.fldLastFelt:         iso.string(from: feltAt),
+            Self.fldLastFelt:         writtenFeltAt,
             Self.fldRecognitionCount: newCount
         ]
         let body: [String: Any] = ["fields": fields, "typecast": true]
@@ -813,10 +944,8 @@ extension AirtableService {
         patchReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
         patchReq.httpBody = data
 
-        let (_, patchResp) = try await session.data(for: patchReq)
-        guard let httpPatch = patchResp as? HTTPURLResponse, (200..<300).contains(httpPatch.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
+        let (patchData, patchResp) = try await session.data(for: patchReq)
+        try Self.checkHTTP(patchResp, data: patchData)
         return previousCount
     }
 
@@ -848,6 +977,7 @@ extension AirtableService {
         shakti.lastSyncedAt = .now
         try? context.save()
 
+        if syncIsDisabled() { return }
         guard let token = pat,
               let recordId = shakti.airtableRecordId, !recordId.isEmpty else { return }
 
@@ -861,18 +991,22 @@ extension AirtableService {
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = data
-        _ = try? await session.data(for: req)
-        // Failure is silent — the next reconcile will reassert the local
-        // advance through the existing advance-only sync rule.
+        do {
+            let (respData, response) = try await session.data(for: req)
+            try Self.checkHTTP(response, data: respData)
+        } catch {
+            // Logged, not retried — the next reconcile will reassert the local
+            // advance through the existing advance-only sync rule.
+            log.error("Status advance write failed: \(Self.describe(error), privacy: .public)")
+        }
     }
 
     // MARK: - Pending queue (UserDefaults-backed)
 
     private func loadPending() -> [PendingRecognition] {
-        guard let data = UserDefaults.standard.data(forKey: Self.pendingKey),
-              let queue = try? JSONDecoder().decode([PendingRecognition].self, from: data) else {
-            return []
-        }
+        guard let data = UserDefaults.standard.data(forKey: Self.pendingKey) else { return [] }
+        let (queue, stamped): ([PendingRecognition], Bool) = PendingQueueStorage.decode(data)
+        if stamped { savePending(queue) }   // ids must be stable across the next load
         return queue
     }
 
@@ -895,7 +1029,8 @@ extension AirtableService {
 
     // MARK: - Living Rite · Descent crossing writes (mirror of DescentState.crossings)
 
-    private struct PendingCrossing: Codable {
+    private struct PendingCrossing: Codable, PendingQueueItem {
+        var id: String = UUID().uuidString
         let ring: Int
         let feltAt: Date
         var failCount: Int = 0
@@ -910,6 +1045,7 @@ extension AirtableService {
     /// `restoreDescentIfLocalEmpty` reads. `typecast: true` creates the `Crossing`
     /// Row-Type option on first write (the option is not pre-created — see PR-0).
     func recordCrossing(ring: Int) async {
+        if syncIsDisabled() { return }
         let item = PendingCrossing(ring: ring, feltAt: .now)
         if !(await processCrossing(item)) { enqueueCrossing(item) }
     }
@@ -920,7 +1056,7 @@ extension AirtableService {
             try await createCrossingRow(token: token, item: item)
             return true
         } catch {
-            log.error("Crossing write failed: \(error.localizedDescription, privacy: .public)")
+            log.error("Crossing write failed: \(Self.describe(error), privacy: .public)")
             return false
         }
     }
@@ -942,37 +1078,41 @@ extension AirtableService {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = data
 
-        let (_, response) = try await session.data(for: req)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
+        let (respData, response) = try await session.data(for: req)
+        try Self.checkHTTP(response, data: respData)
     }
 
     private func flushPendingCrossings() async {
         let queue = loadPendingCrossings()
         guard !queue.isEmpty else { return }
-        log.notice("Crossing queue: flushing \(queue.count) item(s)")
-        var remaining: [PendingCrossing] = []
-        var dropped = 0
-        for item in queue {
-            if await processCrossing(item) { continue }
-            var bumped = item
-            bumped.failCount += 1
-            if bumped.failCount >= Self.maxFailures {
-                dropped += 1
-                log.notice("Crossing dropped after \(bumped.failCount) failures (ring \(item.ring))")
-            } else {
-                remaining.append(bumped)
-            }
+        guard pat != nil else {
+            // No-PAT mode holds, never drops: the queue is left exactly as it is.
+            log.notice("Crossing queue: \(queue.count) waiting for a token")
+            return
         }
+        log.notice("Crossing queue: flushing \(queue.count) item(s)")
+        var succeeded: [Bool] = []
+        for item in queue {
+            succeeded.append(await processCrossing(item))
+        }
+        let update = PendingQueuePolicy.update(queue, hasToken: true, succeeded: succeeded)
+        for item in update.dropped {
+            log.notice("Crossing dropped after \(item.failCount) failures (ring \(item.ring))")
+        }
+        // Keep anything enqueued behind the snapshot while this drain awaited the network.
+        let remaining = PendingQueuePolicy.merge(remaining: update.remaining, drained: queue, stored: loadPendingCrossings())
         savePendingCrossings(remaining)
+        if remaining.isEmpty {
+            log.notice("Crossing queue: drained (\(update.dropped.count) dropped)")
+        } else {
+            log.notice("Crossing queue: \(remaining.count) still pending (\(update.dropped.count) dropped)")
+        }
     }
 
     private func loadPendingCrossings() -> [PendingCrossing] {
-        guard let data = UserDefaults.standard.data(forKey: Self.pendingCrossingKey),
-              let queue = try? JSONDecoder().decode([PendingCrossing].self, from: data) else {
-            return []
-        }
+        guard let data = UserDefaults.standard.data(forKey: Self.pendingCrossingKey) else { return [] }
+        let (queue, stamped): ([PendingCrossing], Bool) = PendingQueueStorage.decode(data)
+        if stamped { savePendingCrossings(queue) }
         return queue
     }
 
@@ -995,7 +1135,8 @@ extension AirtableService {
 
     // MARK: - Phase 8 · Letter writes
 
-    private struct PendingLetter: Codable {
+    private struct PendingLetter: Codable, PendingQueueItem {
+        var id: String = UUID().uuidString
         let shaktiRecordId: String
         let body: String
         let updatedAt: Date
@@ -1010,6 +1151,9 @@ extension AirtableService {
     /// what it can when it can. Pre-sync Shaktis (no `airtableRecordId`) skip
     /// silently per brief §10 Phase 8.
     func saveLetter(shakti: Shakti, body: String) async {
+        // The letter is already saved locally by the caller (The Well is
+        // offline-first); only the Airtable mirror and the ledger row stop here.
+        if syncIsDisabled() { return }
         guard let recordId = shakti.airtableRecordId, !recordId.isEmpty else {
             log.notice("Letter: no airtableRecordId — skipping Airtable write")
             return
@@ -1044,7 +1188,7 @@ extension AirtableService {
             try await patchLetter(token: token, item: item)
             return true
         } catch {
-            log.error("Letter write failed: \(error.localizedDescription, privacy: .public)")
+            log.error("Letter write failed: \(Self.describe(error), privacy: .public)")
             return false
         }
     }
@@ -1062,43 +1206,44 @@ extension AirtableService {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = data
 
-        let (_, response) = try await session.data(for: req)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
+        let (respData, response) = try await session.data(for: req)
+        try Self.checkHTTP(response, data: respData)
     }
 
     private func flushPendingLetters() async {
         let queue = loadPendingLetters()
         guard !queue.isEmpty else { return }
-        log.notice("Letter queue: flushing \(queue.count) item(s)")
-        var remaining: [PendingLetter] = []
-        var dropped = 0
-        for item in queue {
-            let success = await processLetter(item)
-            if success { continue }
-            var bumped = item
-            bumped.failCount += 1
-            if bumped.failCount >= Self.maxFailures {
-                dropped += 1
-                log.notice("Letter dropped after \(bumped.failCount) failures: \(item.shaktiRecordId, privacy: .public)")
-            } else {
-                remaining.append(bumped)
-            }
+        guard pat != nil else {
+            // No-PAT mode holds, never drops: the queue is left exactly as it is.
+            log.notice("Letter queue: \(queue.count) waiting for a token")
+            return
         }
+        log.notice("Letter queue: flushing \(queue.count) item(s)")
+        var succeeded: [Bool] = []
+        for item in queue {
+            succeeded.append(await processLetter(item))
+        }
+        let update = PendingQueuePolicy.update(queue, hasToken: true, succeeded: succeeded)
+        for item in update.dropped {
+            log.notice("Letter dropped after \(item.failCount) failures: \(item.shaktiRecordId, privacy: .public)")
+        }
+        // Keep anything enqueued behind the snapshot while this drain awaited
+        // the network — and, as `enqueueLetter` does, only the newest body per
+        // Śakti, so a failed older draft can never be PATCHed over a newer one.
+        let merged = PendingQueuePolicy.merge(remaining: update.remaining, drained: queue, stored: loadPendingLetters())
+        let remaining = PendingQueuePolicy.latestPerKey(merged, key: \.shaktiRecordId, at: \.updatedAt)
         savePendingLetters(remaining)
         if remaining.isEmpty {
-            log.notice("Letter queue: drained (\(dropped) dropped)")
+            log.notice("Letter queue: drained (\(update.dropped.count) dropped)")
         } else {
-            log.notice("Letter queue: \(remaining.count) still pending (\(dropped) dropped)")
+            log.notice("Letter queue: \(remaining.count) still pending (\(update.dropped.count) dropped)")
         }
     }
 
     private func loadPendingLetters() -> [PendingLetter] {
-        guard let data = UserDefaults.standard.data(forKey: Self.pendingLetterKey),
-              let queue = try? JSONDecoder().decode([PendingLetter].self, from: data) else {
-            return []
-        }
+        guard let data = UserDefaults.standard.data(forKey: Self.pendingLetterKey) else { return [] }
+        let (queue, stamped): ([PendingLetter], Bool) = PendingQueueStorage.decode(data)
+        if stamped { savePendingLetters(queue) }
         return queue
     }
 
@@ -1149,7 +1294,8 @@ extension AirtableService {
     private static let pendingActivityKey = "pendingActivities"
     private static let ledgeredLettersKey = "ledgeredLetters"
 
-    private struct PendingActivity: Codable {
+    private struct PendingActivity: Codable, PendingQueueItem {
+        var id: String = UUID().uuidString
         let type: String
         let linkRecordId: String
         let name: String
@@ -1164,6 +1310,7 @@ extension AirtableService {
                      linkedShaktiRecordId: String,
                      activityName: String,
                      detail: String) async {
+        if syncIsDisabled() { return }
         let item = PendingActivity(type: type,
                                    linkRecordId: linkedShaktiRecordId,
                                    name: activityName,
@@ -1180,7 +1327,7 @@ extension AirtableService {
             try await createActivityRow(token: token, item: item)
             return true
         } catch {
-            log.error("Activity write failed: \(error.localizedDescription, privacy: .public)")
+            log.error("Activity write failed: \(Self.describe(error), privacy: .public)")
             return false
         }
     }
@@ -1189,6 +1336,10 @@ extension AirtableService {
         let dateFmt = DateFormatter()
         dateFmt.calendar = Calendar(identifier: .gregorian)
         dateFmt.locale = Locale(identifier: "en_US_POSIX")
+        // Activity Date is the practitioner's *local* calendar day, pinned
+        // deliberately to the device zone so a late-evening milestone is not
+        // filed under tomorrow's UTC date.
+        dateFmt.timeZone = TimeZone.current
         dateFmt.dateFormat = "yyyy-MM-dd"
 
         let fields: [String: Any] = [
@@ -1208,37 +1359,41 @@ extension AirtableService {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = data
 
-        let (_, response) = try await session.data(for: req)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
+        let (respData, response) = try await session.data(for: req)
+        try Self.checkHTTP(response, data: respData)
     }
 
     private func flushPendingActivities() async {
         let queue = loadPendingActivities()
         guard !queue.isEmpty else { return }
-        log.notice("Activity queue: flushing \(queue.count) item(s)")
-        var remaining: [PendingActivity] = []
-        var dropped = 0
-        for item in queue {
-            if await processActivity(item) { continue }
-            var bumped = item
-            bumped.failCount += 1
-            if bumped.failCount >= Self.maxFailures {
-                dropped += 1
-                log.notice("Activity dropped after \(bumped.failCount) failures: \(item.type, privacy: .public)")
-            } else {
-                remaining.append(bumped)
-            }
+        guard pat != nil else {
+            // No-PAT mode holds, never drops: the queue is left exactly as it is.
+            log.notice("Activity queue: \(queue.count) waiting for a token")
+            return
         }
+        log.notice("Activity queue: flushing \(queue.count) item(s)")
+        var succeeded: [Bool] = []
+        for item in queue {
+            succeeded.append(await processActivity(item))
+        }
+        let update = PendingQueuePolicy.update(queue, hasToken: true, succeeded: succeeded)
+        for item in update.dropped {
+            log.notice("Activity dropped after \(item.failCount) failures: \(item.type, privacy: .public)")
+        }
+        // Keep anything enqueued behind the snapshot while this drain awaited the network.
+        let remaining = PendingQueuePolicy.merge(remaining: update.remaining, drained: queue, stored: loadPendingActivities())
         savePendingActivities(remaining)
+        if remaining.isEmpty {
+            log.notice("Activity queue: drained (\(update.dropped.count) dropped)")
+        } else {
+            log.notice("Activity queue: \(remaining.count) still pending (\(update.dropped.count) dropped)")
+        }
     }
 
     private func loadPendingActivities() -> [PendingActivity] {
-        guard let data = UserDefaults.standard.data(forKey: Self.pendingActivityKey),
-              let queue = try? JSONDecoder().decode([PendingActivity].self, from: data) else {
-            return []
-        }
+        guard let data = UserDefaults.standard.data(forKey: Self.pendingActivityKey) else { return [] }
+        let (queue, stamped): ([PendingActivity], Bool) = PendingQueueStorage.decode(data)
+        if stamped { savePendingActivities(queue) }
         return queue
     }
 
@@ -1271,5 +1426,307 @@ extension AirtableService {
         guard !ids.contains(recordId) else { return }
         ids.append(recordId)
         UserDefaults.standard.set(ids, forKey: ledgeredLettersKey)
+    }
+
+    /// Server-derived Letter-Written dedup (§0.6). The local `ledgeredLetters`
+    /// set is per-install, so a reinstall or a second device would re-log
+    /// "Letter Written" for a Śakti the ledger already holds. Once per sync,
+    /// read the ledger's own view and union it in: a Śakti whose Letter is
+    /// non-empty on the server *and* is already linked from a Letter-Written
+    /// row is marked ledgered locally. Failure is logged and non-fatal — the
+    /// local set still governs.
+    private func reconcileLedgeredLetters(token: String, shaktis: [ShaktiRow]) async {
+        do {
+            let linked = try await fetchLetterWrittenLinks(token: token)
+            var marked = 0
+            for row in shaktis {
+                guard let letter = row.fields.letter?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !letter.isEmpty,
+                      linked.contains(row.id),
+                      !Self.hasLedgeredLetter(row.id) else { continue }
+                Self.markLetterLedgered(row.id)
+                marked += 1
+            }
+            log.notice("Letter ledger: \(linked.count) linked on server, \(marked) newly marked locally")
+        } catch {
+            log.error("Letter ledger read failed: \(Self.describe(error), privacy: .public)")
+        }
+    }
+
+    /// One paged GET against App Activity: the Śakti record ids linked from
+    /// every `Letter Written` row. The ledger table is addressed by field
+    /// *names* throughout (matching its writes), so `fields[]` is by name too.
+    private func fetchLetterWrittenLinks(token: String) async throws -> Set<String> {
+        struct Row: Decodable {
+            let fields: Fields
+            struct Fields: Decodable {
+                let linkToMandala: [String]?
+                enum CodingKeys: String, CodingKey {
+                    case linkToMandala = "Link to Mandala"
+                }
+            }
+        }
+        var linked = Set<String>()
+        var offset: String? = nil
+        repeat {
+            var comps = URLComponents(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.activityTableId)")!
+            var items: [URLQueryItem] = [
+                .init(name: "pageSize",        value: "100"),
+                .init(name: "filterByFormula", value: "{\(Self.fldActType)}='\(Self.activityLetterWritten)'"),
+                .init(name: "fields[]",        value: Self.fldActLinkMandala),
+            ]
+            if let offset { items.append(.init(name: "offset", value: offset)) }
+            comps.queryItems = items
+            var req = URLRequest(url: comps.url!)
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            let (data, response) = try await session.data(for: req)
+            try Self.checkHTTP(response, data: data)
+            let page = try JSONDecoder().decode(Page<Row>.self, from: data)
+            for r in page.records {
+                for id in r.fields.linkToMandala ?? [] { linked.insert(id) }
+            }
+            offset = page.offset
+        } while offset != nil
+        return linked
+    }
+}
+
+// MARK: - HTTP error
+
+/// An Airtable HTTP failure that keeps *why*: the status and Airtable's error
+/// body (truncated), so the unified log can show e.g. `HTTP 422: {"error":…}`
+/// instead of a bare "bad server response". Carries no headers and never the
+/// token — only the response body Airtable returned.
+struct AirtableHTTPError: Error, CustomStringConvertible, LocalizedError {
+    let status: Int
+    let body: String
+
+    /// Bodies are clipped so a runaway HTML error page can't flood the log.
+    static let bodyLimit = 600
+
+    init(status: Int, body: String) {
+        self.status = status
+        self.body = String(body.prefix(Self.bodyLimit))
+    }
+
+    init(status: Int, data: Data) {
+        let text = String(data: data, encoding: .utf8) ?? "<\(data.count) non-UTF8 bytes>"
+        self.init(status: status, body: text)
+    }
+
+    var description: String { "HTTP \(status): \(body)" }
+    var errorDescription: String? { description }
+}
+
+// MARK: - Pending-queue policy (pure, shared by every offline queue)
+
+/// Anything held in a UserDefaults queue awaiting Airtable: it carries a stable
+/// identity (stamped at enqueue, persisted with the item) so a drain can tell
+/// the items it took from any enqueued while it ran, and how many flushes have
+/// failed so the policy can retire it.
+protocol PendingQueueItem {
+    var id: String { get }
+    var failCount: Int { get set }
+}
+
+/// Decoding for the UserDefaults-backed queues. Items written by a build that
+/// predates item ids decode with a fresh id stamped on each, so the queue
+/// survives the upgrade instead of failing to decode and vanishing. The caller
+/// persists a stamped queue at once — a drain compares ids across two loads,
+/// so they must be stable.
+enum PendingQueueStorage {
+    static func decode<Item: Decodable>(_ data: Data) -> (queue: [Item], stamped: Bool) {
+        if let queue = try? JSONDecoder().decode([Item].self, from: data) { return (queue, false) }
+        guard var raw = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else {
+            return ([], false)
+        }
+        var stamped = false
+        for i in raw.indices where raw[i]["id"] == nil {
+            raw[i]["id"] = UUID().uuidString
+            stamped = true
+        }
+        guard stamped,
+              let restamped = try? JSONSerialization.data(withJSONObject: raw),
+              let queue = try? JSONDecoder().decode([Item].self, from: restamped) else {
+            return ([], false)
+        }
+        return (queue, true)
+    }
+}
+
+/// The queue-update decision every flush applies, extracted from the loops so
+/// it is testable without a network (§0.6 "make the pipe honest").
+///
+/// - No token: the queue is **held untouched** — nothing bumps, nothing drops.
+///   Items wait for a token.
+/// - Success: the item leaves the queue.
+/// - Failure: `failCount` bumps; at `maxFailures` the item is dropped (local
+///   SwiftData is already canonical, so the only loss is the Airtable mirror).
+enum PendingQueuePolicy {
+
+    static let maxFailures = 3
+
+    enum Decision: Equatable {
+        /// No token — leave the item exactly as it is.
+        case hold
+        /// The write succeeded — remove the item.
+        case remove
+        /// The write failed — keep the item with this bumped fail count.
+        case retain(failCount: Int)
+        /// The write failed for the last time — drop the item.
+        case drop(failCount: Int)
+    }
+
+    static func decide(hasToken: Bool,
+                       succeeded: Bool,
+                       failCount: Int,
+                       maxFailures: Int = maxFailures) -> Decision {
+        guard hasToken else { return .hold }
+        if succeeded { return .remove }
+        let bumped = failCount + 1
+        return bumped >= maxFailures ? .drop(failCount: bumped) : .retain(failCount: bumped)
+    }
+
+    /// Apply `decide` across a whole queue. `succeeded[i]` is the flush result
+    /// for `queue[i]` (a missing result counts as a failure); with no token the
+    /// results are ignored and the queue comes back exactly as it went in.
+    /// Dropped items are returned with their final fail count so the caller
+    /// can log them.
+    static func update<Item: PendingQueueItem>(
+        _ queue: [Item],
+        hasToken: Bool,
+        succeeded: [Bool],
+        maxFailures: Int = maxFailures
+    ) -> (remaining: [Item], dropped: [Item]) {
+        guard hasToken else { return (queue, []) }
+        var remaining: [Item] = []
+        var dropped: [Item] = []
+        for (i, item) in queue.enumerated() {
+            let ok = i < succeeded.count ? succeeded[i] : false
+            switch decide(hasToken: true, succeeded: ok,
+                          failCount: item.failCount, maxFailures: maxFailures) {
+            case .hold:
+                remaining.append(item)
+            case .remove:
+                continue
+            case .retain(let n):
+                var kept = item
+                kept.failCount = n
+                remaining.append(kept)
+            case .drop(let n):
+                var gone = item
+                gone.failCount = n
+                dropped.append(gone)
+            }
+        }
+        return (remaining, dropped)
+    }
+
+    /// A drain works on the snapshot it loaded and awaits the network per item;
+    /// anything enqueued meanwhile landed in the store behind it. The final save
+    /// is therefore `remaining` (the drain's survivors, in order) followed by
+    /// every stored item the drain never saw — never the snapshot alone, which
+    /// would erase the newcomers. Items the drain removed or dropped stay gone.
+    static func merge<Item: PendingQueueItem>(remaining: [Item],
+                                              drained: [Item],
+                                              stored: [Item]) -> [Item] {
+        let seen = Set(drained.map(\.id))
+        return remaining + stored.filter { !seen.contains($0.id) }
+    }
+
+    /// Collapse to the newest item per key (first-seen key order kept) — the
+    /// letter queue's rule, where only the latest body per Śakti may survive.
+    static func latestPerKey<Item: PendingQueueItem, Key: Hashable>(
+        _ queue: [Item],
+        key: (Item) -> Key,
+        at: (Item) -> Date
+    ) -> [Item] {
+        var order: [Key] = []
+        var newest: [Key: Item] = [:]
+        for item in queue {
+            let k = key(item)
+            if let held = newest[k] {
+                if at(item) > at(held) { newest[k] = item }
+            } else {
+                order.append(k)
+                newest[k] = item
+            }
+        }
+        return order.compactMap { newest[$0] }
+    }
+}
+
+// MARK: - Recognition idempotency (pure helpers)
+
+/// Before a Recognition row is created, the server is asked whether this exact
+/// moment is already there — the retry path after a create-succeeded /
+/// PATCH-failed split would otherwise write her twice. The key is the one the
+/// create wrote: her record id in `Of Shakti` plus `Felt At` to the second. A
+/// queued retry carries the original `feltAt`, so it matches; a genuine second
+/// recognition of the same Śakti never can (the ceremony alone outlasts a
+/// second). The ±60 s window is only the fetch — it keeps the page to a
+/// handful of rows. Everything here is pure so it is testable without a
+/// network. Nothing here touches Notes — that is the practitioner's text.
+enum RecognitionDedup {
+
+    /// Half-width of the fetch window.
+    static let windowSeconds: TimeInterval = 60
+
+    /// `Of Shakti`, read with `returnFieldsByFieldId=true`.
+    static let ofShaktiFieldId = "fldaDjmaPvu57sJVg"
+
+    /// `Felt At`, read with `returnFieldsByFieldId=true`.
+    static let feltAtFieldId = "fldk4BdikzJQOautw"
+
+    /// `Felt At` exactly as the create writes it: second precision, `Z`.
+    static func writtenFeltAt(_ feltAt: Date) -> String {
+        writtenFormatter().string(from: feltAt)
+    }
+
+    /// `Felt At` as the API returns it — `2026-07-13T21:25:33.000Z` (ms) —
+    /// brought to the written form so the two compare as strings. `nil` when
+    /// it is in neither form: an unreadable timestamp is never a match.
+    static func normalizedServerFeltAt(_ raw: String) -> String? {
+        let fractional = writtenFormatter()
+        fractional.formatOptions.insert(.withFractionalSeconds)
+        guard let date = fractional.date(from: raw) ?? writtenFormatter().date(from: raw) else {
+            return nil
+        }
+        return writtenFeltAt(date)
+    }
+
+    private static func writtenFormatter() -> ISO8601DateFormatter {
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+        iso.timeZone = TimeZone(secondsFromGMT: 0)
+        return iso
+    }
+
+    /// ISO8601 Z bounds of the window: exactly `feltAt ∓ windowSeconds`, in the
+    /// same second-precision `…Z` form the create wrote to `Felt At`.
+    static func window(around feltAt: Date) -> (lower: String, upper: String) {
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+        iso.timeZone = TimeZone(secondsFromGMT: 0)
+        return (lower: iso.string(from: feltAt.addingTimeInterval(-windowSeconds)),
+                upper: iso.string(from: feltAt.addingTimeInterval(windowSeconds)))
+    }
+
+    /// The `filterByFormula` for the check. Formulas take field *names*.
+    static func filterFormula(around feltAt: Date) -> String {
+        let w = window(around: feltAt)
+        return "AND({Row Type}='Recognition', IS_AFTER({Felt At}, '\(w.lower)'), IS_BEFORE({Felt At}, '\(w.upper)'))"
+    }
+
+    /// True only when the row is hers *and* carries this `feltAt` to the second
+    /// — the full client key. Same Śakti at another second is another moment.
+    static func rowMatches(ofShakti: [String]?,
+                           feltAt rowFeltAt: String?,
+                           shaktiRecordId: String,
+                           feltAt: Date) -> Bool {
+        guard let links = ofShakti, !shaktiRecordId.isEmpty,
+              links.contains(shaktiRecordId) else { return false }
+        guard let raw = rowFeltAt, let server = normalizedServerFeltAt(raw) else { return false }
+        return server == writtenFeltAt(feltAt)
     }
 }

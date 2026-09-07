@@ -57,9 +57,17 @@ struct RecognitionLogStore {
 struct LetterStore {
     let context: ModelContext
 
-    func letter(for position: Int) -> ShaktiLetter {
+    /// The letter for this position if one has ever been saved. A read that
+    /// inserts nothing — for opening and display, so merely looking at a
+    /// letter never writes a blank row.
+    func existingLetter(for position: Int) -> ShaktiLetter? {
         let d = FetchDescriptor<ShaktiLetter>(predicate: #Predicate { $0.shaktiPosition == position })
-        if let existing = (try? context.fetch(d))?.first { return existing }
+        return (try? context.fetch(d))?.first
+    }
+
+    /// The letter for this position, created on demand — for a save.
+    func letter(for position: Int) -> ShaktiLetter {
+        if let existing = existingLetter(for: position) { return existing }
         let new = ShaktiLetter(shaktiPosition: position)
         context.insert(new)
         try? context.save()

@@ -135,15 +135,17 @@ struct WellView: View {
 }
 
 /// Full-screen editor for one letter. Surface background, cream Cormorant.
-/// Auto-saves 5s after the last keystroke; always saves on dismiss.
+/// Auto-saves 5s after the last keystroke and on dismiss — but only when the
+/// text differs from what was last saved (`LetterDraft.isDirty`). Merely
+/// opening a letter is not an edit and writes nothing, locally or to Airtable.
 struct LetterEditorView: View {
     @Bindable var shakti: Shakti
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
-    @State private var draft: String = ""
+    /// Saved baseline + live text; dirty iff they differ — see `LetterDraft`.
+    @State private var draft = LetterDraft()
     @State private var loaded = false
-    @State private var dirty = false
     @State private var saveTask: Task<Void, Never>?
     @FocusState private var focused: Bool
 
@@ -164,7 +166,7 @@ struct LetterEditorView: View {
             VStack(spacing: 0) {
                 header
                 ZStack(alignment: .topLeading) {
-                    if draft.isEmpty {
+                    if draft.text.isEmpty {
                         Text("Speak to her directly. She is listening.")
                             .font(.custom(AppFont.cormorantItalic, size: 19))
                             .foregroundStyle(Color.cream.opacity(0.28))
@@ -172,7 +174,7 @@ struct LetterEditorView: View {
                             .padding(.top, 18)
                             .allowsHitTesting(false)
                     }
-                    TextEditor(text: $draft)
+                    TextEditor(text: $draft.text)
                         .focused($focused)
                         .font(.custom(AppFont.cormorant, size: 19))
                         .foregroundStyle(Color.cream.opacity(0.92))
@@ -181,12 +183,11 @@ struct LetterEditorView: View {
                         .background(Color.clear)
                         .padding(.horizontal, 20)
                         .padding(.top, 10)
-                        .onChange(of: draft) { _, _ in
-                            // Initial load assigns draft without going through user
-                            // input — `loaded` gates the dirty flag so first-render
-                            // doesn't trigger a save (and doesn't seed Airtable).
-                            guard loaded else { return }
-                            dirty = true
+                        .onChange(of: draft.text) { _, _ in
+                            // Dirty means the practitioner typed: the text differs
+                            // from the saved baseline. `load()` sets both sides at
+                            // once, so opening a letter never schedules a save.
+                            guard draft.isDirty else { return }
                             scheduleAutoSave()
                         }
                 }
@@ -235,11 +236,12 @@ struct LetterEditorView: View {
     }
 
     private func load() {
-        guard !loaded else { return }
-        // Read existing local body without going through the .onChange dirty path.
-        draft = LetterStore(context: context).letter(for: shakti.position).body
-        // Only flip `loaded` after the assignment so the .onChange this triggers
-        // is ignored — initial load is not an edit.
+        guard !loaded else { return }   // onAppear can fire again; never clobber the draft
+        // Read-only: no row is inserted for a letter never written. The insert
+        // belongs to `saveIfNeeded`, so opening leaves the store untouched and
+        // a blank row can never block her server letter from seeding.
+        let body = LetterStore(context: context).existingLetter(for: shakti.position)?.body ?? ""
+        draft = LetterDraft(saved: body)   // text == saved, so this is not an edit
         loaded = true
     }
 
@@ -254,17 +256,17 @@ struct LetterEditorView: View {
     }
 
     private func saveIfNeeded() {
-        guard dirty else { return }
+        guard draft.isDirty else { return }
         saveTask?.cancel()
 
         let store = LetterStore(context: context)
         let letter = store.letter(for: shakti.position)
-        store.save(letter, body: draft)
-        dirty = false
+        store.save(letter, body: draft.text)
+        draft.markSaved()
 
         // Fire-and-forget Airtable PATCH. Failure is silent; queued for retry.
         let s = shakti
-        let body = draft
+        let body = draft.text
         Task {
             await AirtableService.shared.saveLetter(shakti: s, body: body)
         }

@@ -23,7 +23,7 @@ struct LivingMandalaView: View {
     @State private var focus: MandalaWorld.Seat?
     @State private var descent = false
     @State private var detailFor: Shakti?
-    @State private var soundOn = false
+    @State private var soundOn = UserDefaults.standard.bool(forKey: "lr_sound")   // toggleSound() writes it; read it back so the choice survives relaunch
     @State private var moved = false
     @State private var animating = false
     @State private var enteredRing = 0
