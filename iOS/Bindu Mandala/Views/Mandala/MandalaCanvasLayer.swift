@@ -78,7 +78,7 @@ struct MandalaCanvasLayer: View {
     private static let ordinals = ["", "First", "Second", "Third", "Fourth", "Fifth",
                                    "Sixth", "Seventh", "Eighth", "Ninth"]
     /// The invariant Śrī-Yantra enclosure forms — exactly the prototype's `av.form`
-    /// values (all-shaktis-data.js), so the tier-1 labels read as designed.
+    /// values (the July prototype; Airtable is canon for names), so the tier-1 labels read as designed.
     private static let enclosureForms = [
         "", "Bhūpura", "16-Petal Lotus", "8-Petal Lotus", "14 Triangles",
         "10 Outer Triangles", "10 Inner Triangles", "Vāk Ring", "Mūla Trikoṇa", "Bindu",
@@ -277,9 +277,7 @@ struct MandalaCanvasLayer: View {
                 // bīja syllable at the deepest zoom — she names her seed (the 86
                 // without a bīja show nothing).
                 if tier >= 2 && !isFocus {
-                    let bija = seat.shakti.bija.trimmingCharacters(in: .whitespaces)
-                    if !bija.isEmpty {
-                        let syllable = bija.components(separatedBy: " — ").first ?? bija
+                    if let syllable = seat.shakti.bijaSyllable {
                         var bt = ctx.resolve(
                             Text("bīja \(syllable)")
                                 .font(.custom(AppFont.cormorantItalic, size: 8))

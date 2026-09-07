@@ -17,11 +17,7 @@ struct SignificanceCard: View {
         let p = shakti.phonetic.trimmingCharacters(in: .whitespaces)
         return p.isEmpty ? nil : p
     }
-    private var bijaSyllable: String? {
-        let raw = shakti.bija.trimmingCharacters(in: .whitespaces)
-        guard !raw.isEmpty else { return nil }
-        return raw.components(separatedBy: " — ").first ?? raw
-    }
+    private var bijaSyllable: String? { shakti.bijaSyllable }
     private var significance: String? {
         let q = shakti.qualityDescription.trimmingCharacters(in: .whitespaces)
         if !q.isEmpty { return q }

@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// The only navigation chrome in the app. A whisper, not a feature.
-/// Full-screen overlay over `Color.ground`, four items in italic Cormorant.
+/// Full-screen overlay over `Color.ground`, six items in italic Cormorant —
+/// the five rooms in descent order, then Settings last.
 struct HamburgerMenuView: View {
     @Binding var destination: RootView.Destination
     @Binding var isOpen: Bool
@@ -35,12 +36,12 @@ struct HamburgerMenuView: View {
                 item("The Rite",    active: destination == .rite)    { select(.rite) }
                 item("The Well",    active: destination == .well)    { select(.well) }
                 item("The Field",   active: destination == .the102)  { select(.the102) }
+                item("The Memory",  active: destination == .memory)  { select(.memory) }
                 item("Settings",    active: false) {
                     Haptics.light()
                     onSettings()
                     withAnimation(.easeInOut(duration: 0.3)) { isOpen = false }
                 }
-                item("The Memory",  active: destination == .memory)  { select(.memory) }
             }
         }
     }

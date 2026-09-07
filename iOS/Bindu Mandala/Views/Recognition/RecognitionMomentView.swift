@@ -36,11 +36,8 @@ struct RecognitionMomentView: View {
     }
     private var recog: RecogElement { RecogElement.forElement(atmo.element) }
 
-    /// The bare bīja syllable (before any " — description").
-    private var bijaSyllable: String {
-        shakti.bija.components(separatedBy: " — ").first?
-            .trimmingCharacters(in: .whitespaces) ?? ""
-    }
+    /// The bare bīja syllable (before any " — description") — `Shakti.bijaSyllable`.
+    private var bijaSyllable: String { shakti.bijaSyllable ?? "" }
 
     /// Her appreciation line: the bootstrap `recognitionPhrase` when present,
     /// else the Airtable `appreciationPhrase`, else empty (phrase is hidden).
@@ -117,7 +114,7 @@ struct RecognitionMomentView: View {
 
             // Her ring's geometry, spinning, at the focal.
             RiteSigil(atmosphere: atmo, ring: shakti.ringNumber ?? 2,
-                      size: 480 * scale, spin: sigilSpin, reduceMotion: reduceMotion)
+                      size: 480 * scale, spin: sigilSpin)
                 .opacity(0.55 * (nameVisible ? 1 : 0))
                 .scaleEffect(respScale)
                 .position(focal)

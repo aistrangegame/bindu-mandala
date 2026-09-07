@@ -12,6 +12,8 @@ struct RiteContent {
     let hasCluster: Bool
     let cluster: Cluster?
     let phonetic: String?
+    /// Her bare seed syllable (`Shakti.bijaSyllable`) — never the Type-2
+    /// description; nil for the 86 who carry none.
     let bija: String?
     let quality: String
     let prompt: String
@@ -26,8 +28,7 @@ struct RiteContent {
 
         let p = s.phonetic.trimmingCharacters(in: .whitespacesAndNewlines)
         self.phonetic = p.isEmpty ? nil : p
-        let b = s.bija.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.bija = b.isEmpty ? nil : b
+        self.bija = s.bijaSyllable
 
         // quality → her quality, else an āvaraṇa line, else empty.
         let q = s.quality.trimmingCharacters(in: .whitespacesAndNewlines)

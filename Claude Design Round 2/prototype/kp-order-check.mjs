@@ -13,7 +13,7 @@ import vm from 'node:vm'
 
 // ── 1. Load the prototype data (eval in a sandbox; Ring 2 comes from shakti-data.js
 //       which we don't load here — Ring 2's +28 bridge is already proven).
-const src = readFileSync(new URL('./all-shaktis-data.js', import.meta.url), 'utf8')
+const src = readFileSync(new URL('./_superseded/all-shaktis-data.js', import.meta.url), 'utf8')
 const sandbox = { window: {}, SHAKTIS: [], CLUSTER_INFO: {}, console }
 vm.createContext(sandbox)
 vm.runInContext(src, sandbox)

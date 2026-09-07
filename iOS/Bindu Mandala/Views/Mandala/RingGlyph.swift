@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// A 36pt bespoke glyph for one of the nine Avaraṇas.
+/// A 36pt bespoke glyph for one of the nine Avaraṇas — drawn for each crossing
+/// in The Memory's descent film (`DescentFilmView`).
 /// Square (1) · 16-rayed star (2) · 8-rayed star (3) · crossed triangles (4–7)
-/// · downward triangle (8) · filled bindu (9, unused in the Veil but kept for parity).
+/// · downward triangle (8) · filled bindu (9).
 struct RingGlyph: View {
     let ring: Int
     let color: Color

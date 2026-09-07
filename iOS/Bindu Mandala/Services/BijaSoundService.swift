@@ -1,12 +1,14 @@
 import AVFoundation
 
-/// Plays a pure sine tone for one of the 16 bīja syllables.
-/// Each position gets a distinct frequency along a meditative scale anchored at
-/// 174 Hz (the lowest Solfeggio frequency — "foundation"). Whole-tone steps
-/// upward from there give 16 distinct, harmonically related tones.
+/// Sounds a Śakti's bīja for any of the 102 seats.
 ///
-/// This is the Phase 5 implementation — Phase 6+ plan is to ship recorded
-/// human-voice samples (`bija_01.mp3` …) and prefer them when present.
+/// A bundled human-voice recording wins when present — `bija_%02d` keyed by
+/// `khadgamalaPosition` (1–102), so `bija_29` … `bija_44` are Ring 2. Until a
+/// seat is recorded, playback falls through to synthesis: `playBija` derives a
+/// soft pentatonic drone from her syllable (or from her position when she
+/// carries none, as most of the 86 do), so no gesture is ever silent. The older
+/// `play(forPosition:)` whole-tone sine (anchored at 174 Hz) remains as the
+/// simplest fallback tone.
 @MainActor
 final class BijaSoundService {
     static let shared = BijaSoundService()
@@ -22,9 +24,9 @@ final class BijaSoundService {
 
     func play(forPosition position: Int, duration: TimeInterval = 1.6) {
         // Prefer a recorded voice file when one is bundled. Naming convention:
-        // bija_01.mp3 … bija_16.mp3 (zero-padded). If files are absent or
-        // playback fails, fall through to the synthesized sine so the gesture
-        // is never silent.
+        // bija_01 … bija_102 (zero-padded to two digits, keyed by khaḍgamālā
+        // position; mp3 / m4a / wav). If the file is absent or playback fails,
+        // fall through to the synthesized sine so the gesture is never silent.
         if playVoiceFile(forPosition: position) { return }
 
         let baseFreq: Double = 174.0

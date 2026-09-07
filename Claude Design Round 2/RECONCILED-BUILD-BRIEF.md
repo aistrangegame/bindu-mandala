@@ -1,7 +1,7 @@
 # Bindu Mandala — The Living Rite · Reconciled Build Brief
 
-**This is the single source of truth for the rebuild.** It supersedes `README.md`,
-`Bindu Mandala - Final Handoff.md`, and `DESIGN_SPEC.md` in this folder wherever they conflict.
+**This is the single source of truth for the rebuild.** It supersedes `README.md`
+and `DESIGN_SPEC.md` in this folder wherever they conflict.
 It reconciles the Round 2 "Living Rite" design against the app **as actually shipped on `main`**
 (the later, deliberate mind), and records Ash's rulings on every conflict the audit surfaced
 (32 verified; 8 high). When a Round 2 doc and this brief disagree, **this wins**; when this brief
@@ -145,7 +145,7 @@ artifact; each of 102 points brightens with felt-count, warms with recency (reus
 
 ## 5 · Doc hygiene (fix in the Round 2 folder, no app code)
 
-- `DESIGN_SPEC.md` is **byte-identical** to `Bindu Mandala - Final Handoff.md` — delete one; this brief is canonical.
+- `DESIGN_SPEC.md` is **byte-identical** to `Bindu Mandala - Final Handoff.md` — delete one; this brief is canonical. *(Done 2026-09-07, Brief v2 Phase 1.6: `Final Handoff.md` deleted after `cmp`; `DESIGN_SPEC.md` kept.)*
 - Prototype entry is **`prototype/index.html`**, not "Bindu Mandala - The Living Rite.html."
 - Prototype field is **`recognition`** (fallback `appreciationPhrase`), not `recognitionPhrase`; `LR_RECOG` is an *animation* spec, not a phrase. Key remaps: `short`→`shortName`, `location`→`bodilyLocation`, `description`→`qualityDescription`, `recognition`→`recognitionPhrase`, CLUSTER_INFO `self`→enum `selfBody`.
 - "Eight modules" undercounts — 12 files incl. the two data modules (data, not chrome).

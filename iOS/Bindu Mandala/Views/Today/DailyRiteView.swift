@@ -133,8 +133,7 @@ struct DailyRiteView: View {
         return GeometryReader { geo in
             let scale = min(geo.size.width, geo.size.height) / Self.sigilReferenceWidth
             let size = base * plan.sigilScale * comp.sigilScale * scale
-            let sigil = RiteSigil(atmosphere: atmo, ring: ring, size: size, spin: comp.spin,
-                                  reduceMotion: reduceMotion)
+            let sigil = RiteSigil(atmosphere: atmo, ring: ring, size: size, spin: comp.spin)
             Color.clear
                 .overlay(alignment: alignment) { sigil.offset(x: dx * scale, y: dy * scale) }
         }

@@ -1,15 +1,16 @@
 import AVFoundation
 import Foundation
 
-/// Continuous and modulated audio for the nine ring worlds.
+/// Sustained and modulated audio techniques, one per āvaraṇa.
 ///
-/// `BijaSoundService` handles discrete bīja taps from ShaktiDetail and the Ring 7
-/// chamber. This service handles every other ring-world voice — drones, sustained
-/// breathy tones, the Ring 8 triad collapse, and the Ring 9 Shepard descent.
+/// The nine ring worlds these were written for were cut when the living Mandala
+/// replaced them; the techniques stay as the carrier for the Homes. Today the
+/// only live caller is `ringChime` — the opt-in bell `LivingMandalaView` sounds
+/// as the viewport crosses an enclosure inward — plus `stopAll` on app
+/// background. `BijaSoundService` handles the discrete bīja taps.
 ///
 /// All voices are lazily started on first user gesture, run quietly (master
-/// gain ~0.05–0.07), and stop cleanly when the view dismisses. Each ring world
-/// owns its on/off state via the lower-left `RingSoundDot`.
+/// gain ~0.05–0.07), and stop cleanly via their `…Stop()` calls.
 @MainActor
 final class RingAudioService {
     static let shared = RingAudioService()
