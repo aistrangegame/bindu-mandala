@@ -569,7 +569,8 @@ struct ShaktiDetailView: View {
             HerMomentsList(
                 khadgamalaPosition: shakti.khadgamalaPosition ?? (shakti.position + 28),
                 clusterColor: seatColor,
-                airtableRecordId: shakti.airtableRecordId
+                airtableRecordId: shakti.airtableRecordId,
+                shaktiName: shakti.name
             )
         }
     }
@@ -798,6 +799,9 @@ private struct HerMomentsList: View {
     let khadgamalaPosition: Int
     let clusterColor: Color
     let airtableRecordId: String?
+    /// Narrows the ledger read to rows whose link carries her name; the
+    /// record id above keeps the match exact (names repeat across rings).
+    let shaktiName: String
     @Environment(\.modelContext) private var context
 
     @State private var airtableMoments: [RecognitionAirtableRow] = []
@@ -878,7 +882,8 @@ private struct HerMomentsList: View {
             return
         }
         do {
-            let rows = try await AirtableService.shared.fetchRecognitions(forShaktiRecordId: recordId)
+            let rows = try await AirtableService.shared.fetchRecognitions(forShaktiRecordId: recordId,
+                                                                          name: shaktiName)
             airtableMoments = rows
             airtableLoaded = true
         } catch {
