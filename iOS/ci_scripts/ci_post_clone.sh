@@ -1,4 +1,5 @@
 #!/bin/sh
+# NOTE: ci_scripts/ must sit beside "Bindu Mandala.xcodeproj" (here, under iOS/) — Xcode Cloud only runs hooks adjacent to the project.
 #
 # Xcode Cloud post-clone hook.
 #

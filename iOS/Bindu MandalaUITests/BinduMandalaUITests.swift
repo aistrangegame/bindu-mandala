@@ -13,7 +13,8 @@ final class BinduMandalaUITests: XCTestCase {
     /// Today with a rich Ring-2 Karṣiṇī (kp 29, Kāmākarṣiṇī — carries a phonetic).
     private func launchToday() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["SKIP_SUMMONS", "SKIP_HOMECOMING", "START_TAB=rite", "ENERGY_POS=29"]
+        // SYNC_OFF: the app must never write to Airtable during a UI run (honoured by AppRuntime.syncDisabled).
+        app.launchArguments = ["SKIP_SUMMONS", "SKIP_HOMECOMING", "START_TAB=rite", "ENERGY_POS=29", "SYNC_OFF"]
         app.launch()
         return app
     }
