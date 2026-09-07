@@ -51,20 +51,20 @@ enum ActivityLedger {
         /// `fldzsEMInQmNIxTNu` — link to the Mandala table (her Shakti row, or the Avaraṇa row).
         static let linkToMandala = "Link to Mandala"
 
-        // New fields (plan step 0, created via the Airtable MCP) — meta ids to be
-        // filled in after creation.
+        // The six event fields, created 2026-09-07 via the Airtable MCP (plan step 0).
 
-        /// dateTime, stored UTC, displayed America/New_York; written second-precision `…Z`.
+        /// `fldWAR0B4pNxjTwEJ` — dateTime, stored UTC, displayed America/New_York; written second-precision `…Z`.
         static let feltAt        = "Felt At"
-        /// number, precision 0 — synodic day 1…30.
+        /// `fldJc7iCzxZOSdO4D` — number, precision 0 — synodic day 1…30.
         static let lunarDay      = "Lunar Day"
-        /// singleLineText — "Waning Crescent" etc.
+        /// `fldMpjvAsT64v85bh` — singleLineText — "Waning Crescent" etc.
         static let moonPhase     = "Moon Phase"
-        /// singleSelect: Today · Mandala · Well · Silence (named apart from `Source App`).
+        /// `fldP3wq8QTgxeTDuC` — singleSelect: Today `selGxDFvn0Yu7W1qJ` · Mandala `selo5F9IaokSkEbLK`
+        /// · Well `sel8WmHGvD9CYnSEk` · Silence `selZX7daPpNj7dAMI` (named apart from `Source App`).
         static let gestureSource = "Gesture Source"
-        /// number, precision 0 — the ring crossed into (1…9).
+        /// `fldi7SOuep57UoXzi` — number, precision 0 — the ring crossed into (1…9).
         static let descentRing   = "Descent Ring"
-        /// number, precision 2 — how long the silence was held.
+        /// `fldrIOx1id7Esm2fd` — number, precision 2 — how long the silence was held.
         static let durationSec   = "Duration (sec)"
     }
 

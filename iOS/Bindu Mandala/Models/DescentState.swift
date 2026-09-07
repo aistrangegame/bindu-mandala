@@ -14,7 +14,10 @@ import SwiftData
 ///   • `currentRing` is the ring she is inside *now* (1 = Bhūpura … 9 = Bindu).
 ///   • `deepestReached` is the furthest ring ever crossed into.
 ///   • `crossings` records when each new-deepest threshold was crossed; each is
-///     mirrored to Airtable once (`AirtableService.recordCrossing`).
+///     mirrored once as a `Ring Crossed` row in the App Activity ledger, linked
+///     to the Avaraṇa (`AirtableService.recordCrossing`), and read back from
+///     there by `restoreDescentIfLocalEmpty` after a reinstall. The Mandala
+///     table holds no crossing rows.
 ///   • `enteredCurrentAt` is the last time the practitioner stepped into
 ///     `currentRing`. Nothing gates on it.
 @Model
@@ -39,7 +42,7 @@ final class DescentState {
     /// timestamp. Crossing into a *new* ring appends a date and lifts the floor.
     ///
     /// Returns `true` only when this is a genuinely new deepest crossing — the
-    /// caller uses that to mirror the crossing to Airtable exactly once
+    /// caller uses that to write the ledger's `Ring Crossed` row exactly once
     /// (Ruling 8), never on a shallower re-entry.
     @discardableResult
     func enter(ring: Int) -> Bool {
@@ -57,8 +60,9 @@ final class DescentState {
         return newCrossing
     }
 
-    /// Rebuild the descent timeline from crossings restored out of Airtable
-    /// (after a reinstall / store recovery). Pure and testable — no network.
+    /// Rebuild the descent timeline from crossings restored out of the App
+    /// Activity ledger (`ActivityLedger.crossings`, after a reinstall / store
+    /// recovery). Pure and testable — no network.
     ///
     /// Zero rows leaves the bootstrap floor (2 / 2) untouched — a fresh device
     /// with no crossings on the server must never regress or invent a descent.

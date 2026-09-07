@@ -4,10 +4,15 @@ import SwiftData
 /// A single moment of recognition — "she was felt here · [time]".
 ///
 /// Private-facing, not surveilled (Ruling 4): the archive belongs to her and is
-/// never shown as a score — but it *is* mirrored to Airtable (`recordRecognition`)
-/// and the first felt of each Śakti is written to the cross-app App Activity ledger
-/// (`logActivity` "Shakti Recognized"). SwiftData stays the read-time source of
-/// truth; `serverRecognitionCount` is the durable readiness signal for embodiment.
+/// never shown as a score. Every moment here is mirrored, fire-and-forget, as one
+/// row in the cross-app App Activity ledger (`ActivityLedger`): a `Shakti
+/// Recognized` row for a felt (`AirtableService.recordRecognition`, her words in
+/// the ledger's `Notes`), a `Silence Held` row for a dwell (`SilenceDwell` →
+/// `recordSilence`). The Mandala table receives no event rows — only her Shakti
+/// row's state PATCH (Last Felt, Recognition Count) after a felt. SwiftData stays
+/// the read-time source of truth; the ledger is what `restoreRecognitionsIfLocalEmpty`
+/// rebuilds this log from after a reinstall. `serverRecognitionCount` is the
+/// durable readiness signal for embodiment.
 ///
 /// Phase-2 schema:
 /// - `khadgamalaPosition` is the authoritative key (1-102, globally unique).
@@ -55,7 +60,7 @@ final class RecognitionEntry {
     }
 
     enum Gesture: String, Codable, CaseIterable {
-        case felt      // "I feel her" tap
-        case silence   // Bindu / Silence dwell
+        case felt      // "I feel her" tap — ledger `Shakti Recognized`
+        case silence   // the R11 dwell (`SilenceDwell`) — ledger `Silence Held`
     }
 }

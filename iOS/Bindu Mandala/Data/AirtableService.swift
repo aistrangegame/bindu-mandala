@@ -4,9 +4,17 @@ import os
 
 private let log = Logger(subsystem: "com.ashrey.bindu-mandala", category: "airtable")
 
-/// Reconciles the local SwiftData store from Airtable for Śaktis, Avaraṇas, and Nityā Devīs.
-/// The local cache is always the source of truth at read time — Airtable is a quiet background
-/// updater. Failures are silent. The "I feel her" gesture never depends on a successful sync.
+/// Reconciles the local SwiftData store from Airtable for Śaktis, Avaraṇas, and Nityā Devīs,
+/// and writes the practice back. Two tables, two roles (ruling of 2026-09-07 — events belong
+/// in the ledger; the spine stays the spine): every practice event — a recognition from any
+/// screen, a new-deepest ring crossing, the silence dwell, the first letter written — is one
+/// row in the shared **App Activity** ledger (`ActivityLedger`) and nowhere else; the
+/// **Mandala** table receives only the per-Śakti state PATCHes on the Shakti row (Last Felt,
+/// Recognition Count, Status, Letter). The reads follow the writes: Her Moments and both
+/// `restore*IfLocalEmpty` read the ledger. The local cache is always the source of truth at
+/// read time — Airtable is a quiet background updater. Failures are silent; writes are
+/// fire-and-forget behind offline queues that hold without a token and never drop for want
+/// of one. The "I feel her" gesture never depends on a successful sync.
 @MainActor
 final class AirtableService {
 
@@ -146,28 +154,45 @@ final class AirtableService {
         var all: [Row] = []
         var offset: String? = nil
         repeat {
-            var comps = URLComponents(string: "https://api.airtable.com/v0/\(Self.baseId)/\(table ?? Self.tableId)")!
-            var items: [URLQueryItem] = [
-                .init(name: "pageSize", value: "100"),
-                .init(name: "filterByFormula", value: filter),
-            ]
-            if byFieldId { items.append(.init(name: "returnFieldsByFieldId", value: "true")) }
-            for f in fields { items.append(.init(name: "fields[]", value: f)) }
-            for (i, pair) in sort.enumerated() {
-                items.append(.init(name: "sort[\(i)][field]", value: pair.field))
-                items.append(.init(name: "sort[\(i)][direction]", value: pair.direction))
-            }
-            if let offset { items.append(.init(name: "offset", value: offset)) }
-            comps.queryItems = items
-            var req = URLRequest(url: comps.url!)
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            let (data, response) = try await session.data(for: req)
-            try Self.checkHTTP(response, data: data)
-            let page = try JSONDecoder().decode(Page<Row>.self, from: data)
+            let page: Page<Row> = try await fetchPage(token: token, table: table, filter: filter,
+                                                     sort: sort, fields: fields,
+                                                     byFieldId: byFieldId, offset: offset)
             all.append(contentsOf: page.records)
             offset = page.offset
         } while offset != nil
         return all
+    }
+
+    /// One page (100 rows) of `table` matching `filter`, from `offset`. The
+    /// building block of `fetch`; a reader that can stop early (Her Moments)
+    /// pages with it directly.
+    private func fetchPage<Row: Decodable>(
+        token: String,
+        table: String?,
+        filter: String,
+        sort: [(field: String, direction: String)],
+        fields: [String],
+        byFieldId: Bool,
+        offset: String?
+    ) async throws -> Page<Row> {
+        var comps = URLComponents(string: "https://api.airtable.com/v0/\(Self.baseId)/\(table ?? Self.tableId)")!
+        var items: [URLQueryItem] = [
+            .init(name: "pageSize", value: "100"),
+            .init(name: "filterByFormula", value: filter),
+        ]
+        if byFieldId { items.append(.init(name: "returnFieldsByFieldId", value: "true")) }
+        for f in fields { items.append(.init(name: "fields[]", value: f)) }
+        for (i, pair) in sort.enumerated() {
+            items.append(.init(name: "sort[\(i)][field]", value: pair.field))
+            items.append(.init(name: "sort[\(i)][direction]", value: pair.direction))
+        }
+        if let offset { items.append(.init(name: "offset", value: offset)) }
+        comps.queryItems = items
+        var req = URLRequest(url: comps.url!)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await session.data(for: req)
+        try Self.checkHTTP(response, data: data)
+        return try JSONDecoder().decode(Page<Row>.self, from: data)
     }
 
     private struct Page<R: Decodable>: Decodable {
@@ -387,9 +412,14 @@ final class AirtableService {
         context.insert(ShaktiLetter(shaktiPosition: position, body: body))
     }
 
-    /// Rebuild the local recognition log from Airtable when it is empty — the
-    /// path home after a reinstall or a store recovery. Guarded on emptiness so
-    /// it can never duplicate existing history. Silent on any failure.
+    /// Rebuild the local recognition log from the App Activity ledger when it
+    /// is empty — the path home after a reinstall or a store recovery. Every
+    /// `Shakti Recognized` row comes back as a `.felt` entry and every
+    /// `Silence Held` row as `.silence`, her words restored from `Notes`; the
+    /// mapping is `ActivityLedger.recognitionEntries` (pure), which tolerates
+    /// a legacy milestone that predates `Felt At` and skips what it cannot
+    /// place. Guarded on emptiness so it can never duplicate existing history.
+    /// Silent on any failure.
     func restoreRecognitionsIfLocalEmpty(context: ModelContext) async {
         let existing = (try? context.fetch(FetchDescriptor<RecognitionEntry>())) ?? []
         guard existing.isEmpty else { return }
@@ -404,84 +434,64 @@ final class AirtableService {
         }
         guard !byRecord.isEmpty else { return }
 
-        struct RecRow: Decodable {
-            let id: String
-            let fields: Fields
-            struct Fields: Decodable {
-                let feltAt: String?
-                let notes: String?
-                let ofShakti: [String]?
-                enum CodingKeys: String, CodingKey {
-                    case feltAt   = "fldk4BdikzJQOautw"
-                    case notes    = "fld1HR38cQAtEicFc"
-                    case ofShakti = "fldaDjmaPvu57sJVg"
-                }
-            }
-        }
-
         do {
-            let rows: [RecRow] = try await fetch(
+            // The mapper orders oldest-first itself, so no server sort is asked for.
+            let rows: [ActivityLedger.Row] = try await fetch(
                 token: token,
-                filter: "{fldw33m8YqrINlvrN}='Recognition'",
-                sort: [("fldk4BdikzJQOautw", "asc")]
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.restoreRecognitions,
+                sort: [],
+                fields: Self.restoreRecognitionFields,
+                byFieldId: false
             )
-            let iso = ISO8601DateFormatter()
-            var inserted = 0
-            for r in rows {
-                guard let rec = r.fields.ofShakti?.first, let map = byRecord[rec] else { continue }
-                let ts = r.fields.feltAt.flatMap { iso.date(from: $0) } ?? Date()
+            let restored = ActivityLedger.recognitionEntries(from: rows, byRecord: byRecord)
+            for r in restored {
                 context.insert(RecognitionEntry(
-                    timestamp: ts,
-                    khadgamalaPosition: map.kp,
-                    ringNumber: map.ring,
-                    note: r.fields.notes,
-                    gesture: .felt
+                    timestamp: r.timestamp,
+                    khadgamalaPosition: r.kp,
+                    ringNumber: r.ring,
+                    note: r.note,
+                    gesture: r.gesture
                 ))
-                inserted += 1
             }
-            if inserted > 0 { try? context.save() }
-            log.notice("Recognition restore: inserted \(inserted) from Airtable")
+            if !restored.isEmpty { try? context.save() }
+            log.notice("Recognition restore: inserted \(restored.count) from the ledger")
         } catch {
             log.error("Recognition restore failed: \(Self.describe(error), privacy: .public)")
         }
     }
 
-    /// Rebuild the descent timeline from Airtable when the local one is empty —
-    /// the path home for `DescentState.crossings` after a reinstall/recovery
-    /// (Ruling 8). Guarded on empty crossings so it never overwrites a live
-    /// timeline; zero Crossing rows leave the bootstrap floor (2/2) untouched.
+    /// The ledger columns the recognition restore reads (`fields[]`, by name).
+    private static let restoreRecognitionFields = [
+        ActivityLedger.Field.activityType,
+        ActivityLedger.Field.activityDate,
+        ActivityLedger.Field.feltAt,
+        ActivityLedger.Field.notes,
+        ActivityLedger.Field.linkToMandala,
+    ]
+
+    /// Rebuild the descent timeline from the App Activity ledger when the
+    /// local one is empty — the path home for `DescentState.crossings` after a
+    /// reinstall/recovery (Ruling 8). Every `Ring Crossed` row with a ring in
+    /// 1…9 and a readable `Felt At` counts (`ActivityLedger.crossings`, pure —
+    /// a stray row never rewrites a crossing's date). Guarded on empty
+    /// crossings so it never overwrites a live timeline; zero rows leave the
+    /// bootstrap floor (2/2) untouched.
     func restoreDescentIfLocalEmpty(context: ModelContext) async {
         let states = (try? context.fetch(FetchDescriptor<DescentState>())) ?? []
         guard let state = states.first, state.crossings.isEmpty else { return }
         guard let token = pat else { return }
 
-        struct CrossRow: Decodable {
-            let fields: Fields
-            struct Fields: Decodable {
-                let ring: Int?
-                let feltAt: String?
-                enum CodingKeys: String, CodingKey {
-                    case ring   = "fld225xgYl2Rs3TP6"   // Descent Ring
-                    case feltAt = "fldk4BdikzJQOautw"   // Felt At
-                }
-            }
-        }
-
         do {
-            let rows: [CrossRow] = try await fetch(
+            let rows: [ActivityLedger.Row] = try await fetch(
                 token: token,
-                filter: "{fldw33m8YqrINlvrN}='Crossing'",
-                sort: [("fldk4BdikzJQOautw", "asc")]
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.restoreCrossings,
+                sort: [],
+                fields: Self.restoreCrossingFields,
+                byFieldId: false
             )
-            let iso = ISO8601DateFormatter()
-            let restored: [(ring: Int, date: Date)] = rows.compactMap { r in
-                guard let ring = r.fields.ring, (1...9).contains(ring) else { return nil }
-                // Skip rows with a missing/unparseable timestamp rather than
-                // coercing to `.now` — a stray row must not rewrite a crossing's
-                // date and corrupt the descent timeline.
-                guard let raw = r.fields.feltAt, let d = iso.date(from: raw) else { return nil }
-                return (ring, d)
-            }
+            let restored = ActivityLedger.crossings(from: rows)
             guard !restored.isEmpty else { return }   // zero rows → floor untouched
             state.restore(from: restored)
             try? context.save()
@@ -490,6 +500,13 @@ final class AirtableService {
             log.error("Descent restore failed: \(Self.describe(error), privacy: .public)")
         }
     }
+
+    /// The ledger columns the descent restore reads (`fields[]`, by name).
+    private static let restoreCrossingFields = [
+        ActivityLedger.Field.activityType,
+        ActivityLedger.Field.descentRing,
+        ActivityLedger.Field.feltAt,
+    ]
 
     private func reconcileAvaranas(_ rows: [AvaranaRow], context: ModelContext) throws {
         let existing = try context.fetch(FetchDescriptor<Avarana>())
@@ -584,9 +601,11 @@ final class AirtableService {
     }
 }
 
-// MARK: - Phase 10 · Recognition reads (Her Moments)
+// MARK: - Her Moments · Recognition reads (App Activity)
 
-/// One Recognition row read from Airtable for a single Shakti's history.
+/// One `Shakti Recognized` row read from the ledger for a single Śakti's
+/// history. `feltAt` is `nil` for a legacy milestone written before `Felt At`
+/// existed — Her Moments renders those as a bare "she was felt here".
 struct RecognitionAirtableRow: Identifiable, Equatable {
     let id: String
     let feltAt: Date?
@@ -596,62 +615,58 @@ struct RecognitionAirtableRow: Identifiable, Equatable {
 
 extension AirtableService {
 
-    /// Fetch up to 5 most-recent Recognition rows for a given Shakti.
-    /// Strategy: pull the 20 newest Recognitions globally (already filtered by
-    /// `Row Type`), then keep only those linking this Shakti. Most practitioners
-    /// have < 20 recognitions in any short window so the 5 we need almost
-    /// always appear in the first page. Throws on network failure; the caller
-    /// should fall back to local SwiftData if this fails.
+    /// Her `limit` most-recent `Shakti Recognized` rows from App Activity,
+    /// newest first. The formula narrows by type and by her name in the
+    /// link's primary field (`ActivityLedger.moments`; a blank name narrows
+    /// nothing); names repeat across rings, so the record-id match stays
+    /// client-side, paging by `offset` (100 a page, at most `momentPageCap`
+    /// pages) until `limit` rows link this record. Throws on network failure;
+    /// the caller keeps local SwiftData.
     func fetchRecognitions(forShaktiRecordId shaktiRecordId: String,
+                           name shaktiName: String,
                            limit: Int = 5) async throws -> [RecognitionAirtableRow] {
         guard let token = pat else { return [] }
 
-        struct Row: Decodable {
-            let id: String
-            let fields: Fields
-            struct Fields: Decodable {
-                let feltAt: String?
-                let notes: String?
-                let moonPhase: String?
-                let ofShakti: [String]?
-                enum CodingKeys: String, CodingKey {
-                    case feltAt    = "fldk4BdikzJQOautw"
-                    case notes     = "fld1HR38cQAtEicFc"
-                    case moonPhase = "fldFZcZ5AVcOWwo6X"
-                    case ofShakti  = "fldaDjmaPvu57sJVg"
-                }
-            }
-        }
-
-        var comps = URLComponents(string: "https://api.airtable.com/v0/\(Self.baseId)/\(Self.tableId)")!
-        comps.queryItems = [
-            .init(name: "pageSize",                value: "20"),
-            .init(name: "filterByFormula",         value: "{fldw33m8YqrINlvrN}='Recognition'"),
-            .init(name: "returnFieldsByFieldId",   value: "true"),
-            .init(name: "sort[0][field]",          value: "fldk4BdikzJQOautw"),
-            .init(name: "sort[0][direction]",      value: "desc"),
-        ]
-        var req = URLRequest(url: comps.url!)
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        let (data, response) = try await session.data(for: req)
-        try Self.checkHTTP(response, data: data)
-
-        struct Page: Decodable { let records: [Row] }
-        let page = try JSONDecoder().decode(Page.self, from: data)
-        let iso = ISO8601DateFormatter()
-
-        let matching: [RecognitionAirtableRow] = page.records.compactMap { row in
-            guard let ofShakti = row.fields.ofShakti,
-                  ofShakti.contains(shaktiRecordId) else { return nil }
-            return RecognitionAirtableRow(
-                id: row.id,
-                feltAt: row.fields.feltAt.flatMap { iso.date(from: $0) },
-                notes: row.fields.notes,
-                moonPhase: row.fields.moonPhase
+        var matching: [RecognitionAirtableRow] = []
+        var offset: String? = nil
+        var pages = 0
+        repeat {
+            let page: Page<ActivityLedger.Row> = try await fetchPage(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.moments(shaktiName: shaktiName),
+                sort: [(ActivityLedger.Field.feltAt, "desc")],
+                fields: Self.momentFields,
+                byFieldId: false,
+                offset: offset
             )
-        }
-        return Array(matching.prefix(limit))
+            for row in page.records
+            where row.fields.linkToMandala?.contains(shaktiRecordId) == true {
+                matching.append(RecognitionAirtableRow(
+                    id: row.id,
+                    feltAt: ActivityLedger.serverDate(row.fields.feltAt),
+                    notes: row.fields.notes,
+                    moonPhase: row.fields.moonPhase
+                ))
+                if matching.count >= limit { return matching }
+            }
+            offset = page.offset
+            pages += 1
+        } while offset != nil && pages < Self.momentPageCap
+        return matching
     }
+
+    /// The ledger columns Her Moments reads (`fields[]`, by name).
+    private static let momentFields = [
+        ActivityLedger.Field.feltAt,
+        ActivityLedger.Field.notes,
+        ActivityLedger.Field.moonPhase,
+        ActivityLedger.Field.linkToMandala,
+    ]
+
+    /// How far Her Moments will page for one Śakti — 500 name-matched rows is
+    /// beyond any practice; past that the newest found are shown.
+    private static let momentPageCap = 5
 }
 
 // MARK: - Phase 6 · Recognition writes
@@ -1247,9 +1262,44 @@ extension AirtableService {
         }
     }
 
+    // MARK: The silence dwell (R11)
+
+    /// The R11 dwell: one `Silence Held` row in the ledger, linked to her
+    /// Shakti row and carrying how long the silence was held — no Notes, and
+    /// **no Shakti-row PATCH** (a silence is held, not counted). Guards as
+    /// `recordRecognition` does: nothing when sync is off, nothing for a
+    /// pre-sync Śakti (no `airtableRecordId`) — the local `.silence` entry
+    /// `SilenceDwell` wrote first stays the record. Rides the activity queue,
+    /// so an offline dwell drains with the other events. Zero call sites
+    /// until Phase 3.6 wires the dwell.
+    func recordSilence(shakti: Shakti, durationSec: Double, at: Date = .now) async {
+        if syncIsDisabled() { return }
+        guard let recordId = shakti.airtableRecordId, !recordId.isEmpty else {
+            log.notice("Silence: no airtableRecordId — skipping Airtable write")
+            return
+        }
+        await logActivity(ActivityLedger.silence(shaktiRecordId: recordId,
+                                                 name: shakti.name,
+                                                 durationSec: durationSec,
+                                                 at: at))
+    }
+
+    /// One ledger row per event. A linked item gets the same create-time
+    /// check as a recognition or a crossing: a queued retry repeats the
+    /// original instant, so a row already linking this record at this second
+    /// *is* this event, and nothing is written twice. Fail-open — the check's
+    /// own failure never blocks the create.
     private func processActivity(_ item: PendingActivity) async -> Bool {
         guard let token = pat else { return false }
         do {
+            if !item.linkRecordId.isEmpty,
+               await activityExistsOnServer(token: token,
+                                            type: item.type,
+                                            linkRecordId: item.linkRecordId,
+                                            feltAt: item.at) {
+                log.notice("\(item.type, privacy: .public) row already on server — skipping create")
+                return true
+            }
             try await createActivityRow(token: token, item: item)
             return true
         } catch {
