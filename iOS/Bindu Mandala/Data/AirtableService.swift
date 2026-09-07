@@ -379,14 +379,14 @@ final class AirtableService {
                 shakti.status = order[max(li, ri)]
             }
 
-            // Restore a Ring-2 letter from Airtable when none exists locally.
-            // The Well is offline-first and Ring-2 only (ShaktiLetter is keyed
-            // 1–16), so we seed only when the practitioner has no local draft —
-            // never overwriting a newer local edit.
-            if ring == 2,
-               let remoteLetter = row.fields.letter?.trimmingCharacters(in: .whitespacesAndNewlines),
+            // Restore her letter from Airtable when none exists locally. Every
+            // one of the 102 may be written to now that `ShaktiLetter` is keyed
+            // by Khaḍgamālā position, so no ring is gated out. Offline-first:
+            // seed only when the practitioner has no local draft — never
+            // overwriting a newer local edit.
+            if let remoteLetter = row.fields.letter?.trimmingCharacters(in: .whitespacesAndNewlines),
                !remoteLetter.isEmpty {
-                seedLetterIfMissing(position: perRing, body: remoteLetter, context: context)
+                seedLetterIfMissing(khadgamalaPosition: kp, body: remoteLetter, context: context)
             }
 
             shakti.lastSyncedAt = .now
@@ -394,14 +394,14 @@ final class AirtableService {
         try context.save()
     }
 
-    /// Restore the server's letter for this Ring-2 position unless the
+    /// Restore the server's letter for this Khaḍgamālā position unless the
     /// practitioner has written one — a local draft always wins. A row whose
-    /// body is blank is not a draft (an opened-but-never-written letter, or a
-    /// pre-fix build's write-on-open): it is filled in place rather than left
+    /// body is blank is not a draft (a pre-fix build's write-on-open, or a row
+    /// migrated from an empty V1 letter): it is filled in place rather than left
     /// to block the restore forever, and never duplicated on the unique key.
-    private func seedLetterIfMissing(position: Int, body: String, context: ModelContext) {
+    private func seedLetterIfMissing(khadgamalaPosition: Int, body: String, context: ModelContext) {
         let d = FetchDescriptor<ShaktiLetter>(
-            predicate: #Predicate { $0.shaktiPosition == position }
+            predicate: #Predicate { $0.khadgamalaPosition == khadgamalaPosition }
         )
         if let row = (try? context.fetch(d))?.first {
             guard row.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -409,7 +409,7 @@ final class AirtableService {
             row.updatedAt = .now
             return
         }
-        context.insert(ShaktiLetter(shaktiPosition: position, body: body))
+        context.insert(ShaktiLetter(khadgamalaPosition: khadgamalaPosition, body: body))
     }
 
     /// Rebuild the local recognition log from the App Activity ledger when it

@@ -25,7 +25,7 @@ final class SchemaMigrationTests: XCTestCase {
             let ctx = ModelContext(container)
             ctx.insert(DescentState(currentRing: 5, deepestReached: 5,
                                     crossings: [Date(timeIntervalSince1970: 1000)]))
-            ctx.insert(ShaktiLetter(shaktiPosition: 3, body: "a letter that must survive"))
+            ctx.insert(ShaktiLetter(khadgamalaPosition: 3, body: "a letter that must survive"))
             try ctx.save()
         }
 

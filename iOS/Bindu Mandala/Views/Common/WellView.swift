@@ -9,8 +9,10 @@ struct WellView: View {
     @Query private var allLetters: [ShaktiLetter]
     @State private var openingFor: Shakti?
 
-    /// Only Ring 2 Karṣiṇīs receive letters. `ShaktiLetter.shaktiPosition` is
-    /// `@Attribute(.unique)` over 1–16; including other rings would collide.
+    /// The Well still lists the 16 Karṣiṇīs of Ring 2. The data beneath it no
+    /// longer requires that — `ShaktiLetter` is keyed by Khaḍgamālā position, so
+    /// all 102 can hold a letter — but opening the list to them is the view half
+    /// of Brief 2.1 and lands separately.
     private var ring2Shaktis: [Shakti] {
         allShaktis.filter { ($0.ringNumber ?? 2) == 2 }
             .sorted { $0.position < $1.position }
@@ -18,8 +20,8 @@ struct WellView: View {
 
     /// One look-up across the whole list, vs. the old code which inserted a
     /// fresh `ShaktiLetter` per rendered row just to read the preview.
-    private var lettersByPosition: [Int: String] {
-        Dictionary(allLetters.map { ($0.shaktiPosition, $0.body) },
+    private var lettersByKhadgamala: [Int: String] {
+        Dictionary(allLetters.map { ($0.khadgamalaPosition, $0.body) },
                    uniquingKeysWith: { first, _ in first })
     }
 
@@ -97,7 +99,7 @@ struct WellView: View {
     }
 
     private func row(for shakti: Shakti) -> some View {
-        let preview = lettersByPosition[shakti.position] ?? ""
+        let preview = lettersByKhadgamala[shakti.letterKey] ?? ""
         let firstLine = preview.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
         let hasLetter = !firstLine.trimmingCharacters(in: .whitespaces).isEmpty
         return HStack(alignment: .top, spacing: 14) {
@@ -240,7 +242,7 @@ struct LetterEditorView: View {
         // Read-only: no row is inserted for a letter never written. The insert
         // belongs to `saveIfNeeded`, so opening leaves the store untouched and
         // a blank row can never block her server letter from seeding.
-        let body = LetterStore(context: context).existingLetter(for: shakti.position)?.body ?? ""
+        let body = LetterStore(context: context).existingLetter(for: shakti.letterKey)?.body ?? ""
         draft = LetterDraft(saved: body)   // text == saved, so this is not an edit
         loaded = true
     }
@@ -260,7 +262,7 @@ struct LetterEditorView: View {
         saveTask?.cancel()
 
         let store = LetterStore(context: context)
-        let letter = store.letter(for: shakti.position)
+        let letter = store.letter(for: shakti.letterKey)
         store.save(letter, body: draft.text)
         draft.markSaved()
 
