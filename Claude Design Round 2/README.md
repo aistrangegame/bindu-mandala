@@ -62,7 +62,7 @@ engine. **Read `living-rite-core.jsx` first** — it holds every derivation the 
 |---|---|
 | `index.html` | Entry point: fonts, all `@keyframes`, script load order, `#root`. |
 | `shakti-data.js` | The 16 fully-authored Ring-2 Śaktis (`SHAKTIS`, `CLUSTER_INFO`). |
-| `all-shaktis-data.js` | The full 102 + ring/āvaraṇa metadata (`AVARANAS`). |
+| `_superseded/all-shaktis-data.js` | **Superseded draft roster** — never shipped; Airtable is canon for all 102 names and content (see `_superseded/README.md`, Brief v2 Law 1). Still loaded by `index.html` for the ring/āvaraṇa metadata (`AVARANAS`) so the prototype runs; never diff against it. |
 | `ios-frame.jsx` | The device bezel/status bar. Prototype chrome only — **do not port.** |
 | `tweaks-panel.jsx` | The Tweaks panel. Prototype chrome only — **do not port.** |
 | `living-rite-core.jsx` | **The engine.** Atmosphere, time-of-day, element→archetype, moon, day-cycle, embodiment, recognition responses, bīja + ring chimes, and shared SVG atoms. Everything below reads from here. |
