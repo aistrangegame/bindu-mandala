@@ -73,7 +73,15 @@ touching them must be reviewed against the prototype/rulings by whoever owns the
 - `Data/RecognitionMigrator` — lossless backfill.
 - `Models/DescentState` — mirror-once (`enter → true` only on a new deepest crossing,
   Ruling 8) + restore-if-empty (never regress below floor 2).
-- `Data/AirtableService` — sync + `restore*IfLocalEmpty` + pending queues.
+- `Data/ActivityLedger` — the App Activity vocabulary, payload, formulas and restore
+  mappers (pure). Ruling 2026-09-07: every practice event → App Activity; the Mandala
+  table receives only the Shakti-row PATCHes. Notes is the practitioner's text, never
+  metadata; `Felt At` is the second-precision key every dedup matches on.
+- `Data/AirtableService` — sync + the one ledger writer (fail-open create-time dedup) +
+  the Shakti-row PATCHes + `restore*IfLocalEmpty` + Her Moments, all reading the ledger +
+  pending queues (hold without a token, never drop for want of one).
+- `Services/SilenceDwell` — the R11 entry point: local `.silence` entry first, then the
+  ledger's `Silence Held`. No call sites until Phase 3.6.
 - `Data/PersistenceRecovery` — no-launch-crash guarantees.
 
 ## Design §4 stretches — disposition
@@ -86,6 +94,7 @@ Stated explicitly so they read as **decisions, not defects**:
 - **WidgetKit home-screen widget** — **not built; stays parked.** Optional; no widget target exists.
 - **`.silence` recognition gesture** — **reborn as the dwelling** (Brief v2 R11), **wired in
   Phase 3.6**: a dwell held past the first adaptation records a `RecognitionEntry` with
-  `gesture: .silence` (local + Airtable Source "Silence"), once per visit, never displayed.
-  Until 3.6 lands, the `RecognitionEntry.Gesture.silence` case stays defined and unwritten
-  (both record sites use `.felt`) — a dormant hook, harmless.
+  `gesture: .silence` (local + App Activity Silence Held, Gesture Source Silence), once per
+  visit, never displayed. The writer exists (`Services/SilenceDwell.record` →
+  `AirtableService.recordSilence`; no Shakti-row PATCH) with zero call sites until 3.6
+  lands — the `.silence` case is defined, tested, and unwritten by any screen.
