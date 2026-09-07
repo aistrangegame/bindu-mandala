@@ -10,8 +10,8 @@ struct RiteSigil: View {
     let ring: Int
     let size: CGFloat
     let spin: Double            // +1 / -1
-    var reduceMotion: Bool = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var angle: Double = 0
 
     private var accent: Color { atmosphere.accent }

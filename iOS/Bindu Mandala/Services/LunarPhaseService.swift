@@ -28,17 +28,6 @@ enum LunarPhaseService {
         return age < 0 ? age + synodicMonth : age
     }
 
-    /// 0–15. Maps to Shakti.position via `+ 1`.
-    static func todayPetalIndex(at date: Date = .now) -> Int {
-        let age = floor(moonAgeDays(at: date))
-        return Int(age.truncatingRemainder(dividingBy: 16))
-    }
-
-    /// 1–16.
-    static func todayPosition(at date: Date = .now) -> Int {
-        todayPetalIndex(at: date) + 1
-    }
-
     /// Phase 0…1 around the synodic cycle (0 = new moon, 0.5 = full).
     static func phaseFraction(at date: Date = .now) -> Double {
         moonAgeDays(at: date) / synodicMonth

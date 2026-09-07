@@ -277,9 +277,7 @@ struct MandalaCanvasLayer: View {
                 // bīja syllable at the deepest zoom — she names her seed (the 86
                 // without a bīja show nothing).
                 if tier >= 2 && !isFocus {
-                    let bija = seat.shakti.bija.trimmingCharacters(in: .whitespaces)
-                    if !bija.isEmpty {
-                        let syllable = bija.components(separatedBy: " — ").first ?? bija
+                    if let syllable = seat.shakti.bijaSyllable {
                         var bt = ctx.resolve(
                             Text("bīja \(syllable)")
                                 .font(.custom(AppFont.cormorantItalic, size: 8))
