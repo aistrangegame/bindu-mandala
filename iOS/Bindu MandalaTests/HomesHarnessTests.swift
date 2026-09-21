@@ -21,6 +21,11 @@ import SwiftData
 //   · felt     · the `MEASURING` detector, ported verbatim, over every
 //                user-facing string the instrument can compose today
 //   · coverage · "the known collisions resolve by position, not by name"
+//   · coverage · "every authored room is actually reached" — the check Design's
+//                own pass does **not** have, and the reason four of its eight
+//                authored rooms fall through in its shipped Axis
+//   · distinction · language uniqueness, over all 102
+//   · distinction · sister divergence, at the level of logic
 //
 // The four `promise` checks are asked of `HomeMemoryStore` — the store, on a
 // real container — and not only of the pure statics `HomeMemoryTests` already
@@ -35,52 +40,59 @@ import SwiftData
 // exact failure `homes-verify.js` was written to prevent. Each returns as a real
 // check the moment the thing it interrogates exists:
 //
-//  1. distinction · "adjacent sisters diverge geometrically by more than a
-//     tenth". Needs `HomeChambers.build(world:shakti:)` returning a node graph
-//     whose children carry position, scale and opacity, plus a Swift port of
-//     `fingerprint(chamber, t)` and `divergence(a, b)`. Lights up when Ring 2's
-//     sixteen rooms are built (Phase 3.4), then widens ring by ring through 3.5
-//     and 3.6. This is the check that carries Ruling 10: the Gate's two rooms
-//     are authored by hand, and the grammar is proven by sister divergence
-//     across the other rooms instead.
+//  1. distinction · "adjacent sisters diverge **geometrically** by more than a
+//     tenth". The *logic* half of this check now runs — see
+//     `testAdjacentSistersDivergeAcrossTheGrammarThatDrivesTheirRooms`, which
+//     asks Design's own `divergence` of a fingerprint built from what the
+//     grammar produces rather than from what a renderer draws. What is still
+//     absent is the geometric half: a node graph whose children carry position,
+//     scale and opacity, and a Swift port of `fingerprint(chamber, t)` over it.
+//     That lights up when the rooms are built (Phase 3.4 → 3.5 → 3.6) under the
+//     ruled renderer. This is the check that carries Ruling 10: the Gate's two
+//     rooms are authored by hand, and the grammar is proven by sister
+//     divergence across the other rooms instead.
 //
-//  2. distinction · "no two Śaktis in one ring speak the same near words".
-//     Needs each chamber's `label` at the first adaptation (t = 20), compared
-//     within a ring. Same build as (1).
+//  2. distinction · "every room reverses its premise at the second adaptation".
+//     The grammar composes both halves already — `HomeLabel.near` and
+//     `.deep` — and `testEveryRoomSaysSomethingElseOnceThePremiseReverses`
+//     asserts they are never the same words. What is absent is the *room*
+//     reversing with them: the geometry that makes the ceiling's descent read
+//     as having held you all along. Same build as (1).
 //
-//  3. distinction · "every room reverses its premise at the second adaptation".
-//     Needs a chamber's `label` at t = 20 and again at t = 300. Same build.
+//  3. distinction · "her world conditions her room". `HomeWorlds` now exists
+//     and `HomeRooms.resolve` stands her in it, but the check asks for one
+//     Śakti built into two different worlds and **fingerprinted**, which is the
+//     geometric fingerprint of (1). Same build.
 //
-//  4. distinction · "her world conditions her room". Needs one Śakti built into
-//     two different worlds and fingerprinted. Lights up with `HomeWorlds`
-//     (Phase 3.2).
-//
-//  5. legibility · all five checks — no room renders black at the first
+//  4. legibility · all five checks — no room renders black at the first
 //     adaptation, none blows out to white, every room has internal contrast,
 //     the second adaptation is still legible, the light visibly changes between
 //     them. Needs the 102-room offscreen render and the 4×4 luminance grid
 //     `makeStage()` builds against a WebGL context. Blocked twice over: on the
 //     rooms (Phase 3), and on the renderer itself — Phase 2.4 spikes SceneKit
-//     against `Canvas` and Ashrey rules it before Phase 3 starts. Whichever
+//     against `Canvas` and the ruling lands before Phase 3.3 starts. Whichever
 //     wins must also offer a headless capture path, or this register can only
 //     ever run on the device.
 //
-//  6. coverage · "every one of the 102 resolves to a built room" and "no Śakti
-//     falls through to the shared seat". Needs the room set plus Design's
-//     authored `BY_NAME` map ported by Khaḍgamālā position ({1, 2, 3, 4, 6, 27,
-//     28, 102} — errata §3.x, because four of Design's name keys are ghost
-//     spellings). Lights up progressively: Phase 3.3 (the Gate), 3.4 (Ring 2),
-//     3.5 (Ring 1), 3.6 (Rings 3–9 — 58 rooms, not 74; errata §3.x).
+//  5. coverage · "every one of the 102 resolves to a built room" and "no Śakti
+//     falls through to the shared seat". The *dispatch* is built and asserted
+//     here — `HomeRooms.resolve` runs Design's three-step order, and the
+//     authored map is keyed by Khaḍgamālā position ({1, 2, 3, 4, 6, 27, 28,
+//     102} — errata §3.x, because four of Design's name keys are ghost
+//     spellings). What remains is the *rooms*: a mechanism is a named
+//     placeholder until Phase 3.3 fills its geometry, so "resolves to a built
+//     room" is answered structurally and not yet visually.
 //
-//  7. canon · the six checks that trace every datum to the 102 cards. The cards
+//  6. canon · the six checks that trace every datum to the 102 cards. The cards
 //     are Chat-side documents today (`Claude Chat/homes-shakti-cards-*.md`) and
 //     the app reads Airtable. Lights up if and when a card table ships inside
 //     the binary — and not before, because asserting against a copy Code typed
 //     out would be exactly the invention the register exists to catch.
 //
-//  8. iconography · all seven checks. Needs `HomeAttribute` — the 26 forms,
-//     their mounting, their motion, her card's colour word, and the dissolve
-//     past the second adaptation.
+//  7. iconography · all seven checks. `HomeAttribute` now carries the 26 forms,
+//     their mounting, their motion and the dissolve past the second adaptation,
+//     so the register's *inputs* exist; its questions are asked of the rendered
+//     actor, which waits on the renderer with (4).
 //
 // The two remaining registers — coherence and brief — audit Design's own
 // deliverable files (the Axis, the method, the thread) rather than the app, and
@@ -102,7 +114,11 @@ import SwiftData
 ///
 /// **If a string matches, that is a Ruling-2 violation in the app, not a bug in
 /// the regex.** Change the copy; never soften the pattern.
-private enum Measuring {
+///
+/// Module-internal rather than file-private so every suite that composes
+/// walker-facing words runs the *same* nine patterns. A second copy would drift
+/// from this one, and a drifted detector is worse than none.
+enum Measuring {
 
     struct Pattern {
         /// The JavaScript literal, as `homes-verify.js` writes it.
@@ -696,7 +712,288 @@ final class HomesHarnessTests: XCTestCase {
         )
         return HomeMemoryStore(context: ModelContext(container))
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MARK: - coverage · every authored room is actually reached
+    //
+    // The check Design's own pass does not have, and the one that matters most.
+    //
+    // `homes-chambers.js` keys its eight authored mechanisms by Śakti **name**,
+    // and four of those eight keys are ghost spellings that match no card:
+    // `Animā` against the card's `Aṇimā`, `Vaśitā` against `Vaśitva`,
+    // `Sarvayoni` against `Sarva-Yoni`, `Sarvatrikhaṇḍā` against
+    // `Sarva-Trikhaṇḍā`. In Design's shipped Axis those four rooms are never
+    // reached — the lookup misses and the walker silently gets the grammar
+    // instead — and nothing in `homes-verify.js` can see it, because the only
+    // coverage question it asks is whether *some* room was built.
+    //
+    // Keyed by `khadgamalaPosition`, as law 1 requires, the miss cannot happen:
+    // a position is a number, and a number cannot be misspelled. These tests
+    // are what makes that claim checkable rather than merely stated.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    func testTheAuthoredMapIsKeyedByPositionAndHoldsDesignsEight() {
+        XCTAssertEqual(Set(HomeRooms.authored.keys), [1, 2, 3, 4, 6, 27, 28, 102],
+                       "the authored positions are the errata's eight (§3.x)")
+        XCTAssertEqual(Set(HomeRooms.authored.values).count, HomeRooms.authored.count,
+                       "each of the eight mechanisms is authored for exactly one Śakti")
+        XCTAssertEqual(Set(HomeRooms.authored.values),
+                       Set(HomeAuthoredMechanism.allCases),
+                       "every mechanism Design wrote has a position, and none is orphaned")
+    }
+
+    func testEveryAuthoredPositionReachesItsAuthoredMechanism() {
+        let rooms = Dictionary(uniqueKeysWithValues:
+            HomesCorpus.resolvedRooms().map { ($0.row.position, $0) })
+
+        for (position, expected) in HomeRooms.authored.sorted(by: { $0.key < $1.key }) {
+            guard let entry = rooms[position] else {
+                XCTFail("kp \(position) resolved to no room at all")
+                continue
+            }
+            guard case .authored(let reached) = entry.room.kind else {
+                XCTFail("""
+                        kp \(position) fell through to \(entry.room.kind) instead of reaching \
+                        its authored \(expected.designFunction). This is exactly Design's \
+                        by-name miss, and the reason the map is keyed by position.
+                        """)
+                continue
+            }
+            XCTAssertEqual(reached, expected,
+                           "kp \(position) reached \(reached.designFunction), not \(expected.designFunction)")
+            XCTAssertTrue(entry.room.isBuilt, "an authored room is a room of her own")
+            XCTAssertNil(entry.room.label,
+                         "an authored room writes its own words in Phase 3.3; the grammar does not speak for her")
+        }
+    }
+
+    /// The dispatch hands each authored position **its own** placeholder, and
+    /// the placeholder agrees about which of the eight it is. Phase 3.3 fills
+    /// these in; what is proven now is that it will fill the right one.
+    func testTheDispatchHandsEachAuthoredRoomItsOwnPlaceholder() {
+        for mechanism in HomeAuthoredMechanism.allCases {
+            XCTAssertEqual(mechanism.placeholder.kind, mechanism,
+                           "\(mechanism.rawValue)'s placeholder answers to \(mechanism.placeholder.kind)")
+        }
+        let placeholders = HomeAuthoredMechanism.allCases.map { String(describing: $0.placeholder) }
+        XCTAssertEqual(Set(placeholders).count, placeholders.count,
+                       "no two mechanisms share a placeholder type")
+    }
+
+    /// Nobody else is authored. A ninth room appearing here would mean a
+    /// mechanism had been reached by a Śakti Design never wrote one for.
+    func testOnlyTheEightAreAuthoredAndEveryoneElseIsResolvedByTheOrder() {
+        var authored = 0, grammar = 0, seat = 0
+        for entry in HomesCorpus.resolvedRooms() {
+            switch entry.room.kind {
+            case .authored: authored += 1
+            case .grammar:  grammar += 1
+            case .seat:     seat += 1
+            }
+        }
+        XCTAssertEqual(authored, 8)
+        XCTAssertEqual(grammar, KhadgamalaMap.total - 8,
+                       "the other 94 are spoken for by the grammar")
+        XCTAssertEqual(seat, 0,
+                       "no Śakti falls through to the shared seat once the order is whole")
+    }
+
+    /// The order is an order: authored first, then the grammar, then the seat.
+    func testTheOrderFallsThroughInDesignsSequence() {
+        // 2 · not authored, and in a ring the grammar speaks for.
+        let grammared = HomeRooms.resolve(position: 30, ring: 2, tattva: "Vāyu (Air)",
+                                          quality: "She who attracts Touch",
+                                          bodilyLocation: "skin")
+        guard case .grammar(let reading)? = grammared?.kind else {
+            return XCTFail("kp 30 should be the grammar's")
+        }
+        XCTAssertEqual(reading.archetype, .crossed)
+
+        // 3 · a world the grammar declines to speak for, and no authored room:
+        // her seat, gem-lit. The Bindu is the only ninth-world Śakti and she is
+        // authored, so this is the floor rather than a live case.
+        let seated = HomeRooms.resolve(position: 50, ring: 9, tattva: "Para-Bindu",
+                                       quality: "She who is", bodilyLocation: "crown")
+        XCTAssertEqual(seated?.kind, HomeRoomKind.seat)
+        XCTAssertEqual(seated?.isBuilt, false)
+
+        // …and the attribute joins whichever room resulted. Never a fourth branch.
+        for room in [grammared, seated].compactMap({ $0 }) {
+            XCTAssertNotNil(room.attribute,
+                            "kp \(room.position): her attribute acts in whatever room she has")
+        }
+        XCTAssertNotNil(HomeRooms.resolve(position: 4, ring: 1, tattva: "Pṛthvī — earth",
+                                          quality: "Weightedness",
+                                          bodilyLocation: "Mūlādhāra / sit-bones / soles")?.attribute,
+                        "an authored room's attribute joins it too")
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MARK: - distinction · language uniqueness
+    //
+    // Design: *"no two Śaktis in one ring speak the same near words"*, and every
+    // room must have something else to say once its premise reverses. Asked of
+    // all 102 — the sixteen Karṣiṇīs as themselves, the other eighty-six over
+    // real tattva vocabulary, because their rows live in Airtable and a bundled
+    // card table would be the ghost roster (see `HomesCorpus`).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    func testNoTwoSistersInARingComposeTheSameNearWords() {
+        var byRing: [Int: [(String, HomesCorpus.Row)]] = [:]
+        for entry in HomesCorpus.resolvedRooms() {
+            guard let label = entry.room.label else { continue }
+            byRing[entry.room.ring, default: []].append((label.near, entry.row))
+        }
+        XCTAssertFalse(byRing.isEmpty, "the check read no rooms")
+
+        var collisions: [String] = []
+        for (ring, spoken) in byRing.sorted(by: { $0.key < $1.key }) {
+            var seen: [String: HomesCorpus.Row] = [:]
+            for (words, row) in spoken {
+                if let first = seen[words] {
+                    collisions.append("""
+                        ring \(ring): kp \(first.position) (\(first.provenance)) and \
+                        kp \(row.position) (\(row.provenance)) both say "\(words)"
+                        """)
+                } else {
+                    seen[words] = row
+                }
+            }
+        }
+        XCTAssertTrue(collisions.isEmpty,
+                      """
+                      \(collisions.count) pair(s) of sisters speak alike. The grammar does not \
+                      distinguish them, and Phase 3 would build rooms that blur. Fix the \
+                      grammar; never weaken the check.
+                      \(collisions.joined(separator: "\n"))
+                      """)
+    }
+
+    func testEveryRoomSaysSomethingElseOnceThePremiseReverses() {
+        var same: [String] = []
+        for entry in HomesCorpus.resolvedRooms() {
+            guard let label = entry.room.label else { continue }
+            if label.near == label.deep {
+                same.append("kp \(entry.row.position) (\(entry.row.provenance)): \"\(label.near)\"")
+            }
+            XCTAssertFalse(label.near.isEmpty, "kp \(entry.row.position) has no near words")
+            XCTAssertFalse(label.deep.isEmpty, "kp \(entry.row.position) has no deep words")
+        }
+        XCTAssertTrue(same.isEmpty,
+                      """
+                      \(same.count) room(s) say the same thing at the second adaptation as at \
+                      the first — the premise never reverses.
+                      \(same.joined(separator: "\n"))
+                      """)
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MARK: - distinction · sister divergence, at the level of logic
+    //
+    // Design's check is geometric: fingerprint two chambers, and demand that
+    // more than a tenth of their components differ. The geometry waits on the
+    // renderer ruling — but the *thing the geometry is made of* does not, and
+    // that is what this asks.
+    //
+    // `divergence` is Design's own, ported exactly: the fraction of fingerprint
+    // components that differ. What is fingerprinted here is what the grammar
+    // **produces** rather than what a renderer draws — where her displacement
+    // kernel puts a thing at eight moments of a stay, where her attribute is
+    // mounted and how it acts at those same moments, her altitude, her mode,
+    // and the shape that acts. Physics and phase are folded into the motion
+    // samples rather than counted once each, because that is how much of a room
+    // they actually drive.
+    //
+    // Nineteen components, so the tenth bites at two of them: a pair separated
+    // by a single number is **not** separated enough, and the test says so.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    func testAdjacentSistersDivergeAcrossTheGrammarThatDrivesTheirRooms() {
+        var byRing: [Int: [(HomesCorpus.Row, [String])]] = [:]
+        for entry in HomesCorpus.resolvedRooms() {
+            guard case .grammar(let reading) = entry.room.kind else { continue }
+            byRing[entry.room.ring, default: []]
+                .append((entry.row, HomeLogicFingerprint.of(room: entry.room, reading: reading)))
+        }
+        XCTAssertFalse(byRing.isEmpty, "the check read no rooms")
+
+        var blurred: [String] = []
+        var margins: [String] = []
+        for (ring, rooms) in byRing.sorted(by: { $0.key < $1.key }) {
+            let ordered = rooms.sorted { $0.0.position < $1.0.position }
+            // Seeded above 1 on purpose: a pair whose every component differs
+            // diverges at exactly 1.0, and seeding at 1.0 would report no pair
+            // at all for a ring that separates its sisters perfectly.
+            var closest = (pair: "—", divergence: Double.infinity)
+            for (a, b) in zip(ordered, ordered.dropFirst()) {
+                let d = HomeLogicFingerprint.divergence(a.1, b.1)
+                let pair = "kp \(a.0.position) (\(a.0.provenance)) ↔ " +
+                           "kp \(b.0.position) (\(b.0.provenance))"
+                if d < closest.divergence { closest = (pair, d) }
+                if d <= HomeLogicFingerprint.threshold {
+                    blurred.append("ring \(ring): \(pair) — divergence \(String(format: "%.3f", d))")
+                }
+            }
+            margins.append("  ring \(ring) · closest \(closest.pair) at "
+                           + String(format: "%.3f", closest.divergence))
+        }
+        XCTAssertTrue(blurred.isEmpty,
+                      """
+                      \(blurred.count) adjacent pair(s) diverge by a tenth or less. The grammar \
+                      does not actually distinguish them, and Phase 3 would build rooms that \
+                      blur. Fix the grammar or the port; never lower the threshold.
+                      \(blurred.joined(separator: "\n"))
+                      """)
+        // Not an assertion — the margin, ring by ring, printed so a slow drift
+        // toward the threshold is visible in the log before it is a failure.
+        print("[sister divergence] closest adjacent pair in each ring, threshold "
+              + String(format: "%.3f", HomeLogicFingerprint.threshold) + "\n"
+              + margins.joined(separator: "\n"))
+    }
+
+    /// The threshold has teeth. A pair that differs in exactly one of nineteen
+    /// components must **fail**, or the check above is asserting nothing.
+    func testTheDivergenceThresholdBites() {
+        let a = (0..<19).map { "component \($0)" }
+        XCTAssertEqual(HomeLogicFingerprint.divergence(a, a), 0,
+                       "a room cannot diverge from itself")
+
+        var oneApart = a; oneApart[7] = "different"
+        let single = HomeLogicFingerprint.divergence(a, oneApart)
+        XCTAssertLessThanOrEqual(single, HomeLogicFingerprint.threshold,
+                                 "one component in nineteen is not a room of her own")
+
+        var twoApart = oneApart; twoApart[11] = "different too"
+        XCTAssertGreaterThan(HomeLogicFingerprint.divergence(a, twoApart),
+                             HomeLogicFingerprint.threshold,
+                             "two in nineteen clears the tenth — this is the smallest pass")
+
+        XCTAssertEqual(HomeLogicFingerprint.divergence([], []), 0,
+                       "Design's own guard: no components, no divergence")
+    }
+
+    /// The fingerprint reads the whole room, not one corner of it. If a
+    /// component ever stopped varying across the 102, the divergence above
+    /// would quietly get easier to pass.
+    func testEveryFingerprintComponentDistinguishesSomebody() {
+        let prints = HomesCorpus.resolvedRooms().compactMap { entry -> [String]? in
+            guard case .grammar(let reading) = entry.room.kind else { return nil }
+            return HomeLogicFingerprint.of(room: entry.room, reading: reading)
+        }
+        XCTAssertEqual(prints.count, KhadgamalaMap.total - 8)
+        for print_ in prints {
+            XCTAssertEqual(print_.count, HomeLogicFingerprint.componentCount)
+        }
+        for index in 0..<HomeLogicFingerprint.componentCount {
+            let values = Set(prints.map { $0[index] })
+            XCTAssertGreaterThan(values.count, 1,
+                                 "fingerprint component \(index) is the same in every room — it "
+                                 + "distinguishes nobody and should not be counted")
+        }
+    }
 }
+
+
 
 // MARK: - File-scope fixtures
 
@@ -749,4 +1046,76 @@ private func blankShakti(ring: Int, kp: Int? = nil, name: String = "Anonymous") 
     s.ringNumber = ring
     s.khadgamalaPosition = kp
     return s
+}
+
+
+// MARK: - The logic-level fingerprint
+//
+// Design's `fingerprint(chamber, t)` walks a built room's node graph and writes
+// each object's position, scale and opacity to two decimal places; its
+// `divergence(a, b)` is then the fraction of those components that differ. The
+// graph waits on the renderer ruling. What does not wait is the layer beneath
+// it — the displacement kernel, the attribute's motion and mount, the altitude,
+// the mode and the shape — which is what a renderer would be drawing.
+//
+// So this is Design's method applied one level down: the same two-decimal
+// quantisation, the same fraction-differing divergence, the same tenth.
+private enum HomeLogicFingerprint {
+
+    /// Design's `> 0.1`. A pair at or below it is not two rooms.
+    static let threshold: Double = 0.1
+
+    /// Eight moments of one stay, in chamber seconds: arrival, the eye still
+    /// settling, the first adaptation, past it, the far side of the settling
+    /// ramp, and three points through the second adaptation and beyond.
+    static let sampleTimes: [TimeInterval] = [0, 8, 20, 45, 62, 120, 200, 300]
+
+    /// Eight motion samples, eight attribute samples, and three standing facts.
+    static let componentCount = 19
+
+    private static func f(_ x: Double) -> String { String(format: "%.2f", x) }
+
+    /// What the grammar and the attribute produce for this room, quantised.
+    static func of(room: HomeRoom, reading: HomeGrammar.Reading) -> [String] {
+        var out: [String] = []
+        out.reserveCapacity(componentCount)
+
+        // Where her room puts a thing, moment by moment. Physics and phase are
+        // folded in here rather than counted once, because this is the share of
+        // the room they drive.
+        for t in sampleTimes {
+            let d = reading.displacement(time: t, amplitude: 1)
+            out.append("m|" + f(d.x) + "," + f(d.y) + "," + f(d.z))
+        }
+
+        // Where her attribute is held, and what it is doing there.
+        for t in sampleTimes {
+            guard let actor = room.attribute else {
+                out.append("a|-")
+                continue
+            }
+            let s = actor.state(atChamberTime: t)
+            out.append("a|" + f(s.body.x) + "," + f(s.body.y) + "," + f(s.body.z)
+                       + "|" + f(s.body.scaleX) + "|" + f(s.body.opacity)
+                       + "|" + f(s.mount.y) + "," + f(s.mount.z) + "|" + f(s.mount.scale))
+        }
+
+        out.append("alt|" + f(room.bodyAltitude))
+        out.append("mode|" + (reading.soundingMode.map(String.init)
+                              ?? reading.matrkaLetterCount.map(String.init)
+                              ?? reading.sourcingCorner.map(String.init)
+                              ?? "-"))
+        out.append("form|" + (room.attribute?.form.rawValue ?? "-"))
+        return out
+    }
+
+    /// `homes-verify.js`'s `divergence`, ported exactly: the fraction of
+    /// components that differ, over the shorter of the two.
+    static func divergence(_ a: [String], _ b: [String]) -> Double {
+        let n = min(a.count, b.count)
+        guard n > 0 else { return 0 }
+        var d = 0
+        for i in 0..<n where a[i] != b[i] { d += 1 }
+        return Double(d) / Double(n)
+    }
 }
