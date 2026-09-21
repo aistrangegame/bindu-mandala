@@ -133,3 +133,39 @@ The earlier lock — that Laghimā and Garimā must be unmistakable from each ot
 ### 3.6 — The room count, in the brief itself
 
 Brief v2 §3.6 reads "Rings 3–9 … (74 rooms)", which counts Ring 2 twice. The true figures are **102 = 28 (Ring 1) + 16 (Ring 2) + 58 (Rings 3–9)**. Use 58 throughout; the brief's own line is to be corrected the next time that file is touched.
+
+### Ruling 2026-09-07 — the carrier's roots, its one air layer, and the descent it does not have
+
+**Ruled ahead of Phase 2.3, closing the three questions §2.3's note left open.** The brief's
+sentence for the per-Śakti carrier names three things the ground does not hold as the brief
+pictures them; each is settled here, and `Services/HomeSoundService.swift` is built to these.
+
+**1 · Design's `ROOTS`, not `RingAudioService`'s constants.** The brief says the carrier sits
+above "the ring root from `RingAudioService`'s technique constants". That service cannot serve:
+rings 4 and 5 are discrete stepped notes there (`playSteppedNote`, whose frequency the caller
+passes in) and ring 7 is sourceless, so **three of the nine have no root at all**, and the five
+it does carry (73.42 · 130.81 · 116.5 / 207.65 · 261.63 · 32.7 Hz) were each chosen for their
+own technique, never as an ascending series. Design's set is complete and deliberate —
+55.0 · 61.74 · 69.30 · 73.42 · 82.41 · 92.50 · 98.00 · 110.00 · 123.47 Hz, feet to totality,
+and its own note is the reason: "the absolute pitch is a design choice and nothing more; what
+is canonical is the ORDER". `HomeCarrier.roots` is that table. The nine ring techniques are
+read, never edited (Brief v2 2.3 is explicit); the two services run parallel engines on the same
+session category (`.playback` + `.mixWithOthers`) and mix rather than evict one another.
+
+**2 · "Roomtone" and "breath layer" are Design's one air layer.** The brief names two; Design's
+package has neither phrase and exactly one thing — `air`, a looped noise buffer through a
+bandpass into the master, gain `0.006 + 0.012a`, cutoff `380 + 700a`, both opened by her
+adaptation. Built as that one layer. Two were not invented to match the two words.
+
+**3 · No descent glissando exists in Design, and none was invented.** "Descent glissando" is a
+brief-only phrase: it appears nowhere in Design's package — not in `homes-sound.js`, not in
+`homes-descent.js` (which has no audio in it at all), not in the handoff's §5 table. Law 5
+governs — never invent canon. **The descent is silent in `HomeSoundService`**, and Phase 3.9,
+where the descent is actually built, owns whatever it turns out to want.
+
+Two departures from the JS were required rather than chosen, and are noted so they read as
+decisions: Design's `setInterval` steppers (rings 4, 5, 8) are never cleared and its voice has
+no lifecycle at all — here they are cancellable `Task`s cancelled in `stopAll()`, and `stopAll()`
+is idempotent and safe when nothing ever started. `HomeSoundService` also observes
+`AVAudioSession` interruption and route-change notifications and pauses cleanly, which
+`RingAudioService` does not do; that observation is confined to the new service.

@@ -83,6 +83,12 @@ touching them must be reviewed against the prototype/rulings by whoever owns the
 - `Services/SilenceDwell` — the R11 entry point: local `.silence` entry first, then the
   ledger's `Silence Held`. No call sites until Phase 3.6.
 - `Data/PersistenceRecovery` — no-launch-crash guarantees.
+- `Services/HomeSoundService` — the Homes' per-Śakti carrier (Brief v2 2.3), a parallel
+  `AVAudioEngine` beside `RingAudioService`, whose nine techniques it never touches.
+  `HomeCarrier` is the pure half and holds the whole contract: Design's nine roots (its
+  table, not the ring service's incomplete constants — see the errata ruling of
+  2026-09-07), the 49-syllable varṇamālā, the 12 just intervals, the withheld fifth, and
+  the one air layer. No syllable means the bare root; the descent is silent until 3.9.
 
 ## Design §4 stretches — disposition
 
