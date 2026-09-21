@@ -63,12 +63,19 @@ enum BinduSchemaV1: VersionedSchema {
 /// Phase 2.1: a letter belongs to any of the 102, not only the 16 Karṣiṇīs.
 /// `ShaktiLetter`'s identity becomes `khadgamalaPosition` (1–102) and the legacy
 /// per-ring key survives as plain provenance.
+///
+/// Phase 2.2 adds `HomeMemory` to this same version. A **new** entity is the
+/// lightweight case by definition — no existing row changes shape, and a V1
+/// store simply arrives at V2 with one more, empty table — so it needs no stage
+/// of its own and rides the letter stage already here. (`LetterMigrationTests`
+/// and `SchemaMigrationTests` are the proof: they migrate and reopen real
+/// stores on disk with this model list.)
 enum BinduSchemaV2: VersionedSchema {
     static var versionIdentifier = Schema.Version(2, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [Shakti.self, RecognitionEntry.self, ShaktiLetter.self,
-         Avarana.self, NityaDevi.self, DescentState.self]
+         Avarana.self, NityaDevi.self, DescentState.self, HomeMemory.self]
     }
 }
 
