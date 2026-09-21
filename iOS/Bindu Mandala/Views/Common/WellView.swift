@@ -368,9 +368,14 @@ struct LetterEditorView: View {
                 header
                 ZStack(alignment: .topLeading) {
                     if draft.text.isEmpty {
+                        // The same invitation the Well's own header speaks, and
+                        // it now reads as one: FIDELITY rule 4's ≥ 0.5 α, not
+                        // the ghost 0.28 the audit caught (H2). The last of this
+                        // screen's three rule-4 sites — see the errata entry
+                        // "Phase-4 items that landed inside Phase 2".
                         Text("Speak to her directly. She is listening.")
                             .font(.custom(AppFont.cormorantItalic, size: 19))
-                            .foregroundStyle(Color.cream.opacity(0.28))
+                            .foregroundStyle(Color.cream.opacity(0.5))
                             .padding(.horizontal, 26)
                             .padding(.top, 18)
                             .allowsHitTesting(false)

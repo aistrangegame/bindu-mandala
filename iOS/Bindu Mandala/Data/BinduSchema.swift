@@ -112,23 +112,49 @@ enum BinduMigrationPlan: SchemaMigrationPlan {
     ///
     /// Idempotent by construction: SwiftData runs a stage only when the store on
     /// disk is actually at V1, so a reopened V2 store never re-enters it.
+    ///
+    /// **The lift never lives only in RAM.** The delete on the V1 side is
+    /// *committed*, and the rows do not return until `didMigrate` — so a kill
+    /// inside that window (the launch watchdog, jetsam, a force-quit of a launch
+    /// that looks hung) would take every letter with it, with no `.corrupt-`
+    /// copy to recover from, because nothing failed. So the bodies are written to
+    /// a sidecar beside the store *before* the delete and unlinked only after
+    /// they are back in the store; the next launch restores from that file.
     static let lettersOntoKhadgamalaKey = MigrationStage.custom(
         fromVersion: BinduSchemaV1.self,
         toVersion: BinduSchemaV2.self,
         willMigrate: { context in
+            let store = LetterMigrationStash.storeURL(for: context)
             let rows = try context.fetch(FetchDescriptor<BinduSchemaV1.ShaktiLetter>())
-            LetterMigrationStash.hold(rows.map {
+            let held = rows.map {
                 LetterMigrationStash.Held(legacyPosition: $0.shaktiPosition,
                                           body: $0.body,
                                           updatedAt: $0.updatedAt)
-            })
+            }
+            LetterMigrationStash.hold(held, for: store)
+            // Nothing to lift — and, on a re-entered stage over an already
+            // emptied table, nothing to overwrite: the sidecar from the attempt
+            // that emptied it stays exactly where it is.
             guard !rows.isEmpty else { return }
+            try LetterMigrationStash.writeSidecar(held, besideStoreAt: store)
             for row in rows { context.delete(row) }
             try context.save()
             log.notice("Letter migration: lifted \(rows.count) letter(s) off the V1 key")
         },
         didMigrate: { context in
-            let held = LetterMigrationStash.release()
+            let store = LetterMigrationStash.storeURL(for: context)
+            // The sidecar wins over the stash: on the ordinary path the two hold
+            // the same rows, and after a kill inside the stage the stash died
+            // with the process while the file did not.
+            let inMemory = LetterMigrationStash.release(for: store)
+            let onDisk = LetterMigrationStash.readSidecar(besideStoreAt: store)
+            let held = onDisk.isEmpty ? inMemory : onDisk
+            if !onDisk.isEmpty && inMemory.isEmpty {
+                log.notice("Letter migration: \(onDisk.count) letter(s) recovered from the sidecar — a previous attempt did not finish")
+            }
+            // Nothing to put back. Any file still lying there is one this stage
+            // could not read, and an unreadable copy of her words is still the
+            // only copy — it is left where it is rather than unlinked.
             guard !held.isEmpty else { return }
 
             var restored = 0
@@ -157,6 +183,9 @@ enum BinduMigrationPlan: SchemaMigrationPlan {
                                             updatedAt: row.updatedAt))
             }
             try context.save()
+            // Only now, with the bodies committed under their new keys, does the
+            // copy of last resort go.
+            LetterMigrationStash.removeSidecar(besideStoreAt: store)
             log.notice("Letter migration: \(restored) letter(s) onto the Khaḍgamālā key, \(quarantined) preserved out of range")
         }
     )
@@ -170,15 +199,24 @@ enum BinduMigrationPlan: SchemaMigrationPlan {
     }
 }
 
-/// Carries the V1 letter rows across the custom stage.
+/// Carries the V1 letter rows across the custom stage — in memory for the
+/// ordinary pass, and on disk so no kill inside the stage can be the end of them.
 ///
 /// `willMigrate` and `didMigrate` are two separate closures with no shared
 /// context between them, so the rows have to wait somewhere. The migration runs
 /// synchronously inside `ModelContainer` init, on whatever thread opened the
 /// store, so a lock-guarded static is the whole mechanism — and `release()`
 /// empties it, so nothing lingers after the stage.
-private enum LetterMigrationStash {
-    struct Held {
+///
+/// The static alone is not enough, because the process can end between the two
+/// closures with the V1 delete already committed. So `willMigrate` also writes
+/// the bodies to `<store>.letter-migration.json` beside the store and syncs it
+/// to disk before deleting anything, and `didMigrate` prefers that file, deleting
+/// it only once the rows are saved under their new keys. Internal rather than
+/// private so `LetterMigrationTests` can stage that unfinished state with the
+/// very code that writes it, instead of a hand-copied JSON shape.
+enum LetterMigrationStash {
+    struct Held: Codable {
         let legacyPosition: Int
         let body: String
         let updatedAt: Date
@@ -186,18 +224,84 @@ private enum LetterMigrationStash {
 
     private static let lock = NSLock()
     nonisolated(unsafe) private static var rows: [Held] = []
+    /// Which store the rows were lifted from, so a full stash is never handed to
+    /// a different store's stage.
+    nonisolated(unsafe) private static var heldFor: URL?
 
-    static func hold(_ held: [Held]) {
+    /// Hold the lifted rows. An **empty** hold never clobbers a full one for the
+    /// same store: if attempt 1 lifted the rows out and the container init then
+    /// failed, attempt 2 re-enters `willMigrate` over an emptied table and would
+    /// otherwise replace the held letters with `[]`.
+    static func hold(_ held: [Held], for store: URL?) {
         lock.lock()
+        defer { lock.unlock() }
+        if held.isEmpty, !rows.isEmpty, heldFor == store { return }
         rows = held
-        lock.unlock()
+        heldFor = store
     }
 
-    static func release() -> [Held] {
+    /// The rows lifted from `store`, and nothing if the stash belongs to another
+    /// store (whose own retry may still need them).
+    static func release(for store: URL?) -> [Held] {
         lock.lock()
+        defer { lock.unlock() }
+        guard heldFor == store else { return [] }
         let held = rows
         rows = []
-        lock.unlock()
+        heldFor = nil
         return held
+    }
+
+    // MARK: - The copy on disk
+
+    /// The store the migrating context is opening, when it can be known.
+    static func storeURL(for context: ModelContext) -> URL? {
+        context.container.configurations.first?.url
+    }
+
+    /// `default.store.letter-migration.json`, beside the store itself.
+    static func sidecarURL(besideStoreAt store: URL) -> URL {
+        store.deletingLastPathComponent()
+            .appendingPathComponent(store.lastPathComponent + ".letter-migration.json")
+    }
+
+    /// Write the bodies down and fsync them **before** the rows leave the store.
+    ///
+    /// Throwing here fails the migration, which is the safe end of it: the V1
+    /// delete has not been committed yet, so `PersistenceRecovery` sets the store
+    /// aside whole rather than emptied. Only an unknowable store URL is tolerated
+    /// — refusing a migration that would otherwise succeed would be the worse
+    /// trade, and it leaves the in-memory stash exactly as it was before.
+    static func writeSidecar(_ held: [Held], besideStoreAt store: URL?) throws {
+        guard let store else {
+            log.error("Letter migration: no store URL — the lift is held in memory only")
+            return
+        }
+        let url = sidecarURL(besideStoreAt: store)
+        let data = try JSONEncoder().encode(held)
+        try data.write(to: url, options: [.atomic])
+        if let handle = try? FileHandle(forUpdating: url) {
+            try? handle.synchronize()
+            try? handle.close()
+        }
+        log.notice("Letter migration: \(held.count) letter(s) staged on disk before the delete")
+    }
+
+    /// What a previous, unfinished attempt left behind — empty when there is
+    /// nothing, and empty rather than fatal when the file cannot be read.
+    static func readSidecar(besideStoreAt store: URL?) -> [Held] {
+        guard let store else { return [] }
+        let url = sidecarURL(besideStoreAt: store)
+        guard let data = try? Data(contentsOf: url) else { return [] }
+        guard let held = try? JSONDecoder().decode([Held].self, from: data) else {
+            log.error("Letter migration: the staged letters could not be read — leaving \(url.lastPathComponent) in place")
+            return []
+        }
+        return held
+    }
+
+    static func removeSidecar(besideStoreAt store: URL?) {
+        guard let store else { return }
+        try? FileManager.default.removeItem(at: sidecarURL(besideStoreAt: store))
     }
 }

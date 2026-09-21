@@ -269,11 +269,11 @@ final class HomesHarnessTests: XCTestCase {
                 corpus.append(Utterance(origin: "ActivityLedger.silence · Activity Name", text: s.name))
                 corpus.append(Utterance(origin: "ActivityLedger.silence · Detail", text: s.detail))
 
-                // The letter row, exactly as `AirtableService.saveLetter`
-                // composes it before handing it to `logActivity`.
-                let letterName = "A letter to \(name.isEmpty ? "a Śakti" : name)"
-                corpus.append(Utterance(origin: "Letter Written · Activity Name", text: letterName))
-                corpus.append(Utterance(origin: "Letter Written · Detail", text: "First letter written"))
+                // The letter row, from the builder `AirtableService.saveLetter`
+                // itself calls — never a copy of its words typed out here.
+                let letter = ActivityLedger.letterWritten(shaktiName: name)
+                corpus.append(Utterance(origin: "ActivityLedger.letterWritten · Activity Name", text: letter.name))
+                corpus.append(Utterance(origin: "ActivityLedger.letterWritten · Detail", text: letter.detail))
             }
 
             // Every ring, and the numbers just outside the nine, so `ordinal`'s
@@ -318,10 +318,11 @@ final class HomesHarnessTests: XCTestCase {
     /// wordless fallbacks for a store that has not been read yet.
     func testTheMorningSummonsNeverMeasuresTheWalker() {
         var corpus: [Utterance] = [
-            // `DailySummons.reschedule`'s unprimed title.
-            Utterance(origin: "DailySummons · unprimed title", text: "She is waiting."),
-            // `RootView.primeSummons`'s body for a Śakti carrying no quality.
-            Utterance(origin: "DailySummons · quality-less body", text: "She greets you this morning."),
+            // `DailySummons.reschedule`'s unprimed title, and
+            // `RootView.primeSummons`'s body for a Śakti carrying no quality —
+            // read from the symbols both of them speak through.
+            Utterance(origin: "DailySummons.unprimedTitle", text: DailySummons.unprimedTitle),
+            Utterance(origin: "DailySummons.wordlessBody", text: DailySummons.wordlessBody),
         ]
 
         for s in ShaktiBootstrap.all {
@@ -329,7 +330,7 @@ final class HomesHarnessTests: XCTestCase {
             let quality = s.quality.trimmingCharacters(in: .whitespacesAndNewlines)
             corpus.append(Utterance(origin: "DailySummons · title (kp \(kp))", text: s.name))
             corpus.append(Utterance(origin: "DailySummons · body (kp \(kp))",
-                                    text: quality.isEmpty ? "She greets you this morning." : quality))
+                                    text: quality.isEmpty ? DailySummons.wordlessBody : quality))
         }
 
         assertNothingMeasures(corpus)

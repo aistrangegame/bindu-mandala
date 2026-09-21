@@ -55,6 +55,24 @@ final class LetterMigrationTests: XCTestCase {
         try ctx.save()
     }
 
+    /// Empty the V1 letter table and commit it — precisely what `willMigrate`
+    /// does on the V1 side, for a process that never reaches `didMigrate`.
+    private func emptyV1Letters(at url: URL) throws {
+        let schema = Schema(BinduSchemaV1.models, version: BinduSchemaV1.versionIdentifier)
+        let container = try ModelContainer(
+            for: schema,
+            configurations: ModelConfiguration(schema: schema, url: url)
+        )
+        let ctx = ModelContext(container)
+        for row in try ctx.fetch(FetchDescriptor<BinduSchemaV1.ShaktiLetter>()) { ctx.delete(row) }
+        try ctx.save()
+    }
+
+    private func sidecarExists(beside url: URL) -> Bool {
+        FileManager.default.fileExists(
+            atPath: LetterMigrationStash.sidecarURL(besideStoreAt: url).path)
+    }
+
     // MARK: - The headline: a V1 store's letters arrive intact at V2
 
     func testV1LettersMigrateOntoKhadgamalaKey() throws {
@@ -108,6 +126,10 @@ final class LetterMigrationTests: XCTestCase {
 
         // Provenance: the legacy per-ring key rides along beside the new one.
         XCTAssertEqual(letters.map(\.shaktiPosition), [1, 11, 12, 16])
+
+        // The copy staged before the delete goes once the rows are back.
+        XCTAssertFalse(sidecarExists(beside: url),
+                       "nothing may be left lying beside a finished store")
     }
 
     /// Reopening a store that is already at V2 must not re-run the stage —
@@ -206,6 +228,68 @@ final class LetterMigrationTests: XCTestCase {
         store.save(store.letter(for: 39), body: "and more")
         XCTAssertEqual(try ctx.fetch(FetchDescriptor<ShaktiLetter>()).count, 1)
         XCTAssertEqual(store.existingLetter(for: 39)?.body, "and more")
+    }
+
+    // MARK: - A process that dies inside the stage
+
+    /// The window the stage cannot avoid: `willMigrate` **commits** the delete,
+    /// and the rows do not return until `didMigrate`. A launch that ends in
+    /// between — watchdog, jetsam, a force-quit — leaves a V1 store whose letter
+    /// table is empty, and nothing *failed*, so no `.corrupt-` copy is ever
+    /// made. The bodies must therefore already be on disk before the delete, and
+    /// the next launch must find them there.
+    func testAKillInsideTheStageLeavesTheLettersRecoverable() throws {
+        let url = freshStoreURL()
+        let written = Date(timeIntervalSince1970: 1_555_555)
+        let body = "what I could not say out loud\n"
+
+        // Exactly the state such a kill leaves behind: still V1, the letters
+        // gone from the table, the staged copy `willMigrate` wrote still there.
+        try writeV1Store(at: url, letters: [(9, body, written)])
+        try emptyV1Letters(at: url)
+        try LetterMigrationStash.writeSidecar(
+            [LetterMigrationStash.Held(legacyPosition: 9, body: body, updatedAt: written)],
+            besideStoreAt: url)
+        XCTAssertTrue(sidecarExists(beside: url), "the staged copy is the premise of this test")
+
+        let ctx = ModelContext(PersistenceRecovery.makeContainer(storeURL: url))
+        let letters = try ctx.fetch(FetchDescriptor<ShaktiLetter>())
+
+        XCTAssertEqual(letters.count, 1, "her letter must come back from disk")
+        XCTAssertEqual(letters.first?.khadgamalaPosition, 37, "legacy 9 is Khaḍgamālā 37")
+        XCTAssertEqual(letters.first?.body, body)
+        XCTAssertEqual(letters.first.map { Array($0.body.utf8) }, Array(body.utf8),
+                       "the body must survive the staging byte for byte")
+        XCTAssertEqual(letters.first?.updatedAt, written, "and the hour she wrote it")
+        XCTAssertEqual(letters.first?.shaktiPosition, 9)
+        XCTAssertFalse(preservedStoreExists(beside: url), "a recovery, not a wipe")
+        XCTAssertFalse(sidecarExists(beside: url),
+                       "the staged copy goes only once the rows are saved again")
+    }
+
+    /// The same wound without a crash: attempt 1 lifts the rows out, the
+    /// container init fails afterwards, and attempt 2 re-enters `willMigrate`
+    /// over the emptied table. An empty hold must not replace the letters
+    /// attempt 1 is still holding — and one store's letters are never handed to
+    /// another store's stage.
+    func testAnEmptyHoldNeverClobbersTheHeldLetters() {
+        let store = URL(fileURLWithPath: "/dev/null/bindu-\(UUID().uuidString)/default.store")
+        let other = URL(fileURLWithPath: "/dev/null/bindu-\(UUID().uuidString)/default.store")
+        let held = LetterMigrationStash.Held(legacyPosition: 3, body: "still here",
+                                             updatedAt: Date(timeIntervalSince1970: 7))
+
+        LetterMigrationStash.hold([held], for: store)
+        LetterMigrationStash.hold([], for: store)          // the re-entered stage
+        let out = LetterMigrationStash.release(for: store)
+        XCTAssertEqual(out.count, 1, "the held letter was clobbered by an empty pass")
+        XCTAssertEqual(out.first?.body, "still here")
+        XCTAssertTrue(LetterMigrationStash.release(for: store).isEmpty,
+                      "release must leave nothing behind")
+
+        LetterMigrationStash.hold([held], for: store)
+        XCTAssertTrue(LetterMigrationStash.release(for: other).isEmpty,
+                      "another store's stage must never be handed these rows")
+        XCTAssertEqual(LetterMigrationStash.release(for: store).count, 1)
     }
 
     /// A legacy position the Ring-2 mapping cannot place is parked above 102,

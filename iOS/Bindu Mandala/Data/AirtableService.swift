@@ -1139,12 +1139,12 @@ extension AirtableService {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty, !Self.hasLedgeredLetter(recordId) {
             Self.markLetterLedgered(recordId)
-            let name = shakti.name.isEmpty ? "a Śakti" : shakti.name
+            let row = ActivityLedger.letterWritten(shaktiName: shakti.name)
             await logActivity(
                 type: ActivityLedger.ActivityType.letterWritten,
                 linkedShaktiRecordId: recordId,
-                activityName: "A letter to \(name)",
-                detail: "First letter written"
+                activityName: row.name,
+                detail: row.detail
             )
         }
     }

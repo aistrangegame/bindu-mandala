@@ -24,8 +24,18 @@ enum DailySummons {
     /// Maps a Khaḍgamālā position (1–102) to the notification's title + body.
     /// Set by the app layer from SwiftData (`primeSummons`) so the scheduler,
     /// which is otherwise store-free, can name each morning's energy. Nil until
-    /// primed → the summons falls back to the wordless "She is waiting."
+    /// primed → the summons falls back to the wordless `unprimedTitle`.
     static var greetingProvider: ((Int) -> (title: String, body: String)?)?
+
+    /// The two wordless fallbacks, owned here and nowhere else.
+    ///
+    /// `unprimedTitle` is the morning that has no name yet (no provider);
+    /// `wordlessBody` is the line for a Śakti carrying no quality, composed by
+    /// `RootView.primeSummons`. They live as symbols because the felt register
+    /// (`HomesHarnessTests`) reads *these* — a copy typed out beside them would
+    /// let the words drift while the test still reported green.
+    static let unprimedTitle = "She is waiting."
+    static let wordlessBody = "She greets you this morning."
 
     // MARK: - One-time migration
 
@@ -136,7 +146,7 @@ enum DailySummons {
                 let body = greeting.body.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !body.isEmpty { content.body = body }
             } else {
-                content.title = "She is waiting."
+                content.title = unprimedTitle
             }
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)

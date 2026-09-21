@@ -126,6 +126,20 @@ enum ActivityLedger {
         )
     }
 
+    /// The words of a `Letter Written` row — the first letter written for a
+    /// Śakti, unchanged from build 36.
+    ///
+    /// `AirtableService.saveLetter` owns the *when* (the `ledgeredLetters`
+    /// guard, the record id, the instant); this owns the *words*, so the felt
+    /// register can read the very strings that ship instead of a copy of them.
+    /// Kept as name + detail rather than a `PendingActivity` because the letter
+    /// path logs through `logActivity(type:linkedShaktiRecordId:…)` and carries
+    /// no moon or lunar day.
+    static func letterWritten(shaktiName: String) -> (name: String, detail: String) {
+        let name = shaktiName.isEmpty ? "a Śakti" : shaktiName
+        return (name: "A letter to \(name)", detail: "First letter written")
+    }
+
     /// A `Silence Held` row for the R11 dwell, linked to her Shakti row. No
     /// Notes, and the caller issues no Shakti PATCH for it.
     static func silence(shaktiRecordId: String,
