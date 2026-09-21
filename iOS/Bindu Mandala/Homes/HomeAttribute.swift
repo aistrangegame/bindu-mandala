@@ -833,35 +833,19 @@ extension HomeAttribute {
 
     /// Where the body feels her — normalised, soles `1` → crown `0`.
     ///
-    /// Design's `bodyAltitude`, read off the card's `loc`; here it is read off
-    /// the synced `Shakti.bodilyLocation`, which is the same field from the
-    /// same base. Order is Design's and matters: "between the eyes" meets the
-    /// eye band before it meets the brow band, and stays at the eyes.
+    /// **One table, not two.** This layer and the grammar each ported Design's
+    /// `bodyAltitude` while being built on parallel branches, so each carried
+    /// its own copy of the eleven zones. They are unified here at the resolve:
+    /// ``HomeGrammar/bodyZones`` is the single table — it is the faithful port,
+    /// keeping each zone's JavaScript literal beside its pattern — and this
+    /// forwards to it so the attribute can never drift from the room it acts
+    /// in. The ASCII `muladhara` this layer used to carry alone moved there
+    /// with it, so nothing was lost in the merge.
     ///
-    /// Held privately, not in a shared helper: two other Homes layers are being
-    /// built in parallel and a shared file would collide. Unify at the resolve.
-    private static let zones: [(words: [String], altitude: Double)] = [
-        (["soles", "feet", "mūlādhāra", "muladhara"], 0.94),
-        (["belly", "navel", "yoni", "abundance"], 0.66),
-        (["solar plexus"], 0.6),
-        (["waist"], 0.68),
-        (["diaphragm"], 0.56),
-        (["sternum", "chest", "heart"], 0.46),
-        (["throat", "palate", "mouth"], 0.34),
-        (["behind the eyes", "eyes", "face"], 0.26),
-        (["forehead", "third eye", "between the eyes"], 0.2),
-        (["crown", "above"], 0.1),
-        (["spine", "whole body", "whole field", "cellular", "totality", "converge"], 0.5),
-    ]
-
     /// The default is the middle of the field — a location the base has not
     /// filled in is a blank to be guarded, never an assumption to be made.
     static func bodyAltitude(forBodilyLocation location: String) -> Double {
-        let text = location.lowercased()
-        for zone in zones where zone.words.contains(where: { text.contains($0) }) {
-            return zone.altitude
-        }
-        return 0.5
+        HomeGrammar.bodyAltitude(bodilyLocation: location)
     }
 
     /// Where the actor rests before the second adaptation.
