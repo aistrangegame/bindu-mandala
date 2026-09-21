@@ -1498,3 +1498,14 @@ pure functions and a corpus.
 | every pair of the eight Mātṛkās | closest **kp 16 ↔ kp 17 at 0.255** over 28 pairs |
 | every pair of the ten Mudrās | closest **kp 19 ↔ kp 25 at 0.578** over 581 components, 127 of them silent |
 | the three families | Mudrās ↔ Siddhis **0.728**, Mudrās ↔ Mātṛkās **0.731**, against the Mudrās' own within-family spread of 0.668 · Siddhis ↔ Mātṛkās **0.393** against the Mātṛkās' own 0.423, which is the expected failure above |
+## 2026-09-21 · Phase 5 preflight — the Avaraṇa fields verified live, and no Design package governs
+
+Charter §4 requires verifying the gem, dhātu, clock and bīja field IDs before Phase 5 builds on them, and says a Claude Design package for the light governs if one is present. Both checks done, read-only, while Phase 3 held the machine.
+
+**Field IDs, confirmed live on the base:** Gem `fldWlbdPNpmqPvfMj` · Dhatu `fldVjcApdGFVrIfq1` · Time Cycle `fldZLBoLGegod2xfy` · Avarana Beeja `fldixnYtJ30lZEDJM` · Goddess Body Region `fld6Ucmi8YqeAbOXU` · Yogini `fldcqAvdN3wcP8BhT` (idea 30 needs this one and the charter's list omits it) · Geometric Shape `fldNqYFRn8x4F9jR0` · Subtle Body Chakra `fld6deGFzModjBmoj` · Siddhi `fldx9jXyTVWxp19o1` · Mudra of Avarana `fld1C14f4MsVIrA9F` · Presiding Form `fldgHVP1LqoVJsYu8` · Mental State `fld8p7FtKqEKvSy7P` · Phase `fldKWGAI16XjdqoI3`.
+
+**All nine rings carry real values** — topaz through cat's eye to all-gems-unified; rasa through ojas to tejas; a day-night cycle through the year to Kāla-Akāla; Aiṁ through Hsauḥ to the three-syllable core and Hrīṁ. Nothing is blank, so idea 27's refraction and idea 31's falling bīja both have their data.
+
+Note for the build: the app currently decodes **none** of these into `Avarana.swift` — only sanskritName, subtitle, presidingForm, mentalState, subtleBodyChakra, geometricShape, personalConnection and yogini. Phase 5's first act is extending that decode, additively.
+
+**No Design light package exists.** Searched the three design folders for anything on light, gems or Tratak: nothing. So charter §4's fallback applies and Phase 5 builds from `Claude Chat/bindu-mandala-expansion.md`'s descriptions of ideas 27, 28, 30, 31, 32 and 38.
