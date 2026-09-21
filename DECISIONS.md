@@ -1509,3 +1509,19 @@ Charter §4 requires verifying the gem, dhātu, clock and bīja field IDs before
 Note for the build: the app currently decodes **none** of these into `Avarana.swift` — only sanskritName, subtitle, presidingForm, mentalState, subtleBodyChakra, geometricShape, personalConnection and yogini. Phase 5's first act is extending that decode, additively.
 
 **No Design light package exists.** Searched the three design folders for anything on light, gems or Tratak: nothing. So charter §4's fallback applies and Phase 5 builds from `Claude Chat/bindu-mandala-expansion.md`'s descriptions of ideas 27, 28, 30, 31, 32 and 38.
+
+## 2026-09-21 · The MVP line, and the cable dropped for good
+
+**Ashrey, 2026-09-21:** he does not want to connect the device or leave a cable, the letters stay as they are and anything unnecessary can go, Xcode Cloud and TestFlight are already set up so builds land on his phone directly, and what he wants is a minimum viable product driven to completion.
+
+He is right and I had been regressing. The delivery path is automated and proven — builds 36 and 37 both reached Neev through Xcode Cloud with the `AIRTABLE_PAT` secret in the workflow. The fresh-container pull was only ever a nicety after he released §7's letters condition; it is dropped and will not be raised again.
+
+**The MVP line, decided here.** An MVP is not "fewer rooms" — the rooms are nearly all built and the remaining ones are running. It is **the smallest build that is worth installing**, and the thing that decides that is reachability: today `RootView` offers five destinations and none opens a Home, so a build shipped now would look identical to the one he already has.
+
+**So MVP = what is running, plus the way in, plus the ship:**
+1. Phase 3.6, the 58 outer rooms with the silence dwell and the ledger events (running).
+2. Phase 4, the felt register (running, disjoint).
+3. **Phase 3.7 — the corridor and the way in.** Her seat on the Mandala and her row in the Field open her room; neighbour doors walk the ring. This is the MVP gate.
+4. Ship through Xcode Cloud, confirm the sync and recognition-write path in the build logs, leave `ARRIVAL.md`.
+
+**Explicitly after the MVP ships, as later builds, not before:** 3.8 the library fold, 3.9 the descent and the carrier in every room, and Phase 5's light. Each is real work and none of it is what makes the difference between a build worth installing and one that is not.
