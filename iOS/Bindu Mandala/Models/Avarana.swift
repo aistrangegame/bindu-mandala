@@ -74,5 +74,13 @@ final class Avarana {
     /// One line on the enclosure's geometry.
     var formDescription: String { idx.map { Self.formDescriptions[$0] } ?? "" }
     /// The gratitude the threshold offers on crossing.
-    var appreciationPhrase: String { idx.map { Self.appreciations[$0] } ?? "" }
+    var appreciationPhrase: String { Self.appreciationPhrase(forRing: ringNumber) }
+
+    /// The same, for any ring 1…9 without a model row — the rite of entering
+    /// stands behind a Śakti's own phrase with her enclosure's, and it must be
+    /// able to do so while a room is being built, before any context is at
+    /// hand. `""` outside 1…9.
+    static func appreciationPhrase(forRing ring: Int) -> String {
+        (1...9).contains(ring) ? appreciations[ring - 1] : ""
+    }
 }

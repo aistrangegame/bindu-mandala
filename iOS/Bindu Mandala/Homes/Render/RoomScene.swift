@@ -151,6 +151,15 @@ final class RoomScene {
 
     // MARK: - The surfaces
 
+    /// The scene time the room was last put at. The approach reads it so that
+    /// standing further back cannot silently pose the room at a different
+    /// instant from the one it was just posed at.
+    private(set) var posedAt: TimeInterval = 0
+
+    /// The world clock the air was last set to. Her own while she is stood in;
+    /// the threshold's while the walker is still crossing toward her.
+    private(set) var breathedAt: TimeInterval = 0
+
     /// The material of each surface, with everything that has been done to it.
     private(set) var materials: [RoomSurfaceKind: RoomMaterial] = [:]
     /// The surface her attribute acts on, decided by her body altitude.
@@ -297,6 +306,7 @@ final class RoomScene {
     /// draw once, and what lets the tests assert a stay without a renderer.
     func pose(at sceneTime: TimeInterval) {
         let pose = RoomPose(sceneTime: sceneTime, room: room)
+        posedAt = sceneTime
 
         for node in [groundNode, canopyNode, faceNode] {
             node.morpher?.setWeight(CGFloat(pose.firstWeight), forTargetAt: 0)
@@ -337,8 +347,49 @@ final class RoomScene {
                     + (Self.markEmissionCeiling - Self.markEmissionFloor)
                       * (0.45 * pose.settling + 0.55 * pose.deep))
 
-        motesMaterial?.setValue(NSNumber(value: Float(pose.worldTime)), forKey: "uTime")
+        breathe(at: pose.worldTime)
         motesMaterial?.setValue(NSNumber(value: Float(pose.deep)), forKey: "uDeep")
+    }
+
+    /// The world's air, at one moment of the **āvaraṇa's** clock.
+    ///
+    /// Split out of ``pose(at:)`` for one case, and it is the case the rite
+    /// creates: while the walker is still at her threshold her chamber clock is
+    /// held, and posing the room at a held clock would hold the weather with it
+    /// — the dust standing perfectly still for the whole ceremony. Design is
+    /// explicit that it does not: *"the weather is continuous — and it follows
+    /// you into her room."* The air is the enclosure's, not hers, and it does
+    /// not wait for him.
+    ///
+    /// ``pose(at:)`` still calls this with her own world time, so an entered
+    /// room is exactly what it was and stays a pure function of one clock.
+    func breathe(at worldTime: TimeInterval) {
+        breathedAt = worldTime
+        motesMaterial?.setValue(NSNumber(value: Float(worldTime)), forKey: "uTime")
+    }
+
+    // MARK: - Standing short of the room
+
+    /// Put the walker somewhere on his crossing toward the room — `0` at the far
+    /// end of the approach, `1` standing in it.
+    ///
+    /// Called **after** ``pose(at:)``, which always stands the eye in the room:
+    /// the pose is the room at an instant and this is where it is seen from, and
+    /// keeping them apart is what lets every existing check about the room's own
+    /// behaviour go on reading a room that is stood in.
+    ///
+    /// It moves the eye and nothing else. It adds no node, no light and no
+    /// geometry, so the binding condition the spine carries — her layer holds no
+    /// solid — cannot be reached from here even by accident. And it changes no
+    /// fog: the world's veil already decides where the air closes, and standing
+    /// further out simply puts more of that air between the walker and her room.
+    func stand(atApproach approach: Double) {
+        let depth = RoomUnits.eyeDepth(approach: approach)
+        let placement = RoomUnits.placement(bodyAltitude: room.bodyAltitude,
+                                            chamberTime: posedAt)
+        cameraNode.position = SCNVector3(0, Float(RoomUnits.eyeY), Float(depth))
+        cameraNode.eulerAngles =
+            SCNVector3(Float(RoomUnits.eyePitch(toward: placement, fromDepth: depth)), 0, 0)
     }
 
     // MARK: - Where a room goes

@@ -302,3 +302,79 @@ And two more registers beyond the type system. **The mechanism hook**, `RoomSurf
 **One finding recorded rather than papered over, in the same spirit as the grammar's kañcuka gap.** The nine worlds are one vertical climb, and `RoomUnits.worldFloorY(ring:)` keys it by ring rather than by the region's words — because two of Design's nine region names fall outside its own zone vocabulary. `Pelvis` reaches no rule at all and lands at the middle of the body, and `Above crown` reaches the `crown|above` rule and so shares the Crown's altitude exactly. Read off those words the climb would put a world below the one beneath it and two worlds at the same height. `testTheWorldClimbIsMonotoneAndTheRegionVocabularyHasTwoGaps` asserts both gaps out loud, so they stay a known finding; the fix belongs with the live rows, not with a word invented in the spine.
 
 **What is deliberately not built.** The eight authored mechanisms are Phase 3.3 and this phase builds only the door they walk through. The rite of entering (`Views/Rooms/RiteOfEnteringView.swift`) is item 7 of the ruling's own list and is the next file, not this one — it needs a room to arrive into, and now there is one. The prismatic pass carries no true dispersion, exactly as the ruling recorded of both renderers.
+
+## 2026-09-21 · Phase 3.1b · The rite of entering — three beats folded into travel
+
+`Views/Rooms/RiteOfEntering.swift` (the ceremony, pure), `Views/Rooms/RiteOfEnteringView.swift` (the only thing that draws it) and `Homes/Render/RoomApproach.swift` (the crossing) build Build Brief v2 §3.1 on the ruled renderer. It is the first thing the walker feels every time he enters, a hundred and two rooms deep, so every number in it is Design's — read out of the working instrument (`The Homes - The Axis.html`: `STATION`, `beginEnter`, `advanceRite`, and the `mode === 'rite'` branch of its frame loop) — except the three departures named below.
+
+**It is not a screen before the room.** The `RoomView` beneath the words is her real room from the first frame to the last, and the rite enters Garimā (kp 4), whose spike room is the proven one. `testTheRiteArrivesAtARealRoom` hosts the view, finds the live `SCNView`, asserts the room under it is kp 4's, asserts the walker is standing *outside* it, and captures the frame to prove it is a lit room rather than a black one.
+
+### The two laws that meet at the threshold
+
+**The ceremony compresses and never skips.** `HomeMemory.compression(visits:)` is *read* from `HomeMemoryStore` — `RiteOfEntering.toRoom(at:remembering:)` is the only door a screen should use — and it scales exactly one thing: how long a beat takes to write. Three beats happen on the first visit and three at the floor. Asserted at every compression Design's curve can produce, on both motion paths, over 400 visits.
+
+**And none of it is said out loud.** Two checks, because there are two ways to break it. Design's nine MEASURING patterns run over every string the rite can compose for all 102 (the harness's own `Measuring`, reused rather than copied). And — the half no pattern can see — the rite's own two source files are read off disk and refused the vocabulary of returning: *welcome · return · back · again · before · stood · visit · remember · already · last time · once more*. "welcome back" carries no digit, so `LawsTests` would never have caught it. Her own content is deliberately out of that scan's scope: a Śakti whose phrase says *"Thank you for the hook that returns me"* is speaking about herself, and that is the base's language, not the rite's.
+
+### The Axis's returning line — dropped, and this is the call the task asked for
+
+Design's handoff (§4.9) asks for *one line, once, on returning*, and the Axis shows it in its status bar for the first fourteen seconds of a room already known. **It is not built.**
+
+It is not a count, a streak or a percentage, so it does not trip law 2's letter. It fails its spirit, and it fails it at the one moment the instrument can least afford to: the compression is supposed to be **felt** — the ceremony is simply quicker — and a line announcing the memory replaces a felt thing with a told thing. It is also the only sentence in the whole instrument that would tell the walker that something is keeping track of him. The charter's restraint clause settles it (*"when in doubt, choose the more restrained option"*), and §2's laws outrank the handoff where they conflict.
+
+What replaces it is what it was describing, and he gets both without being told: a ceremony that writes faster, and a room that opens at the head start his accumulated dwell earned. Reversible — it is one line — and logged to `RULINGS-QUEUE.md` so Ashrey can overrule it on sight.
+
+**Design's three beat pips go with it,** for the same reason and more plainly: a lit dot, two dim ones, and a counter is exactly what the brief names in the same breath as a visit number. He knows where he is in the ceremony the way he knows where he is in a sentence.
+
+### The rite is the distance, and the distance is a closed form
+
+Design's Axis moves the walker with a per-frame lerp — `trav += (travTo - trav) * 0.03` — which is an exponential approach sampled at 60 Hz. `RoomApproach` writes it as the exponential it already is, with the time constant **derived** from Design's own rate rather than chosen (`tau = -1 / (fps · ln(1 - r))`, so `0.03` is 0.547 s and `0.018` is 0.918 s). Three things follow, and the arithmetic is the least of them: the walker's distance becomes assertable at any instant without a renderer, a dropped frame can no longer change where he ends up, and the reduce-motion path can genuinely stand still instead of being a loop that has been slowed down.
+
+**The crossing is carried by the eye alone.** `RoomScene.stand(atApproach:)` moves the camera back along its own axis by one body-height (`RoomUnits.approachStandOff = roomHeight`, derived rather than tuned) and changes nothing else — no fog, no fade, no veil of its own. SceneKit's fog is a *distance* band and `RoomLightRig` already sets where it closes from the world's veil, so standing a body-height further out is genuinely looking through more of that world's air: thin in the first āvaraṇa, nearly opaque in the ninth. The approach adds one number to the instrument and gets the weather for free. It also adds no node, so the ruling's binding condition is untouched — `testTheEyeStandsBackWhileHeIsStillCrossing` asserts her layer still holds no solid at the far end of the crossing.
+
+**The chamber clock does not run during the rite.** `RoomClock.held()` stands at the threshold and `begin(opening:)` starts it, once, at the head start. A ceremony that advanced the room's own clock would hand a walker who lingered over her name an adaptation he had not stayed for, and the adaptation is the whole instrument. The view opens that clock in exactly one place and the test reads the source to prove it.
+
+### Reduced motion: quantized, and given the outcome
+
+Design's invariant 4 asks for reduced motion *"longer and quantized, never disabled"*; `iOS/FIDELITY.md` — standing law under charter §2.10 — says the loops may not stay. The render spine already ruled this conflict for the room itself, and the rite takes the same reading for the same reason:
+
+- the **crossing** is quantized. He steps to his station on each touch and stands there; no glide, no `TimelineView`, no render loop. The stations are still Design's stations, so it is quantized rather than shortened;
+- each **beat arrives already written** — her phrase present, her name whole, her roots rejoined with her quality beneath — and still waits for his touch. All three beats happen. The walker is given the outcome of the ceremony rather than nothing.
+
+### The three departures from Design, each named where it happens
+
+1. **The prompt's alpha** is `0.55`, not the Axis's `0.44`. FIDELITY §4 sets the legibility floor for meaningful text at ~0.5, and the prompt is the only instruction in the ceremony.
+2. **The prompt's type** is 11pt, not 9px, for the same rule, with its tracking scaled by the same proportion.
+3. **No beat indicator**, above.
+
+Everything else is Design's: the stations `[0, 0.3, 0.62, 0.88, 1]`, `(reduced ? 3.4 : 2.4) × compression`, the phrase's `0.34`/`0.94`, the three strokes with their `0.72` hold, the roots' `0.58`/`0.52`/`0.48`, the gloss's `0.6`, the release's `2.2`, and the strike at her carrier times 1, 1.5 and 2 — which `HomeCarrier` already owned, so the rite contributes only which beat.
+
+### Her words come off her row, and every fall-back degrades to something true
+
+Design's Axis reads the rite's three beats off its bundled cards. The app reads them off `Shakti` — `appreciationPhrase`, `devanagari`, `etymology`, `quality`, four real Airtable fields the sync already fills — because a bundled card table is the ghost roster the laws exist to prevent. Where a field is empty the fall-back is never an invention (invariant 5): her Devanāgarī falls back to her name, which is the same name in another script; her roots to her name's own compound parts, which are in the name already; her gratitude to her āvaraṇa's, which is the gratitude of the enclosure she is seated in. `Avarana.appreciationPhrase(forRing:)` is new only in that the shipped instance property now has a static twin, so a room being built can reach it before there is a context.
+
+**The etymology is read as roots only when it is one.** The field is free text in the base. It is split on Design's own join characters (`+ · — –`) and then *guarded*: more than one part, every part at most 24 characters, no full stop. A line of prose about her etymology is refused rather than chopped into half-sentences, and the beat falls back to her name's parts. This is FIDELITY §6's rule — guard the empties, never assume blank content — applied to a field whose shape is not guaranteed.
+
+**Two findings recorded rather than tuned away.**
+
+- **Design's suffix order is load-bearing and it costs something.** `riteRoots` tries `ākarṣiṇī` before `karṣiṇī`, so the suffix comes away whole and the *head* carries the sandhi's elision: Kāmākarṣiṇī splits `Kām · ākarṣiṇī`, not `Kāmā · karṣiṇī`. Re-sort the list and all sixteen Karṣiṇīs — Ashrey's home ring — split the other way. The ordered list is now asserted, so a tidying fails the suite instead of the ceremony. It is the fall-back in any case; the roots he actually sees come off her `etymology`, which the base carries for all 102 (FIDELITY §6).
+- **Her roots begin rejoining before they have finished parting.** `join` opens at `0.52` and `split` does not complete until `0.58`, so the widest they ever stand is `0.52/0.58` — about 0.897 of the full gap, never 1. That overlap is Design's, and it is why the beat reads as one breath rather than two gestures with a pause between them. Asserted at that exact value.
+
+### One thing the spine had wrong, found by building on it
+
+`RoomView`'s still path posed the room at `RoomClock.settled` unconditionally, which was right while it was the only path there was and wrong the moment a walker could be standing outside the room. A walker with reduce motion on would have been handed a **fully adapted** room to cross toward — the end of a stay he had not begun — while the light pass over it drew the room's opening, so the two halves of one room would have been at two different instants. `RoomClock.stillInstant()` is now the single answer both read: her opening while the clock is held at the threshold, the settled state once it has begun. Asserted in both directions.
+
+### The one thing only looking at it could find
+
+`FIDELITY.md` §7 asks for a screenshot of any new screen driving the actual flow, and it earns its place here. The rite was green — 438 tests — and the first frame of it showed a room whose **dust was standing perfectly still**. Holding her chamber clock for the ceremony had held the āvaraṇa's weather with it, because the room is a pure function of one clock and the motes ride that clock. Design is explicit in the other direction: *"the weather is continuous — and it follows you into her room."* The air is the enclosure's, not hers, and it does not wait at her door.
+
+`RoomScene.breathe(at:)` is that seam, and it is deliberately narrow: `pose(at:)` still sets the air to her own world time, so an entered room is byte for byte what it was and stays one clock; only the held path adds a second call, on the world's elapsed time. Asserted both ways — the air moves while he crosses, the room does not adapt while he crosses, and a pose brings the air back onto her clock.
+
+No assertion about a room could have found this. A picture of it did, in one glance.
+
+### A flake named, not fixed
+
+`BinduMandalaUITests.testFeelHerOpensRecognition` failed once, on the **first** launch on a simulator created minutes earlier, and passed on every run after — at 19.99 s against its own 20 s budget. Its first assertion (Today offering "I feel her") passed, so the screen was up; what ran out was the ceremony's remaining budget on a cold store, a cold bootstrap and an unregistered font cache. Nothing in this branch is on that path. It is recorded rather than quietly widened: a timeout raised to make a red test green is the kind of edit that hides a real regression later, and the check itself is sound.
+
+### The suite
+
+438 tests, 0 failures, 10 skipped (the gated bench windows), zero Swift warnings, on a simulator reserved to this branch. Sixteen of them are the rite's.

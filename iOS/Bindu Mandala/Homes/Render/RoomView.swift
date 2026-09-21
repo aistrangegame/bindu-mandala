@@ -63,10 +63,20 @@ final class RoomClock: @unchecked Sendable {
     /// The reference-date instant this stay began.
     private(set) var epoch: TimeInterval
 
-    init(opening: TimeInterval = 0, epoch: TimeInterval? = nil) {
+    /// A stay that has not begun. The rite of entering holds the clock here for
+    /// the whole crossing: the ceremony at her threshold is not time stood in
+    /// her room, and a clock that ran through it would hand a walker who lingered
+    /// over her name an adaptation he did not stay for.
+    private(set) var isHeld: Bool
+
+    init(opening: TimeInterval = 0, epoch: TimeInterval? = nil, held: Bool = false) {
         self.opening = opening
         self.epoch = epoch ?? Date().timeIntervalSinceReferenceDate
+        self.isHeld = held
     }
+
+    /// A clock waiting at the threshold.
+    static func held() -> RoomClock { RoomClock(opening: 0, held: true) }
 
     /// A returning walker's clock, opened by her relationship rather than by a
     /// count of her visits.
@@ -77,11 +87,29 @@ final class RoomClock: @unchecked Sendable {
     func restart(opening: TimeInterval) {
         self.opening = opening
         self.epoch = Date().timeIntervalSinceReferenceDate
+        self.isHeld = false
     }
 
-    /// How far into the stay we are.
+    /// The stay begins: the crossing is over and the room opens where her
+    /// accumulated dwell says it opens.
+    func begin(opening: TimeInterval,
+               at now: TimeInterval = Date().timeIntervalSinceReferenceDate) {
+        self.opening = opening
+        self.epoch = now
+        self.isHeld = false
+    }
+
+    /// How far into the stay we are. A held clock has not started, so it stands
+    /// at its opening however long the threshold takes.
     func chamberTime(now: TimeInterval = Date().timeIntervalSinceReferenceDate) -> TimeInterval {
-        (now - epoch) + opening
+        isHeld ? opening : (now - epoch) + opening
+    }
+
+    /// Real seconds since this clock was made or begun — **the world's** time
+    /// rather than hers. It runs through the threshold, because the āvaraṇa's
+    /// air is not hers and does not wait at her door.
+    func elapsed(now: TimeInterval = Date().timeIntervalSinceReferenceDate) -> TimeInterval {
+        max(0, now - epoch)
     }
 
     /// Where the reduce-motion path poses the room: the end of the second
@@ -89,6 +117,18 @@ final class RoomClock: @unchecked Sendable {
     /// instant both adaptations are complete, so the still room is the room a
     /// walker who stayed would have arrived at — not a frozen middle.
     static var settled: TimeInterval { HomeMemory.secondAdaptationEnd }
+
+    /// The one instant the still path draws, wherever the walker is.
+    ///
+    /// Once he is inside, it is the settled room, as above. While he is still at
+    /// her threshold it is the room's own opening, because **a room he has not
+    /// entered has not adapted** — handing a walker with reduce motion on a
+    /// fully-adapted room to cross toward would give him the end of a stay he
+    /// has not begun. One fact, so the geometry and the light pass cannot draw
+    /// two different instants of the same room.
+    func stillInstant() -> TimeInterval {
+        isHeld ? chamberTime() : Self.settled
+    }
 }
 
 /// One Śakti's room, on screen.
@@ -99,6 +139,9 @@ struct RoomView: View {
     let clock: RoomClock
     /// The mechanism acting on her room, where Phase 3.3 has built one.
     let mechanism: RoomSurfaceMechanism?
+    /// Where the walker stands on his crossing toward the room. `nil` is the
+    /// ordinary case — he is in it.
+    let approach: RoomApproachSource?
     /// Forced on for tests and captures; otherwise the environment decides.
     let forceReduceMotion: Bool
 
@@ -107,10 +150,12 @@ struct RoomView: View {
     init(room: HomeRoom,
          clock: RoomClock = RoomClock(),
          mechanism: RoomSurfaceMechanism? = nil,
+         approach: RoomApproachSource? = nil,
          forceReduceMotion: Bool = false) {
         self.room = room
         self.clock = clock
         self.mechanism = mechanism
+        self.approach = approach
         self.forceReduceMotion = forceReduceMotion
     }
 
@@ -119,9 +164,9 @@ struct RoomView: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                RoomSceneLayer(room: room, clock: clock,
-                               mechanism: mechanism, reduceMotion: reduceMotion)
-                RoomLightPassLayer(room: room, clock: clock,
+                RoomSceneLayer(room: room, clock: clock, mechanism: mechanism,
+                               approach: approach, reduceMotion: reduceMotion)
+                RoomLightPassLayer(room: room, clock: clock, approach: approach,
                                    reduceMotion: reduceMotion, size: geo.size)
                     .allowsHitTesting(false)
             }
@@ -138,10 +183,12 @@ struct RoomSceneLayer: UIViewRepresentable {
     let room: HomeRoom
     let clock: RoomClock
     let mechanism: RoomSurfaceMechanism?
+    let approach: RoomApproachSource?
     let reduceMotion: Bool
 
     func makeCoordinator() -> RoomDriver {
-        RoomDriver(room: room, clock: clock, mechanism: mechanism, reduceMotion: reduceMotion)
+        RoomDriver(room: room, clock: clock, mechanism: mechanism,
+                   approach: approach, reduceMotion: reduceMotion)
     }
 
     func makeUIView(context: Context) -> SCNView {
@@ -169,6 +216,7 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
 
     let scene: RoomScene
     private let clock: RoomClock
+    private let approach: RoomApproachSource?
     private var reduceMotion: Bool
 
     /// How many times the room has been put at an instant.
@@ -178,10 +226,11 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
     /// screen. `RoomCaptureTests` reads it.
     private(set) var posesApplied = 0
 
-    init(room: HomeRoom, clock: RoomClock,
-         mechanism: RoomSurfaceMechanism?, reduceMotion: Bool) {
+    init(room: HomeRoom, clock: RoomClock, mechanism: RoomSurfaceMechanism?,
+         approach: RoomApproachSource?, reduceMotion: Bool) {
         self.scene = RoomScene(room: room, mechanism: mechanism)
         self.clock = clock
+        self.approach = approach
         self.reduceMotion = reduceMotion
         super.init()
     }
@@ -203,7 +252,7 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
             view.isPlaying = false
             view.rendersContinuously = false
             view.scene?.isPaused = true
-            pose(at: RoomClock.settled)
+            pose(at: clock.stillInstant())
             view.setNeedsDisplay()
         } else {
             view.scene?.isPaused = false
@@ -215,6 +264,17 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
 
     func pose(at chamberTime: TimeInterval) {
         scene.pose(at: chamberTime)
+        // Her stay has not begun, but the enclosure's air is not hers: it keeps
+        // moving while he is still crossing toward her, on the world's own
+        // clock. Without this the dust stands perfectly still for the whole
+        // ceremony, which the room's first screenshot showed and no assertion
+        // about the room could have.
+        if clock.isHeld {
+            scene.breathe(at: HomeWorlds.worldClock(clock.elapsed(), ring: scene.room.ring))
+        }
+        // Where he is standing, after where the room is: the pose stands the eye
+        // in the room, and the crossing is the one thing that moves it out.
+        if let approach { scene.stand(atApproach: approach.value()) }
         posesApplied += 1
     }
 
@@ -234,6 +294,7 @@ struct RoomLightPassLayer: View {
 
     let room: HomeRoom
     let clock: RoomClock
+    let approach: RoomApproachSource?
     let reduceMotion: Bool
     let size: CGSize
 
@@ -241,8 +302,10 @@ struct RoomLightPassLayer: View {
         Group {
             if reduceMotion {
                 // No timeline, no animation: one evaluation, at the settled
-                // state, and then nothing.
-                pass(at: RoomClock.settled)
+                // state, and then nothing. On a crossing that is quantized to
+                // its stations, the evaluation happens once per touch, because
+                // a touch is the only thing that moves him.
+                pass(at: clock.stillInstant())
             } else {
                 TimelineView(.animation) { timeline in
                     pass(at: clock.chamberTime(now: timeline.date.timeIntervalSinceReferenceDate))
@@ -254,9 +317,11 @@ struct RoomLightPassLayer: View {
 
     private func pass(at chamberTime: TimeInterval) -> some View {
         let pose = RoomPose(sceneTime: chamberTime, room: room)
+        let crossed = approach?.value() ?? 1
         let mark = RoomUnits.markOnScreen(bodyAltitude: room.bodyAltitude,
                                           chamberTime: chamberTime,
-                                          size: size)
+                                          size: size,
+                                          approach: crossed)
         let rake = RoomLightRig.rakeDirection(keyPosition: pose.keyPosition,
                                               sourceless: room.gem.isSourceless)
         return Rectangle()

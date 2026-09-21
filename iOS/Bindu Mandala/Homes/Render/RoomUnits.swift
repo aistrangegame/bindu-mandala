@@ -189,9 +189,42 @@ enum RoomUnits {
 
     /// The eye's pitch for a placement, in radians. Negative looks down.
     static func eyePitch(toward placement: RoomPlacement) -> Double {
-        let distance = eyeZ - placement.depth
+        eyePitch(toward: placement, fromDepth: eyeZ)
+    }
+
+    /// The same, from somewhere other than where he will stand — the approach.
+    ///
+    /// One formula, not two: the crossing toward her room changes only how far
+    /// back the eye is, so it is the same inclination read at a longer distance,
+    /// and her altitude stays legible the whole way in rather than becoming
+    /// legible on arrival.
+    static func eyePitch(toward placement: RoomPlacement, fromDepth depth: Double) -> Double {
+        let distance = depth - placement.depth
         guard distance > 0.0001 else { return 0 }
         return -gaze * atan2(eyeY - placement.height, distance)
+    }
+
+    /// How far behind his standing place the walker begins the crossing in.
+    ///
+    /// **One body-height, and it is derived rather than tuned.** The room is one
+    /// body tall (``roomHeight``), so beginning one body behind where he will
+    /// stand puts him exactly one room's depth outside it — far enough that the
+    /// approach is a real crossing, near enough that her room is the thing he is
+    /// crossing toward rather than a light in the distance.
+    ///
+    /// Nothing else about the approach is a number. The air does the rest by
+    /// itself: SceneKit's fog is a **distance** band, and the world's own veil
+    /// already sets where it closes (``RoomLightRig/applyFog(to:)``), so a
+    /// walker standing a body-height further out is genuinely looking through
+    /// more of the world's air — thin in the first āvaraṇa, nearly opaque in the
+    /// ninth. The veil is not re-stated here, and it must not be: it is the same
+    /// fact seen from further away.
+    static let approachStandOff: Double = roomHeight
+
+    /// Where the eye stands at a point on the crossing, `0` at the far end and
+    /// `1` in the room.
+    static func eyeDepth(approach: Double) -> Double {
+        eyeZ + (1 - HomeGrammar.smooth(approach)) * approachStandOff
     }
 
     // MARK: - The horizontal axis
@@ -376,13 +409,21 @@ enum RoomUnits {
 
     /// Where her mark lands on the layer at a moment of her stay — the whole
     /// camera track and projection in one call, so no room repeats it.
+    ///
+    /// `approach` is where the walker stands on his way in, `1` being in the
+    /// room. It is here rather than in the light pass because the mark's place
+    /// on the layer and the eye's place in the room are one fact: leave it out
+    /// and the light in her mark sits where the walker is *going to* stand
+    /// instead of where he is.
     static func markOnScreen(bodyAltitude altitude: Double,
                              chamberTime t: TimeInterval,
-                             size: CGSize) -> CGPoint {
+                             size: CGSize,
+                             approach: Double = 1) -> CGPoint {
         let placement = placement(bodyAltitude: altitude, chamberTime: t)
+        let depth = eyeDepth(approach: approach)
         return project(placement.point,
-                       eye: SIMD3(0, eyeY, eyeZ),
-                       pitch: eyePitch(toward: placement),
+                       eye: SIMD3(0, eyeY, depth),
+                       pitch: eyePitch(toward: placement, fromDepth: depth),
                        size: size)
     }
 }
