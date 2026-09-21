@@ -121,7 +121,7 @@ struct RootView: View {
         for s in shaktis {
             guard let kp = s.khadgamalaPosition else { continue }
             let quality = s.quality.trimmingCharacters(in: .whitespacesAndNewlines)
-            let body = quality.isEmpty ? "She greets you this morning." : quality
+            let body = quality.isEmpty ? DailySummons.wordlessBody : quality
             map[kp] = (title: s.name, body: body)
         }
         DailySummons.greetingProvider = { map[$0] }

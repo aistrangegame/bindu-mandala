@@ -52,29 +52,39 @@ struct RecognitionLogStore {
     }
 }
 
-/// Thin façade for private letters.
+/// Thin façade for private letters, keyed by Khaḍgamālā position (1–102) —
+/// every one of the 102 may be written to, not only the 16 Karṣiṇīs.
+///
+/// **No read ever writes.** Opening a letter that has never been written must
+/// leave the store exactly as it found it: a blank row is not a draft, and one
+/// written on open would masquerade as one — blocking her letter on the server
+/// from ever seeding back, and putting a phantom row in the ledger's way.
 @MainActor
 struct LetterStore {
     let context: ModelContext
 
-    /// The letter for this position if one has ever been saved. A read that
-    /// inserts nothing — for opening and display, so merely looking at a
-    /// letter never writes a blank row.
-    func existingLetter(for position: Int) -> ShaktiLetter? {
-        let d = FetchDescriptor<ShaktiLetter>(predicate: #Predicate { $0.shaktiPosition == position })
+    /// The stored letter for this Khaḍgamālā position, if she has ever been
+    /// written to. A pure read: it inserts nothing.
+    func existingLetter(for khadgamalaPosition: Int) -> ShaktiLetter? {
+        let d = FetchDescriptor<ShaktiLetter>(
+            predicate: #Predicate { $0.khadgamalaPosition == khadgamalaPosition }
+        )
         return (try? context.fetch(d))?.first
     }
 
-    /// The letter for this position, created on demand — for a save.
-    func letter(for position: Int) -> ShaktiLetter {
-        if let existing = existingLetter(for: position) { return existing }
-        let new = ShaktiLetter(shaktiPosition: position)
-        context.insert(new)
-        try? context.save()
-        return new
+    /// The letter for this position — the stored row when there is one, otherwise
+    /// a **transient, unsaved** letter the caller may show and type into. It
+    /// enters the store only when `save` is called on it, so a letter that is
+    /// merely opened leaves no trace.
+    func letter(for khadgamalaPosition: Int) -> ShaktiLetter {
+        existingLetter(for: khadgamalaPosition)
+            ?? ShaktiLetter(khadgamalaPosition: khadgamalaPosition)
     }
 
+    /// Write the body. A letter becomes real at the moment it has words in it:
+    /// if this one is still transient, that is when it is inserted.
     func save(_ letter: ShaktiLetter, body: String) {
+        if letter.modelContext == nil { context.insert(letter) }
         letter.body = body
         letter.updatedAt = .now
         try? context.save()

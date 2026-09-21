@@ -24,8 +24,12 @@ enum PersistenceRecovery {
     /// → SwiftData's default location). The versioned `BinduMigrationPlan` is what
     /// keeps an additive, defaulted model change opening in place instead of
     /// throwing — so the preserve-and-recover path fires only on true corruption.
+    ///
+    /// The schema is always the **latest** version (`BinduSchema.makeLatest`), with
+    /// the plan carrying an older store up to it. Naming a pinned version here would
+    /// silently strand every practitioner's store one version behind.
     static func makeContainer(storeURL: URL? = nil) -> ModelContainer {
-        let schema = Schema(BinduSchemaV1.models)
+        let schema = BinduSchema.makeLatest()
         func configuration() -> ModelConfiguration {
             if let storeURL { return ModelConfiguration(schema: schema, url: storeURL) }
             return ModelConfiguration(schema: schema)

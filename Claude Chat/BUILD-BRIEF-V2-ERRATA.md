@@ -55,6 +55,27 @@ PersistenceRecovery hardcodes BinduSchemaV1.models; a V2 must move it to the lat
 
 Design's HomeMemory stores visits + accumulated dwell (capped 4000 s); compression and head start derive from those; the brief's longestDwell/lastDwell/lastVisit/deepestAdaptation are additions.
 
+### 2.1b note — Phase-4 items that landed inside Phase 2
+
+Rebuilding the Well for all nine rings (c4634b5) rewrote the screen, and three Phase-4
+repairs landed with it; the commit body named none of them. Recorded here so the Phase-4
+counts stay true, and the screen is now whole rather than half-repaired:
+
+- **4.1 (readability) — the Well's three rule-4 sites are done.** `WellView.swift` header
+  instruction 10 pt → **11 pt**; empty-state invitation α 0.32 → **0.50**; letter-editor
+  placeholder α 0.28 → **0.50** (that last one in the Phase 2-A review fixes, where the
+  inconsistency was caught). **31 sub-threshold sites → 28 remain** for 4.1.
+- **4.4 (VoiceOver) — "WellView rows" is closed.** The ring headers carry a label and a
+  hint, and each seat is one element speaking her phonetic-first name and whether she has
+  been written to — never how many (Law 2). The rest of H5's list is untouched.
+- **4.5 — the SE-width Well-header collision is fixed.** The title is `lineLimit(1)` +
+  `minimumScaleFactor(0.75)` inside a 52 pt gutter and shrinks rather than running into the
+  hamburger; the instruction wraps centred. 4.5's other items stand.
+
+Not Phase-4 items, noted so they are not counted twice: the rows' `minHeight: 44` is belt
+and braces (audit H4 already credited the Well's rows at ~70 pt), and the Well is still
+Phase 4's for the device pass — nothing here was verified on hardware.
+
 ### 2.3 note — The per-Śakti carrier
 
 "roomtone" and "descent glissando" appear only in the brief, not in Design's handoff; Design's per-ring roots (55→123.47 Hz) are its own choice and disagree with RingAudioService, which has no root for rings 4, 5, 7 — a ruling is needed before 2.3.
@@ -95,4 +116,20 @@ Whether the nine Personal Connection marginalia are the existing May-28 Avaraṇ
 
 **Reads follow the writes:** Her Moments (`fetchRecognitions`, name-narrowed formula + client-side record-id match, paged), `restoreRecognitionsIfLocalEmpty` (Shakti Recognized + Silence Held → `.silence`; a legacy milestone without `Felt At` restores at noon of its local day, unless its migrated twin — same type, link and day — already carries the instant, in which case only the twin restores; Her Moments folds the pair the same way) and `restoreDescentIfLocalEmpty` (Ring Crossed) read App Activity. The laws hold: local SwiftData stays the read-time source of truth and the ceremony's line stays driven by the local write; Airtable stays fire-and-forget; no-token holds, never drops; dedup fails open; `syncIsDisabled()` early-returns stay; build-36 queued items decode and drain into the ledger.
 
-**Chat-side, not yet done:** the June asg-airtable canon's "threshold crossings only; substance on the app's row" clause is **amended for the Mandala** — the body already had precedent (Feed writes per event, Learning writes Notes). The bindu-mandala-app skill's **App Write Contract** ("WRITE Recognition / Silence" to the Mandala table) **must be rewritten by Chat** to the ledger shapes above; until it is, the skill describes build 36, not build 37.
+**Chat-side, done 2026-09-07:** the June asg-airtable canon's "threshold crossings only; substance on the app's row" clause is **amended for the Mandala** — the body already had precedent (Feed writes per event, Learning writes Notes) — and the bindu-mandala-app skill's **App Write Contract** was rewritten from the Mandala-table shapes to the ledger shapes above. Both skills previously told every future session that recognitions live in the Mandala table.
+
+### Ruling 17 (R17), sealed 2026-09-20 — App Activity is the single record
+
+Chat sealed the 2026-09-07 ruling above as **R17** and gave it a number, so code may cite it: `HomeMemory.swift` and the ledger types do. Its terms are unchanged; what the sealing adds is the reach. **Every event the app writes goes to App Activity**, linked through `Link to Mandala`. **The Mandala table holds only the Śaktis and Avaraṇas themselves** — rows with Row Type Recognition, Silence or Crossing stay at **zero, forever**, and the verification check for that is permanent. Read every instruction in Brief v2 to write such a row — §0.4's crossing backfill, R11's "local + Airtable Source Silence", §3.6's ledger wording — as an App Activity row instead.
+
+Where each thing lives, confirmed against shipped code on 2026-09-21: a recognition is `Shakti Recognized`, first or return · the R11 dwell is `Silence Held`, once per visit, never displayed · a descent is `Ring Crossed` · a letter's **words** stay in the `Letter` field on her own Śakti row (`patchLetter`, PATCH by record id) and only the **moment** is a `Letter Written` row · the three Phase-3 events are ledger rows when wired · **HomeMemory is phone-only — never synced, never a row.** That last is the never-measure law holding at the data layer.
+
+**`Deepest Ring Reached` is redundant, and Ashrey may strike it.** Confirmed in code, not inferred: `DescentState.enter(ring:)` appends a crossing and returns true only when `ring > deepestReached`, and `LivingMandalaView.recordCrossing` writes to the ledger only on that true — both call sites, the zoom path and the ring-9 descent arrival, pass through the same gate, and re-entering a ring already reached records nothing. So `Ring Crossed` **is** Ruling 8's mirror already; a `Deepest Ring Reached` row would carry the same trigger, ring and instant a second time. Every `Ring Crossed` row carries `Descent Ring`, so "how deep has he gone" is a maximum over rows that exist. `Full Circle` and `First Dwelling` stand, unwired, for Phase 3.
+
+### Ruling 10 (R10), restated 2026-09-20 — the Gate is authored
+
+The earlier lock — that Laghimā and Garimā must be unmistakable from each other **with zero hand-work**, or the grammar is wrong — was **released by Ashrey on 2026-09-06**. Laghimā (kp 3) and Garimā (kp 4) resolve through Design's authored `BY_NAME` map as hand-built rooms. **No grammar-only Gate proof is required.** The grammar's power is proven instead by the sister-divergence harness across the other rooms: no two sisters within 10% of each other, no two speaking alike. Phase 3.3 builds and lives in the two authored rooms; its gate is Design's handoff §8 acceptance plus the harness, not a test of the grammar alone.
+
+### 3.6 — The room count, in the brief itself
+
+Brief v2 §3.6 reads "Rings 3–9 … (74 rooms)", which counts Ring 2 twice. The true figures are **102 = 28 (Ring 1) + 16 (Ring 2) + 58 (Rings 3–9)**. Use 58 throughout; the brief's own line is to be corrected the next time that file is touched.
