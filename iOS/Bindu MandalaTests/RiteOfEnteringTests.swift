@@ -840,8 +840,18 @@ final class RiteOfEnteringTests: XCTestCase {
                              continuous and it follows him into her room; holding her chamber clock \
                              must not hold the āvaraṇa's.
                              """)
+        // …and it goes on moving. Waited for rather than sampled after a fixed
+        // pause: what is being asserted is that the weather advances at all, and
+        // a fixed pause additionally asserts that SceneKit drew a frame inside it
+        // — which is a statement about how busy the machine is, not about the
+        // room. Under the full suite it is sometimes false, and it failed here for
+        // that reason and no other. The check itself is unchanged: if the air is
+        // held, this never becomes true and the test fails.
         let air = driver.scene.breathedAt
-        pump(seconds: 0.4)
+        let deadline = Date().addingTimeInterval(4)
+        while driver.scene.breathedAt <= air && Date() < deadline {
+            pump(seconds: 0.1)
+        }
         XCTAssertGreaterThan(driver.scene.breathedAt, air, "the air stopped moving")
 
         // And what he is looking at is a lit room rather than a black frame —

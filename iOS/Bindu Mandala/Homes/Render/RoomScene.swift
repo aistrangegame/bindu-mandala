@@ -55,19 +55,25 @@ import UIKit
 // to. That is the same rule as ``RoomMaterial``'s, one level up.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// WHAT THE SPINE DOES NOT YET CARRY
+// THE REVERSAL, AND THE GAP PHASE 3.3 CLOSED
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Design's second adaptation *"is never 'more of the same': in every room it
-// REVERSES the room's own premise"* (`homes-chambers.js`), and `homes-grammar.js`
-// authors a different reversal for each archetype. What is here is the reversal's
-// **stage** — the mark widening and nearing, the key handing its work to the
-// mark, the gradient turning toward her — and it is the same stage in all 102
-// rooms. The reversals themselves arrive through ``RoomSurfaceMechanism``, which
-// is scheduled for the authored eight in Phase 3.3 and for the grammar rooms
-// with their rings. Until then the 94 grammar rooms intensify rather than
-// reverse, and `DECISIONS.md` carries that as a scheduled gap rather than a
-// property of the spine.
+// REVERSES the room's own premise"* (`homes-chambers.js`). Phase 3.1 shipped only
+// the reversal's **stage** — the mark widening and nearing, the key handing its
+// work to the mark, the gradient turning toward her — and that stage is the same
+// stage in all 102 rooms, so nothing in the spine actually turned a room's own
+// premise over. The review recorded it as a scheduled gap rather than arguing it
+// away.
+//
+// It is closed here. ``HomeBecoming`` is the missing term — what a premise
+// becomes, said as which part of the room yields and which takes over — and
+// ``RoomSurfaceMechanism`` now carries it, along with the second register a
+// reversal needs: **stations**, where the room's own surfaces stand. A station is
+// one number per surface, a displacement of a surface that already exists. It
+// cannot make a surface and it cannot place anything, so the binding condition
+// reaches the reversal untouched: the whole return type is
+// `[RoomSurfaceKind: Double]`.
 
 /// What a mechanism is handed, and the only thing it can do with it.
 ///
@@ -99,8 +105,42 @@ struct RoomStage {
 /// — are all deformations of the room's own material, and this signature is
 /// what keeps the ninetieth one honest.
 protocol RoomSurfaceMechanism {
+    /// **What this room's premise becomes.** The deep term: the one thing the
+    /// second adaptation needs that the first does not, and the thing whose
+    /// absence made the reversal one generic intensification in all 102 rooms.
+    var becoming: HomeBecoming { get }
+
     /// Everything this mechanism does to the room at one moment of the stay.
     func actions(at chamberTime: TimeInterval, stage: RoomStage) -> [RoomSurfaceKind: [SurfaceAction]]
+
+    /// Where the room's own surfaces stand at one moment of the stay, as a
+    /// displacement along each surface's own way off the material — positive
+    /// toward the walker.
+    ///
+    /// **This is the second half of the binding condition, not a loosening of
+    /// it.** A ceiling that descends and a floor that lets go are two of the
+    /// eight rooms Design authored by hand, and neither of them is a thing added
+    /// to a room: they are the room's own stone, standing somewhere else. So the
+    /// return type is a distance per surface and there are only ever four
+    /// surfaces. There is no case here for a surface that does not exist, no way
+    /// to make one, and nothing an object could arrive as.
+    func stations(at chamberTime: TimeInterval, stage: RoomStage) -> [RoomSurfaceKind: Double]
+}
+
+extension RoomSurfaceMechanism {
+
+    /// A room that says what its premise becomes and nothing more gets the
+    /// reversal that follows from it — the work moving from one part of the room
+    /// to another, and the answering material doing something where it landed.
+    /// That is what the ninety-four grammar rooms inherit.
+    func actions(at chamberTime: TimeInterval, stage: RoomStage) -> [RoomSurfaceKind: [SurfaceAction]] {
+        RoomReversal.actions(becoming, deep: stage.deep, stage: stage)
+    }
+
+    func stations(at chamberTime: TimeInterval, stage: RoomStage) -> [RoomSurfaceKind: Double] {
+        RoomReversal.stations(becoming, deep: stage.deep,
+                              bodyAltitude: stage.placement.bodyAltitude)
+    }
 }
 
 /// The whole room at one instant, as numbers. Pure, so the room's behaviour is
@@ -159,9 +199,13 @@ final class RoomScene {
     let room: HomeRoom
     /// Her light.
     let rig: RoomLightRig
-    /// The mechanism acting on the room, where one has been built. Phase 3.3
-    /// fills these in for the authored eight; until then a room is its grammar,
-    /// its world and her attribute, which is a whole room.
+    /// The mechanism acting on the room.
+    ///
+    /// Resolved by ``RoomMechanisms/forRoom(_:)`` unless a caller hands one in,
+    /// so every room that has a premise reverses it without anybody having to
+    /// remember to pass something: the authored Gate gets its own hand-built
+    /// room, and the rest get their archetype's turn. `nil` only for a seat,
+    /// which has no premise to reverse.
     let mechanism: RoomSurfaceMechanism?
 
     // MARK: - Design's three depth layers, as named node roots
@@ -210,6 +254,10 @@ final class RoomScene {
     private let faceNode = SCNNode()
     private let riserNode = SCNNode()
     private var wallNodes: [SCNNode] = []
+    /// Where each wall stands before the enclosure moves, so a station is a
+    /// displacement of the room rather than a second opinion about where its
+    /// sides are.
+    private var wallBases: [SCNVector3] = []
     private var emberNode: SCNNode?
     private var keyNode: SCNNode?
     private var motesMaterial: SCNMaterial?
@@ -231,6 +279,24 @@ final class RoomScene {
     /// ``RoomMaterial/emission(at:)``.
     private(set) var markLightWeights: SIMD3<Double> = SIMD3(1, 0, 0)
 
+    /// How far the marked surface stands from its resting plane **at the mark**,
+    /// at the stay's three moments.
+    ///
+    /// The ember is the light *in* a mark, stood off onto the walker's side of
+    /// the material it is in — and the material moves. In a room where what the
+    /// mark made rises (Garimā's plinth stands two units proud of the floor by
+    /// the end of the stay), an ember held at the resting plane ends up *inside*
+    /// the mound, and an omni light inside a hill lights the whole hill: the room
+    /// came back as a pale featureless mass with every bed she had made lost
+    /// behind it. Held at three moments and blended by ``markLightWeights``, for
+    /// the same reason and by the same arithmetic the mark's own light is.
+    private var markRelief: SIMD3<Double> = .zero
+
+    /// Where each of the room's own surfaces stands, at the instant it was last
+    /// posed — the reversal, as a number a check can read without a renderer.
+    /// Empty in a room with no mechanism, which is a room with no premise.
+    private(set) var stood: [RoomSurfaceKind: Double] = [:]
+
     // MARK: - Constants
 
     /// Vertices per side of a surface mesh. 64 × 64 is 4,096 vertices and 7,938
@@ -250,6 +316,16 @@ final class RoomScene {
     static let markEmissionFloor: Double = 0.06
     static let markEmissionCeiling: Double = 0.42
 
+    /// The nearest the enclosure may ever come to the room's own axis, as a
+    /// fraction of where it began.
+    ///
+    /// It is a floor rather than a taste: three walls closing all the way in
+    /// would meet at the walker, and *nothing in any of the 102 rooms may reach
+    /// him*. ``RoomReversal``'s saturating fraction already holds a single
+    /// surface short of him; this holds the enclosure short of him even if a room
+    /// is ever handed a station larger than its own clearance.
+    static let enclosureFloor: Double = 0.2
+
     /// How many motes stand in the air. Carried from the spike, where the
     /// screen-space radius clamp that keeps them from stacking to white was
     /// measured rather than guessed (Design's invariant 7).
@@ -259,7 +335,7 @@ final class RoomScene {
 
     init(room: HomeRoom, mechanism: RoomSurfaceMechanism? = nil) {
         self.room = room
-        self.mechanism = mechanism
+        self.mechanism = mechanism ?? RoomMechanisms.forRoom(room)
         self.rig = RoomLightRig(gem: room.gem, world: room.world)
         self.receivingSurface = RoomUnits.surface(forBodyAltitude: room.bodyAltitude)
 
@@ -277,6 +353,16 @@ final class RoomScene {
                                        HomeMemory.firstAdaptation,
                                        HomeMemory.secondAdaptationEnd]
         let shapes = moments.map { shaped(at: $0) }
+
+        // Where the marked surface actually stands, at the mark, at each of those
+        // three moments — read off the material rather than off the resting plane.
+        let reliefs = zip(moments, shapes).map { moment, surfaces -> Double in
+            guard let material = surfaces[receivingSurface] else { return 0 }
+            let at = RoomUnits.placement(bodyAltitude: room.bodyAltitude,
+                                         chamberTime: moment).coordinate
+            return material.relief(at: at)
+        }
+        markRelief = SIMD3(reliefs[0], reliefs[1], reliefs[2])
 
         // ── layer 1 · the building ──────────────────────────────────────────
         building.name = "building"
@@ -369,14 +455,69 @@ final class RoomScene {
         // Her physics, on the room itself.
         building.position = SCNVector3(Float(pose.drift.x), Float(pose.drift.y), Float(pose.drift.z))
 
-        // Her face comes toward the walker as the attribute grows into the room.
-        if receivingSurface == .face {
-            faceNode.position = SCNVector3(0, Float(pose.placement.height), Float(pose.placement.depth))
-            riserNode.position = SCNVector3(0, Float(RoomUnits.floorY), Float(pose.placement.depth))
-            riserNode.scale = SCNVector3(1, Float(max(0.001, pose.placement.height - RoomUnits.floorY)), 1)
+        // ── where the room's own surfaces stand ─────────────────────────────
+        //
+        // The reversal, as the room doing it. A station is a displacement of a
+        // surface that already exists, positive toward the walker, and this is
+        // the only place one is ever applied.
+        let stage = RoomStage(placement: pose.placement,
+                              settling: pose.settling,
+                              deep: pose.deep,
+                              materials: materials)
+        stood = mechanism?.stations(at: sceneTime, stage: stage) ?? [:]
+        let ground = stood[.ground] ?? 0
+        let overhead = stood[.canopy] ?? 0
+        let facing = stood[.face] ?? 0
+        groundNode.position = SCNVector3(0, Float(RoomUnits.floorY + ground), 0)
+        canopyNode.position = SCNVector3(0, Float(RoomUnits.canopyY - overhead), 0)
+
+        // The enclosure closes on him or leaves him, along its own way in. It can
+        // never reach him: the fraction is held short of the axis, so three walls
+        // cannot become a box around a walker.
+        let closing = 1 - (stood[.wall] ?? 0) / RoomUnits.halfExtent
+        let sides = Float(min(2.4, max(Self.enclosureFloor, closing)))
+        for (node, base) in zip(wallNodes, wallBases) {
+            node.position = SCNVector3(base.x * sides, base.y, base.z * sides)
         }
 
+        // Her face comes toward the walker as the attribute grows into the room.
+        //
+        // It stands at *her* altitude and does not travel with the floor: in the
+        // room whose floor lets go, the walls end before the ground and hang from
+        // above, and her own working face hangs with them. The riser keeps its own
+        // length, so a floor that has let go leaves the column hanging rather than
+        // stretching it into a slab the height of the room.
+        //
+        // **And the riser stands behind the face, not through it.** It is a box a
+        // third of the face's own span deep, and centred on the face's plane it
+        // put half of itself in front of her working surface — which is to say it
+        // occluded the lower half of her mark, in every room a Śakti is felt
+        // between the soles and the crown, which is most of them. Nothing in the
+        // spine could see it: the rite and the legibility spread both look at
+        // rooms whose mark is in the floor. The first capture of a face room
+        // showed it in one glance.
+        if receivingSurface == .face {
+            let depth = pose.placement.depth + facing
+            faceNode.position = SCNVector3(0, Float(pose.placement.height), Float(depth))
+            riserNode.position = SCNVector3(0, Float(RoomUnits.floorY),
+                                            Float(depth - RoomUnits.riserDepth / 2))
+            riserNode.scale = SCNVector3(
+                1, Float(max(0.001, pose.placement.height - RoomUnits.floorY)), 1)
+        }
+
+        // Which of the stay's three moments the surfaces are showing. Read before
+        // the ember is placed, because the ember rides the material it is in and
+        // the material is blended by exactly these weights.
+        markLightWeights = SIMD3(max(0, 1 - pose.firstWeight - pose.secondWeight),
+                                 pose.firstWeight,
+                                 pose.secondWeight)
+
+        // The ember: her mark's own light, stood off onto the walker's side of the
+        // material — from where that material actually is, which is not the
+        // resting plane in a room where the mark has made something.
+        let standing = (markLightWeights * markRelief).sum()
         let ember = RoomUnits.emberPoint(for: pose.placement)
+            + RoomUnits.emberOffset(for: pose.placement.surface) / RoomUnits.emberStandOff * standing
         emberNode?.position = SCNVector3(Float(ember.x), Float(ember.y), Float(ember.z))
         emberNode?.light?.intensity = CGFloat(pose.emberStrength)
 
@@ -394,11 +535,9 @@ final class RoomScene {
         // The marks are lit as they are made — *where* they are made as much as
         // *when*. A texture cannot morph, so the surface's light is carried at
         // the same three moments the surface's shape is, one to a channel, and
-        // weighed here by the same two morph weights. How much of it is showing
-        // is the stay's own two adaptations, which is an intensity.
-        markLightWeights = SIMD3(max(0, 1 - pose.firstWeight - pose.secondWeight),
-                                 pose.firstWeight,
-                                 pose.secondWeight)
+        // weighed by the same two morph weights (``markLightWeights``, set above).
+        // How much of it is showing is the stay's own two adaptations, which is
+        // an intensity.
         let showing = CGFloat(Self.markEmissionFloor
                               + (Self.markEmissionCeiling - Self.markEmissionFloor)
                                 * (0.45 * pose.settling + 0.55 * pose.deep))
@@ -601,7 +740,7 @@ final class RoomScene {
         building.addChildNode(faceNode)
 
         let riser = SCNBox(width: CGFloat(RoomUnits.faceSpan * 0.55), height: 1,
-                           length: CGFloat(RoomUnits.faceSpan * 0.3), chamferRadius: 0)
+                           length: CGFloat(RoomUnits.riserDepth), chamferRadius: 0)
         riser.materials = [Self.stone(ink, roughness: 0.95, marks: [])]
         riserNode.geometry = riser
         riserNode.name = "riser"
@@ -628,6 +767,7 @@ final class RoomScene {
                 node.position = SCNVector3(0, 0, Float(-RoomUnits.halfExtent))
             }
             wallNodes.append(node)
+            wallBases.append(node.position)
             building.addChildNode(node)
         }
     }

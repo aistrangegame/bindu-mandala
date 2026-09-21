@@ -719,3 +719,176 @@ exactly that reason).
 **Navigation.** The climb is not yet reachable from a screen, for the same reason the rite is not:
 the Homes layer is being built from the bottom and the building becomes walkable at §3.7, the
 corridor. Nothing in the app changed.
+
+## 2026-09-21 · Phase 3.3 · The Gate, and the deep term the second adaptation was missing
+
+`Homes/HomeBecoming.swift`, `Homes/Render/{RoomReversal, ReleaseRoom, PressRoom}.swift`, with
+`GateRoomTests` and `GateLookTests` judging them. Ruling 10 governs: the authored Gate is
+**accepted**, so Laghimā (khaḍgamālā 3) and Garimā (khaḍgamālā 4) are hand-built rooms resolved
+through the authored map by position, and no grammar-only proof is required. 481 tests, 0
+failures, 10 skipped, zero Swift warnings, and a clean Release build.
+
+### The deep term, which is the heart of this phase
+
+The Phase 3.1 review found that the second adaptation was **one generic intensification shared by
+all 102 rooms** — the mark widening and nearing, the key handing its work to the mark — and named
+the reason exactly: `HomeGrammar.Reading` carried no term a room could read to say what its own
+premise *becomes*. `HomeLabel.deep` said the reversal in words for all 94 grammar rooms and was
+consumed by nothing. Design is explicit that *"the second adaptation is never 'more of the same':
+in every room it REVERSES the room's own premise"*, so a room that does not reverse is a loop.
+
+`HomeBecoming` is that term, and it is deliberately four fields. A reversal, said as plainly as
+Design says it, is **which part of the room carried the premise**, **which part answers it**, how
+completely the first yields, and how far the second takes over. Everything downstream — which of
+the five verbs the answering material performs, how far that is in scene units, what it does to
+the light — is read from those in `RoomReversal` and nowhere else.
+
+**It is written in the room's four surfaces rather than in a new enum of its own.**
+`RoomSurfaceKind` imports nothing that can draw and names no geometry; its own header says it
+states the binding condition *"in the coordinate system before `RoomMaterial` states it in the
+API"*. The instrument has already paid once for a duplicated table — the body zones, ported twice
+on parallel branches and unified afterwards — and a second list of "the parts a room has" would
+drift the same way. The consequence is that **the binding condition now reaches one layer further
+out than it did**: there is no case in either field for a thing in the air, so a reversal that
+wanted a free object to arrive has nowhere to name it.
+
+**`takes` is signed, and the sign is the meaning.** Ring 5's gift becomes the ground he is
+standing on and arrives *at* him; Ring 4's gesture expands through fourteen shells and leaves
+*past* him. A term with no sign would make those two rooms the same room. Which verb the answering
+material performs is then *read from the travel* — toward him is a swell, away from him an
+impression — which is `RoomInscription`'s own discipline, not a second one: nothing is keyed by an
+archetype's name.
+
+**The ten archetype reversals are read out of Design's own builders,** each with the deep sentence
+it prints and the number its `update(t)` actually drives with `b` quoted beside it. All ten
+tuples are distinct and `testNoTwoArchetypesReverseAlike` holds them apart, so a Vāk Devī's room
+and a Nigarbha Yoginī's no longer turn alike. That is what the other hundred inherit: **101 of the
+102 rooms now carry a reversal**, and the exception is recorded rather than filled in — the ninth
+āvaraṇa's single Śakti has no archetype to inherit from, because the grammar declines to speak for
+the Bindu, and inventing one for her would be the generic intensification under a new name. Her
+room is authored and arrives with the rest of the eight.
+
+### The second register a reversal needed, and why it is not a loosening
+
+`RoomSurfaceMechanism` now also carries `stations(at:stage:)`. A ceiling that descends and a floor
+that lets go are two of the eight rooms Design authored by hand, and neither is a thing *added* to
+a room: they are the room's own stone, standing somewhere else. The whole return type is
+`[RoomSurfaceKind: Double]` — a distance per surface, over an enum with four cases — so there is
+nothing an object could arrive as, and `testAMechanismCanOnlyReturnActionsOnSurfaces` now pins both
+signatures and refuses the protocol body the whole SceneKit vocabulary.
+
+**Two rules govern every station, and neither is a constant.** A surface travels a fraction of *its
+own distance to the walker*, because how far the canopy can come down is how far the canopy is and
+that is a different distance from how far the floor can rise. And the fraction saturates —
+`takes / (1 + takes)`, so Design's largest growth reaches 0.81 and nothing reaches 1. **The room
+comes toward him and never reaches him**, as arithmetic rather than as a clamp somebody has to
+remember.
+
+### The two rooms
+
+**Garimā presses, and the reversal is not the press undone.** Design wrote her reversal out in her
+own file: *"the weight was never above you. It is what you are standing on, and it has been holding
+you the whole time."* So nothing is given back. The mass closes six sevenths of its own distance to
+him through the first adaptation and lifts away through the second; the strata **stay compacted and
+go on deepening** (`0.5 → 2.4 → 3.8` in Design's numbers, carried as the ratio and normalised
+against `RoomInscription.markDepth`, because a three.js displacement scale over a normalised map
+says nothing about how deep a bed is in a room one body tall); and what the pressing made rises
+into a plinth and carries him. Measured: her mark is a hollow **1.05 units below the floor beside
+it** at the first adaptation and a plinth **0.24 above it** past the second, and the bedding away
+from the mark is deeper at the end of the stay than at the first adaptation.
+
+The plinth's depth is **read off the room rather than chosen**: it fills the hollow the pressing
+actually made at that point — every bed and the crater together, measured — and then stands two
+marks proud of it. One is Design's own growth of the press; the other is one whole mark, because
+*her attribute is still working in the top of the plinth*. The mechanism acts first and her
+attribute acts into whatever the room turned out to be, so the palm goes on pressing into the
+plinth after it has risen, and without that mark's worth the two cancel and her mark ends the stay
+a shallow hollow — the room having reversed everything except the one thing he is looking at.
+
+**The spike's one breach does not come across.** `Views/Spike/GarimaSceneKitRoom.swift` mounts the
+palm's mark as a cylinder with its own emissive material, lying on the floor, and Design's three.js
+does the same. That is a free-standing lit solid — the props cupboard in one object, and precisely
+what the ruling was written to prevent. Here the press is a **compaction**, its light is the
+ground's own emission and is therefore multiplied by how far the ground moved, and her layer holds
+zero solids at every moment of the stay.
+
+**Laghimā lets go, and the reversal is not absence.** Design hit two defects in this room and only
+this room, and both are pinned on the real render.
+
+Her rising field *"stacked additively to pure white at arm's length"*. It cannot recur, and not
+because it was remembered: there is no additive field in this room. The only thing the mechanism
+can do is act on the canopy's own material, and a surface's emission is `min(1, …)` of a value
+already bounded by how far the material moved, so there is no quantity here that can accumulate.
+Measured at the first adaptation: **0.0% of the frame at white**, mean 0.0996.
+
+And she *"went dark at the second adaptation, because the walls departing left an empty room"* —
+which is a real hazard here, because the walls departing *is* the reversal and the floor has
+already let go, so at the turn this room genuinely has no floor and no enclosure. Design's fix is
+the design of the reversal and it is honoured literally: *"as the walls go, the opening they were
+hanging from takes the whole room."* Measured: mean **0.0996 → 0.1151**, brighter past the second
+adaptation than at the first, with the opening's own material widening by more than half again.
+
+**The one place the verb is read the other way.** `RoomReversal` answers with a swell, because
+material taking the work over usually comes toward the walker. An opening is the exception by
+definition — it is material that has *drawn back* — so Laghimā's canopy mark is an impression
+widening upward while the canopy itself descends toward him. That is Design's lid exactly: a rim
+that comes down and a mouth that opens. The verb is still read from the travel rather than assigned.
+
+**They diverge by 0.888 of ninety-eight geometric components**, against Design's tenth. This is the
+geometric half of the fingerprint that had waited on rooms existing: where each of the room's four
+surfaces stands, and what the material of the two that carry marks is doing, at seven moments of
+one stay, quantised to two decimals exactly as `homes-verify.js` quantises. Design chose this pair
+as its own sample-before-batch gate and measured them at 100% of geometry; 0.888 is the same
+finding at a different resolution. They differ at the opening, at the first adaptation and past the
+second, so it is not one moment carrying it.
+
+### Three defects only a picture could find, and the rules they turned into
+
+`FIDELITY.md` §7 keeps earning its place. Phase 3.1 was 438 tests green when the first frame of the
+rite showed the āvaraṇa's dust standing perfectly still. Phase 3.3 cost three more, and **every one
+of them passed every check in the suite first**.
+
+- **The floor rose to the walker's chest.** The generic reversal let the ground take the work over
+  by standing somewhere else, and Garimā's floor came up three units of a room six and a half tall
+  — a pale wall filling four fifths of the frame with every bed she had made lost behind it. The
+  rule it became is a fact about walking rather than a tuning: **the ground never comes toward
+  him**, because he is standing on it and a floor that rose toward his eye would have to have
+  lifted him, and nothing in the instrument moves the walker. A ground that answers does it as
+  material. Going away is untouched, which is Laghimā's whole premise.
+- **The ember was inside the hill.** Her mark's light stands off onto the walker's side of the
+  material it is in — and the material had risen two units, so the light ended up under the top of
+  the plinth, and an omni light inside a mound lights the whole mound. `RoomScene.markRelief`
+  carries how far the marked surface stands at the mark at the stay's three moments and blends it
+  by the same weights the mark's own light is blended by. This is the same fix as the emission
+  map's, one level out.
+- **The riser stood in front of her face.** It is a box a third of the face's own span deep, and
+  centred on the face's plane it put half of itself between the walker and her mark — **in every
+  room a Śakti is felt between the soles and the crown**, which is most of the hundred and two.
+  Nothing in the spine could see it: the rite and the legibility spread both look at rooms whose
+  mark is in the floor, and Phase 3.3 took the first capture of a face room. The riser now rises
+  behind her working surface, and `RoomUnits.riserDepth` is one number both places read.
+
+A fourth, smaller: Garimā's press grew nearly threefold and brightened at once, at exactly the
+moment the mark is nearest the eye, and stopped being a press and became the frame. It now widens
+by Design's own growth and **dims** by Design's own mount fade, `1 - b * 0.55` — the same fade
+every attribute in the instrument carries, for the reason she wrote it: *"the attribute stops being
+a bright thing and becomes part of what the room is made of."* And the crater is wide while the
+light in it is not, which is Design's own arrangement: her mount opens the whole inscription out,
+while what she *lights* is one press.
+
+`GateLookTests` is the harness that takes those pictures, kept rather than thrown away — the rings
+still to come will need it, and a capture nobody can re-take stops being true. It asserts the one
+thing a still can assert on its own and Design's legibility register asks for: **the room visibly
+changed.** Read relative to how bright the frame was, because an absolute threshold said so on its
+first run — Garimā's whole frame lives between 3% and 36% of the scale, and a mass descending the
+height of the room moved a twentieth of full range and read as nothing at all.
+
+### One check waited rather than weakened
+
+`testTheRiteArrivesAtARealRoom` asserts the āvaraṇa's air goes on moving while the walker is at her
+threshold, and did it by sampling after a fixed pause — which additionally asserts that SceneKit
+drew a frame inside that pause, a statement about how busy the machine is rather than about the
+room. Under the full suite it was sometimes false; in isolation it passed three times out of three.
+It now waits for the air to move, up to four seconds. The assertion is unchanged: if the weather is
+held, it never becomes true and the test fails. A timeout raised to make a red test green hides the
+next regression; a wait that still fails on the real condition does not.

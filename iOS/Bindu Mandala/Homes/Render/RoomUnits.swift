@@ -247,6 +247,15 @@ enum RoomUnits {
     /// reads as a mark rather than as weather.
     static let faceSpan: Double = roomHeight
 
+    /// How deep the riser is — the column of the room's own stone the working
+    /// face is the top of. A third of the face's span, which is what makes it a
+    /// column rather than a fin.
+    ///
+    /// It is named here because two places need it and need to agree: the box is
+    /// built this deep, and it is then stood back by half of it so that it rises
+    /// *behind* her working surface rather than through it.
+    static let riserDepth: Double = faceSpan * 0.3
+
     /// The span of one surface in scene units, so a world-space footprint can
     /// be turned into a surface-space reach without a room knowing which
     /// surface it is standing on.
