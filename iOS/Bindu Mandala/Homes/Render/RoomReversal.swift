@@ -92,9 +92,31 @@ enum RoomReversal {
         case .canopy:
             return RoomUnits.canopyY - RoomUnits.eyeY
         case .face:
+            // **A working face may come to the middle of the room and no
+            // further, and this is a fact about a panel rather than a tuning.**
+            //
+            // A face is one body square standing at her own altitude, and her
+            // mount has already brought it most of the way in by the end of the
+            // second adaptation. Measured to the *eye*, its remaining clearance
+            // is four and a half units — so a face that travelled three quarters
+            // of it, which is what Design's own Mātṛkā growth asks for, ends the
+            // stay a third of a body from the eye with a span five times the
+            // height of the frame. Looking at it is conclusive: all eight Mātṛkā
+            // rooms rendered as one flat grey field at 0.70 luminance with a
+            // spread of 0.013, which is the *whole picture* being her working
+            // surface. Nothing in the suite could see it — a face answering a
+            // premise had never been rendered, because Ring 2's answer is the
+            // enclosure and the Gate's two are the floor and the ceiling.
+            //
+            // So the half of the room between its middle and the eye is the
+            // walker's own standing room — it is exactly ``RoomUnits/eyeZ``, half
+            // a body — and no surface enters it. What is left is how far the face
+            // still is from the room's own origin, which is what it may travel.
+            // It is the same law the ground already has one line below, said for
+            // the one surface that stands in front of him rather than under him.
             let settled = RoomUnits.placement(bodyAltitude: bodyAltitude,
                                               chamberTime: HomeMemory.secondAdaptationEnd)
-            return max(0, RoomUnits.eyeZ - settled.depth)
+            return max(0, -settled.depth)
         case .wall:
             return RoomUnits.halfExtent
         }
@@ -241,19 +263,47 @@ enum RoomMechanisms {
             // not cost the other six the turn they already had.
             return archetypeReversal(ring: room.ring, position: room.position)
         case .grammar(let reading):
-            return GrammarReversal(reading)
+            // Ring 2 is built. Her archetype is the crossing and ``CrossingRoom``
+            // is Design's own `crossed(…)`, so the sixteen get the room rather
+            // than the bare turn their archetype would otherwise hand them.
+            //
+            // Keyed off the archetype the resolution already read, which is
+            // decided by ring and position and by nothing else — there is no
+            // second resolution order here and no name is consulted.
+            // `testEveryKarsiniReachesTheCrossingByPosition` asserts all sixteen
+            // arrive, by position, and that nobody else does.
+            switch reading.archetype {
+            case .crossed: return CrossingRoom(reading)
+            // Ring 1 is three families and not one ring of twenty-eight, so it
+            // arrives as three rooms and not one. The archetype was decided by
+            // ``HomeGrammar/ringOneFamily(position:)`` from her position alone,
+            // which is the only key the laws allow.
+            case .siddhi: return SiddhiRoom(reading)
+            case .matrka: return MatrkaRoom(reading)
+            case .mudra:  return MudraRoom(reading)
+            default: return GrammarReversal(reading)
+            }
         case .seat:
             return nil
         }
     }
 
-    /// The hand-built rooms. Phase 3.3 builds the Gate — Laghimā at khaḍgamālā 3
-    /// and Garimā at khaḍgamālā 4 — and the other six arrive with their rings.
+    /// The hand-built rooms. Phase 3.3 built the Gate — Laghimā at khaḍgamālā 3
+    /// and Garimā at khaḍgamālā 4 — and Phase 3.5 builds the five Design named in
+    /// Ring 1 and never finished, in its three family passes.
     static func authored(_ mechanism: HomeAuthoredMechanism) -> RoomSurfaceMechanism? {
         switch mechanism {
-        case .release: return ReleaseRoom()
-        case .press:   return PressRoom()
-        default:       return nil
+        case .release:  return ReleaseRoom()
+        case .press:    return PressRoom()
+        case .contract: return ContractRoom()
+        case .endless:  return EndlessRoom()
+        case .known:    return KnownRoom()
+        // Pass three built the two Design named among the Mudrās and never
+        // finished: khaḍgamālā 27 is the membrane and 28 is the triple. Only the
+        // Bindu's own room is left, and it waits for Ring 9.
+        case .membrane: return MembraneRoom()
+        case .triple:   return TripleRoom()
+        case .dissolve: return nil
         }
     }
 

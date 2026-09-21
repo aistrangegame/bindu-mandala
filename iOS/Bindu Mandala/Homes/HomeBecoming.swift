@@ -130,13 +130,26 @@ extension HomeBecoming {
             return HomeBecoming(premise: .face, answer: .ground, yields: 0.8, takes: 1.0)
 
         // RING 1 · MĀTṚKĀ — *"the letters were never separate from the voice"*.
-        // The letters stand around the room and then `m.scale.y = 1 + b * 3.4`
-        // draws them into one column in front of her; `column.material.opacity =
-        // … + b * 0.22` on a base of 0.18.
+        // The letters stand around the room and are drawn into one column in
+        // front of her; `column.material.opacity = … + b * 0.22` on a base of
+        // 0.18, and `column.scale.setScalar(1 + b * 1.1)`.
+        //
+        // **The growth is the column's and not the letters'**, and getting that
+        // wrong is what Phase 3.5 had to find with a picture. This case first
+        // carried Design's `m.scale.y = 1 + b * 3.4`, which is how far *the
+        // letters* stretch — the premise — read as how far *the column* takes the
+        // room over. Through ``RoomReversal/answeringFraction(takes:)`` that sent
+        // her working face three quarters of its clearance toward the eye, and
+        // all eight Mātṛkā rooms ended the stay as one flat grey field: the whole
+        // picture was her own working surface. The two numbers had been taken
+        // from opposite sides of the reversal.
         case .matrka:
-            return HomeBecoming(premise: .wall, answer: .face, yields: 0.22, takes: 3.4)
+            return HomeBecoming(premise: .wall, answer: .face, yields: 0.22, takes: 1.1)
 
-        // RING 1 · MUDRĀ — *"the seal has opened its hand"*.
+        // RING 1 · MUDRĀ — Design's *"the seal has opened its hand"*, carried as
+        // *"the seal has opened, and let go of what it held"* because law 4 does
+        // not let a walker-facing line name a body part in the one family where a
+        // mudrā already is one (``MudraRoom``, and ``HomeGrammar/tag(for:position:bija:quality:tattva:)``).
         // `held.scale.setScalar(… + b * 3.6)` and
         // `held.children[0].material.opacity = 0.5 + 0.3 * k - b * 0.2`: the seal
         // you were standing inside opens, upward and away.

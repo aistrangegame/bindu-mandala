@@ -277,6 +277,39 @@ enum RoomUnits {
     static let zNear: Double = 0.1
     static let zFar: Double = climbHeight + extent
 
+    /// **The shape of the frame the room is seen through**, as width over height.
+    ///
+    /// Already implied by ``fieldOfView``'s own note — *"SceneKit reads
+    /// `fieldOfView` on the larger axis, which in portrait is the vertical one"*
+    /// — and named here because a room that lays a figure out needs it. A phone
+    /// held upright is about one across for two down, so the walker sees **half
+    /// as much across the room as up it**, and a figure sized against the
+    /// vertical alone runs off both sides of the picture.
+    ///
+    /// That is not a hypothetical: Ring 1's first render put Vaiṣṇavī's fourteen
+    /// letters on a ring two and a half units wide on a face whose visible
+    /// half-width at that distance is one and a third, so the ring she is the
+    /// Mother of was almost entirely outside the frame with one bright patch of
+    /// it showing.
+    static let frameAspect: Double = 0.5
+
+    /// How far across the room the walker can see, at a distance from his eye —
+    /// half the width of the picture, in scene units.
+    ///
+    /// A figure laid out on a surface has to fit *this*, not the surface: half a
+    /// working face is 3.2 units and the frame shows 1.3 of it at the distance a
+    /// face settles to.
+    static func visibleHalfWidth(atDistance distance: Double) -> Double {
+        max(0, distance) * tan(fieldOfView * .pi / 180 / 2) * frameAspect
+    }
+
+    /// How far the walker's eye is from a placement, in scene units.
+    static func distance(fromEyeTo placement: RoomPlacement) -> Double {
+        let dy = placement.height - eyeY
+        let dz = placement.depth - eyeZ
+        return (dy * dy + dz * dz).squareRoot()
+    }
+
     // MARK: - Which surface, and where on it
 
     /// How close to the floor or the canopy a mark must be before it stops
@@ -375,6 +408,57 @@ enum RoomUnits {
     static func emberPoint(for placement: RoomPlacement) -> SIMD3<Double> {
         let offset = emberOffset(for: placement.surface)
         return SIMD3(offset.x, placement.height + offset.y, placement.depth + offset.z)
+    }
+
+    // MARK: - Which of Design's three axes is which, on one surface
+
+    /// Which way is which on a surface, for a room carrying a figure Design drew
+    /// in three dimensions.
+    ///
+    /// **A floor and a ceiling run away from the walker; a working face runs
+    /// up.** That is the one thing the four surfaces disagree about, and a room
+    /// that settles it for itself settles it once per room. It is here because
+    /// the way *out of* the material is already ``emberOffset(for:)``, so there
+    /// is one answer in the instrument to "which way is out of this stone" and
+    /// this reads it rather than restating it.
+    ///
+    /// Note how the surface mesh is built (``RoomScene/mesh(of:extent:orientation:resolution:)``):
+    /// on a floor and a canopy `v` runs to `(v - 0.5) * extent` in **z**, so a
+    /// smaller `v` is further from the walker; on a face `v` runs to the same
+    /// number in **y**, so a larger `v` is higher up. Both fall out of
+    /// ``alongIsRise`` without a room needing to know it.
+    struct SurfaceAxes {
+        /// `+1` where the way out of the material is the positive axis, `-1`
+        /// where it is the negative one.
+        let outward: Double
+        /// True on a face and a wall, where the surface's second axis is height
+        /// rather than depth.
+        let alongIsRise: Bool
+
+        /// Design's `x` — across the surface, on every surface.
+        func across(_ offset: HomeOffset) -> Double { offset.x }
+        /// Design's second axis along the surface: the rise on a face, the depth
+        /// on a floor or a canopy.
+        func along(_ offset: HomeOffset) -> Double { alongIsRise ? offset.y : offset.z }
+        /// What is left runs **into** the material, which is how deep a mark goes
+        /// and never a height in the air.
+        func into(_ offset: HomeOffset) -> Double { (alongIsRise ? offset.z : offset.y) * outward }
+        /// One of Design's two figures for a surface: a depth on a floor or a
+        /// canopy, a rise on a face.
+        func along(design depth: Double, rise: Double) -> Double { alongIsRise ? rise : depth }
+    }
+
+    /// Which way is which, on one surface.
+    static func axes(of surface: RoomSurfaceKind) -> SurfaceAxes {
+        // `emberOffset` is the way out of the material in scene units; its sign
+        // on the axis that is not along the surface is all that is needed.
+        let offset = emberOffset(for: surface)
+        switch surface {
+        case .ground, .canopy:
+            return SurfaceAxes(outward: offset.y >= 0 ? 1 : -1, alongIsRise: false)
+        case .face, .wall:
+            return SurfaceAxes(outward: offset.z >= 0 ? 1 : -1, alongIsRise: true)
+        }
     }
 
     /// What one unit of Design's mount scale is worth on a surface.

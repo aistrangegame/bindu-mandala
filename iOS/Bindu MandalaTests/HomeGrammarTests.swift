@@ -420,7 +420,17 @@ final class HomeGrammarTests: XCTestCase {
                        accuracy: 1e-12,
                        "the eyes are read before the brow — Design's order, not a slip")
 
-        XCTAssertEqual(HomeGrammar.bodyZones.count, 11)
+        // Design's own eleven, and the seven Phase 3.4 appended for the words the
+        // shipped rows actually write — `head`, `solar`, `ears`, `tongue`,
+        // `nose`, `temples`, `sacrum`. They stand behind all eleven, so nothing
+        // that resolved before resolves anywhere else now, and the two
+        // assertions above prove the order is still Design's.
+        // `CrossingRoomTests.testTheZoneVocabularyReadsTheRowsTheAppShips` holds
+        // the appended seven.
+        XCTAssertEqual(HomeGrammar.bodyZones.prefix(11).map(\.altitude),
+                       [0.94, 0.66, 0.6, 0.68, 0.56, 0.46, 0.34, 0.26, 0.2, 0.1, 0.5],
+                       "Design's own eleven zones have been reordered or replaced")
+        XCTAssertEqual(HomeGrammar.bodyZones.count, 18)
         XCTAssertEqual(HomeGrammar.compiledBodyZones.count, HomeGrammar.bodyZones.count,
                        "every zone must compile: \(HomeGrammar.bodyZones.map(\.js))")
     }
