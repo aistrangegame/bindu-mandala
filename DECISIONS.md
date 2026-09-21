@@ -97,3 +97,23 @@ Closest adjacent pair in each ring, against a threshold of 0.100:
 
 **What did not move.** The other nine entries in the header's not-yet list stand, narrowed only where a layer that blocked them now exists: the geometric half of sister divergence, the premise reversing in the *room* rather than in its words, her world conditioning her room, the five legibility renders, "every one of the 102 resolves to a *built* room", the six canon checks, and the seven iconography checks. Every one of them is blocked on the renderer ruling, on Phase 3.3's geometry, or on the cards being Chat-side documents.
 
+
+## 2026-09-21 · Ring 2 would have collapsed into one motion, and Design never named why it doesn't
+
+The grammar layer found this while porting Design's 50-rule physics classifier, and it is the most valuable thing to come out of the Phase 3 foundation.
+
+Every Karṣiṇī's quality begins "she who attracts" — sixteen Śaktis, one verb. That phrase trips Design's `ākarṣaṇa` rule. But `ākarṣaṇa` sits at rule 12, **two behind the five elements**, so for every one of the sixteen it is her *tattva* that claims her first and decides her room, and the verb all sixteen share is only the fallback nobody reaches.
+
+Sort those rules into any tidier order and the whole of Ring 2 — Ashrey's home ring, the sixteen rooms Phase 3.4 builds first — collapses into a single identical motion. Design's ordering is load-bearing and its file never says so. There is now a test that asserts the full ordered list, so a future tidying fails the suite instead of the instrument.
+
+Two other orderings are pinned the same way: `source` is read nine rules before `icchā`, which is why kp 99 and kp 101 share a physics; and the body zones are first-match, so "between the eyes" reaches the *eyes* rule before the *third eye* one.
+
+**Also recorded, not papered over:** the six kañcukas, the Spanda words and Saṃskāra / Vṛtti / Guṇa have no classifier rule at all, so a Śakti whose tattva line carries only one of those falls through to `breathe`. It never fires on the sixteen real cards. The rooms layer adds rules for them once the live tattva lines are read, rather than inventing vocabulary now.
+
+## 2026-09-21 · Host saturation, and the discipline that replaces it
+
+The Phase 3 foundation ran three layers concurrently while the Garimā spike ran two more. Load average passed **600** on an 8-core machine with 13+ concurrent `xcodebuild` processes, `posix_spawn` began returning `EAGAIN`, and agents lost their shells entirely — one finished a clean build and then could not run `git commit`, so a whole layer sat uncommitted until the orchestrator recovered it by hand.
+
+This is the second time tonight that host contention, not code, cost real work. It reads as test failure ("Test crashed with signal kill before establishing connection", "Early unexpected exit") and is not.
+
+**The discipline from here, and it costs less speed than it looks:** at most two `xcodebuild` processes on this machine at once; every concurrent agent gets its own named `-derivedDataPath` and its own simulator; branches merge serially with one suite run each. The parallelism that pays is in *writing* — three logic layers written at once is free, because writing costs no simulator. Only the verifying has to queue.
