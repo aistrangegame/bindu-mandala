@@ -279,6 +279,7 @@ enum RoomMechanisms {
             // ``HomeGrammar/ringOneFamily(position:)`` from her position alone,
             // which is the only key the laws allow.
             case .siddhi: return SiddhiRoom(reading)
+            case .matrka: return MatrkaRoom(reading)
             default: return GrammarReversal(reading)
             }
         case .seat:

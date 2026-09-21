@@ -130,11 +130,21 @@ extension HomeBecoming {
             return HomeBecoming(premise: .face, answer: .ground, yields: 0.8, takes: 1.0)
 
         // RING 1 · MĀTṚKĀ — *"the letters were never separate from the voice"*.
-        // The letters stand around the room and then `m.scale.y = 1 + b * 3.4`
-        // draws them into one column in front of her; `column.material.opacity =
-        // … + b * 0.22` on a base of 0.18.
+        // The letters stand around the room and are drawn into one column in
+        // front of her; `column.material.opacity = … + b * 0.22` on a base of
+        // 0.18, and `column.scale.setScalar(1 + b * 1.1)`.
+        //
+        // **The growth is the column's and not the letters'**, and getting that
+        // wrong is what Phase 3.5 had to find with a picture. This case first
+        // carried Design's `m.scale.y = 1 + b * 3.4`, which is how far *the
+        // letters* stretch — the premise — read as how far *the column* takes the
+        // room over. Through ``RoomReversal/answeringFraction(takes:)`` that sent
+        // her working face three quarters of its clearance toward the eye, and
+        // all eight Mātṛkā rooms ended the stay as one flat grey field: the whole
+        // picture was her own working surface. The two numbers had been taken
+        // from opposite sides of the reversal.
         case .matrka:
-            return HomeBecoming(premise: .wall, answer: .face, yields: 0.22, takes: 3.4)
+            return HomeBecoming(premise: .wall, answer: .face, yields: 0.22, takes: 1.1)
 
         // RING 1 · MUDRĀ — *"the seal has opened its hand"*.
         // `held.scale.setScalar(… + b * 3.6)` and
