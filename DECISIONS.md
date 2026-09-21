@@ -420,3 +420,302 @@ A texture cannot morph, so the light is carried at the same three moments the sh
 Design is explicit that *"the second adaptation is never 'more of the same': in every room it REVERSES the room's own premise"*, and `homes-grammar.js` authors a different reversal for each archetype. What the spine carries is the reversal's **stage** — the mark widening and nearing, the key handing its work to the mark, the gradient turning toward her — and it is the same stage in all 102 rooms. `HomeGrammar.Reading.displacement(time:amplitude:)` takes no deep term, and `HomeLabel.deep` is computed for all 94 grammar rooms and consumed by nothing.
 
 **Not built here, and the reason is scope rather than disagreement.** Authoring nine archetype reversals in the surface vocabulary is a design act, not a review fix, and it belongs with the rooms: Phase 3.3 for the authored eight and 3.4–3.6 for the rings, through the `RoomSurfaceMechanism` door the spine already offers. What is fixed here is the overclaim — `RoomScene.swift`'s header now names what the spine does not yet carry, so the gap is a scheduled item rather than a property of the layer all 102 rooms are built on.
+
+## 2026-09-21 · Phase 3.2 · The nine worlds as one climb
+
+`Homes/Render/{WorldBands, WorldClimb, WorldClimbScene}.swift` and
+`Views/Rooms/WorldClimbView.swift` build Build Brief v2 §3.2 on the ruled renderer, with
+`WorldClimbTests` and `WorldClimbCaptureTests` judging them. Ruling 1 cut the nine worlds as
+nine screens in July and this is what replaces them: one continuous vertical space the walker
+rises through, where an āvaraṇa is a **weather** and a **clock** rather than a place with a door.
+
+The tables were already ported — `HomeWorlds` carries `RING_CHARACTER` and `WORLDS`, and
+`RoomUnits.worldFloorY(ring:)` already gave the climb real units. Nothing of either is restated.
+What is new is the thing Design's file does sixty times a second, and the space it does it in.
+
+### The nine clocks, and why they are not nine of the same number
+
+Design gives each band its own rate and the rates are the whole argument of the phase: the feet
+band runs a day, the pelvis a heartbeat, the navel a churn, the heart a lunar fortnight, the
+throat a month, the forehead a season, the crown a solar half-year, above-crown a year, and
+Totality kāla and akāla together. They are ported to the last decimal, and
+`testEveryClockRateIsDesignsOwn` reads `homes-worlds.js` **off disk** and asserts each rate's own
+expression is still in it — a table of numbers typed into a test proves only that somebody typed
+the same numbers twice.
+
+**They are not the same kind of number, and flattening them would have been a lie.** `0.05` at
+the Feet is cycles per second into a modulo; `0.0398` at the Heart is radians per second into a
+sine; `0.062` above the Crown is the angular velocity of a meridian; the ninth carries two at
+once. `WorldBandClock` keeps the kind beside the rate, and `phase(at:)` is what makes nine kinds
+comparable — how far round this band's own clock the world has come, whatever kind it is.
+
+**The tempo is applied in exactly one place and it is not this file.** Every reading is taken at
+`HomeWorlds.worldClock(_:ring:)`, which is the only door, and the felt period — the band's clock
+through its own mental state — is what the walker actually experiences:
+
+| ring | clock | period | × tempo | felt |
+|---|---|---|---|---|
+| 1 Feet | day–night `0.05` | 20 s | 1.00 | 20 s |
+| 2 Pelvis | the hour `1.05` | 1.9 s | 0.82 | 2.3 s |
+| 3 Navel | the day `1.00` | 6.3 s | 0.62 | 10 s |
+| 4 Heart | fortnight `0.0398` | 158 s | 0.72 | 219 s |
+| 5 Throat | month `0.0199` | 316 s | 0.66 | 478 s |
+| 6 Forehead | season `0.0066` | 952 s | 0.50 | 1904 s |
+| 7 Crown | half-year `0.0033` | 1904 s | 0.44 | 4328 s |
+| 8 Above crown | year `0.062` | 101 s | 0.36 | 281 s |
+| 9 Totality | kāla `0.008` · akāla `0.13` | 785 s | 0.28 | 2805 s |
+
+The sixth āvaraṇa comes round some eight hundred times slower than the second, and nothing
+anywhere says so. That is the phase.
+
+**One finding recorded rather than tuned away: the periods are not a monotone ramp.** A *year*
+above the Crown comes round in 101 seconds and a *fortnight* at the Heart takes 158, because the
+year there is one sweep of a single band of light and the fortnight is a swell that has to be
+waited out. The word names what the clock is a clock *of*, not how fast it runs.
+`testTheBandPeriodsAreNotAMonotoneRamp` asserts it out loud, so a future tidying into a
+descending ramp fails the suite instead of the instrument — the same guard `HomeWorlds.tempi`
+already carries for the third āvaraṇa running slower than the fourth.
+
+### The wall between the two clocks, asserted three ways
+
+A slow āvaraṇa handing the walker a cheaper second adaptation than a fast one would be depth
+bought by where he was standing rather than by how long he stayed. That is the never-measure law
+at the timing layer, and it is the one thing in this phase that could break the whole instrument
+quietly, so `testTheTempoNeverReachesAnAdaptationClock` closes it in three registers:
+
+- `HomeWorlds.adaptationClock` returns its argument unscaled in every ring, while `worldClock`
+  genuinely scales;
+- the **same stay is the same stay in all nine worlds** — one position, one clock, nine rings,
+  and `RoomPose`'s two adaptations are identical to the last bit at every mark;
+- the **source**. The climb's three files are read off disk and refused the whole vocabulary of a
+  stay — `chamberTime`, `firstAdaptation`, `secondAdaptationEnd`, `holdEnd`, `settling(`,
+  `deepProgress(`, `RoomClock`, `headStart`. There is nowhere in them for a tempo and an
+  adaptation to meet. And `tempo` appears in code in exactly two files in the whole shipping
+  tree, pinned by exact equality: `HomeWorlds.swift`, where it is defined and applied, and
+  `WorldBands.swift`, where a band's felt period is reported. A third has to be written down.
+
+### An open world with a vast floor, not nine rooms stacked — and a picture is what settled it
+
+The building is **one surface**: the ground of the world the walker is in. Design builds nine bands
+at nine heights and shows only the near one; the continuous form of "only the near one" is one
+ground whose *material* is the blend — a morph over the nine band materials, weighed by
+`WorldClimb.weights(atFraction:)`, which are the same numbers the fog, the veil and the light are
+blended over. Never more than two of the nine are non-zero, and the morph is **normalised**, so the
+first band is the base and carries whatever weight the eight targets leave. There is no seam to
+cross because there is no join, and the material cannot develop one the weather does not have.
+
+It is also the *second* shape this phase had, and the first one passed every check.
+
+**The climb was first built as a shaft** — a far wall and two sides, each running the whole nine
+bands as a single mesh with each band's condition worked into its own stretch of it. Every
+assertion in both suites passed: the nine clocks, the continuity of every quantity at two step
+sizes, the eye's 0.18 units per quarter-second against a 0.25 bound, ring 7's zero directional
+lights, and a luminance floor of 0.047–0.79 mean across all nine bands at both adaptations. Then
+`FIDELITY.md` §7 asked for a picture of the actual thing, and the first āvaraṇa — *"low light
+raking a vast floor, swinging horizon to horizon"* — was **a dark corridor with a few motes in
+it**. Sixteen units of unlit stone in every direction, the floor a sliver at the bottom of the
+frame, and the walker looking level at a wall.
+
+Three findings, and all three are one: **the Axis is an open space and the climb was a corridor.**
+
+1. **There was no ground.** A floor existed only at the very bottom of the climb, so from the
+   second band upward the walker rose through a shaft with nothing under him. Design gives five of
+   its nine bands a floor at that band's own `y`.
+2. **The bands were therefore unlit.** Everything in frame was sixteen units away and fogged, and
+   the stone is `ink` — the dhātu, taken nearly to black. A luminance floor cannot see this: a dark
+   room and a dark corridor read the same to it.
+3. **The shaft visibly ended.** The seventh āvaraṇa's luminous fog met the background in a hard
+   horizontal seam where the wall stopped — a cut, in the one phase whose whole rule is that there
+   are none.
+
+The walls are gone. What replaced them is Design's own structure and it costs three meshes: the
+climb is **two** — the ground, and the air. `RoomScene.mesh` and `RoomScene.morpher` build it, so
+the ground is made the way a room's floor is made, by the same code.
+
+**The ground is never placed.** The blended station is
+`station(lower)·(1−k) + station(upper)·k`, which is exactly `WorldClimb.height(atFraction:)` — the
+walker's own height on the climb. So the ground *is* the climb, and the eye stands its own
+eye-height above it in every āvaraṇa exactly as it stands in a room. That also means it is always
+underfoot, which is what a world with nothing under it was missing.
+
+**The key light was standing inside the world it was lighting.** A directional light's shadow
+frustum is built around its own position, and a body-height's stand-off put it among the ground it
+was meant to be raking, so surfaces past its near plane came back unlit. It now stands a whole
+room's width out along the direction it arrives from and looks at the ground the walker is on.
+
+**One thing the ground cannot cross-fade, and the fix is arithmetic rather than a compromise.** A
+band's own light sits in a *pattern* that is that band's — the Forehead's nine bodies are not the
+Crown's five veils — and a pattern cannot be blended the way a number can. So
+`WorldClimb.wholeness(atFraction:)` takes a band's light to **nothing** exactly where the walker is
+equally in two of them, which is the one height at which the map may be exchanged without anything
+being seen to change. It is `1` at every station and `0` at every midpoint, and it is continuous
+everywhere between. It also swaps on a *placement* — half a band in one call is thirty bands a
+second, which no hand can do, so it is a capture, a launch or reduce motion's quantized step, and
+in all three the whole frame changed anyway. Without that second limb a climb that **opened** at
+the sixth āvaraṇa wore the first's light, which is none, and its nine glowing bodies were simply
+missing. Nothing in the suite could see it; the picture of it was blank where the picture of the
+first band was not.
+
+### Three more things only looking could find, after the walls came down
+
+`FIDELITY.md` §7 earned its place four times in this phase, not once.
+
+- **The world was behind the walker.** With the ground centred on the origin, the eye at
+  eye-height sees only the far *fifth* of it — so eleven standing stones, nine bodies that glow and
+  twenty-four ribs were almost all under and behind him. The ground is now pushed out by half its
+  own width (`groundAhead = eyeZ − halfExtent`), so its near edge is exactly underfoot and the
+  whole of it is ahead. One number, and the first āvaraṇa went from a dark strip to a floor of
+  standing stones throwing long shadows.
+- **The eye was level, and level is the sky.** It now inclines toward the ground it is crossing —
+  and by nothing chosen: it is `RoomUnits.gaze`, the same `0.55` of the whole angle the eye
+  inclines toward her mark in a room, applied to the angle down to the far edge of the ground.
+- **The one travelling band had no light and no rake.** Above the Crown, Design's meridian is a bar
+  with a constant material and no fog — *itself* light — and its sweep stands at `y` while its
+  ground is at `y − 3.6`. The port read the elevation as almost nothing, so the one band of light
+  arrived exactly parallel to the ground it was supposed to be crossing, and the eighth āvaraṇa was
+  dark for the whole year. Both are Design's own numbers: the rake is `3.6` over a radius of `16`,
+  and the band's own glow is its halo, `24 + s·14` of its own `38`.
+
+And the light in the ground is **this world's** light rather than white: her lift, through
+`Atmosphere` and `HomeGem`, the same colour the key and the ambient already are. A band that glows
+from within was turning its own stone grey.
+
+Measured offscreen, all nine bands at both adaptations, after: mean luminance 0.033 (above the
+Crown, *"everything else waits in the dark"*) to 0.533 (the Crown's own luminous fog), with real
+spread in every one of them — never black, never blown out, never flat.
+
+**Design's own arithmetic is the blend, read as what it is.** `lerpColors(fogCols[i0], fogCols[i1], k)`
+is a tent on each band's station: `1` at the station, `0` a spacing away, and the sum over the nine
+is exactly `1` at every height, so a blend is a weighted mean and cannot dim at a boundary.
+`testTheBandsOverlapSoNothingIsEverEmpty` asserts the sum, and that two or three bands are always
+near — Design's `|worldY(ix) - climb| < WORLD_SPACING * 1.15`.
+
+**The crossing is asserted twice, because there are two ways to fake it.** At quarter-second
+resolution over the whole rise at Design's own rate, the eye moves less than a quarter of a scene
+unit between samples — the spike's own bound, from the check that caught the eye popping 1.5 units
+across a seam at t = 314. And in height rather than in time: every quantity the walker is given —
+the veil, the fog's colour and density, the key's strength, the ambient, the glow, the air's drift
+and the **stone's own relief** — is swept across all eight boundaries at two step sizes, and
+**halving the step must halve the largest change.** That is what continuity actually means; a
+generous absolute bound can be satisfied by a small cut, but a quantity with a step in it changes
+the same amount however finely it is sampled.
+
+### One light in the whole climb, and the seventh āvaraṇa has none
+
+The renderer ruling named its own revisit condition 2: *"the +6.5 MB does not stay flat with nine
+ring worlds resident; if nine lighting rigs and their maps live at once, re-measure before Phase
+3.2 ships."* It is answered **structurally rather than by measurement.** Design's file gives each
+band its own rig — nine keys, nine ambients, two shadow maps. There is one key in this climb and
+one shadow map, and where it stands, what colour it is and how hard it burns are the blend of the
+bands the walker is between. The memory is a constant, and the crossing is continuous by
+construction rather than by nine rigs being cross-faded.
+
+Ring 7 is then what it has always been: `keyNode.light` is set to **`nil`**, not dimmed, and with
+no directional light there is nothing to cast — Design's *"no shadow anywhere"* without a second
+setting to keep in step. It is read from `HomeGem.isSourceless` rather than from a ring number, so
+the fact lives in one place for the instrument. `testTheSeventhAvaranaHasNoDirectionalLightAnywhere`
+closes it in the band's reading, in the blended weather at its station, and in the scene graph
+(`activeKeys == 0` there, `== 1` at every other station) — and asserts that the absence **arrives
+by travel**: the light fades monotonically to nothing as the walker comes to the station and
+returns as he leaves. It is a place he passes through, not a switch that is thrown.
+
+### The bands are conditions in the stone, not a props cupboard
+
+Design's JavaScript builds each band out of objects — eleven standing stones, seventy-two ribs, an
+octahedral prism, nine glowing solids. Under the renderer ruling none of those may be a
+free-standing lit solid, and **none of them needs to be**, because Design's own comments say what
+each band is actually for and in every case it is the light and the air rather than the object:
+the Feet's stones are *"things that exist only to be raked — long shadows are the weather"*; the
+Heart is *"three spectra crawling over glossy ground"*, which is the caustic and not the
+octahedron; the Throat is *"light arrives only in shafts between ribs"*, which is the gap and not
+the cylinder; the Forehead is *"nothing is lit from outside"*, which is emission in the material.
+
+So a band's condition is worked into the ground's own stone with `RoomMaterial`'s five verbs, and
+**the vocabulary is not extended by a word**: the Feet's stones are swells, the Pelvis's seven
+travelling rings are rows of impressions, the Navel's churn is scattered cracks, the Heart is
+compactions only (a caustic needs a clean surface), the Throat's colonnade is stacked furrows, the
+Forehead's nine bodies are swells that *glow*, the Crown is all but flat, above the Crown there is
+one furrow and nothing else, and Totality is the yantra's own crossing lines. Design's counts are
+Design's counts; the cylindrical placements are not, because they do not survive being flattened
+onto a wall and no attempt is made to pretend otherwise.
+
+**The binding condition therefore holds on the axis too, and in a stronger form.** Design's third
+depth layer is her mechanism, and on the axis **there is no her** — so the climb has two layers,
+not three, and `testTheClimbHoldsNothingStandingInTheAir` asserts the whole scene holds exactly
+two meshes: the ground the walker stands on, and the air he stands in. Every band's stone is on
+`.wall`, which `RoomUnits` names as the one surface no attribute ever acts on (*"a wall is not
+where a body is felt"*) — so nothing on the axis can be mistaken for a Śakti's mark, even though
+what it is drawn on is a floor. And the glow goes through
+`RoomMaterial.emission(at:)`, so the Forehead's nine bodies light and the untouched stone between
+them does not: `testTheStonesLightCannotExistWithoutItsRelief` finds zero points emitting where
+nothing happened to the material.
+
+### The one band where Design's own two files disagree
+
+`bandForehead` places **no directional light at all** — only an ambient and nine point lights
+inside the bodies — while the gem table (handoff §4.1) gives ruby 0.55 diffusion and the ruling
+makes the Crown the *only* sourceless āvaraṇa. Ring 6 keeps a key, at the floor of what a key can
+be (`WorldBands.keyFloor`, named rather than written inline so a second band cannot quietly
+acquire a nearly-absent key and pass for sourceless), and the glow carries the band. The reason is
+Design's own verification pass: a surface with no raking light on it reads as one flat plane,
+which is the defect it hit with Ring 1's Mātṛkās. The Crown's absence stays `nil`, and nothing in
+the file can produce a `nil` key for any other ring.
+
+### Rising
+
+Design moves the walker two ways and both are ported. The settle — `climb += (target - climb) *
+0.06` — is the same per-frame lerp `RoomApproach` already turned into the exponential it is, so it
+is **reused rather than rewritten**: the derivation `tau = -1/(fps·ln(1-r))` lives in one file and
+the climb contributes only Design's rates. The rise — `target += dt * 3.4`, against Design's own
+`SPACING = 30`, so `3.4/30` bands per second — is a steady stretch over the distance left. Both
+are closed forms, so the walker's height is assertable at any instant with no renderer and a
+dropped frame cannot change where he ends up.
+
+The unit is **bands**, not scene units. Design's spacing is 30 three.js units and ours is one
+body-height, because `RoomUnits` builds the room as a body and the climb is that body nine times
+over; every one of Design's climb numbers is therefore ported as a proportion of the spacing,
+which is the unit-free fact.
+
+**Reduced motion is quantized, and no band is skipped.** He steps to the next station and stands
+there — genuinely stands, at any instant, forever — which is the same reading the render spine
+took for the room and the rite took for the crossing. Design's own reduced rate (`0.035`) is
+ported and then deliberately not used to animate; it is kept as the evidence that the departure
+was taken knowingly. `WorldClimbDriver.standsApplied` is the proof as a number: it reaches one and
+stays there however long the view is on screen, while the animated path passes ten in a second and
+a half.
+
+### No rail, and the name is not a measure
+
+Design's Axis puts nine ticks down the right edge with the current one lit and the ones already
+met dimmed. **It is not built.** Phase 3.1 already ruled its twin when it dropped the rite's three
+beat pips — *"a lit dot, two dim ones, and a counter is exactly what the brief names in the same
+breath as a visit number"* — and nine ticks with the met ones dimmed is that same readout over a
+whole instrument, and the one place on the climb that would tell the walker something was keeping
+track of him. What replaces it is what it was describing, and it is the entire point of the phase:
+**he knows where he is because the weather tells him.**
+
+The āvaraṇa's name is drawn, and that is a different thing: `Trailokyamohana` names an enclosure
+the way a room's label names a room, carries no count, and says nothing about the walking. It is
+read off the base where the base has been reached (law 1) and falls back to Design's table where it
+has not, and it is clearest at a station and faintest between two, so it reads as the air changing
+rather than as a header standing over the world. Its floor is FIDELITY §4's legibility floor and
+it never goes below it.
+
+### One edit to a file this phase did not own
+
+`RoomLightRig.applyFog` had the fog's distance band written inline. It is extracted as
+`RoomLightRig.fogBand(density:)` and `applyFog` now calls it, so the climb reads the same law
+rather than a second copy: the āvaraṇa's air is one thing whether the walker is standing in her
+room or rising past it, and a second copy would drift the day somebody retunes one of them. No
+number changed.
+
+### What is deliberately not built
+
+**Sound.** Design's Axis grounds its voice on the climb (`HomeSound.root(forRing:)`), and the
+carrier belongs to Phase 3.9, where it goes live in every room. Wiring a second audio path here
+would be the kind of thing that is easiest to get subtly wrong (handoff §7 puts sound last, for
+exactly that reason).
+
+**Navigation.** The climb is not yet reachable from a screen, for the same reason the rite is not:
+the Homes layer is being built from the bottom and the building becomes walkable at §3.7, the
+corridor. Nothing in the app changed.

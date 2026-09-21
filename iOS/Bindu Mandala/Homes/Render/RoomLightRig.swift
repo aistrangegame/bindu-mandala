@@ -211,15 +211,28 @@ struct RoomLightRig {
     /// is read as *how early the air closes*: the ninth world's veil brings the
     /// far wall almost to the walker, and the first world's leaves it in view.
     func applyFog(to scene: SCNScene) {
-        let density = world.veiledFogDensity
         scene.fogColor = Self.colour(fogHSL)
-        // Design's densities run 0.009 → 0.034 before the veil. Normalised
-        // against that band so the fog is a proportion of the room rather than
-        // a three.js exponential nobody can read.
-        let closed = min(1, max(0, (density - Self.thinnestFog) / (Self.thickestFog - Self.thinnestFog)))
-        scene.fogStartDistance = CGFloat(RoomUnits.roomHeight * (1.6 - 0.9 * closed))
-        scene.fogEndDistance = CGFloat(RoomUnits.extent * (1.0 - 0.55 * closed))
+        let band = Self.fogBand(density: world.veiledFogDensity)
+        scene.fogStartDistance = CGFloat(band.start)
+        scene.fogEndDistance = CGFloat(band.end)
         scene.fogDensityExponent = 2
+    }
+
+    /// Where the air begins to close and where it has closed completely, for a
+    /// density.
+    ///
+    /// Design's densities run 0.009 → 0.034 before the veil. Normalised against
+    /// that band so the fog is a proportion of the room rather than a three.js
+    /// exponential nobody can read.
+    ///
+    /// Extracted so the climb reads the same law rather than a second copy of
+    /// it: the āvaraṇa's air is one thing whether the walker is standing in her
+    /// room or rising past it, and a second copy would drift the day somebody
+    /// retunes one of them (``WorldClimbScene``).
+    static func fogBand(density: Double) -> (start: Double, end: Double) {
+        let closed = min(1, max(0, (density - thinnestFog) / (thickestFog - thinnestFog)))
+        return (RoomUnits.roomHeight * (1.6 - 0.9 * closed),
+                RoomUnits.extent * (1.0 - 0.55 * closed))
     }
 
     /// The thinnest and thickest fog Design authored, read off the table rather
