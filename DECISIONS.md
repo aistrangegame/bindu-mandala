@@ -1001,3 +1001,107 @@ rooms. What makes the room hers is that her attribute acts in it at her own coor
 material this mechanism moved, and that the premise is hers by authorship. Position is identity and
 only khaḍgamālā 3 resolves here, so there is no second row whose frames could be compared. The file
 now says all of this out loud, which is what was actually missing.
+
+---
+
+## 2026-09-21 · Phase 3.4 · Ring 2 — the sixteen crossings (charter §4, "every ring's rooms")
+
+Design's `crossed(world, card, G, syllable, cross)`, built on the Phase 3.1 spine as
+`Homes/Render/CrossingRoom.swift` and reached through `RoomMechanisms.forRoom` by the archetype the
+resolution order already read from her ring and her position. Seven marks a side; the far half runs
+at Design's `t + 3.2` and `ph + 0.5` and converges onto the near half as the stay deepens. Ring 2 is
+the one ring whose rows ship in the binary and sync from the base, so every number below was tuned
+and measured against her real quality, tattva, bodily location and bīja.
+
+### The ordering finding, confirmed on the shipped sixteen
+
+Every Karṣiṇī's quality says *"she who attracts"*, and the classifier's twelfth rule is
+`ākarṣaṇa|karṣaṇa|magnet|attract` → `draw`, two rules behind the five elements. So **her tattva is
+what claims her**: Fire takes 29, 34 and 41; Air 30 and 33; Space 31, 32 and 40; Water 35 and 39;
+Earth 36, 38 and 44 — and only Cittā, Ātmā and Amṛtā, whose tattvas the classifier has no element
+for, are left holding the ring's own drawing. That is the truthful answer for Consciousness, the
+Self and the Deathless, and nothing overrides the classifier to make the ring look more various than
+the base says it is. Recorded as a test so a re-sort of the fifty rules shows up here too.
+
+### Four calls
+
+**Design's growth is spent on the room, not on the mark.** `s.scale.setScalar(1.4 * (1 + b * (isKey
+? 2.6 : 1.2)))` is a scale on a glow sprite, and Design's sentence for it is *"the organ she was
+given grows until it is the room around him"*. Spent literally it ends the stay a quarter of the
+surface across **with its own light on all of it**, and seven of those converging came back as a
+pale structureless mass across the middle of the frame with every ring she had pressed lost inside
+it — `PressRoom`'s own finding (*"a lit area erases relief rather than revealing it"*) a second time,
+and Design's first Laghimā defect a third. The growth is therefore carried by the **enclosure**,
+through `becoming.takes`, which is `RoomReversal`'s own rule that a wall answers by moving rather
+than by being marked; the key pairing's enclosure goes furthest of the sixteen, which is Design's
+`isKey`. What is left for the mark is the instrument's saturating fraction of the same number — half
+again as wide by the end of the stay, and still a mark.
+
+**The near half is drawn and the far half is lit.** Design says which is which in the materials
+rather than in a comment: the near half is seven tori with a tube radius of 0.028 on a
+`MeshBasicMaterial`, the far half is seven glow sprites. A tube of 0.028 in a petal of 11 is a line,
+and a line lights nothing. So the near half is a shape pressed into her wall and read by the room's
+own key raking across it — `PressRoom`'s bedding idiom — and the light in the room is the far half
+arriving. It also makes the reversal legible *in light*: what she drew is dark and formed, what she
+was given is the only thing burning, and by the end it is burning exactly where the drawing is. Each
+mark takes `1/√7` of the light, the same root `RoomInscription` shares one mark's worth of material
+among a rosary's beads by.
+
+**Design's lengths are read against the body, not against the surface.** A Karṣiṇī's working surface
+is her own face, one body square, and the floor and the ceiling are four bodies across. Read as
+fractions of *the surface*, the same arc came out four times smaller on a ceiling than on a face —
+and on a face every ring she pressed was **shallower than the stone's own grain**, which is a mark
+nobody can see in a room whose only content is marks. Looking at it was conclusive: seven rings,
+buried. Lengths are now Design's own against her thirteen-tall room, carried into this one's
+`roomHeight`, and a check holds every room's deepest mark above `grainRelief` and at or under
+`RoomInscription.markDepth` — the room is not a quarry, and fourteen marks do not get fourteen
+answers to how deep anything may go.
+
+**The depth is normalised against the kernel's widest term, not against the amplitude.** The
+displacement kernel multiplies its amplitude by as much as 2.2 (`widen`), so normalising by the
+amplitude alone rails the fast axes at ±1 for most of every turn — and a railed mark has stopped
+carrying her phase. Measured, it cost Cittā and Ātmā: both drawing, both felt on a working face,
+their halves pinned to the same two depths for most of the stay and their rooms **4.3% apart** on the
+geometric fingerprint, well under Design's tenth. Against 2.2 nothing rails. A test walks all
+fifty-one kinds and fails if one ever reaches further.
+
+### Two things the ring needed that the layers below it did not have
+
+**The body-zone vocabulary did not reach the words the base writes.** Design's eleven zones were
+written against Design's own card strings — *"Forehead, eyes"*, *"Solar plexus, shoulders"* — and
+`Shakti.bodilyLocation` on the sixteen that actually ship says `head`, `solar`, `ears`, `skin`,
+`tongue`, `nose`, `temples`, `sacrum`. **Eleven of the sixteen fell to the middle of the body**: her
+mark at the same height and the eye inclined the same way in eleven of the home ring's rooms, with
+one of the four channels that make a room hers carrying nothing. Seven zones are **appended** —
+never interleaved, so nothing that resolved before resolves anywhere else now, and `forehead` still
+reaches the brow before it reaches `head` — each interpolated between altitudes Design already
+fixed. `skin` is deliberately left out: Sparśā is felt wherever skin meets world, and a location
+that is everywhere resolves to the middle, which is the answer the fall-through already gives.
+
+**Fifteen of the sixteen said the same sentence at the one moment the room turns over.** The crossed
+tag was `pos == 44 ? "body and mind were one point" : "the drawing and the drawn are one"`. Design
+composes the other fifteen from a `CROSSED` table of its own — `34: ['form','ear']` and so on — and
+that table **cannot be ported**: it is keyed to Design's card tattvas, and the base's are different
+ones. Design's card gives Rūpā the ear; the row the app syncs gives her fire. A bundled copy would be
+the ghost roster law 1 exists to prevent, and a wrong one. So the crossing is read off her own row —
+the faculty out of her quality, the thing she is given out of her tattva — and each of the sixteen
+says her own reversal. Design's shape without its last word: Design's crossings are a faculty and a
+sense organ, so *"were one sense"* is true of every one of them; the base's are a faculty and an
+element, and calling earth a sense would be the sentence saying something the row does not. Where the
+row genuinely carries no crossing — Cittā draws consciousness and is given Pure Consciousness, which
+is one word twice — the ring's own sentence is kept rather than one that says the same thing twice.
+
+### The fingerprint, widened for a ring
+
+`GateRoomTests`'s port reads five probes down the middle of the floor and the ceiling. Fifteen of
+the sixteen act on a **working face**, whose material is read across as well as away; two surfaces
+nothing happened to are two blocks of identical zeroes that dilute every real difference toward the
+threshold; and on a face her altitude reaches neither the station nor the material, because the face
+*is* her altitude — so a print that could not see the frame would be blind to one of the four
+channels. The ring's print therefore reads a five-by-five grid on the surface her body puts her on,
+**every action on it in order** (verb, place, reach, depth, glow — which is exactly what Design's
+`fingerprint(chamber, t)` writes for each object, in the vocabulary that replaced objects), and where
+her mark stands in the room. All **120 pairs** clear Design's tenth; the closest is Gandhā ↔ Śarīrā
+at **0.300**, two Earth rooms a body's middle apart. A second check refuses the print itself if more
+than half its components read the same in all sixteen rooms, so the measure cannot be passed by
+dilution.

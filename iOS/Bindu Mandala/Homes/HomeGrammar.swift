@@ -382,6 +382,58 @@ enum HomeGrammar {
                  pattern: #"crown|above"#, altitude: 0.1),
         BodyZone(js: #"/spine|whole body|whole field|cellular|totality|converge/i"#,
                  pattern: #"spine|whole body|whole field|cellular|totality|converge"#, altitude: 0.5),
+
+        // ── the words the shipped rows actually speak ───────────────────────
+        //
+        // **Appended, never interleaved.** Design's eleven are its own reading
+        // and are untouched; every one of these stands behind all eleven, so no
+        // location that resolved before resolves anywhere else now. "Forehead"
+        // still reaches the brow before it reaches `head`, and "above the head"
+        // still reaches the crown.
+        //
+        // They are here because Design's `ZONES` were written against Design's
+        // own card vocabulary — *"Forehead, eyes"*, *"Solar plexus, shoulders"*,
+        // *"Bridge of the nose"* — and the base does not write its rows that way.
+        // `Shakti.bodilyLocation` on the sixteen that actually ship says `head`,
+        // `solar`, `ears`, `skin`, `tongue`, `nose`, `temples`, `sacrum`. Against
+        // Design's eleven, **eleven of the sixteen Karṣiṇīs fell to the middle of
+        // the body** — which is to say her mark sat at exactly the same height in
+        // eleven of the home ring's rooms, and the eye inclined the same way in
+        // all of them. Altitude is one of the five channels that make a room hers
+        // (handoff §4.3) and it was carrying nothing across most of Ring 2.
+        //
+        // Each altitude is interpolated between zones Design already fixed rather
+        // than invented: the crown at 0.10, the brow at 0.20, the eyes at 0.26,
+        // the mouth at 0.34, the chest at 0.46, the solar plexus at 0.60, the
+        // waist at 0.68 and the soles at 0.94.
+        //
+        // `skin` is deliberately **not** here. Sparśā is felt wherever skin meets
+        // world — palms, lips, soles — and a location that is everywhere resolves
+        // to the middle. That is the honest reading, and it is the one the
+        // fall-through already gives, so a rule saying it again would only make
+        // the table longer.
+        //
+        // The world regions' two gaps are also untouched: nothing here matches
+        // `Pelvis`, and `Above crown` still reaches `crown|above` first.
+        // `testTheWorldRegionVocabularyHasTwoGaps` holds both.
+
+        /// The base writes the solar plexus with its first word only.
+        BodyZone(js: #"/solar/i"#, pattern: #"solar"#, altitude: 0.6),
+        /// The head as a whole, which is neither the crown nor the face: the
+        /// midpoint of Design's crown (0.10) and mouth (0.34).
+        BodyZone(js: #"/\bhead\b/i"#, pattern: #"\bhead\b"#, altitude: 0.22),
+        /// The temple sits at the outer brow, between Design's brow and eyes.
+        BodyZone(js: #"/temple/i"#, pattern: #"temple"#, altitude: 0.23),
+        /// The bridge of the nose, just under the eyes.
+        BodyZone(js: #"/\bnose\b|nostril/i"#, pattern: #"\bnose\b|nostril"#, altitude: 0.28),
+        /// The ear canal, between the eyes and the mouth.
+        BodyZone(js: #"/\bears?\b|skull/i"#, pattern: #"\bears?\b|skull"#, altitude: 0.3),
+        /// The tongue is in the mouth, and takes the mouth's own height rather
+        /// than a new one.
+        BodyZone(js: #"/tongue/i"#, pattern: #"tongue"#, altitude: 0.34),
+        /// The base of the spine, above the pelvic floor: between Design's waist
+        /// (0.68) and the mūlādhāra (0.94).
+        BodyZone(js: #"/sacrum|sacral/i"#, pattern: #"sacrum|sacral"#, altitude: 0.8),
     ]
 
     static let compiledBodyZones: [(zone: BodyZone, regex: NSRegularExpression)] =
@@ -522,7 +574,9 @@ enum HomeGrammar {
     /// carry none, and the tag then falls back to Design's own words.
     static func tag(for archetype: HomeArchetype,
                     position pos: Int,
-                    bija: String? = nil) -> (near: String, deep: String) {
+                    bija: String? = nil,
+                    quality: String = "",
+                    tattva: String = "") -> (near: String, deep: String) {
         switch archetype {
         case .siddhi:
             return ("lent, not shown", "the capacity was never lent")
@@ -534,9 +588,30 @@ enum HomeGrammar {
         case .crossed:
             // The key pairing, marked as such in the base: at kp 44 the body
             // and the mind are the crossing, so her reversal names them.
-            return ("drawn toward the centre",
-                    pos == 44 ? "body and mind were one point"
-                              : "the drawing and the drawn are one")
+            //
+            // Everywhere else in the ring the reversal is **read off her own
+            // row**: the faculty she draws out of her quality, the thing she is
+            // given out of her tattva. Design writes the same sentence from a
+            // `CROSSED` table of its own — `34: ['form','ear']`, and so on — and
+            // that table cannot be ported, because it is keyed to Design's card
+            // tattvas and the base's are different ones. A bundled copy of it
+            // would be the ghost roster law 1 exists to prevent, and it would be
+            // a *wrong* ghost: Design's card gives Rūpā the ear, and the row the
+            // app actually syncs gives her fire.
+            //
+            // Without this, fifteen of the sixteen say the same thing at the one
+            // moment the room turns over — which is the home ring reversing into
+            // one sentence, whoever the walker came to see.
+            if pos == crossingKeyPosition { return (crossingNear, "body and mind were one point") }
+            guard let crossed = crossing(quality: quality, tattva: tattva) else {
+                return (crossingNear, "the drawing and the drawn are one")
+            }
+            // Design's own shape — `the ${near} and the ${far} were one sense` —
+            // without its last word. Design's crossings are a faculty and a sense
+            // organ, so "sense" is true of every one of them; the base's are a
+            // faculty and an element, and calling earth a sense would be the
+            // sentence saying something the row does not.
+            return (crossingNear, "the \(crossed.faculty) and the \(crossed.organ) were one")
         case .bodiless:
             return ("and nothing there to feel", "the effect was the only body")
         case .cosmic:
@@ -562,6 +637,63 @@ enum HomeGrammar {
         }
     }
 
+    // MARK: · RING 2 · the crossing, read off her row
+
+    /// Design's key pairing, by position and never by name.
+    static let crossingKeyPosition = 44
+
+    /// The near words every Karṣiṇī shares. Design's own
+    /// `${low(card.quality)} · drawn toward the centre`, whose first half the
+    /// composition in ``label(archetype:position:quality:bija:tattva:)`` supplies.
+    static let crossingNear = "drawn toward the centre"
+
+    /// **The faculty she draws, and the thing she is given.**
+    ///
+    /// Two live fields and no table. `nil` where the row cannot say it — a blank
+    /// tattva, or a pairing that is not a crossing because the two words are the
+    /// same word. Cittā is the real case of the second: her quality draws
+    /// consciousness and her tattva gives Pure Consciousness, so there is nothing
+    /// crossed about her and she keeps the ring's own sentence instead of a
+    /// sentence that says one thing twice.
+    static func crossing(quality: String, tattva: String) -> (faculty: String, organ: String)? {
+        let faculty = drawnFaculty(from: quality)
+        let organ = givenTattva(from: tattva)
+        guard !faculty.isEmpty, !organ.isEmpty else { return nil }
+        guard !faculty.contains(organ), !organ.contains(faculty) else { return nil }
+        return (faculty, organ)
+    }
+
+    /// What her quality says she draws. The base writes the sixteen as *"She who
+    /// attracts Touch"*; what is left once the drawing is taken out of it is the
+    /// faculty. A quality written any other way is returned whole, because a
+    /// quality is already her own word.
+    static func drawnFaculty(from quality: String) -> String {
+        var text = quality.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        for opening in ["she who attracts ", "she who draws ", "she who attracts", "she who draws"]
+        where text.hasPrefix(opening) {
+            text = String(text.dropFirst(opening.count))
+            break
+        }
+        if text.hasPrefix("the ") { text = String(text.dropFirst(4)) }
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// What her tattva gives her, in its own first word.
+    ///
+    /// The base writes *"Earth (Pṛthivī)"* and Design's cards write *"Pṛthivī —
+    /// earth"*; either way the head of the line is the tattva's own name and
+    /// everything after the bracket or the dash is its gloss. A tattva that
+    /// carries a whole sentence — the base does that at Ātmā and Amṛtā — is cut
+    /// at its first stop for the same reason.
+    static func givenTattva(from tattva: String) -> String {
+        let head = tattva.lowercased().prefix { character in
+            !"(—–-.,;:/".contains(character)
+        }
+        var text = head.trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.hasPrefix("the ") { text = String(text.dropFirst(4)) }
+        return text
+    }
+
     /// SOURCING is the one archetype whose near words are not prefixed by her
     /// quality. Design wrote the three corners as whole sentences — "will,
     /// before there is anything to will" — and a quality in front of them says
@@ -581,8 +713,9 @@ enum HomeGrammar {
     static func label(archetype: HomeArchetype,
                       position pos: Int,
                       quality: String,
-                      bija: String? = nil) -> HomeLabel {
-        let t = tag(for: archetype, position: pos, bija: bija)
+                      bija: String? = nil,
+                      tattva: String = "") -> HomeLabel {
+        let t = tag(for: archetype, position: pos, bija: bija, quality: quality, tattva: tattva)
         guard prefixesQuality(archetype) else {
             return HomeLabel(near: t.near, deep: t.deep)
         }
@@ -660,7 +793,8 @@ enum HomeGrammar {
             soundingMode: archetype == .sounding ? soundingMode(position: pos) : nil,
             matrkaLetterCount: archetype == .matrka ? matrkaLetterCount(position: pos) : nil,
             sourcingCorner: archetype == .sourcing ? sourcingCorner(position: pos) : nil,
-            label: label(archetype: archetype, position: pos, quality: quality, bija: bija)
+            label: label(archetype: archetype, position: pos, quality: quality,
+                         bija: bija, tattva: tattva)
         )
     }
 }

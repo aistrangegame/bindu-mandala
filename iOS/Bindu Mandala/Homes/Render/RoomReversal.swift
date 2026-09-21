@@ -241,6 +241,16 @@ enum RoomMechanisms {
             // not cost the other six the turn they already had.
             return archetypeReversal(ring: room.ring, position: room.position)
         case .grammar(let reading):
+            // Ring 2 is built. Her archetype is the crossing and ``CrossingRoom``
+            // is Design's own `crossed(…)`, so the sixteen get the room rather
+            // than the bare turn their archetype would otherwise hand them.
+            //
+            // Keyed off the archetype the resolution already read, which is
+            // decided by ring and position and by nothing else — there is no
+            // second resolution order here and no name is consulted.
+            // `testEveryKarsiniReachesTheCrossingByPosition` asserts all sixteen
+            // arrive, by position, and that nobody else does.
+            if reading.archetype == .crossed { return CrossingRoom(reading) }
             return GrammarReversal(reading)
         case .seat:
             return nil
