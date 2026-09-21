@@ -304,9 +304,22 @@ enum WorldClimb {
             // the walker reaches the seventh āvaraṇa's own station. The fade is
             // in the weight, which is continuous — the absence is not a cut.
             guard let direction = reading.key else { continue }
-            let share = reading.keyStrength * entry.weight
-            keySum += direction * share
-            keyStrength += share
+            // **Where the light comes from is blended by how near the band is,
+            // and by nothing else.** How *much* light it gives is the separate
+            // sum below, and the two must not be multiplied together: a band's
+            // strength is a function of its own clock, and the Pelvis's beats.
+            //
+            // Weighted by strength, the one shadow-casting key on the axis
+            // swung tens of degrees of arc every 2.3 seconds anywhere between
+            // the Feet and the Pelvis — the systole dragging the direction
+            // overhead and letting it fall back — so the Feet's eleven standing
+            // swells, the things Design says *"exist only to be raked"*, strobed
+            // from long-raked to flat and back with every heartbeat. Blended by
+            // weight, the direction is a path between the two bands' own
+            // directions: it moves only when the walker does, and it says where
+            // he is, which is the whole premise of the climb.
+            keySum += direction * entry.weight
+            keyStrength += reading.keyStrength * entry.weight
         }
 
         return WorldWeather(

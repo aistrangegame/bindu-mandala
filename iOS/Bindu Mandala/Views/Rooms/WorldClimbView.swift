@@ -237,6 +237,24 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
     /// keeps for a room.
     private(set) var standsApplied = 0
 
+    /// The instant the climb opened, and the only reference-date number in this
+    /// file that reaches the scene.
+    ///
+    /// The climb is the one place in the Homes layer that had no clock of its
+    /// own: a room has ``RoomClock``, whose `elapsed` is seconds since the stay
+    /// began, and the axis was handing the scene raw reference-date time
+    /// instead. That is roughly 8.1 × 10⁸ today, and the air is driven through a
+    /// shader `float` whose ulp at that magnitude is **sixty-four seconds** — so
+    /// the motes held one offset for a minute and then jumped, which is the
+    /// āvaraṇa's dust standing perfectly still all over again, one phase later.
+    /// Design's own axis never has this shape: its `t` starts at zero and
+    /// accumulates `dt`.
+    ///
+    /// The travel keeps absolute time — ``RoomApproach`` is anchored to the
+    /// instant the drag or the rise began — so only the world's own seconds are
+    /// counted from here.
+    private let epoch = Date().timeIntervalSinceReferenceDate
+
     init(climb: WorldClimbSource, reduceMotion: Bool) {
         self.climb = climb
         self.reduceMotion = reduceMotion
@@ -273,7 +291,7 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
 
     func stand() {
         let now = Date().timeIntervalSinceReferenceDate
-        scene.stand(atFraction: climb.value(at: now), at: now)
+        scene.stand(atFraction: climb.value(at: now), at: now - epoch)
         standsApplied += 1
     }
 

@@ -192,6 +192,53 @@ final class WorldClimbCaptureTests: XCTestCase {
                              """)
     }
 
+    /// **The air of the climb actually moves, on the path the view drives.**
+    ///
+    /// The one check no capture can stand in for, and the reason it exists is a
+    /// defect that was live on this branch: the driver handed the scene
+    /// `Date().timeIntervalSinceReferenceDate` — about 8.1 × 10⁸ — and the motes
+    /// are driven by a shader `float`, whose ulp at that magnitude is **sixty-four
+    /// seconds**. The number reaching the geometry modifier took two distinct
+    /// values in a minute, so every mote in all nine bands held a fixed offset and
+    /// then teleported, and `uDrift` — the churn of the Navel, which Design gives
+    /// the highest drift in the climb — multiplied into a constant and did
+    /// nothing. Every capture passed, because a capture is handed small numbers.
+    ///
+    /// So it is asserted after the narrowing, on a driven view, twice over: the
+    /// value moves between frames, and the clock still has the resolution to
+    /// register a frame at all.
+    func testTheClimbsAirIsNotFrozenByTheClockItIsHanded() {
+        let window = host(reduceMotion: false)
+        defer { teardown(window) }
+        guard let view = sceneView(in: window),
+              let driver = view.delegate as? WorldClimbDriver else {
+            return XCTFail("the climb's SCNView never came up")
+        }
+
+        let air = driver.scene.motesTime
+        let deadline = Date().addingTimeInterval(4)
+        while driver.scene.motesTime == air && Date() < deadline { pump(seconds: 0.05) }
+        XCTAssertNotEqual(driver.scene.motesTime, air,
+                          """
+                          the air of the climb did not move in four seconds of a running view. \
+                          `uTime` reached the shader as \(air) and stayed there, which is the \
+                          āvaraṇa's dust standing perfectly still — the defect FIDELITY §7 exists \
+                          for, on the one screen no still could show it on.
+                          """)
+
+        // And it is not merely moving *now*: a clock handed absolute time reads
+        // as moving for its first few seconds and freezes once the magnitude
+        // climbs. The frame after this one has to be a different number.
+        let clock = driver.scene.breathedAt
+        XCTAssertNotEqual(Float(clock + 1.0 / 60), Float(clock),
+                          """
+                          the climb's clock stands at \(clock), where a Float cannot resolve a frame: \
+                          one sixtieth of a second later it is the same number. The scene must be \
+                          handed seconds since the climb opened, the way a room is handed \
+                          `RoomClock.elapsed`.
+                          """)
+    }
+
     // MARK: - Hosting
 
     /// A real window on a real scene, and retained.

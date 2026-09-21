@@ -250,6 +250,63 @@ final class GateRoomTests: XCTestCase {
         XCTAssertTrue(mechanism.becoming.isAReversal)
     }
 
+    /// **What her press grows into is depth, not lit floor.**
+    ///
+    /// Design grows the press — `press.scale.setScalar(1 + b * 1.8)` — on a
+    /// cylinder standing seven units away on a floor forty-six wide. Carried over
+    /// as a growth of the *emissive* reach, it read very differently: her mark
+    /// also rides her mount toward the walker, so past the second adaptation the
+    /// lit disc was 2.8 times its resting footprint and lying directly under the
+    /// eye. Measured on the render, the near half of the frame went from a mean
+    /// luminance of 0.081 to 0.343 while the structure in it did not change, so
+    /// what the walker had was a pale wash with every bed she had made lost
+    /// inside it — the exact failure the file above it says it avoided, one step
+    /// further in. Emission is additive and is not shaded by the surface normal:
+    /// a lit *area* erases relief instead of revealing it.
+    ///
+    /// So the check is on the area, in the room's own material, where it can be
+    /// stated exactly rather than inferred from a mean: **the floor her press
+    /// lights does not spread as the stay deepens.** What grows is the crater
+    /// around it, which is relief and is therefore shaded.
+    func testGarimasPressLightsNoMoreOfTheFloorAsItDeepens() throws {
+        let room = garima()
+        let mechanism = try XCTUnwrap(RoomMechanisms.forRoom(room))
+
+        /// How much of the ground the room's own actions light, on a grid.
+        func litArea(at t: TimeInterval) -> Double {
+            let placement = RoomUnits.placement(bodyAltitude: room.bodyAltitude, chamberTime: t)
+            var ground = RoomMaterial(surface: .ground, seed: room.position)
+            let stage = RoomStage(placement: placement,
+                                  settling: HomeGrammar.settling(chamberTime: t),
+                                  deep: HomeGrammar.deepProgress(chamberTime: t),
+                                  materials: [.ground: ground])
+            ground.receive(mechanism.actions(at: t, stage: stage)[.ground] ?? [])
+            var lit = 0.0, total = 0.0
+            for i in 0...120 {
+                for j in 0...120 {
+                    let point = SurfaceCoordinate(u: Double(i) / 120, v: Double(j) / 120)
+                    total += 1
+                    if ground.emission(at: point) > 0.02 { lit += 1 }
+                }
+            }
+            return lit / total
+        }
+
+        let first = litArea(at: Self.firstAdaptation)
+        let deep = litArea(at: Self.pastTheSecond)
+        print(String(format: "GATE_PRESS_LIGHT {\"litAtFirst\":%.4f,\"litPastSecond\":%.4f}", first, deep))
+        XCTAssertGreaterThan(first, 0, "her press is not lighting anything at all")
+        XCTAssertLessThanOrEqual(deep, first * 1.1,
+                                 """
+                                 her press lights \(deep) of the floor past the second adaptation \
+                                 against \(first) at the first. The mark comes toward the eye as it \
+                                 deepens, so a lit area that also grows arrives as a wash across the \
+                                 near half of the frame — Design's own reading of this room is \
+                                 "a real shadow band and the press glowing", which is a press glowing \
+                                 in a dark room, not a lit floor.
+                                 """)
+    }
+
     /// **Her mark sits low in the frame, because her bodily location is the soles.**
     ///
     /// Design's zone table reads *"Mūlādhāra / sit-bones / soles"* at 0.94, the
@@ -313,6 +370,26 @@ final class GateRoomTests: XCTestCase {
                              exact room: the walls departing left an empty room and it went dark. The \
                              opening has to take over as they go.
                              """)
+
+        // 2b · and it departs **upward**, which is the one sentence this room
+        //      exists to say. Design's own line on the walls is `w.position.y =
+        //      1.4 + b * (15 + i * 2.4)` on walls thirteen tall: they rise
+        //      further than their own height. Read as a widening — which is what
+        //      a station applied as a scale of where a wall stands comes out as —
+        //      *"nothing in this room falls, including the room"* arrives as the
+        //      room getting bigger, and that is Mahimā's authored premise, not
+        //      hers. The Gate's whole job is that these two are not each other.
+        XCTAssertGreaterThan(scene.enclosureRose, 0.1,
+                             """
+                             the enclosure did not rise: it travelled \(scene.enclosureRose) upward for \
+                             a station of \(departed). Nothing in this room falls, including the room.
+                             """)
+        XCTAssertLessThanOrEqual(scene.enclosureSpread, 1.0,
+                                 """
+                                 the enclosure stands at \(scene.enclosureSpread) of where it began — \
+                                 the room widened. A room with no far wall that never arrives is \
+                                 Mahimā's premise; Laghimā's walls go up.
+                                 """)
 
         // 3 · and the opening is **material**, widening, not a light switched on.
         let atFirst = try XCTUnwrap(scene.shaped(at: Self.firstAdaptation)[.canopy])

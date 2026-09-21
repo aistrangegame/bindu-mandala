@@ -553,6 +553,90 @@ final class WorldClimbTests: XCTestCase {
                              "the stone never changes over the whole climb — the bands have no condition")
     }
 
+    /// **The one shadow-casting light does not move because a band's heart
+    /// beat.** Continuity in *time*, which the sweep above cannot see.
+    ///
+    /// Where the key comes from is blended by how near each band is; how much
+    /// light it gives is a separate sum. Multiplied together — which is how this
+    /// was written — the Pelvis's systole steered the direction: its strength
+    /// goes from 0.118 to 1 and back every couple of seconds, so anywhere between
+    /// the Feet and the Pelvis the single key swung tens of degrees of arc per
+    /// beat, and the Feet's eleven standing swells, the things Design says
+    /// *"exist only to be raked"*, strobed from long-raked to flat with every
+    /// heartbeat. The walker can stand anywhere: a drag ends where his thumb
+    /// stops and a flick settles on its own prediction, so the between is not an
+    /// edge case, it is most of the axis.
+    /// The bound is not an angle somebody chose. It is **the bands' own
+    /// tracks**: between two frames the blended key may turn as far as the
+    /// furthest a band near him turned, and no further. That is what "it moves
+    /// only when the walker does" means when the sun is crossing the sky anyway,
+    /// and it is why the check does not have to make an exception for the one
+    /// real seam in Design's source — `Math.sin(ang * 0.6) * 26` is not
+    /// 2π-periodic, so the Feet's sun steps 14° once a day-cycle. Design's own
+    /// track is allowed to do what Design's track does; the blend is not allowed
+    /// to invent motion of its own.
+    func testTheKeysDirectionMovesOnlyWhenTheWalkerDoes() {
+        func degrees(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Double {
+            acos(min(1, max(-1, a.x * b.x + a.y * b.y + a.z * b.z))) * 180 / .pi
+        }
+        /// How far a frame is allowed to differ from the bands' own motion:
+        /// small against the 14° the defect swung, generous against arithmetic.
+        let slack = 0.25
+        var worst = 0.0, worstAt = (fraction: 0.0, seconds: 0.0, bands: 0.0)
+
+        for boundary in 0..<(HomeWorlds.rings.count - 1) {
+            for offset in [0.15, 0.35, 0.5, 0.65, 0.85] {
+                let f = Double(boundary) + offset
+                let near = WorldClimb.weights(atFraction: f).map(\.ring)
+                var previous: SIMD3<Double>?
+                var previousBands: [Int: SIMD3<Double>] = [:]
+                for frame in 0...(60 * 30) {
+                    let t = 40 + Double(frame) / 60
+                    var bands: [Int: SIMD3<Double>] = [:]
+                    for ring in near {
+                        if let key = WorldBands.reading(ring: ring, at: t)?.key { bands[ring] = key }
+                    }
+                    guard let now = WorldClimb.weather(atFraction: f, at: t).key else {
+                        previous = nil
+                        previousBands = bands
+                        continue
+                    }
+                    if let last = previous {
+                        // The furthest any band near him turned on its own.
+                        let ownMotion = bands.reduce(0.0) { most, entry in
+                            guard let was = previousBands[entry.key] else { return most }
+                            return max(most, degrees(was, entry.value))
+                        }
+                        let invented = degrees(last, now) - ownMotion
+                        if invented > worst { worst = invented; worstAt = (f, t, ownMotion) }
+                    }
+                    previous = now
+                    previousBands = bands
+                }
+            }
+        }
+        print(String(format: "CLIMB_KEY_SWING {\"worstInventedDegrees\":%.4f,\"atFraction\":%.2f,"
+                     + "\"atSeconds\":%.2f,\"bandsOwnMotion\":%.4f}",
+                     worst, worstAt.fraction, worstAt.seconds, worstAt.bands))
+        XCTAssertLessThan(worst, slack,
+                          """
+                          the key turned \(worst)° further in one frame than any band near the walker \
+                          turned, at f=\(worstAt.fraction), t=\(worstAt.seconds) (the bands themselves \
+                          moved \(worstAt.bands)°). A direction that moves with an intensity is a light \
+                          being dragged around the room by something the walker cannot see: the \
+                          Pelvis's systole steering where the Feet's shadows fall.
+                          """)
+
+        // And it still *does* turn, or the bound above is satisfied by a light
+        // nailed to the ceiling: the Feet's sun crosses the sky.
+        let dawn = try? XCTUnwrap(WorldClimb.weather(atFraction: 0, at: 0).key)
+        let later = try? XCTUnwrap(WorldClimb.weather(atFraction: 0, at: 8).key)
+        if let dawn, let later {
+            let dot = dawn.x * later.x + dawn.y * later.y + dawn.z * later.z
+            XCTAssertLessThan(dot, 0.999, "the Feet's sun does not move at all")
+        }
+    }
+
     // MARK: - The seventh āvaraṇa
 
     /// **Ring 7 has no key light. Not a dim one — none.**
@@ -712,6 +796,65 @@ final class WorldClimbTests: XCTestCase {
             XCTAssertLessThan(abs(now - last), 0.01, "wholeness jumped at f=\(Double(step) / 500)")
             last = now
         }
+    }
+
+    /// **And it is exchanged on a climb, not only at a midpoint.**
+    ///
+    /// The test above is arithmetic about `wholeness`; this one drives the scene
+    /// the way ``WorldClimbDriver`` drives it — Design's own rise, a frame at a
+    /// time — and asks the only question that matters: when the walker reaches a
+    /// station, whose light is the ground wearing?
+    ///
+    /// It exists because the answer was *the first band's, at every one of the
+    /// eight stations*. The exchange was gated on `wholeness <= 0.0001`, a window
+    /// a twentieth of one frame's travel wide, and a walker who is travelling
+    /// never lands in it: simulated over the whole rise, zero exchanges. Rings 1,
+    /// 2, 3 and 5 are given no light of their own, so a walker who climbed from
+    /// the Feet stood in the sixth āvaraṇa with the ground emitting from an
+    /// all-black map — *"nothing is lit from outside; every solid glows from
+    /// within"*, the Forehead's entire condition, simply absent — and the same
+    /// for the Crown's veils, the meridian above it and Totality's yantra. Every
+    /// capture looked right, because a capture *puts* the walker at a station.
+    func testABandsOwnLightIsExchangedByAWalkerWhoIsActuallyClimbing() {
+        let scene = WorldClimbScene()
+        let step = RoomApproach.riseBandsPerSecond / 60
+        var seconds: TimeInterval = 0
+        var fraction = 0.0
+        var checked = Set<Int>()
+
+        scene.stand(atFraction: 0, at: 0)
+        XCTAssertEqual(scene.showingBand, 1, "the climb did not open in the first āvaraṇa's light")
+
+        while fraction < WorldClimb.fractionRange.upperBound {
+            fraction = min(WorldClimb.fractionRange.upperBound, fraction + step)
+            seconds += 1.0 / 60
+            scene.stand(atFraction: fraction, at: seconds)
+
+            // At each station — within a frame of it — the ground must be wearing
+            // that band's own light.
+            let nearest = WorldClimb.nearestRing(atFraction: fraction)
+            if abs(fraction - Double(nearest - 1)) <= step {
+                checked.insert(nearest)
+                XCTAssertEqual(scene.showingBand, nearest,
+                               """
+                               the walker climbed to āvaraṇa \(nearest) and the ground is still wearing \
+                               āvaraṇa \(scene.showingBand)'s light. A band's own light is the band's own \
+                               condition, and four of the nine are given none at all — so this is not a \
+                               wrong pattern, it is the room's light missing.
+                               """)
+            }
+        }
+        XCTAssertGreaterThanOrEqual(checked.count, HomeWorlds.rings.count - 1,
+                                    "the rise did not pass through every station: \(checked.sorted())")
+
+        // …and the same climb back down, because a walker descends the axis too.
+        while fraction > WorldClimb.fractionRange.lowerBound {
+            fraction = max(WorldClimb.fractionRange.lowerBound, fraction - step)
+            seconds += 1.0 / 60
+            scene.stand(atFraction: fraction, at: seconds)
+        }
+        XCTAssertEqual(scene.showingBand, 1,
+                       "the walker came back down to the Feet wearing another band's light")
     }
 
     /// **The stone's own light obeys the binding condition on the axis too.**

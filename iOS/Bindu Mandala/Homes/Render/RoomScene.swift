@@ -297,6 +297,20 @@ final class RoomScene {
     /// Empty in a room with no mechanism, which is a room with no premise.
     private(set) var stood: [RoomSurfaceKind: Double] = [:]
 
+    /// What the enclosure **did** at that instant, which is not the same thing as
+    /// the station it was handed: how far it rose, in scene units, and the
+    /// furthest any of its walls now stands as a fraction of where it began.
+    ///
+    /// Two numbers rather than the walls themselves, for the reason the scene
+    /// graph is not vended at all: a check should be able to ask what the room
+    /// did without being handed something it could move. And they are here
+    /// because a station's *sign* was being read as a scale — a departing
+    /// enclosure came out as a widening one, which is a different room's premise
+    /// — and nothing in the suite could see it, because every check stopped at
+    /// ``stood``.
+    private(set) var enclosureRose: Double = 0
+    private(set) var enclosureSpread: Double = 1
+
     // MARK: - Constants
 
     /// Vertices per side of a surface mesh. 64 × 64 is 4,096 vertices and 7,938
@@ -471,13 +485,43 @@ final class RoomScene {
         groundNode.position = SCNVector3(0, Float(RoomUnits.floorY + ground), 0)
         canopyNode.position = SCNVector3(0, Float(RoomUnits.canopyY - overhead), 0)
 
-        // The enclosure closes on him or leaves him, along its own way in. It can
-        // never reach him: the fraction is held short of the axis, so three walls
-        // cannot become a box around a walker.
-        let closing = 1 - (stood[.wall] ?? 0) / RoomUnits.halfExtent
-        let sides = Float(min(2.4, max(Self.enclosureFloor, closing)))
+        // The enclosure closes on him, or it leaves — and **the two are not the
+        // same motion reversed.**
+        //
+        // Closing in is along its own way in, and it can never reach him: the
+        // fraction is held short of the axis, so three walls cannot become a box
+        // around a walker.
+        //
+        // Leaving is *upward*, and that is Design's own line rather than a
+        // choice: `w.position.y = 1.4 + b * (15 + i * 2.4)` on walls thirteen
+        // tall — they rise further than their own height, and what is left of
+        // the enclosure is nothing. Read as a widening instead, the one sentence
+        // Laghimā exists to say — *"nothing in this room falls, including the
+        // room"* — comes out as **the room getting bigger**, which is Mahimā's
+        // authored premise (*"no far wall · it never arrives"*), and the Gate's
+        // two halves stop being two rooms. A widening enclosure also opens
+        // corners that were never meant to be looked through.
+        //
+        // The sign is the whole of it: toward him is the enclosure closing, away
+        // from him is the enclosure going the way everything loose in that room
+        // has been going.
+        //
+        // And a station is applied as a **distance**, not as a scale of where a
+        // wall happens to stand: the sides stand closer in than the far wall, so
+        // scaling made one station mean two different travels and `stood[.wall]`
+        // described neither of them.
+        let wall = stood[.wall] ?? 0
+        let departs = Float(max(0, -wall))
+        enclosureRose = max(0, -wall)
+        enclosureSpread = 0
         for (node, base) in zip(wallNodes, wallBases) {
-            node.position = SCNVector3(base.x * sides, base.y, base.z * sides)
+            // One of the two is zero: a wall stands on an axis.
+            let standOff = Double(abs(base.x) + abs(base.z))
+            let closed = max(standOff * Self.enclosureFloor, standOff - max(0, wall))
+            let scale = standOff > 0 ? closed / standOff : 1
+            enclosureSpread = max(enclosureSpread, scale)
+            node.position = SCNVector3(base.x * Float(scale), base.y + departs,
+                                       base.z * Float(scale))
         }
 
         // Her face comes toward the walker as the attribute grows into the room.

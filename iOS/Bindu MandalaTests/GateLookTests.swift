@@ -73,13 +73,38 @@ final class GateLookTests: XCTestCase {
             let scene = RoomScene(room: room)
 
             var frames: [(String, [UInt8])] = []
+            var nearHalf: [String: Double] = [:]
             for (when, t) in Self.moments {
                 let image = try XCTUnwrap(scene.capture(size: Self.frameSize, atSceneTime: t),
                                           "\(name) could not be rendered offscreen at \(when)")
                 let data = try XCTUnwrap(UIImage(cgImage: image).pngData())
                 try data.write(to: directory.appendingPathComponent("\(name)-\(when).png"))
                 frames.append((when, Self.grid(of: image)))
+                nearHalf[when] = Self.nearMean(of: image)
             }
+
+            // **And the near half of the frame does not run away with the light.**
+            //
+            // A global mean cannot tell a lit room from a washed one — the frame
+            // that failed this was 0.2064 overall, comfortably inside every
+            // luminance bound in the suite — because the mark that washes it is
+            // one thing in one place, and the place is always the same: her mark
+            // comes toward the walker through the second adaptation, so whatever
+            // it lights it lights *near*, filling the bottom of the picture.
+            // Garimā's near half went 0.081 → 0.343 with the structure in it
+            // unchanged, which is a wash by definition: more light, no more room.
+            let first = nearHalf["1-first"] ?? 0
+            let deep = nearHalf["3-deep"] ?? 0
+            let ran = first > 0 ? deep / first : 0
+            print(String(format: "GATE_NEAR {\"room\":\"%@\",\"atFirst\":%.4f,\"pastSecond\":%.4f,"
+                         + "\"ratio\":%.2f}", name, first, deep, ran))
+            XCTAssertLessThan(ran, 3.5,
+                              """
+                              \(name)'s near half is \(ran) times as bright past the second adaptation \
+                              as at the first (\(first) → \(deep)). Something in front of the walker is \
+                              lighting the floor rather than showing it, and a whole-frame mean will \
+                              not see it.
+                              """)
 
             // Design's legibility register asks for *"always visibly changed"*.
             // Read as the fraction of a coarse grid that moved by more than a
@@ -122,6 +147,34 @@ final class GateLookTests: XCTestCase {
             out.append(UInt8(min(255.0, red + green + blue)))
         }
         return out
+    }
+
+    /// The mean luminance of the **near half** of the frame: the floor the walker
+    /// is standing on, which is where a mark that has come toward him lands.
+    ///
+    /// Read off the drawn image rather than the coarse grid, because the question
+    /// is how much light is in one part of the picture rather than how much of it
+    /// moved. A bitmap context's first row is the top of the image, so the near
+    /// half is the second half of the buffer.
+    private static func nearMean(of image: CGImage) -> Double {
+        let width = 120, height = 240
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        guard let context = CGContext(data: &pixels, width: width, height: height,
+                                      bitsPerComponent: 8, bytesPerRow: width * 4,
+                                      space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return 0 }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var sum = 0.0, count = 0.0
+        for row in (height / 2)..<height {
+            for column in 0..<width {
+                let index = (row * width + column) * 4
+                sum += (0.2126 * Double(pixels[index]) + 0.7152 * Double(pixels[index + 1])
+                        + 0.0722 * Double(pixels[index + 2])) / 255
+                count += 1
+            }
+        }
+        return count > 0 ? sum / count : 0
     }
 
     /// What fraction of the grid moved, read **relative to how bright it was**.

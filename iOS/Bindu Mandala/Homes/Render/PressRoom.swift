@@ -180,15 +180,33 @@ struct PressRoom: RoomSurfaceMechanism {
         // **The crater is wide and the light in it is not**, and the difference is
         // Design's. Her mount opens the whole inscription out through the second
         // adaptation — the attribute stops being an object and becomes the room —
-        // while what she *lights* is one press, grown by `press.scale.setScalar(1
-        // + b * 1.8)` and no more. Lighting the crater instead came back as a pale
-        // structureless wash over the lower half of the frame with every bed she
-        // had made lost inside it: a compaction is flat-bottomed, so its emission
-        // is full strength right out to its reach, and at her settled footprint
-        // that is a fifth of the floor at once.
+        // while what she *lights* is one press. Lighting the crater instead came
+        // back as a pale structureless wash over the lower half of the frame with
+        // every bed she had made lost inside it: a compaction is flat-bottomed, so
+        // its emission is full strength right out to its reach, and at her settled
+        // footprint that is a fifth of the floor at once.
+        //
+        // **And the lit press does not widen either**, which is the same finding
+        // one step further in. Grown by Design's own `press.scale.setScalar(1 + b
+        // * 1.8)` the lit disc was 2.8 times its resting footprint past the second
+        // adaptation — a lit circle as wide as the room is tall, lying directly in
+        // front of the eye — and the frame said what that does: measured on the
+        // render, the near half of the picture went from a mean luminance of 0.081
+        // to 0.343 while the structure in it (mean |Laplacian|) did not change at
+        // all, so structure per unit brightness fell by four. No bed line, no
+        // plinth edge, no hollow: her whole room washed out under her own mark, at
+        // exactly the moment she is nearest. Emission is additive and is not
+        // shaded by the surface normal, so a lit *area* erases relief rather than
+        // revealing it.
+        //
+        // Design's growth is therefore carried where growth can be seen without
+        // costing the room — the crater above widens with her mount, and the mark
+        // deepens and rises — and the light stays the size of a palm. That is also
+        // Design's own reading of this room, *"13 → 204 with a real shadow band
+        // and the press glowing"*: a press glowing in a dark room, not a lit floor.
         let resting = RoomUnits.placement(bodyAltitude: stage.placement.bodyAltitude,
                                           chamberTime: 0).footprint
-        let burning = ground.reach(worldUnits: resting) * (1 + Self.markGrows * b)
+        let burning = ground.reach(worldUnits: resting)
 
         // And as it widens it **dims**, by Design's own mount fade — the same
         // `1 - b * 0.55` every attribute in the instrument fades by, for the same

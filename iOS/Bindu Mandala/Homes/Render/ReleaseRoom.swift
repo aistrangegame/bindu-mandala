@@ -59,6 +59,33 @@ import Foundation
 //
 // The verb is still read from the travel rather than assigned: the material moves
 // away from him, and away from him is an impression.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// WHY THE OPENING IS CENTRED, WHEN GARIMĀ'S PRESS IS NOT
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// A fair question was asked of this file: ``PressRoom`` is hers in specifics —
+// its bedding is seeded off her khaḍgamālā position and its press sits at her
+// mount's own coordinate — while everything here reads only the stay, so the
+// same numbers would come back for anybody. Said plainly: could this room belong
+// to another Śakti?
+//
+// It is centred **because Design centres it**, and this is one of the eight rooms
+// Ruling 10 accepts as authored rather than grammar-built. Design's own lid is a
+// ring from 2 to 12.4 built at the room's origin — `lid.position.y = 8.4 - b *
+// 5.4`, with no x or z at any moment of the stay — and the sentence it is drawn
+// from is *"as the walls go, the opening they were hanging from takes the whole
+// room."* An opening that takes the whole room and an opening off to one side are
+// two different rooms; the first is the reversal, the second is a skylight.
+//
+// What makes the room hers is therefore not a jitter in the mouth: it is that
+// **her attribute acts in it**, at her own coordinate, on the material this
+// mechanism moved — ``RoomScene/shaped(at:)`` applies her inscription over these
+// actions, at `RoomUnits.placement(bodyAltitude:chamberTime:)`, which is her
+// body's own altitude — and that the whole premise is hers by authorship: the
+// floor that lets go is Lightness, Vāyu, the solar plexus rising. Position is
+// identity, and only khaḍgamālā 3 resolves here, so no second Śakti can stand in
+// this room for the frames to be compared.
 struct ReleaseRoom: RoomSurfaceMechanism {
 
     // MARK: - Design's own numbers

@@ -892,3 +892,112 @@ room. Under the full suite it was sometimes false; in isolation it passed three 
 It now waits for the air to move, up to four seconds. The assertion is unchanged: if the weather is
 held, it never becomes true and the test fails. A timeout raised to make a red test green hides the
 next regression; a wait that still fails on the real condition does not.
+
+## 2026-09-21 · Phases 3.2 and 3.3, reviewed · the two clocks that were not moving
+
+Eight findings read back against the code, the laws and Design's own files. Six were real; two of
+those were the same defect stated twice, and two of the eight are rejected with reasons. 485 tests,
+0 failures, 10 skipped, zero Swift warnings.
+
+**Every new check was mutation-tested**: each fix was put back the way it was and the check that
+guards it was re-run. All six fail on the old code and pass on the new. A check nobody has seen
+fail is a check nobody has tested.
+
+### The two blockers, and they are both clocks
+
+**The climb's air was frozen.** `WorldClimbDriver` handed the scene
+`Date().timeIntervalSinceReferenceDate` — about 8.1 × 10⁸ — and the motes are driven through a
+shader `float`, whose ulp at that magnitude is **sixty-four seconds**. Measured: `uTime` took two
+distinct values over 3600 frames, so every mote in all nine bands held one offset for a minute and
+then teleported, and `uDrift` — the Navel's churn, the highest in the climb, *"the air will not
+settle"* — multiplied into a constant and did nothing. This is the Phase 3.1 defect FIDELITY §7 was
+written for, recurring in the one file no picture had been taken of, and no capture could see it
+because a capture is handed small numbers.
+
+The climb now has what a room has had since Phase 3.1: an **epoch**. The driver counts from the
+instant the climb opened, exactly as `RoomClock.elapsed` does, so the band clocks also start where
+Design's start — at zero — and the number reaching the shader stays small for the life of the view.
+The check reads the value *after* the narrowing, on a driven view, and additionally asserts the
+clock still has the resolution to register a frame.
+
+**A band's own light was never exchanged during a climb.** The exchange was gated on
+`wholeness <= 0.0001` — a window five hundredths of a thousandth of a band wide — and at Design's
+rise the climb advances 0.0019 bands a frame, so a walker who is *travelling* never lands in it.
+Simulated over the branch's own arithmetic: **zero exchanges in a whole rise from the Feet to
+Totality**. Rings 1, 2, 3 and 5 are given no light of their own, so a walker who climbed to the
+sixth āvaraṇa stood in it with an all-black emission map: the Forehead's nine bodies that glow from
+within — *"nothing is lit from outside"*, the band's entire condition — simply absent, and the same
+for the Crown's veils, the meridian above it and Totality's yantra. Every capture and every test
+passed, because both *put* the walker at a station rather than walking him to one.
+
+The window is now the crossing rather than a point on it: `whole <= max(0.02, 2 · travelled)`. Both
+terms are derived rather than chosen — 0.02 of wholeness is one per cent of full glow, which cannot
+be seen to change, and `2 · travelled` is exactly the crossing frame's own wholeness at any speed,
+so a drag, a flick, a launch at the sixth āvaraṇa and reduce motion's quantized step are one line
+instead of a second clause about being put somewhere. The check drives the scene the way the driver
+does, a frame at a time, and asks whose light the ground is wearing at each of the eight stations,
+up and back down.
+
+### Three more, fixed
+
+**The heartbeat was steering the shadows.** The blended key's *direction* was weighted by each
+band's pulsing intensity, so between the Feet and the Pelvis the one shadow-casting light in the
+climb was dragged overhead by every systole and fell back — 21° of invented motion in a single
+frame, against 0.06° of real motion in the bands themselves. The Feet's eleven standing swells,
+which Design says *"exist only to be raked"*, strobed with the beat. Direction is now blended by
+**how near a band is** and by nothing else; how much light it gives is the separate sum it always
+was. The check is not an angle somebody chose: between two frames the key may turn as far as the
+furthest a band near him turned and no further, which is why it needs no exception for the one real
+seam in Design's source — `Math.sin(ang * 0.6) * 26` is not 2π-periodic, so the Feet's sun steps 14°
+once a day-cycle, and Design's track is allowed to do what Design's track does.
+
+**A departing enclosure was widening instead of rising.** `ReleaseRoom` sends the walls away with a
+negative station and `RoomScene` applied it as a scale of where each wall stood, so Laghimā's walls
+moved **outward** — and *"nothing in this room falls, including the room"* came out as the room
+getting bigger, which is Mahimā's authored premise and the one thing the Gate exists to keep
+separate. Design's own line is a lift: `w.position.y = 1.4 + b * (15 + i * 2.4)` on walls thirteen
+tall. The sign now carries the whole meaning: toward him is the enclosure closing in, away from him
+is the enclosure going the way everything loose in that room has been going. A station is also
+applied as a **distance** rather than as a scale, because the sides stand closer in than the far
+wall and one station was meaning two different travels. `RoomScene` publishes what the enclosure
+*did* — how far it rose, and the furthest any wall now stands as a fraction of where it began — as
+two scalars, because every check in the suite stopped at the station it was handed.
+
+**Garimā's press was lighting the floor instead of showing it.** The emissive mark grew by Design's
+`press.scale.setScalar(1 + b * 1.8)`, but Design's press is a cylinder seven units away on a floor
+forty-six wide, while here the mark also rides her mount toward the walker: past the second
+adaptation the lit disc was 2.8 times its resting footprint and lying under the eye. Measured on the
+render, the near half of the frame went **0.081 → 0.343** with the structure in it unchanged, so
+structure per unit brightness fell by four — a pale wash with every bed she had made lost inside it,
+which is the failure the file above it says it avoided, one step further in. Emission is additive
+and is not shaded by the surface normal, so a lit *area* erases relief instead of revealing it.
+Design's growth is now carried where growth can be seen without costing the room — the crater
+widens, the mark deepens, the plinth rises — and the light stays the size of a palm. Measured after:
+**0.081 → 0.224**, and the floor her press lights no longer grows at all (0.0075 → 0.0072 of the
+surface, against 0.0583 before).
+
+**The residual is not her light and is recorded rather than tuned away.** With her press's glow
+zeroed entirely the near half still reads 0.187, and with the ember zeroed as well it reads 0.171
+against 0.078 at the first adaptation: what fills the bottom of that frame is **the plinth he is
+standing on**, which is this room's reversal — *"the weight was never above you; it is what you are
+standing on"* — lit by her mark's own ember riding the material it is in, which is the Phase 3.1
+spine rule. Two new checks hold the line where it now stands: the floor her press lights may not
+spread as the stay deepens (stated exactly, in the room's own material), and the near half of the
+frame may not more than triple in brightness between the adaptations (4.21 before, 2.75 after) —
+because a whole-frame mean cannot tell a lit room from a washed one, and the frame that failed was
+0.2064 overall, inside every luminance bound in the suite.
+
+### Two rejected, and why
+
+**"The climb's air is frozen" and "the band's own light is exchanged only on an exact-zero test"
+were each raised twice.** They are one defect apiece, fixed once apiece.
+
+**`ReleaseRoom` carries nothing of Laghimā.** It is true that its stations and actions read only the
+stay, and that `PressRoom` is hers in specifics. It is not a defect: **Design centres this opening**
+— `lid.position.y = 8.4 - b * 5.4`, a ring built at the room's origin with no x or z at any moment —
+and Ruling 10 accepts the Gate as authored, so the port's job here is fidelity rather than
+invention. An opening that takes the whole room and an opening off to one side are two different
+rooms. What makes the room hers is that her attribute acts in it at her own coordinate, over the
+material this mechanism moved, and that the premise is hers by authorship. Position is identity and
+only khaḍgamālā 3 resolves here, so there is no second row whose frames could be compared. The file
+now says all of this out loud, which is what was actually missing.

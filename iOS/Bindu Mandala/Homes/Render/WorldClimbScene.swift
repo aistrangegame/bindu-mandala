@@ -88,13 +88,26 @@ final class WorldClimbScene {
     /// Each band's own light, baked once. Nine small maps.
     private var bandLight: [CGImage?] = []
     /// Which band's light the ground is wearing. Exchanged only where the
-    /// walker is equally in two, which is where it is showing none.
-    private var showingBand = 1
+    /// walker is nearly equally in two, which is where it is showing almost
+    /// none — see ``exchangeBelow``.
+    ///
+    /// Readable, because a still cannot tell whose light the ground is wearing
+    /// when four of the nine bands are given none of their own: the only way to
+    /// check that a walker who *climbed* to the Forehead arrives in the
+    /// Forehead's light is to drive the climb and read this.
+    private(set) var showingBand = 1
 
     /// Where the walker was last stood, in bands.
     private(set) var standingAt: Double = 0
     /// The real time the climb was last put at.
     private(set) var breathedAt: TimeInterval = 0
+    /// The air's own clock **as the shader receives it**, narrowed to `Float`.
+    ///
+    /// Readable for one check and it is not a formality: the narrowing is the
+    /// whole defect. A `TimeInterval` that advances every frame can reach the
+    /// geometry modifier as a number that does not move for a minute, and only
+    /// the value after the conversion says whether the dust is alive.
+    private(set) var motesTime: Float = 0
     /// The weather he was last given.
     private(set) var weatherNow: WorldWeather
 
@@ -191,9 +204,20 @@ final class WorldClimbScene {
     /// always produce the same climb, which is what lets the reduce-motion path
     /// draw once and the tests assert a rise with no renderer in the room.
     ///
-    /// `seconds` is **real** time. Each band scales it by its own tempo inside
-    /// ``WorldBands/reading(ring:at:)``, and no chamber clock reaches this far:
+    /// `seconds` is **real** time, counted from the moment the climb opened —
+    /// the same reading ``RoomClock/elapsed(now:)`` hands a room, and for the
+    /// same two reasons. Each band scales it by its own tempo inside
+    /// ``WorldBands/reading(ring:at:)``, so every band's clock starts where
+    /// Design's starts, at its own dawn; and no chamber clock reaches this far:
     /// there is no parameter here for one.
+    ///
+    /// **It must stay a small number, and that is a fact about the hardware
+    /// rather than a preference.** The air is driven in the shader by a `float`,
+    /// whose ulp at reference-date magnitude (~8.1 × 10⁸ today) is sixty-four
+    /// seconds: handed absolute time, ``motesTime`` takes two distinct values in
+    /// a minute, and the whole axis's dust stands perfectly still and then
+    /// teleports. That is exactly the Phase 3.1 defect `FIDELITY.md` §7 was
+    /// written for, and no capture can see it — a capture passes small numbers.
     func stand(atFraction f: Double, at seconds: TimeInterval) {
         let here = WorldClimbTravel.clamp(f)
         let travelled = abs(here - standingAt)
@@ -226,7 +250,8 @@ final class WorldClimbScene {
                                             green: CGFloat(now.fog.y * 0.5),
                                             blue: CGFloat(now.fog.z * 0.5), alpha: 1)
 
-        motesMaterial?.setValue(NSNumber(value: Float(seconds)), forKey: "uTime")
+        motesTime = Float(seconds)
+        motesMaterial?.setValue(NSNumber(value: motesTime), forKey: "uTime")
         motesMaterial?.setValue(NSNumber(value: Float(now.airDrift)), forKey: "uDrift")
         motesMaterial?.transparency = CGFloat(0.16 + 0.30 * now.veil)
 
@@ -299,15 +324,27 @@ final class WorldClimbScene {
         // see ``WorldClimb/wholeness(atFraction:)``.
         let whole = WorldClimb.wholeness(atFraction: here)
         let nearest = WorldClimb.nearestRing(atFraction: here)
-        // …or wherever the walker was *put* rather than walked. Half a band in
-        // one call is thirty bands a second at sixty frames, which no hand can
-        // do: it is a capture, a launch, or the quantized step reduce motion
-        // takes, and in all three the whole frame changed anyway so there is no
-        // continuity left to protect. Without this the map only ever changed
-        // while passing through a midpoint, so a climb that *opened* at the
-        // sixth āvaraṇa wore the first's light — which is to say none — and its
-        // nine glowing bodies were simply missing.
-        if nearest != showingBand, whole <= 0.0001 || travelled > 0.5 {
+        // **The window is a stretch of the crossing, not a point on it.** A test
+        // of `whole <= 0.0001` is a window five hundredths of a thousandth of a
+        // band wide, and a walker who is *travelling* never lands in it: at
+        // Design's own rise the climb advances 0.0019 bands a frame, so eight
+        // crossings in a row can pass without the map ever being exchanged, and
+        // the walker arrives at the sixth āvaraṇa still wearing the first's
+        // light — which is to say none, and its nine glowing bodies simply
+        // missing. Simulated over this arithmetic, that is what happened: zero
+        // exchanges in a whole rise from the Feet to Totality.
+        //
+        // So the exchange happens wherever a band's light is too faint to see it
+        // happen, and both terms of that are named. ``exchangeBelow`` is a
+        // wholeness under which the emission is a hundredth of full glow — a
+        // belt about ten frames wide at Design's rise, so a steady climb cannot
+        // step over it. And `2 * travelled` is exactly the crossing frame's own
+        // wholeness at any speed — `whole` is `2k - 1` where `k` is how far past
+        // the midpoint he landed, and he can land at most `travelled` past it —
+        // so a drag, a flick, a launch at the sixth āvaraṇa and the quantized
+        // step reduce motion takes are all covered by the same line rather than
+        // by a second clause about being *put* somewhere.
+        if nearest != showingBand, whole <= max(Self.exchangeBelow, 2 * travelled) {
             showingBand = nearest
             groundStone?.emission.contents = bandLight[nearest - 1]
         }
@@ -318,6 +355,15 @@ final class WorldClimbScene {
     /// over from a room: the material becomes the light, so the top of this
     /// range is ground glowing rather than a lamp lying on it.
     static let glowCeiling: Double = 0.55
+
+    /// How faint a band's light has to be before its pattern may be exchanged.
+    ///
+    /// Not a tolerance chosen for comfort: the ground's emission is
+    /// `glowCeiling * glowFromWithin * whole`, so at this wholeness the brightest
+    /// band in the climb is showing one per cent of full glow. A pattern
+    /// swapping there cannot be seen to swap — which is the whole reason the
+    /// exchange waits for a midpoint at all.
+    static let exchangeBelow: Double = 0.02
 
     // MARK: - Where the climb goes
 
