@@ -281,7 +281,16 @@ enum RoomMechanisms {
             case .siddhi: return SiddhiRoom(reading)
             case .matrka: return MatrkaRoom(reading)
             case .mudra:  return MudraRoom(reading)
-            default: return GrammarReversal(reading)
+            default:
+                // Rings 3–9, the outer climb — six archetypes across fifty-eight
+                // seats. ``OuterRings/outerRoom(_:)`` is the **one place** a built
+                // outer archetype is named, so each of the six rings arrives by
+                // changing its own single line there rather than by six passes
+                // over this switch; that is also why the six are not spelled out
+                // here. `nil` from it means *not built yet*, and she keeps her
+                // ring's own turn in the meantime rather than none, because a room
+                // that does not reverse is a loop.
+                return OuterRings.outerRoom(reading) ?? GrammarReversal(reading)
             }
         case .seat:
             return nil

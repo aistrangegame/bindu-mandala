@@ -1509,3 +1509,146 @@ Charter §4 requires verifying the gem, dhātu, clock and bīja field IDs before
 Note for the build: the app currently decodes **none** of these into `Avarana.swift` — only sanskritName, subtitle, presidingForm, mentalState, subtleBodyChakra, geometricShape, personalConnection and yogini. Phase 5's first act is extending that decode, additively.
 
 **No Design light package exists.** Searched the three design folders for anything on light, gems or Tratak: nothing. So charter §4's fallback applies and Phase 5 builds from `Claude Chat/bindu-mandala-expansion.md`'s descriptions of ideas 27, 28, 30, 31, 32 and 38.
+
+## 2026-09-21 · Phase 3.6 · Ring 3, the eight bodiless — and the shared ground for the outer rings
+
+Design's `bodiless(world, card, G)`, built on the Phase 3.1 spine as
+`Homes/Render/BodilessRoom.swift`, plus `Homes/Render/OuterRings.swift` — the arithmetic all six
+outer archetypes need, built once, before the five parallel passes that follow this one. Ring 3 is
+the pathfinder for rings 3 to 9, so what is shared was built generously rather than when it was
+first needed.
+
+### The hard word, and the thing that made it material
+
+Anaṅga means **limbless — without a body**, and the renderer ruling's binding condition allows a
+room exactly one register: an action on the room's own material. There is nowhere in the air for a
+bodiless effect to be. That tension is not a problem to be routed around; it is the room. Something
+that has no body still leaves a mark.
+
+**Eight marks stand in a ring around a place where nothing has happened.** Design's own comments say
+what its two halves *are* — the petals are *"orbiting nothing"* and the rim is *"the absence at the
+centre"* — so they are concentric here, on the one point the instrument already has for where she is
+felt. Design stands its rim 3.5 units further back than the petal ring because in three.js a key
+light behind a subject rim-lights it; that is a lighting arrangement, and its meaning is a concentric
+one.
+
+**And the room's sentence is then delivered by the instrument's own arithmetic rather than by an
+authored effect.** `RoomMaterial.emission(at:)` multiplies a mark's glow by how far that mark
+actually moved the material, so a mark carrying no glow contributes nothing at any depth. Design's
+rim is a `TorusGeometry` of tube radius **0.02**, which is a line, and `CrossingRoom` already ruled
+what a line becomes here — *"a line lights nothing"*. So the absence carries **no light at all** and
+the eight effects carry every bit there is, and the one place in her room that emits nothing is the
+exact point `RoomUnits.emberPoint(for:)` stands the room's own light at. *The room's light comes from
+a point that visibly holds nothing* is true because of how light is defined in this instrument, not
+because a torus was given a low opacity.
+
+**The absence's verb was not chosen.** `RoomInscription.verb(for:previous:)` reads which of the five
+verbs a part performs from its own travel, and the absence does not travel — it is the still centre
+of a turning ring. A part that bears on the stone without moving classifies as a **compaction**:
+*"the mark of something that bore down without moving."* That is the definition of Anaṅga arrived at
+through the classifier rather than written into it.
+
+**What is at the centre is her attribute**, because Design mounts all 102 attributes where she is
+felt and this room does not make an exception of itself. That is the sentence finishing rather than a
+leak: what stands at the centre of an Anaṅga's room is her *effect*, and the room's own material
+under it has had nothing happen to it but a flattening. The cause is what is missing.
+
+### Six calls
+
+**Design's `ph + i / 8` is an identity for eight of the fifty-one kinds, and it would have halved
+this ring.** `CrossingRoom` found the two-half version of this — *"where a half turn says nothing, a
+quarter does"* — and a ring of eight is the same trap one turn further round: the kinds whose terms
+are all `|sin|` fold at half a turn of phase, so petals `i` and `i + 4` come back the same number.
+Measured over all fifty-one kinds with Design's literal `i / 8`: **`well`, `settle`, `point`,
+`reach`, `spring`, `assert`, `ground` and `surge` each collapse from eight distinct motions to
+four** — Water, Earth, the goad, longing, the source, the ego, support and the throb, which between
+them claim a large share of any ring. `OuterRings.spread(index:of:kind:)` spreads the parts across
+one turn of *the kernel* instead of one turn of phase, read off `HomeGrammar.counterPhase(of:)`
+rather than from a table of which kinds fold. For every kind that does not fold it returns Design's
+number to the last bit, and it is asked once here for all six outer archetypes, every one of which
+writes `ph + i / n`.
+
+**The ring is sized by the strokes standing on it, and by how far her own physics can swing
+them — and both of those were found by the room's own checks rather than by looking.** Design's
+petal is a glow sprite of span 4.2 on a ring of radius 5.4, and a glow sprite is a light with a soft
+edge. A mark here is not: a **furrow** holds its whole depth for the length of its stroke and a
+**crack** is still at a quarter of its own where it closes, and both run four of their own reaches
+*along* the stroke (`SurfaceAction.cutoffReaches`, named for this). A mark of Design's size on
+Design's ring therefore makes a stroke **longer than the ring is wide**, and the two effects whose
+stroke happened to point at the middle lit the absence they were standing around — measured at
+**0.55 of full emission** in the one place this room's whole sentence needs dark. The rule is now one
+sentence: *an effect's stroke closes on the ring it stands on, and never across it.* A mark reaches
+at most a quarter of the way to the absence, which on a working face is Design's own ring exactly; and
+where the surface's mesh has forced the mark up to a cell — a floor is four body-heights across, so
+one cell is four times the thing it is on a face — the ring opens out until the strokes close around
+it again. On the large surfaces it then reaches past the picture, and that is the right way round for
+this archetype and only for this one: Design's own petals ring the walker at `z = -3 ± 5.4`, which
+passes *behind* where he stands. Her effect is not a figure held out in front of him; it is the thing
+he is inside.
+
+**And the ring's plane is the surface, which is not what `RoomUnits.axes` says on a face.** The
+instrument's general rule maps Design's *rise* along a working face, and it is right for a figure
+Design drew standing up. A bodiless ring is drawn lying down: its two in-plane axes are `x` and `z`,
+and the one that leaves the plane, `y`, is the one that runs **into** the stone. On a floor and a
+canopy `RoomUnits.axes` already says exactly that; on a face it does not, and taking the general rule
+there put Design's off-plane motion *across* the ring — which is how a Śakti whose physics is
+expansion lit her own absence. Which way *into* is, is still the instrument's `outward`, so rising off
+a floor and rising off a ceiling stay one fact. The ring also opens by however far her own physics can
+carry an effect toward the middle, measured from the kernel per kind
+(`OuterRings.inPlaneExcursion`) rather than bounded by its widest term — because bounding it by the
+widest would stand a Śakti whose physics barely moves in the same room as Mahat's widening, and the
+whole point of the kernel is that she does not. Design's own word for the petals is *orbiting*, and a
+ring whose motion swings it through its own centre is not orbiting anything.
+
+**Design's `(1 - b)` on the rim is spent on the absence being overtaken, not on the absence
+leaving.** The rim carries no light here, so there is no opacity for that number to be, and a mark
+may not be faded by going shallower — `RingOne` refused that once already, because *"a mark that grew
+shallower would stop being seen while it was still there, which is a different thing from leaving."*
+So the absence is left exactly as it is, and `RoomReversal` opens the answering mark **on the same
+point it stands on**, twenty times its width by the end of the stay. *The effect was the only body*:
+nothing had to be taken away, and what held nothing became the room.
+
+**The classifier was widened by three rules, and deliberately not by thirteen.** The Phase 3.1
+record left a known gap — the six kañcukas, the Spanda words and Saṃskāra / Vṛtti / Guṇa reach no
+rule — and said the fix belonged with the live rows. Before widening anything, all 102 of Design's
+own cards (whose fields it states are the base's) were run through the fifty rules: **not one of
+those words appears anywhere in the 102**, and the cards fall through exactly three times — Priyatā
+at kp 69, Saubhāgya at kp 76, Cāpa at kp 96, all in rings the following passes own. The kañcuka gap
+is the *test corpus's* vocabulary rather than the rows'. So the three real gaps now have rules,
+appended behind Design's fifty and never interleaved, and the kañcukas do not — widening the
+classifier to cover words the rows do not use would make it look fuller than the instrument is. All
+three reuse kinds Design already wrote, so `HomeGrammar.widestTerm` and every room that normalises
+against it stand untouched.
+
+**The fingerprint's probe grid follows the room rather than the surface.** Ring 2 reads a five-by-five
+grid over the whole working face, which is right for a ring whose fourteen marks are spread across
+one. It is wrong from ring 3 outward: `Figure` brings Design's halls into a picture 1.3 units across,
+and on a floor four body-heights wide the whole figure is a twentieth of the surface — so twenty-two
+of twenty-five fixed probes land on undisturbed stone and read identically in every room of the ring.
+That is the dilution Ring 2's suite names, arriving *inside* the measure. `OuterRingFingerprint`
+spans its grid over the room's own marks at that moment, and carries Ring 2's dilution guard as a
+check of its own: fewer than half the components may be constant across a ring.
+
+### What the five parallel passes inherit, and what they must not touch
+
+`Homes/Render/OuterRings.swift` is theirs as much as mine. It holds, ring-parameterised:
+`designSpan(ring:)` and `inRoom(_:ring:)` — **and the divisor changes at ring 4**, where Design's
+altitude span goes from 9 to 8; `widestMark`, `narrowestMark`, `reach(_:)` and `depth(size:on:)` —
+the two floors Ring 1 and Ring 2 each paid for with a render; `Figure`, which scales a whole figure
+into the picture rather than clamping its parts; `readOver`, the clock a physics is read on rather
+than a gesture's; `Place`, `motion`, `pressed`, `mark` and `lightShare`; and
+`spread(index:of:kind:)`. `RingOne` now forwards to all of it rather than carrying its own copy, so
+there is one implementation and Ring 1 keeps the names its rooms and its suites speak in.
+
+`OuterRings.outerRoom(_:)` is the outer climb's whole dispatch, and it is deliberately the only place
+a built outer archetype is named: each of the five remaining rings arrives by changing **one line**
+there, and `RoomMechanisms.forRoom` is not touched again. A `nil` there means *not built yet*, and
+she keeps her ring's own archetype turn in the meantime, because a room that does not reverse is a
+loop.
+
+On the test side, `OuterRingFingerprint` (the print, `divergence`, `refusesDilution`),
+`OuterRingStage` (a room read without a renderer, mechanism-only) and `OuterRingCapture` (the
+legibility register, going around SwiftUI as the renderer ruling requires) are shared for the same
+reason: six passes, one ruler. `slots` is a parameter with a default of sixteen — past five of the
+six builders' part counts and exactly at the sixth's — so a ring that stands fewer parts passes its
+own number rather than carrying empty slots that read alike in every room.

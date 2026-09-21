@@ -57,6 +57,20 @@ import Foundation
 // and between them they are the only reason this file is not three copies of the
 // same eight lines.
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AND WHERE THE ARITHMETIC ACTUALLY LIVES NOW
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Phase 3.6 needed every one of the rules below again, six times over, for the
+// outer climb — and the divisor changes at ring 4, where Design's altitude span
+// goes from 9 to 8. A second copy would have drifted the way the body zones did
+// when they were ported on two branches.
+//
+// So the arithmetic is ``OuterRings``, parameterised by ring, and this file is
+// the **names Ring 1's rooms and Ring 1's suites speak in**. Every member below
+// forwards; none of them restates. What is genuinely Ring 1's — that it is three
+// families split by position, and the reasoning that got each rule written — stays
+// here, where its evidence is.
 enum RingOne {
 
     /// The āvaraṇa the three families stand in. Position decides which family;
@@ -74,9 +88,7 @@ enum RingOne {
     /// crown-to-soles span is 9 in Design's numbers and ``RoomUnits/roomHeight``
     /// in this instrument's.
     static func inRoom(_ designUnits: Double) -> Double {
-        let span = designSpan
-        guard span != 0 else { return 0 }
-        return designUnits / span * RoomUnits.roomHeight
+        OuterRings.inRoom(designUnits, ring: ring)
     }
 
     /// The widest any one mark of a Ring 1 room may open, in the surface's own
@@ -88,7 +100,7 @@ enum RingOne {
     /// the reversal makes. A mark the *premise* makes is one of several, so it
     /// gets half of it: two of them side by side are still two marks in a
     /// surface, and a single one is never the surface.
-    static let widestMark: Double = RoomReversal.answeringSpan / 2
+    static var widestMark: Double { OuterRings.widestMark }
 
     /// **The narrowest a mark may be and still be a mark**: one cell of the
     /// surface's own mesh.
@@ -115,7 +127,7 @@ enum RingOne {
     /// resolution, because Ring 2's own marks turned out to fall under it too —
     /// the smallest of the seven a Karṣiṇī draws is 0.86 of a cell on a floor or
     /// a canopy — and there cannot be two answers to what the material can carry.
-    static var narrowestMark: Double { RoomInscription.narrowestMark }
+    static var narrowestMark: Double { OuterRings.narrowestMark }
 
     /// A reach the material can actually carry, in the surface's own coordinates:
     /// never wider than ``widestMark``, and never narrower than ``narrowestMark``.
@@ -136,7 +148,7 @@ enum RingOne {
     /// room and is coming to rest on him rather than going — passes through here
     /// afterwards, because that one has to be seen at the end.
     static func reach(_ surfaceUnits: Double) -> Double {
-        min(widestMark, max(narrowestMark, surfaceUnits))
+        OuterRings.reach(surfaceUnits)
     }
 
     /// **A figure, brought into the picture the walker is actually looking at.**
@@ -169,39 +181,23 @@ enum RingOne {
     struct Figure {
         /// `1` where Design's figure already fits.
         let scale: Double
-        private let material: RoomMaterial
+        private let figure: OuterRings.Figure
 
         init(spread: Double, part: Double, on material: RoomMaterial,
              bodyAltitude: Double) {
-            self.material = material
-            let want = RingOne.inRoom(abs(spread)) + RingOne.inRoom(abs(part)) / 2
-
-            // What the material can hold: half the surface is the furthest the
-            // figure's outer edge can stand from its centre and still be inside
-            // it at both ends. ``RoomReversal/answeringSpan``'s own reasoning.
-            let onSurface = RoomReversal.answeringSpan * material.span
-
-            // …and what the walker can see of it, where the room has come as near
-            // as it ever comes.
-            let settled = RoomUnits.placement(bodyAltitude: bodyAltitude,
-                                              chamberTime: HomeMemory.secondAdaptationEnd)
-            let inFrame = RoomUnits.visibleHalfWidth(
-                atDistance: RoomUnits.distance(fromEyeTo: settled))
-
-            let room = min(onSurface, inFrame)
-            self.scale = want > room && want > 0 ? room / want : 1
+            self.figure = OuterRings.Figure(ring: RingOne.ring, spread: spread, part: part,
+                                            on: material, bodyAltitude: bodyAltitude)
+            self.scale = figure.scale
         }
 
         /// A length in Design's room, in this one's scene units.
-        func length(_ designUnits: Double) -> Double { RingOne.inRoom(designUnits) * scale }
+        func length(_ designUnits: Double) -> Double { figure.length(designUnits) }
 
         /// A size in Design's room, in this surface's own coordinates — and never
         /// narrower than the material can carry, because a figure that has been
         /// scaled down to fit the picture has scaled its marks down with it.
         /// ``RingOne/narrowestMark`` is the whole of that reasoning.
-        func reach(_ designUnits: Double) -> Double {
-            RingOne.reach(material.reach(worldUnits: length(designUnits)))
-        }
+        func reach(_ designUnits: Double) -> Double { figure.reach(designUnits) }
     }
 
     // MARK: - The clock a Ring 1 room is read on
@@ -222,7 +218,7 @@ enum RingOne {
     /// the clock the travel is read on, and the clock is hers. This is
     /// ``CrossingRoom/readOver``'s finding, and Ring 1 inherits the finding
     /// rather than rediscovering it.
-    static let readOver: TimeInterval = HomeMemory.firstAdaptation / 4
+    static var readOver: TimeInterval { OuterRings.readOver }
 
     // MARK: - Where one part of a room's work stands
 
@@ -234,20 +230,7 @@ enum RingOne {
     /// against the material, which is how deep the mark it is making goes. A
     /// part's place is still two numbers on a surface, exactly as
     /// ``SurfaceCoordinate`` allows and no further.
-    struct Place: Equatable {
-        var at: SurfaceCoordinate
-        /// How far the part has travelled along the surface's own normal, in
-        /// scene units. Negative is into the material.
-        var into: Double
-
-        /// Drawn toward another place, `0` where it stands and `1` on top of it.
-        func drawn(toward target: Place, by amount: Double) -> Place {
-            let b = min(1, max(0, amount))
-            return Place(at: SurfaceCoordinate(u: at.u * (1 - b) + target.at.u * b,
-                                               v: at.v * (1 - b) + target.at.v * b),
-                         into: into * (1 - b) + target.into * b)
-        }
-    }
+    typealias Place = OuterRings.Place
 
     /// A part's place, as the classifier reads a moving part: `y` is always the
     /// way out of the material, so *down onto the stone* means the same thing on
@@ -261,7 +244,7 @@ enum RingOne {
     /// same travel read as four different speeds depending on where on her body
     /// she is felt.
     static func motion(_ place: Place, span: Double) -> AttributeMotion {
-        AttributeMotion(x: place.at.u * span, y: place.into, z: place.at.v * span)
+        OuterRings.motion(place, span: span)
     }
 
     /// How far a part's travel has carried it **against** the stone, `-1` drawn
@@ -273,7 +256,7 @@ enum RingOne {
     /// leaves the fast axes railed at ±1 for most of every turn — and a mark that
     /// is railed has stopped carrying her phase at all.
     static func pressed(_ into: Double, travel: Double) -> Double {
-        min(1, max(-1, -into / max(travel * HomeGrammar.widestTerm, 0.0001)))
+        OuterRings.pressed(into, travel: travel)
     }
 
     /// One part of a room's work, as one action on the material.
@@ -315,28 +298,18 @@ enum RingOne {
     /// written down twice. Ring 1 keeps the name its rooms and its suites speak
     /// in.
     static func depth(size: Double, on material: RoomMaterial) -> Double {
-        RoomInscription.depth(size: size, on: material)
+        OuterRings.depth(size: size, on: material)
     }
 
     static func mark(_ here: Place, from before: Place,
                      reach: Double, size: Double, travel: Double, glow: Double,
                      material: RoomMaterial) -> SurfaceAction {
-        // See ``depth(size:on:)``, which is where the grain floor lives. `lean` is
-        // how hard this part is bearing on the stone at this instant — a mark
-        // driven into the material is deeper and one drawn back out of it is
-        // shallower, and neither ever falls below the grain.
-        let lean = 0.55 + 0.45 * pressed(here.into, travel: travel)
-        let depth = RingOne.depth(size: min(1, max(0.2, size)) * lean, on: material)
-
-        let now = motion(here, span: material.span)
-        let then = motion(before, span: material.span)
-        switch RoomInscription.verb(for: now, previous: then) {
-        case .impression: return .impression(at: here.at, reach: reach, depth: depth, glow: glow)
-        case .furrow:     return .furrow(at: here.at, reach: reach, depth: depth, glow: glow)
-        case .crack:      return .crack(at: here.at, reach: reach, depth: depth, glow: glow)
-        case .swell:      return .swell(at: here.at, reach: reach, depth: depth, glow: glow)
-        case .compaction: return .compaction(at: here.at, reach: reach, depth: depth, glow: glow)
-        }
+        // See ``depth(size:on:)``, which is where the grain floor lives, and
+        // ``OuterRings/mark(_:from:reach:size:travel:glow:material:)``, which is
+        // where the arithmetic is: `lean` is how hard this part is bearing on the
+        // stone at this instant, and neither end of it ever falls below the grain.
+        OuterRings.mark(here, from: before, reach: reach, size: size,
+                        travel: travel, glow: glow, material: material)
     }
 
     /// One part's share of the light, so that `count` parts converging do not
@@ -344,6 +317,6 @@ enum RingOne {
     /// worth of material among a rosary's twenty-seven beads by, for the same
     /// reason and by the same arithmetic.
     static func lightShare(of count: Int) -> Double {
-        1 / Double(max(1, count)).squareRoot()
+        OuterRings.lightShare(of: count)
     }
 }

@@ -28,16 +28,25 @@ final class HomeGrammarTests: XCTestCase {
     // MARK: - The classifier is whole
 
     func testTheClassifierIsWhole() {
-        XCTAssertEqual(HomeGrammar.physicsRules.count, 50,
-                       "Design's PHYSICS holds fifty rules")
+        // Design's PHYSICS holds fifty rules. Phase 3.6 appended three for the
+        // three words the outer climb's own cards speak that the fifty do not —
+        // Priyatā, Saubhāgya and Cāpa, which were reaching no rule at all and
+        // would have built three rooms in rings 5 and 8 on the fall-through.
+        XCTAssertEqual(HomeGrammar.physicsRules.count, 53,
+                       "Design's fifty, and the three the outer climb needed")
         XCTAssertEqual(HomeGrammar.compiledPhysicsRules.count, HomeGrammar.physicsRules.count,
                        "every rule must compile: \(HomeGrammar.physicsRules.map(\.js))")
 
         // Fifty kinds, plus `breathe` — the fall-through, which is a named case
         // so the kernel's switch is exhaustive.
+        // The kernel is **not** widened by an appended rule: all three reuse
+        // kinds Design already wrote, so ``HomeGrammar/widestTerm`` and every
+        // room that normalises against it stand untouched.
         XCTAssertEqual(HomePhysics.allCases.count, 51)
         let ruled = Set(HomeGrammar.physicsRules.map(\.kind))
-        XCTAssertEqual(ruled.count, 50, "no two rules may claim the same physics")
+        XCTAssertEqual(ruled.count, 50, "a rule claims a physics the kernel does not carry")
+        XCTAssertEqual(Set(HomeGrammar.physicsRules.prefix(50).map(\.kind)).count, 50,
+                       "no two of Design's own fifty rules may claim the same physics")
         XCTAssertFalse(ruled.contains(.breathe),
                        "`breathe` is never a rule's verdict — only the absence of one")
         XCTAssertEqual(Set(HomePhysics.allCases).subtracting(ruled), [.breathe])
@@ -53,12 +62,18 @@ final class HomeGrammarTests: XCTestCase {
             .fill, .compress, .spring, .sustain, .sound, .clarify, .assert, .lean, .swell, .ground,
             .incline, .arrive, .bloom, .recur, .call, .turn, .persist, .land, .stand, .rest,
             .thread, .rise, .align, .brighten, .unbind, .mend, .tint, .converge, .centre, .surge,
+            // Phase 3.6's three, appended and never interleaved: Priyatā,
+            // Saubhāgya and Cāpa, real words on Design's own rings 3–9 cards that
+            // reached no rule at all. Behind all fifty, so nothing that resolved
+            // before resolves anywhere else now.
+            .swell, .brighten, .compress,
         ]
         XCTAssertEqual(HomeGrammar.physicsRules.map(\.kind), expected,
                        """
-                       the fifty rules are out of Design's order. First match wins, so an \
-                       order change is a behaviour change in every room whose tattva trips \
-                       two rules — see `testSourceFiresBeforeIccha`.
+                       the rules are out of order. First match wins, so an order change is \
+                       a behaviour change in every room whose tattva trips two rules — see \
+                       `testSourceFiresBeforeIccha`. The three appended rules must stay \
+                       behind Design's fifty.
                        """)
     }
 
@@ -93,8 +108,10 @@ final class HomeGrammarTests: XCTestCase {
             XCTAssertEqual(HomeGrammar.physics(tattva: probe, quality: ""), kind,
                            "\"\(probe)\" should read as \(kind.rawValue)")
         }
+        XCTAssertEqual(Self.ruleProbes.count, HomeGrammar.physicsRules.count,
+                       "one probe per rule, and every rule reachable")
         XCTAssertEqual(Set(Self.ruleProbes.map { $0.1 }).count, 50,
-                       "one probe per rule, and all fifty reachable")
+                       "the probes must reach every physics the kernel carries but `breathe`")
     }
 
     /// The audit that caused Design's rewrite: 78 of 102 rooms — better than
@@ -107,9 +124,18 @@ final class HomeGrammarTests: XCTestCase {
     /// real card offers the classifier a whole tattva line *and* a quality
     /// sentence to read; the sixteen real ones fall through not once — see
     /// `testTheSixteenKarsinisReadAsRoomsOfTheSecondRing`. What residue there
-    /// is, is a genuine gap in Design's vocabulary rather than in the port (the
-    /// six kañcukas and the Spanda words have no rule), and it is recorded in
-    /// `DECISIONS.md` for the rooms layer rather than tuned away here.
+    /// is, is the corpus's own vocabulary rather than the port's: the six
+    /// kañcukas, the Spanda words and Saṃskāra / Vṛtti / Guṇa have no rule, and
+    /// they are in ``HomesCorpus`` because it is a spread of real Trika words
+    /// rather than a copy of the cards.
+    ///
+    /// **Phase 3.6 read the cards themselves before widening anything, and did
+    /// not widen for those.** Run through the classifier, Design's own 102 cards
+    /// — whose fields it states are the base's — never speak one of those words,
+    /// and fall through exactly three times: Priyatā, Saubhāgya and Cāpa. Those
+    /// three now have rules. The kañcukas deliberately do not, because adding
+    /// vocabulary the rows do not use would be making the classifier look fuller
+    /// than the instrument is.
     func testTheBreatheDefaultIsRareRatherThanTheCommonCase() {
         let readings = Self.allOneHundredAndTwo()
         XCTAssertEqual(readings.count, 101,
@@ -639,6 +665,9 @@ private extension HomeGrammarTests {
         ("kula", .thread), ("aiśvarya", .rise), ("saṃyama", .align), ("maṅgala", .brighten),
         ("duḥkha", .unbind), ("ārogya", .mend), ("rañjana", .tint), ("trinity", .converge),
         ("totality", .centre), ("śakti", .surge),
+        // Phase 3.6's three. Each reuses a kind Design already wrote, so a probe
+        // proves the *rule* fires rather than that a new motion exists.
+        ("priyatā", .swell), ("saubhāgya", .brighten), ("cāpa", .compress),
     ]
 
     /// The vocabulary and the roster now live in one place —
