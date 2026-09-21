@@ -146,7 +146,10 @@ extension HomeBecoming {
         case .matrka:
             return HomeBecoming(premise: .wall, answer: .face, yields: 0.22, takes: 1.1)
 
-        // RING 1 · MUDRĀ — *"the seal has opened its hand"*.
+        // RING 1 · MUDRĀ — Design's *"the seal has opened its hand"*, carried as
+        // *"the seal has opened, and let go of what it held"* because law 4 does
+        // not let a walker-facing line name a body part in the one family where a
+        // mudrā already is one (``MudraRoom``, and ``HomeGrammar/tag(for:position:bija:quality:tattva:)``).
         // `held.scale.setScalar(… + b * 3.6)` and
         // `held.children[0].material.opacity = 0.5 + 0.3 * k - b * 0.2`: the seal
         // you were standing inside opens, upward and away.

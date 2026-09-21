@@ -601,7 +601,15 @@ enum HomeGrammar {
             return (bija ?? "the mouth before sound",
                     "the letters were never separate from the voice")
         case .mudra:
-            return ("a seal you stand inside", "the seal has opened its hand")
+            // **Design's own deep line is `'the seal has opened its hand'`, and
+            // it is not carried.** It is a walker-facing string naming a body
+            // part, in the one family of the hundred and two where a mudrā
+            // genuinely *is* a hand in the tradition — which is exactly where law
+            // 4 is least able to afford it. Where Design's handoff and a law
+            // disagree, the law wins (charter §2). The event is unchanged: the
+            // seal opens and lets go of what it was holding, which is what
+            // `held.scale.setScalar(… + b * 3.6)` does in Design's own update.
+            return ("a seal you stand inside", "the seal has opened, and let go of what it held")
         case .crossed:
             // The key pairing, marked as such in the base: at kp 44 the body
             // and the mind are the crossing, so her reversal names them.

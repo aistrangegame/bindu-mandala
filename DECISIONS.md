@@ -1105,3 +1105,190 @@ her mark stands in the room. All **120 pairs** clear Design's tenth; the closest
 at **0.300**, two Earth rooms a body's middle apart. A second check refuses the print itself if more
 than half its components read the same in all sixteen rooms, so the measure cannot be passed by
 dilution.
+
+## 2026-09-21 · Phase 3.5, pass three · Ring 1's ten Mudrās — and the one Design line law 4 would not let through
+
+Ring 1 is **not one ring of twenty-eight**. Design splits it three ways by position
+and writes three different builders, and the brief asks for three passes for that
+reason: a Siddhi is a power exercised, a Mātṛkā is a sound that makes, and a Mudrā
+is a closure that seals. This is the third pass — khaḍgamālā 19–28 — and it
+completes Ring 1 and therefore the first two full rings of the instrument.
+
+### The one place a law overrode Design's handoff
+
+Design's Mudrā builder prints two sentences and the second is
+`'the seal has opened its hand'`. It is a **walker-facing string naming a body
+part**, in the one family of the hundred and two where a mudrā genuinely *is* a
+hand in the tradition — which is exactly where law 4 can least afford it. The
+charter is explicit (§2): where the handoff and a law disagree, the law wins.
+
+`HomeGrammar.tag(for:…)` now says **"the seal has opened, and let go of what it
+held"** — the same event, which is Design's own
+`held.scale.setScalar(… + b * 3.6)`, with the figure taken out of it. The near
+line, *"a seal you stand inside"*, is Design's own and is untouched.
+
+### The aniconic law, measured rather than asserted
+
+Design's own comment for this builder is *"five fingers of the seal, **as vaults
+you stand between**"*, and the vaults are the resolution. A word is not a check,
+so each of the three rooms is asked for a property a body does not have, and
+`testNothingInTheTenReadsAsABodyPart` measures it:
+
+* **The seal is its own mirror image.** Design's five angles are `±0.9, ±0.45, 0`,
+  so vault `i` and vault `4 − i` reflect across the walker's own axis at every
+  moment — the reflection is in the across-axis and Design's opening turns about
+  the other two. A hand is chiral; the thumb is what makes it one.
+* **The five are one span, and the middle is the shortest.** Measured
+  `6.517, 6.135, 5.990, 6.135, 6.517` — longest-to-shortest **1.088** against a bar
+  of 1.2, and the shortest is the middle, which is the inverse of a hand's profile.
+  Design's own geometry; the outer vaults run further because their arc carries
+  more across the room.
+* **The seal is a sphere with the walker at its centre.** Nothing in the room ever
+  comes nearer him than the ring it springs from: the nearest thing in the room,
+  over every vault, every sample and every moment of the opening, is **exactly
+  5.000** — Design's own `footRadius` — and what the seal holds, at `(0, 0, -7)`,
+  is exactly five as well. A hand is a thing you look at from outside; this closes
+  around him and leaves the middle empty. *(The first version of this check
+  measured from the centroid of the five feet and failed at 0.956. The feet stand
+  on a 103° arc and the centroid of an arc sits close to the arc — the fan's centre
+  is the room's axis, not the mean of its feet. The corrected statement is the
+  stronger one.)*
+* **The membrane is eight-fold.** Design's veins stand at `(i / 8) · 2π`, equally
+  spaced on one circle, with three concentric sources beyond.
+* **The triple stands the same figure three times.** A body occurs once.
+
+Over all ten, no walker-facing line and no attribute shape names the hand's
+vocabulary. **And the first run found the over-reach in the check itself**: it
+failed on khaḍgamālā 24 for saying *"the kāla of the eyes"* — which is her
+`bodilyLocation`, where she is felt in the walker's own body. `LawsTests` makes
+exactly that distinction and refuses to flag the somatic fields; the list here is
+now the hand's vocabulary, which is the figure this family is actually in danger
+of. Design's card words `hand` (kp 21) and `palm` (kp 22) resolve through
+`HomeAttribute.kin` onto `linedDisc` — *a disc bearing three lines* — which is the
+aniconic mechanism working rather than a breach of it.
+
+### The three families, measured against one another
+
+The check the whole of item 3.5 exists to pass, and the only ring that needs it.
+Two means over `RingOneFingerprint`'s geometry, asked of the rooms **the grammar
+speaks for** — Ring 1 holds seven authored rooms (1, 2, 3, 4, 6, 27, 28) and
+Ruling 10 exempts them from the grammar-only proof; a hand-built room is an outlier
+in whichever family it sits in by construction, so folding them in would flatter
+the measure in one direction and the sisters in the other. Their positions are
+printed beside the assertion rather than folded into it.
+
+| | within the family | |
+|---|---|---|
+| Siddhis | **0.280** | |
+| Mātṛkās | **0.422** | |
+| Mudrās | **0.668** | |
+
+| between families | |
+|---|---|
+| Mudrās ↔ Siddhis | **0.728** |
+| Mudrās ↔ Mātṛkās | **0.730** |
+| Siddhis ↔ Mātṛkās | 0.393 |
+
+**The claim holds where the brief makes it**: a Mudrā stands further from a Siddhi
+(0.728) and from a Mātṛkā (0.730) than the widest-spread sisters in any one family
+stand from one another (0.668, the Mudrās' own).
+
+**And a finding that is recorded rather than tuned away.** Siddhis and Mātṛkās
+separate at 0.393, which is *below* the Mātṛkās' own internal spread of 0.422 —
+two Mothers differ more from each other than a Mother differs from a Siddhi. The
+cause is visible in the print: `RingOneFingerprint` reads forty-eight mark slots
+plus a count, and a Mātṛkā's mark count is her own row's channel (6 to 15 marks,
+5 to 14 letters), while a Siddhi's is always seven. So the padding pattern that
+separates the Mudrās decisively — eighty-six marks against six or seven — is the
+same padding that fails to separate the other two. The measure is Design's own and
+was cut in pass one; re-cutting it here would quietly restate what passes one and
+two proved. The finding belongs to Phase 3.10's refinement pass, and the honest
+reading is that the Siddhi and the Mātṛkā are told apart by what their rooms *do*
+— a train receding, a ring with one point of light travelling it — rather than by
+this print's mark census.
+
+### Three readings of Design this pass makes
+
+**1 · A vault springs from the stone and lifts clear of it.** Design's arch rises
+nine units over a room that has air in it; this instrument's rooms have surfaces
+and nothing else, and `RingOne.Place` has no third axis that could name a point in
+the air — deliberately, since Phase 3.1. So how far the arch stands off its surface
+is carried as **how much of a mark it makes there**: full where it springs, fading
+to the stone's own grain at the crown. That is a vault seen in the floor it rests
+on. `TripleRoom` uses the same reading and needs it more: on a working face all
+five of its receding loops stand at the same place on the panel, and the fading is
+the only register the material has for saying which is further away. The first
+version of that file anchored the fade at the room's origin instead of at the
+figure's nearest point, which on a face put every loop at zero lift — five frames
+drawn exactly on top of one another, and a room with no depth in it at all.
+
+**2 · The seal opens by pivoting where it springs.** Design's
+`d0.rotation.x = b * 0.42 * (1 + i * 0.1)` mixes the room's height and its depth,
+so the arch tips over — its crown dropping and travelling — and the outer vaults
+tip furthest. Taken about the vault's own foot, so the seal opens rather than
+slides, and monotone in the second adaptation, which is what lets
+`testTheSealOnlyEverOpens` say that this room never grips. A closure that lets go
+and a closure that closes are the same five shapes and opposite rooms.
+
+**3 · What the seal holds is let go, and its light goes with it.** Design's
+`held.scale.setScalar(… + b * 3.6)` on a sprite at `0.5 + 0.3 * k - b * 0.2`.
+Carried literally that is a lit area growing four-and-a-half-fold on the surface
+the walker is looking at — the pale structureless wash `PressRoom` found with a
+picture, `CrossingRoom` found again, and `MatrkaRoom` found a third time by a
+different door. So the opening is **bounded by the seal's own foot** — what it held
+may open until it fills the ring the vaults spring from and no further, because
+past that nothing is holding it — and the rest of Design's 3.6 is spent where the
+instrument already spends it: `HomeBecoming.archetype(.mudra)` carries
+`takes: -3.6`, so the canopy travels away by 0.78 of its own clearance. Measured on
+the render, all ten rooms end the stay at **0.0% of the frame at white**, with the
+mean rising from 0.075–0.104 at the first adaptation to 0.099–0.213 past the
+second and the spread never falling below 0.29. The room opens; the picture does
+not.
+
+For the same reason all three of this pass's rooms make **one** answer rather than
+two: none of them also calls `RoomReversal.actions`, because each already answers
+on its own material — the seal opening, the aperture opening, the one seal
+arriving — and a generic answering mark on top is the second brighter disc
+`MatrkaRoom` had to find with a picture.
+
+### The two authored rooms
+
+**`MembraneRoom` · kp 27 · Sarva-Yoni.** Design's `chamberMembrane`, and a womb —
+which Design resolves before the port has to, by building a **lathe**: a surface of
+revolution with a transmissive material, eight veins and one aperture. The room's
+signature is its enclosure: `vessel.scale.set(1 + br * 0.032, 1 - br * 0.02, …)` on
+`br = sin(t * 0.28)` — the enclosure **breathes**, at every instant of the stay,
+widening as it shortens. Ring 1 now holds four enclosures and each is a different
+fact about one: Aṇimā's closes in, Mahimā's never arrives, Laghimā's leaves at the
+turn, and this one is never still and never leaves. *No door · you were always
+inside*, said as a station rather than as a word. The reversal is Design's own
+material change — `thickness × (1 − b · 0.72)` — carried as the enclosure yielding,
+with the source-aperture opening (`0.7 + 0.4k + b · 0.5`) and the three vessels
+beyond (`NEST = [1.55, 2.3, 3.2]`) arriving concentrically past the turn. *It was
+never one womb.* Design's veins run down the *inside* of the vessel; the walker is
+inside it, and what the inside of a surface of revolution looks like from inside is
+eight spokes going out from its axis — so they arrive on the surface as a rosette,
+with Design's own profile term carrying the descent.
+
+**`TripleRoom` · kp 28 · Sarva-Trikhaṇḍā.** Design's `chamberTriple`, and the
+sharpest reversal in Ring 1. One number carries the whole room: `sep` runs from 1
+to 0 over the first adaptation as three copies of one figure slide into register
+and the single seal arrives — *three rooms · one seal, only in stillness* — and
+then hands over to a **breath**, parting and rejoining for ever. Design's own
+comment is that the trinity is one movement and not a puzzle that resolves, and the
+room's second line is *three and one, and always both*. Design's four rails per
+ghost are **not carried**: they are how a line-drawing in empty space reads as a
+room, and here the loops are cut into the room's own material, which already *is*
+the room — a mark running the whole depth of a surface is one long flute, which is
+`EndlessRoom`'s own finding made with a picture.
+
+Both were keyed in Design's `BY_NAME` as `Sarvayoni` and `Sarvatrikhaṇḍā` against
+cards reading `Sarva-Yoni` and `Sarva-Trikhaṇḍā`, so in Design's shipped Axis
+neither room is ever reached and its harness cannot see it happen. Reached here by
+khaḍgamālā position, and asserted from both ends.
+
+### The numbers
+
+All **45 pairs** of the ten clear Design's tenth on the geometric fingerprint,
+closest **kp 19 ↔ kp 25 at 0.578** over 581 components, of which 127 (22%) are
+silent — well inside the half the dilution guard allows.

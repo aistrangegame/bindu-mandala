@@ -280,6 +280,7 @@ enum RoomMechanisms {
             // which is the only key the laws allow.
             case .siddhi: return SiddhiRoom(reading)
             case .matrka: return MatrkaRoom(reading)
+            case .mudra:  return MudraRoom(reading)
             default: return GrammarReversal(reading)
             }
         case .seat:
@@ -297,10 +298,12 @@ enum RoomMechanisms {
         case .contract: return ContractRoom()
         case .endless:  return EndlessRoom()
         case .known:    return KnownRoom()
-        // The Mātṛkās' and the Mudrās' passes follow; ``MembraneRoom`` and
-        // ``TripleRoom`` are Mudrā seats and arrive with them, and the Bindu's
-        // own room waits for Ring 9.
-        case .membrane, .triple, .dissolve: return nil
+        // Pass three built the two Design named among the Mudrās and never
+        // finished: khaḍgamālā 27 is the membrane and 28 is the triple. Only the
+        // Bindu's own room is left, and it waits for Ring 9.
+        case .membrane: return MembraneRoom()
+        case .triple:   return TripleRoom()
+        case .dissolve: return nil
         }
     }
 
