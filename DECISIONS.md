@@ -1013,3 +1013,67 @@ Charter §4 requires verifying the gem, dhātu, clock and bīja field IDs before
 Note for the build: the app currently decodes **none** of these into `Avarana.swift` — only sanskritName, subtitle, presidingForm, mentalState, subtleBodyChakra, geometricShape, personalConnection and yogini. Phase 5's first act is extending that decode, additively.
 
 **No Design light package exists.** Searched the three design folders for anything on light, gems or Tratak: nothing. So charter §4's fallback applies and Phase 5 builds from `Claude Chat/bindu-mandala-expansion.md`'s descriptions of ideas 27, 28, 30, 31, 32 and 38.
+
+## 2026-09-21 · Phase 4.1, 4.2 and 4.5 — the felt register, decided by measurement rather than by eye
+
+Charter §4 hands Phase 4 a mandate with no hands in it: satisfy audit §H's thresholds **through automation**, with XCUITest and snapshot tests in place of a person looking. Ashrey receives the finished experience once. So every call below is a number somebody can re-run, and three new suites hold them.
+
+**Every site was located by its text and its characteristics, never by the audit's line number.** The audit was written against `522cdd3`; Phase 1 deleted seven files, the ledger re-wire reshaped `AirtableService` and `ShaktiDetailView`, and Phase 2 rewrote `WellView` whole. Not one of §H2's or §H4's line numbers still points at what it named. The sweep found 28 live sub-threshold `Text` sites against §H2's 31: the three `WellView` sites were raised in Phase 2 (the errata records them) and the felt-count digit in `TheHundredTwoView` was deleted in Phase 1. Both were left alone, as instructed.
+
+### 4.1 · Where the floor was set, and why not at the floor
+
+FIDELITY rule 4 asks for **≥ 11 pt and ≥ 0.5 α**. Everything raised went **above** it — 11.5 pt, 0.55 α — and only two strings sit exactly *on* it: the ghost exit hints, "tap to enter" (Homecoming) and "Tap anywhere to close" (the Recognition ceremony). §H3 calls them intentional ghosts and §H2 lists them as failures, and both readings are right: they are meant to be barely there, and "barely there" still has a floor. Sitting them at 11/0.5 while everything else clears it is what keeps them ghosts rather than promoting them into instructions — and it makes the pin exact, so a drift in either direction is a red test rather than a matter of taste.
+
+**Judged decorative, and exempt under rule 4's own words.** Six glyphs: the three disclosure chevrons "›" (the Field's ring row, the Well's ring row, Today's celestial strip), the two back arrows "‹" (Detail, the Well letter) and the Significance card's dismissal "×". Each is furniture rather than language — an arrow that rotates to say open or shut carries no words, and every one of them sits beside a label that is held to the full threshold. Nothing else was exempted: the Portrait's "she is felt, not measured" whisper, which the audit called borderline decorative, was raised, because it is the never-measure law spoken to the walker and a law that cannot be read is not a law.
+
+**Two sizes the scanner refuses to evaluate**, pinned rather than guessed: the Rite's veil name and the Rite block's name are `min(nameSize(cap:…) * 1.7, 150)` and never fall under 27 pt. A source scanner that evaluated arithmetic would be a scanner that could be wrong quietly.
+
+**One composition change inside the canvas**, made for legibility and not paid back: the Mandala's deep-zoom bīja line moved from `dotR + 20` to `dotR + 24`. At 10 pt and 8 pt the two lines just cleared each other; at 11.5 pt they would not, and a seed set inside her own name is less legible than either was.
+
+### 4.2 · Eight targets, and the rule that the composition does not move
+
+All eight reach ≥ 44 × 44 by rule 4's own idiom, `.frame(minHeight: 44)` with a `.contentShape`. The instruction was that **growing a hit area must not move the visual composition**, which rules out the obvious form of the idiom, since a control that simply grows pushes its neighbour down. So every growth is a *known* number of points and the same number is taken straight back out of a padding or a spacing beside it:
+
+| Control | Was | Growth | Paid for by |
+|---|---|---|---|
+| LalitaSourceView · "↑ return to the field" | ≈19 pt | none | the padding was on the `Button`, outside the label — moved *inside* it. 62 pt, identical layout |
+| ShaktiDetailView · hold-to-cross pill | ≈25 pt | +20 below the capsule | the pill stack's spacing, 8 → −12 |
+| TheHundredTwoView · "the threshold ›" | ≈37 pt | +8 | the row's own padding, top 8 → 4 and bottom 12 → 8 |
+| DescentFilmView · CLOSE | ≈37 pt | +8 | the dots' bottom padding 14 → 10 and the button's 24 → 20 |
+| DailyRiteView · celestial strip | ≈38 pt | +8 above the line | the strip's spacing, 7 → −1 |
+| PortraitMandalaView · "hold this image" | ≈41 pt | +4 below the capsule | "close" gives up its `.padding(.top, 4)` |
+| SettingsView · rename field | ≈42 pt | +2 below the box | the hint's top gap, 6 → 4 (the stack's spacing spelled out to make room for it) |
+| RiteBlockView · "know her ›" | ≈42 pt | +2 above the words | the block's top padding, 10 → 8 |
+
+Three of them draw a shape — a capsule, a rounded box — that is the *background of a padded label*, so padding added inside would have grown the ring the walker sees. In all three the growth sits after the `.background(…)`, under the shape rather than around it, and a test asserts that ordering. A thumb comes from underneath anyway.
+
+### 4.5 · The device slips
+
+**The seat glow under the zoom column** (device audit, Also-observed 5). The controls carried `Circle().fill(Color.ground.opacity(0.55))` — one value out to the rim — which stamps a hard dark disc over any seat lit behind the column. Replaced with a four-stop radial wash: 0.72 under the glyph, where it has to stay dense for the glyph to read against a lit seat, falling to **exactly zero at the rim**, so her light carries through the column instead of ending at an edge. The test asserts the rim reaches nothing and that the wash never brightens outward (a wash that brightens has a ring in it).
+
+**The two system-sans slips** (Also-observed 6). The Detail's quality paragraph becomes Cormorant at 15 pt — it was the one body text in the instrument still speaking in somebody else's voice. The Settings title now comes from a principal toolbar item in Cormorant; `.navigationTitle("Settings")` stays beneath it, because VoiceOver and the back stack read it and only the *rendering* was wrong.
+
+**Reduce motion, toggled mid-session** (FIDELITY rule 3). `DustMotesView` read the environment at `onAppear` and never again, so a walker who turned the setting on kept a sky full of moving dust until the screen was left. A mote now answers the *change*: a fresh assignment inside a transaction with animations disabled replaces the running `repeatForever` outright, and the mote settles at mid-phase; turned back off, the loop starts again. A test asserts that every repeat in the file lives inside that one gated function, so a second loop cannot appear outside the gate.
+
+**Staged first paint is not investigable here, and is not being quietly dropped.** Also-observed 7 is a frame-timing observation made on a simulator sharing a Mac that was building at the time. There is nothing in the source to assert and nothing a simulator can measure that would mean anything; it belongs with the G5 baseline, which is BLOCKED on the phone in both audit sessions. A test fails if this paragraph stops existing, which is the only way an item with no code in it can be carried.
+
+### What proves it, since nobody will look
+
+- **`LegibilityTests`** (unit) reuses `LawsTests`' Swift lexer — the part that already knows a string literal from code — and adds the walk it never needed: the modifier chain trailing a `Text(…)`, because a string's size and alpha live in the six lines after the call. Three locks: every `Text` in `Views/` against 11 pt and 0.5 α; **no `.font(…)` anywhere in `Views/` under 11 pt at all**, which is what catches type set on a container and inherited; and the two ghosts pinned to exactly the floor. A `.opacity(…)` modifier counts only when its argument is a bare number — `.opacity(arrived ? 1 : 0)` is a staged arrival, rule 3's business, and reading it as alpha 0 would condemn every screen that fades in. Inside a colour expression the dimmer branch of a ternary *is* judged, which is what catches an unlit seat name at 0.42.
+- **`HitAreaTests`** (XCUITest) measures six of the eight on a running app, where `XCUIElement.frame` is the frame iOS hit-tests. The other two cannot be reached by a launched simulator and say so: the crossing pill needs a practice history, and "the threshold ›" needs an āvaraṇa row. **`HitAreaIdiomTests`** (unit) holds all eight at the source, and holds the compensation ledger above — remove a compensation without its growth and it is red in a second rather than a build later.
+- **`FeltRegisterSnapshots`** (XCUITest) is the composition lock, on **iPhone 17 Pro Max, iPhone 17 and an SE-class screen**. A snapshot here is not a PNG: a screen that breathes differs from itself on the next run, and a test that goes red for weather gets muted. It is the screen's *geometry* — every element the accessibility tree exposes, with its frame to a quarter point. The committed baselines are the geometry of `main` **before** this phase, so every element that moves is compared against the pre-change screen, and the only way past a move is to write it into `FeltRegisterClassifications.shifts` with its reason.
+- **`DeviceSlipTests`** (unit) reads the wash's stops, the two faces and the motes' gate.
+
+**Two screens have no picture, and the reason is data, not effort.** `AvaranaThresholdView` and `NityaDetailView` render rows that exist only in Airtable — `ShaktiBootstrap` seeds the sixteen Ring-2 Śaktis and nothing else, so a simulator with `SYNC_OFF` has no āvaraṇa and no Nityā to open, and a launch argument pointed at either quietly no-ops. Their strings are held by `LegibilityTests`, which reads the source rather than the screen. Their geometry is unproven, and saying so is better than seeding fake content to make a test green.
+
+**Errata for the brief.** `OPEN_LETTER=<n>` takes the **khaḍgamālā** position, not the ring-relative 1–16 the device audit recorded: `Shakti.letterKey` is `khadgamalaPosition ?? position + ringStartOffset(2)`, so an unsynced bootstrap row answers to 29–44 and `OPEN_LETTER=1` silently no-ops. Found by driving it, not by reading the note.
+
+### Four calls inside Phase 4 that the sweep itself forced
+
+**The Field's compensation asks whether there is anything to compensate for.** "the threshold ›" and the caption beside it are all `if let avarana`, so before the first sync the whole row collapses to nothing. Taking the 8 pt back from a row that is not there lifted every seat in the ring by 8 pt on a fresh install — the snapshot caught it on both widths. The padding is now a ternary: it pays the 8 pt only when the row exists. Exact in both states, and ugly enough to be obvious.
+
+**The first embodiment node brightens with the pill.** `nodeColor(0)` colours two things: the crossing pill's label at level 0, and the first circle of the four-node embodiment track. Raising it from 0.4 α to 0.55 for the label's sake brightens a 6 pt dot by the same amount. Judged worth it: the alternative is a second colour that means the same thing, and a track whose first node is *below* the legibility floor is a track whose first node cannot be seen either.
+
+**The snapshot harness measures displacement, not size.** A string that grows because its type grew has not moved — it is anchored where its stack put it and the growth came out the other side. So an element's displacement on an axis is the smallest distance any of its three anchors travelled (leading edge, centre, trailing edge): if one held still, the element held still and only grew. A string shoved down by a taller neighbour has no anchor that held, and all three report the same shove. Without this the first run reported every widened label as a lateral move of half its growth, which is noise that would have buried the real ones.
+
+**Two things the harness has to be told, and now says out loud.** The ceremony screen *writes* — `AUTO_RECOGNIZE` records a real local recognition — so it runs last, and the Detail is captured on kp 33 rather than today's kp 29, because Her Moments would otherwise grow a row on every pass and the screen's geometry would differ from itself. A simulator that has been felt in still shows "felt here" on the Field next time, so the run erases its simulators first and the test fails with that instruction rather than with a mysterious diff. And the film is a cover over Settings — a `fullScreenCover` leaves the tree beneath it in the accessibility tree — so it is read as *what the cover added*, subtracting the screen underneath, rather than as nine tenths of a scrolled sheet whose last visible field prompt depends on where the flick stopped.
