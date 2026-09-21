@@ -33,3 +33,15 @@ The charter asks for a **fresh** copy of Neev's container over the cable, and ca
 Three things make proceeding safe rather than merely convenient: the migration now writes an fsync'd sidecar of every letter body *before* it deletes anything, so even a kill mid-stage is recoverable; the same code path maps all sixteen legacy slots, so a letter written since 09-06 migrates identically; and the letters are additionally mirrored server-side in each Śakti's `Letter` field, which the sync seeds back into a blank local row.
 
 **Reversible, and revisited:** the fresh pull is retried before the final ship (§8), and the gate re-run for real if the phone is reachable then. Logged to `RULINGS-QUEUE.md`.
+
+## 2026-09-21 · Ashrey releases the letters hard stop (charter §7, narrowed)
+
+**Ruled by Ashrey, 2026-09-21, unprompted:** "on the letters migration failing on a container copy, I haven't really recorded much there, so even if we lost the information, it is alright."
+
+He is factually right about the state. Three letters carry words — 13 bytes, 14 bytes, and one real 69-byte letter to Śarīrākarṣiṇī — and a fourth he deliberately cleared himself on 2026-08-24. The Well is barely begun.
+
+**Effect, narrow and deliberate:** charter §7's first halt condition — "the letters migration fails on the container copy" — is **released**. If the migration fails on a copy, the build logs it here and in `RULINGS-QUEUE.md` and continues rather than halting. The locked-phone ruling (queue item 1) drops from consequential to routine.
+
+**What this does NOT release, and I am reading it narrowly on purpose.** He said letters. He did not say practice data. The other three §7 conditions stand in full, and the second one — *any path would lose, duplicate or corrupt his practice data* — still covers the 74 recognition entries, the six crossings, and every ledger row. That is sixty days of daily practice and the entire reason Phase 0 existed. A narrow reading costs the build nothing; a broad one could cost him the thing he actually cares about.
+
+**And the letters are safer than either of us needs them to be:** all three non-empty bodies are mirrored server-side in each Śakti's `Letter` field (`fldgASyV031Hr4sHp`), and `seedLetterIfMissing` restores a server body into a blank local row on sync. Local loss is recoverable from Airtable without a migration at all.

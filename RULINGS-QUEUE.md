@@ -13,3 +13,5 @@ Questions the laws, the rulings, the brief and Design's handoff could not answer
 **What depends on it:** everything downstream of Phase 2.1 — which is the whole queue, since the letters re-key is the schema those phases build on.
 
 **If you want it done properly:** unlock Neev and leave it connected by cable for two minutes. The pull and the re-run take about that long.
+
+**Resolved by Ashrey, 2026-09-21 — downgraded.** He ruled that the letters are not precious ("I haven't really recorded much there, so even if we lost the information, it is alright"), which releases charter §7's letters hard stop. This item stays open only as a nicety: the gate still runs on the sealed container, and the fresh pull is still retried before the ship so the check runs against real current data if the phone is reachable. Nothing waits on it. His recognitions, crossings and ledger rows remain sacred and are **not** covered by this release — see `DECISIONS.md` for why that reading is deliberately narrow.
