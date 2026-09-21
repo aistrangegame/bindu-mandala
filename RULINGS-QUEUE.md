@@ -35,3 +35,13 @@ Questions the laws, the rulings, the brief and Design's handoff could not answer
 **What depends on it:** nothing. It is one overlay in one view.
 
 **If you want it back:** say so, and say whether the *met* ones should be marked differently from the rest — that is the half that is a practice readout, and it could be left out while the nine positions stay.
+
+## 4 · The Mudrā's second line — Design says "its hand", and law 4 would not let it through
+
+**2026-09-21, Phase 3.5.** Every room says one sentence while the eye is settling and a different one once its premise turns. For the ten Mudrās, khaḍgamālā 19 to 28, Design's second sentence is **"the seal has opened its hand"**. It names a body part, out loud, to the walker — in the one family of the hundred and two where the figure is genuinely closest, because a mudrā *is* a hand gesture in the tradition.
+
+**Recommended answer, and what the build did:** change it, to **"the seal has opened, and let go of what it held"**. Law 4 is a law and the handoff is a handoff; the charter says the law wins. Nothing else about the sentence's job changes — it still names exactly what the room does at that moment, which is Design's own `held.scale.setScalar(… + b * 3.6)`: the closure opens and what it was holding goes. Design's first line, *"a seal you stand inside"*, is untouched.
+
+**What depends on it:** nothing but the wording. The room itself is built to the same reading — five equal vaults you stand among, mirror-symmetric, springing from a ring five units around you and tipping open — and there is a test that fails if any of the ten ever becomes readable as a hand.
+
+**If you would rather it said something else:** it is one string. The constraint is only that it must not name a hand, fingers or a palm; anything that says *a closure has opened and let go* will do. If you want Design's line back exactly as it stands, that is your call to make and not mine — say so and it goes back.
