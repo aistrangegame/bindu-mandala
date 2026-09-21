@@ -219,13 +219,17 @@ struct CrossingRoom: RoomSurfaceMechanism {
     static let travel: Double = 1.2 / designRoomHeight * RoomUnits.roomHeight
 
     /// The largest multiple of its own amplitude the displacement kernel puts on
-    /// any one axis — ``HomePhysics/widen``'s `2.2`. It is here so that a depth
-    /// read off the kernel can be normalised against what the kernel can
-    /// actually produce rather than against the amplitude it was given.
+    /// any one axis, so that a depth read off the kernel can be normalised
+    /// against what the kernel can actually produce rather than against the
+    /// amplitude it was given.
+    ///
+    /// Read from ``HomeGrammar/widestTerm``, which is where the kernel is: Ring
+    /// 1's three families need the same number for the same reason, and the
+    /// instrument has already paid once for a table that was written down twice.
     /// `testTheKernelNeverExceedsItsWidestTerm` holds it over all fifty-one
-    /// kinds, so a new kind that reached further would fail here rather than
+    /// kinds, so a new kind that reached further would fail there rather than
     /// quietly rail a ring's marks.
-    static let kernelWidest: Double = 2.2
+    static let kernelWidest: Double = HomeGrammar.widestTerm
 
     /// **How long a reading of a half is taken over, and why it is not a quarter
     /// of a second.**
@@ -457,31 +461,14 @@ struct CrossingRoom: RoomSurfaceMechanism {
 
     // MARK: - Design's room, in this one
 
-    /// Which way is which, on one surface.
+    /// Which way is which, on one surface — ``RoomUnits/axes(of:)``.
     ///
-    /// A floor and a ceiling run away from the walker; a working face runs up.
-    /// The way *out of* the material is the way ``RoomUnits/emberOffset(for:)``
-    /// already calls out, so there is one answer in the instrument to "which way
-    /// is out of this stone" and this reads it rather than restating it.
-    struct Axes {
-        let outward: Double
-        let alongIsRise: Bool
+    /// It moved there when Ring 1's three families needed the same answer: a
+    /// floor and a ceiling run away from the walker and a working face runs up,
+    /// and that is a fact about the room's coordinate system rather than about
+    /// this ring. The name is kept here because the crossing's own reading of
+    /// Design's three axes is what the ring's tests speak in.
+    typealias Axes = RoomUnits.SurfaceAxes
 
-        func across(_ o: HomeOffset) -> Double { o.x }
-        func along(_ o: HomeOffset) -> Double { alongIsRise ? o.y : o.z }
-        func into(_ o: HomeOffset) -> Double { (alongIsRise ? o.z : o.y) * outward }
-        func along(design depth: Double, rise: Double) -> Double { alongIsRise ? rise : depth }
-    }
-
-    static func axes(of surface: RoomSurfaceKind) -> Axes {
-        // `emberOffset` is the way out of the material in scene units; its sign
-        // on the axis that is not along the surface is all that is needed.
-        let offset = RoomUnits.emberOffset(for: surface)
-        switch surface {
-        case .ground, .canopy:
-            return Axes(outward: offset.y >= 0 ? 1 : -1, alongIsRise: false)
-        case .face, .wall:
-            return Axes(outward: offset.z >= 0 ? 1 : -1, alongIsRise: true)
-        }
-    }
+    static func axes(of surface: RoomSurfaceKind) -> Axes { RoomUnits.axes(of: surface) }
 }

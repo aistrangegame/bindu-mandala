@@ -263,6 +263,23 @@ enum HomeGrammar {
 
     // MARK: · The displacement kernel
 
+    /// **The largest multiple of its own amplitude the kernel puts on any one
+    /// axis** — ``HomePhysics/widen``'s `2.2`, which is the widest term in the
+    /// fifty-one cases below.
+    ///
+    /// It is here, beside the kernel, because it is a fact *about* the kernel: a
+    /// room that normalises a travel needs to divide by what the kernel can
+    /// actually produce rather than by the amplitude it handed in, or its fast
+    /// axes rail at full depth for most of every turn and stop carrying her
+    /// phase at all. That was measured once, on Cittā and Ātmā, and cost them
+    /// their divergence.
+    ///
+    /// `CrossingRoomTests.testTheKernelNeverExceedsItsWidestTerm` walks all
+    /// fifty-one kinds over every phase and holds this number to what they do,
+    /// so a new kind that reached further fails there rather than quietly railing
+    /// a ring's marks.
+    static let widestTerm: Double = 2.2
+
     /// How her physics moves a thing, in her own phase.
     ///
     /// A pure function of `(kind, time, phase, amplitude)` — the same four
