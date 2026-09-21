@@ -92,6 +92,7 @@ private struct AppRoot: View {
                 // Ring-world voices must not keep sounding once the app leaves
                 // the foreground; every drone, triad and descent stops here.
                 RingAudioService.shared.stopAll()
+                HomeSoundService.shared.stopAll()
             default:
                 break
             }
