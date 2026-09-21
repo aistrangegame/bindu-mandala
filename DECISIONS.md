@@ -45,3 +45,17 @@ He is factually right about the state. Three letters carry words — 13 bytes, 1
 **What this does NOT release, and I am reading it narrowly on purpose.** He said letters. He did not say practice data. The other three §7 conditions stand in full, and the second one — *any path would lose, duplicate or corrupt his practice data* — still covers the 74 recognition entries, the six crossings, and every ledger row. That is sixty days of daily practice and the entire reason Phase 0 existed. A narrow reading costs the build nothing; a broad one could cost him the thing he actually cares about.
 
 **And the letters are safer than either of us needs them to be:** all three non-empty bodies are mirrored server-side in each Śakti's `Letter` field (`fldgASyV031Hr4sHp`), and `seedLetterIfMissing` restores a server body into a blank local row on sync. Local loss is recoverable from Airtable without a migration at all.
+
+## 2026-09-21 · A non-ruling on the renderer, discarded before it could mislead
+
+An agent reported a renderer ruling of "(a) SceneKit" that rested on the charter's default clause alone. It was honest about why: neither Garimā room existed, because both variant agents died before starting — `Could not read the repository git config to neutralize filter drivers` — so there was nothing to compare.
+
+**Not accepted as the ruling.** The charter asks for the spike run two ways with the numbers logged, and a default taken in the absence of evidence is not that. Both rooms are now being built in prepared worktrees, and the real decision will supersede this note.
+
+## 2026-09-21 · Why the first spike produced nothing: a host-contention failure of my own making
+
+Worth recording because it will recur otherwise. Three agents were building concurrently, and two of them invoked `xcodebuild` with the **same** `-derivedDataPath`, corrupting each other's output. Host load passed 300 on an 8-core machine and `posix_spawn` began returning `EAGAIN`, so builds died with "Early unexpected exit" and "could not spawn" that look like test failures and are not.
+
+The spike agent wrote eight good files and could never commit them; they were recovered and committed by hand as `55cf92b`. Its baseline census survives and is the trustworthy half — a pure function of the canvas's branch structure with no GPU or scheduler in it, so it reproduces exactly anywhere. Its *timing* half was taken at host load ~17 on 8 cores and is explicitly untrustworthy.
+
+**The rule from here:** every concurrent agent gets its own named `-derivedDataPath`, never a generic one it chooses itself, and a spawn failure is treated as contention to wait out rather than a defect to edit around.
