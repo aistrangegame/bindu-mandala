@@ -169,3 +169,16 @@ no lifecycle at all — here they are cancellable `Task`s cancelled in `stopAll(
 is idempotent and safe when nothing ever started. `HomeSoundService` also observes
 `AVAudioSession` interruption and route-change notifications and pauses cleanly, which
 `RingAudioService` does not do; that observation is confined to the new service.
+
+A third departure was found on verification, 2026-09-21. Web Audio's `AudioParam` is
+written from one thread and read by the audio thread with no tearing; a hand-written render
+block has no such gift. As first ported, the render thread read each partial whole at the
+top of a block and wrote it back whole at the bottom, so a frequency the main actor set in
+between was swallowed — ring 4 or 5 would miss a step and stay on the wrong degree until
+the next tick some seconds later. Where a partial is *heading* now lives in
+`HomeGround.targetFreqs`, which the main actor writes and the render thread only reads;
+`HomePartial` holds only what the render thread owns. **And the whole of `homes-sound.js`
+is now a table in `HomeCarrier` that `HomeSoundTests` asserts line by line** — the ten time
+constants, the nine ground voicings, the strike envelope, the stepped and triad movements —
+so a drifted constant fails the build. That guard was checked by drifting three values that
+had no test at all and confirming three tests broke.

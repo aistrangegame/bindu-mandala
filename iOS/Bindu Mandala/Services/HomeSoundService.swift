@@ -19,6 +19,45 @@ enum HomeTechnique: String {
     case shepard
 }
 
+/// The oscillator shapes the voice is built from, under Web Audio's names —
+/// Design's `osc('sine' | 'triangle' | 'sawtooth', …)`.
+enum HomeWave {
+    case sine, triangle, saw
+}
+
+// MARK: - The voice as pure data
+
+/// One partial of a ground: everything Design's `osc(...)` call carries, with
+/// the frequency held as a multiple of the ring's root so the table reads the
+/// way Design wrote it.
+struct HomePartialSpec: Equatable {
+    var wave: HomeWave
+    var multiple: Double
+    var gain: Double
+    /// Routed through the ground's own bandpass rather than straight out.
+    var throughBand: Bool = false
+    var lfoRate: Double = 0
+    var lfoDepth: Double = 0
+    /// Web Audio's `setTargetAtTime` time constant for a frequency change.
+    /// Zero is `setValueAtTime` — a step, not a glide.
+    var glideTau: Double = 0
+}
+
+/// A ground's own bandpass, its frequency a multiple of the ring's root.
+struct HomeBandSpec: Equatable {
+    var multiple: Double
+    var q: Double
+}
+
+/// One āvaraṇa's whole ground.
+struct HomeGroundSpec: Equatable {
+    var partials: [HomePartialSpec]
+    var band: HomeBandSpec?
+    /// The home ring breathes: an LFO on the ground's own amplitude.
+    var amRate: Double = 0
+    var amDepth: Double = 0
+}
+
 // MARK: - The carrier — pure, and the whole contract
 
 /// The arithmetic of the Homes' voice, with no engine anywhere near it.
@@ -120,10 +159,18 @@ enum HomeCarrier {
     /// the fifth, or the octave. Design indexes `[1, 1.5, 2][beat - 1]`
     /// unguarded; a beat outside 1…3 clamps here rather than becoming a NaN.
     static func strikeFrequency(ring: Int, beat: Int, syllable: String?) -> Double {
-        let ratios: [Double] = [1, 1.5, 2]
-        let ratio = ratios[max(0, min(ratios.count - 1, beat - 1))]
+        let ratio = strikeRatios[max(0, min(strikeRatios.count - 1, beat - 1))]
         return carrierFor(ring: ring, syllable: syllable) * ratio
     }
+
+    /// The three beats: the unison, the fifth, the octave.
+    static let strikeRatios: [Double] = [1, fifthRatio, 2]
+
+    /// The fifth above her carrier — the interval that is withheld.
+    static let fifthRatio: Double = 1.5
+
+    /// Below this the master counts as silence, as Design's `on` getter has it.
+    static let soundingFloor: Double = 0.001
 
     /// Her adaptation opens the room's filter.
     static func filterCutoff(adaptation a: Double) -> Double { 220 + 1500 * a }
@@ -137,8 +184,11 @@ enum HomeCarrier {
     /// adaptation grants it, and the ninth world grants it outright.
     static func fifthGain(b: Double, ring: Int) -> Double {
         let allow = ring == 9 ? 1.0 : b
-        return allow * 0.05
+        return allow * fifthLevel
     }
+
+    /// The fifth's level once it has been granted.
+    static let fifthLevel: Double = 0.05
 
     /// The ground's level when it is the one you are standing in.
     static let groundLevel: Double = 0.16
@@ -146,6 +196,140 @@ enum HomeCarrier {
     static let carrierLevel: Double = 0.1
     /// Where `wake` brings the master.
     static let wakeLevel: Double = 0.5
+
+    // MARK: The rest of Design's table
+
+    /// Every `setTargetAtTime` time constant in `homes-sound.js`, named by what
+    /// it moves. Together they are the room's whole sense of time — a drifted
+    /// one is a different instrument — so they are named here rather than left
+    /// buried in the engine's initialiser.
+    enum Tau {
+        /// `wake()` — the master coming up.
+        static let master: Double = 1.2
+        /// `stop()` — the master going down.
+        static let masterOut: Double = 0.5
+        /// `setGround` — the climb's crossfade.
+        static let ground: Double = 0.9
+        /// `setCarrier`.
+        static let carrierFreq: Double = 0.6
+        static let carrierGain: Double = 0.7
+        /// `setRoom` — the lowpass her adaptation opens.
+        static let room: Double = 1.4
+        static let fifthFreq: Double = 0.8
+        static let fifthGain: Double = 2.0
+        static let airGain: Double = 1.5
+        static let airCutoff: Double = 1.6
+    }
+
+    /// Where the carrier, the fifth and the air sit before anyone has entered
+    /// anyone — Design's oscillator and filter defaults, untouched until the
+    /// first `setCarrier` or `setRoom`.
+    static let initialCarrierHz: Double = 136.1
+    static let initialFifthHz: Double = 204.15
+    static let initialAirHz: Double = 460
+
+    /// The room's lowpass and the air's bandpass.
+    static let roomQ: Double = 0.7
+    static let airQ: Double = 0.6
+
+    /// Design's noise buffer: four seconds, looped, at half scale.
+    static let noiseSeconds: Double = 4
+    static let noiseAmplitude: Double = 0.5
+
+    /// Rings 4 and 5 step through these; 4 is the slower of the two.
+    static let steps: [Double] = [1, 9.0 / 8.0, 5.0 / 4.0, 3.0 / 2.0]
+    static func stepPeriod(forRing ring: Int) -> Double { ring == 4 ? 5.2 : 3.4 }
+
+    /// Ring 8's triad collapses toward its root and reopens.
+    static let triadPeriod: Double = 14
+    static let triadGlideTau: Double = 3.4
+
+    /// A rising that never arrives: five voices an octave apart, each drifting
+    /// at its own rate and detuned by its own few cents.
+    static let shepardVoices: Int = 5
+    static let shepardGain: Double = 0.22
+    static let shepardRate: Double = 0.021
+    static let shepardDetuneCents: Double = 3
+    static let shepardRateCents: Double = 40
+
+    /// The struck tone's envelope: nothing to `strikePeak` over `strikeAttack`,
+    /// then an exponential fall to `strikeFloor` at `strikeFall`, the voice
+    /// released at `strikeRelease`.
+    static let strikePeak: Double = 0.05
+    static let strikeAttack: Double = 0.02
+    static let strikeFloor: Double = 0.0001
+    static let strikeFall: Double = 3.4
+    static let strikeRelease: Double = 3.6
+
+    /// Cents as a frequency ratio — Web Audio's `detune`.
+    static func cents(_ c: Double) -> Double { pow(2, c / 1200) }
+
+    /// Each ring's ground, voiced its own way — Design's `build()` branch by
+    /// branch, as data.
+    ///
+    /// The order within `partials` is Design's own and it is load-bearing:
+    /// rings 4 and 5 step their **first** partial, and ring 8 collapses its
+    /// **second and third** toward the first. The tests hold that order.
+    static func ground(forRing ring: Int) -> HomeGroundSpec {
+        switch technique(forRing: ring) {
+        case .drone:
+            return HomeGroundSpec(partials: [
+                HomePartialSpec(wave: .sine, multiple: 1, gain: 1),
+                HomePartialSpec(wave: .sine, multiple: 1.0035, gain: 0.8),
+                HomePartialSpec(wave: .triangle, multiple: 2, gain: 0.16),
+            ], band: nil)
+        case .breath:
+            return HomeGroundSpec(partials: [
+                HomePartialSpec(wave: .sine, multiple: 1, gain: 1),
+                HomePartialSpec(wave: .sine, multiple: 1.5, gain: 0.3),
+            ], band: nil, amRate: 0.14, amDepth: 0.55)
+        case .breathy:
+            return HomeGroundSpec(partials: [
+                HomePartialSpec(wave: .sine, multiple: 1, gain: 0.7),
+                HomePartialSpec(wave: .saw, multiple: 1.002, gain: 0.1),
+                HomePartialSpec(wave: .saw, multiple: 2.01, gain: 0.05, throughBand: true),
+            ], band: HomeBandSpec(multiple: 4, q: 1.6))
+        case .stepped:
+            return HomeGroundSpec(partials: [
+                HomePartialSpec(wave: .sine, multiple: 1, gain: 1),
+                HomePartialSpec(wave: .sine, multiple: 0.5, gain: 0.4),
+            ], band: nil)
+        case .sourceless:
+            return HomeGroundSpec(partials: [
+                HomePartialSpec(wave: .sine, multiple: 2, gain: 0.42),
+                HomePartialSpec(wave: .sine, multiple: 3, gain: 0.26),
+                HomePartialSpec(wave: .sine, multiple: 5, gain: 0.14),
+            ], band: nil)
+        case .triad:
+            return HomeGroundSpec(partials: [
+                HomePartialSpec(wave: .sine, multiple: 1, gain: 0.7),
+                HomePartialSpec(wave: .sine, multiple: 1.26, gain: 0.6, glideTau: triadGlideTau),
+                HomePartialSpec(wave: .sine, multiple: 1.5, gain: 0.6, glideTau: triadGlideTau),
+            ], band: nil)
+        case .shepard:
+            return HomeGroundSpec(partials: (0..<shepardVoices).map { k in
+                HomePartialSpec(
+                    wave: .sine,
+                    multiple: pow(2, Double(k) - 1) * cents(Double(k) * shepardDetuneCents),
+                    gain: shepardGain,
+                    lfoRate: shepardRate * cents(Double(k) * shepardRateCents),
+                    lfoDepth: shepardGain
+                )
+            }, band: nil)
+        }
+    }
+
+    // MARK: Ours, not Design's — the lifecycle its JS never had
+
+    /// How many struck tones may ring at once. Design creates an oscillator per
+    /// strike and lets the graph collect it; a render block cannot allocate, so
+    /// the voices are a fixed pool and the oldest yields.
+    static let strikeVoices: Int = 8
+    /// An interruption ducks faster than a `stop()`: the room did not ask.
+    static let pauseTau: Double = 0.2
+    /// How long a fade is given to land before the nodes go.
+    static let pauseDelay: Double = 0.35
+    static let teardownDelay: Double = 0.8
 }
 
 // MARK: - Render primitives
@@ -191,16 +375,15 @@ struct HomeBiquad {
     }
 }
 
-enum HomeWave {
-    case sine, triangle, saw
-}
-
 /// A partial of a ground voice. `freqCoef` of 1 is Web Audio's
 /// `setValueAtTime` (a step); anything smaller is `setTargetAtTime` (a glide).
+///
+/// Everything here is **render-owned**: the render thread reads the struct at
+/// the top of each block and writes it back whole at the bottom. Where a
+/// partial is *heading* is therefore not here — see `HomeGround.targetFreqs`.
 struct HomePartial {
     var wave: HomeWave = .sine
     var freq: Double = 0
-    var targetFreq: Double = 0
     var freqCoef: Double = 1
     var gain: Double = 0
     var phase: Double = 0
@@ -216,6 +399,14 @@ final class HomeGround {
     var target: Float = 0
     var current: Float = 0
     var partials: [HomePartial] = []
+    /// Where each partial is heading, parallel to `partials`.
+    ///
+    /// **Control-owned:** the main actor writes here and the render thread only
+    /// ever reads. It is kept out of `HomePartial` precisely because the render
+    /// thread writes that struct back whole on every block: a step set between
+    /// its read and its write would be swallowed, and ring 4 or 5 would miss a
+    /// note until the next tick some seconds later.
+    var targetFreqs: [Double] = []
     var band: HomeBiquad?
     /// The home ring breathes: an LFO on its own amplitude.
     var amPhase: Double = 0
@@ -233,10 +424,11 @@ final class HomeGround {
         var banded = 0.0
         for k in partials.indices {
             var p = partials[k]
+            let target = k < targetFreqs.count ? targetFreqs[k] : p.freq
             if p.freqCoef >= 1 {
-                p.freq = p.targetFreq
+                p.freq = target
             } else {
-                p.freq += (p.targetFreq - p.freq) * p.freqCoef
+                p.freq += (target - p.freq) * p.freqCoef
             }
             let increment = p.freq / sr
             p.phase += increment
@@ -308,8 +500,8 @@ final class HomeRenderState {
     var masterCoef: Float
 
     // The room's lowpass, which her adaptation opens.
-    var lowpassTarget: Double = 220
-    var lowpassCurrent: Double = 220
+    var lowpassTarget: Double = HomeCarrier.filterCutoff(adaptation: 0)
+    var lowpassCurrent: Double = HomeCarrier.filterCutoff(adaptation: 0)
     let lowpassCoef: Double
     var lowpass = HomeBiquad()
 
@@ -318,8 +510,8 @@ final class HomeRenderState {
     let groundCoef: Double
 
     // Her carrier — silent until you enter her.
-    var carrierFreqTarget: Double = 136.1
-    var carrierFreqCurrent: Double = 136.1
+    var carrierFreqTarget: Double = HomeCarrier.initialCarrierHz
+    var carrierFreqCurrent: Double = HomeCarrier.initialCarrierHz
     var carrierGainTarget: Double = 0
     var carrierGainCurrent: Double = 0
     var carrierPhase: Double = 0
@@ -327,8 +519,8 @@ final class HomeRenderState {
     let carrierGainCoef: Double
 
     // The withheld fifth.
-    var fifthFreqTarget: Double = 204.15
-    var fifthFreqCurrent: Double = 204.15
+    var fifthFreqTarget: Double = HomeCarrier.initialFifthHz
+    var fifthFreqCurrent: Double = HomeCarrier.initialFifthHz
     var fifthGainTarget: Double = 0
     var fifthGainCurrent: Double = 0
     var fifthPhase: Double = 0
@@ -338,8 +530,8 @@ final class HomeRenderState {
     // Air — the room's own breath, bandpassed noise.
     var airGainTarget: Double = 0
     var airGainCurrent: Double = 0
-    var airFreqTarget: Double = 460
-    var airFreqCurrent: Double = 460
+    var airFreqTarget: Double = HomeCarrier.initialAirHz
+    var airFreqCurrent: Double = HomeCarrier.initialAirHz
     let airGainCoef: Double
     let airFreqCoef: Double
     var airBand = HomeBiquad()
@@ -352,19 +544,19 @@ final class HomeRenderState {
     init(sampleRate: Double) {
         self.sampleRate = sampleRate
         func coef(_ tau: Double) -> Double { 1 - exp(-1.0 / (tau * sampleRate)) }
-        self.masterCoef = Float(coef(1.2))
-        self.lowpassCoef = coef(1.4)
-        self.groundCoef = coef(0.9)
-        self.carrierFreqCoef = coef(0.6)
-        self.carrierGainCoef = coef(0.7)
-        self.fifthFreqCoef = coef(0.8)
-        self.fifthGainCoef = coef(2.0)
-        self.airGainCoef = coef(1.5)
-        self.airFreqCoef = coef(1.6)
-        self.strikes = Array(repeating: HomeStrike(), count: 8)
+        self.masterCoef = Float(coef(HomeCarrier.Tau.master))
+        self.lowpassCoef = coef(HomeCarrier.Tau.room)
+        self.groundCoef = coef(HomeCarrier.Tau.ground)
+        self.carrierFreqCoef = coef(HomeCarrier.Tau.carrierFreq)
+        self.carrierGainCoef = coef(HomeCarrier.Tau.carrierGain)
+        self.fifthFreqCoef = coef(HomeCarrier.Tau.fifthFreq)
+        self.fifthGainCoef = coef(HomeCarrier.Tau.fifthGain)
+        self.airGainCoef = coef(HomeCarrier.Tau.airGain)
+        self.airFreqCoef = coef(HomeCarrier.Tau.airCutoff)
+        self.strikes = Array(repeating: HomeStrike(), count: HomeCarrier.strikeVoices)
 
         // Four seconds of noise, looped — Design's own buffer.
-        let count = Int(sampleRate * 4)
+        let count = Int(sampleRate * HomeCarrier.noiseSeconds)
         var buffer = [Float](repeating: 0, count: count)
         var seed: UInt64 = 0x9E3779B97F4A7C15
         for i in 0..<count {
@@ -372,12 +564,12 @@ final class HomeRenderState {
             seed ^= seed >> 7
             seed ^= seed << 17
             let unit = Double(seed >> 11) / Double(UInt64(1) << 53)
-            buffer[i] = Float((unit * 2 - 1) * 0.5)
+            buffer[i] = Float((unit * 2 - 1) * HomeCarrier.noiseAmplitude)
         }
         self.noise = buffer
 
-        lowpass.setLowpass(frequency: lowpassCurrent, q: 0.7, sampleRate: sampleRate)
-        airBand.setBandpass(frequency: airFreqCurrent, q: 0.6, sampleRate: sampleRate)
+        lowpass.setLowpass(frequency: lowpassCurrent, q: HomeCarrier.roomQ, sampleRate: sampleRate)
+        airBand.setBandpass(frequency: airFreqCurrent, q: HomeCarrier.airQ, sampleRate: sampleRate)
     }
 
     /// Coefficient for a Web Audio `setTargetAtTime` time constant.
@@ -390,15 +582,17 @@ final class HomeRenderState {
             slot = strikes.indices.max(by: { strikes[$0].elapsed < strikes[$1].elapsed })
         }
         guard let index = slot else { return }
-        // 0 → 0.05 over 20 ms, then an exponential fall to 0.0001 at 3.4 s.
-        let ratio = 0.0001 / 0.05
+        // Nothing to the peak over the attack, then an exponential fall to the
+        // floor — Design's linear ramp and `exponentialRampToValueAtTime`.
+        let ratio = HomeCarrier.strikeFloor / HomeCarrier.strikePeak
+        let fall = HomeCarrier.strikeFall - HomeCarrier.strikeAttack
         strikes[index] = HomeStrike(
             active: true,
             freq: frequency,
             phase: 0,
             elapsed: 0,
             amplitude: 0,
-            decay: pow(ratio, 1.0 / (3.38 * sampleRate))
+            decay: pow(ratio, 1.0 / (fall * sampleRate))
         )
     }
 
@@ -407,8 +601,8 @@ final class HomeRenderState {
         let dt = 1.0 / sr
         for i in 0..<frameCount {
             if controlCounter == 0 {
-                lowpass.setLowpass(frequency: lowpassCurrent, q: 0.7, sampleRate: sr)
-                airBand.setBandpass(frequency: airFreqCurrent, q: 0.6, sampleRate: sr)
+                lowpass.setLowpass(frequency: lowpassCurrent, q: HomeCarrier.roomQ, sampleRate: sr)
+                airBand.setBandpass(frequency: airFreqCurrent, q: HomeCarrier.airQ, sampleRate: sr)
             }
             controlCounter = (controlCounter + 1) & 31
 
@@ -446,11 +640,11 @@ final class HomeRenderState {
             for k in strikes.indices where strikes[k].active {
                 var s = strikes[k]
                 s.elapsed += dt
-                if s.elapsed >= 3.6 {
+                if s.elapsed >= HomeCarrier.strikeRelease {
                     s.active = false
                 } else {
-                    if s.elapsed < 0.02 {
-                        s.amplitude = 0.05 * (s.elapsed / 0.02)
+                    if s.elapsed < HomeCarrier.strikeAttack {
+                        s.amplitude = HomeCarrier.strikePeak * (s.elapsed / HomeCarrier.strikeAttack)
                     } else {
                         s.amplitude *= s.decay
                     }
@@ -520,7 +714,7 @@ final class HomeSoundService {
     /// True while the instrument is actually sounding.
     var isSounding: Bool {
         guard isBuilt, let state else { return false }
-        return state.masterCurrent > 0.001
+        return Double(state.masterCurrent) > HomeCarrier.soundingFloor
     }
 
     // MARK: Lifecycle
@@ -552,14 +746,14 @@ final class HomeSoundService {
 
     private func wakeMaster() {
         guard let state else { return }
-        state.masterCoef = Float(state.coefficient(tau: 1.2))
+        state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.master))
         state.masterTarget = Float(HomeCarrier.wakeLevel)
     }
 
     /// Fade to silence but keep the graph — Design's `stop()`.
     func quiet() {
         guard isBuilt, let state else { return }
-        state.masterCoef = Float(state.coefficient(tau: 0.5))
+        state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.masterOut))
         state.masterTarget = 0
     }
 
@@ -579,12 +773,12 @@ final class HomeSoundService {
         generation &+= 1
         let mark = generation
         if let state {
-            state.masterCoef = Float(state.coefficient(tau: 0.5))
+            state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.masterOut))
             state.masterTarget = 0
         }
         // Let the fade land before the nodes go.
         Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(0.8))
+            try? await Task.sleep(for: .seconds(HomeCarrier.teardownDelay))
             guard let self, self.generation == mark, !self.isBuilt else { return }
             self.teardown()
         }
@@ -674,11 +868,11 @@ final class HomeSoundService {
     private func pause() {
         guard isBuilt, !isPaused, let state else { return }
         isPaused = true
-        state.masterCoef = Float(state.coefficient(tau: 0.2))
+        state.masterCoef = Float(state.coefficient(tau: HomeCarrier.pauseTau))
         state.masterTarget = 0
         let mark = generation
         Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(0.35))
+            try? await Task.sleep(for: .seconds(HomeCarrier.pauseDelay))
             guard let self, self.generation == mark, self.isPaused else { return }
             self.engine?.pause()
         }
@@ -691,7 +885,7 @@ final class HomeSoundService {
         if !engine.isRunning {
             do { try engine.start() } catch { return }
         }
-        state.masterCoef = Float(state.coefficient(tau: 1.2))
+        state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.master))
         state.masterTarget = Float(HomeCarrier.wakeLevel)
     }
 
@@ -738,74 +932,40 @@ final class HomeSoundService {
     }
 
     /// Nine grounds, each voiced by its own ring's technique rather than nine
-    /// copies of one drone.
+    /// copies of one drone. Every number comes from `HomeCarrier`'s table, so
+    /// the table and the sound cannot drift apart.
     private static func makeGrounds(sampleRate: Double) -> [HomeGround] {
         HomeCarrier.roots.enumerated().map { index, hz in
             let ring = index + 1
+            let technique = HomeCarrier.technique(forRing: ring)
+            let spec = HomeCarrier.ground(forRing: ring)
             let ground = HomeGround()
-            func partial(_ wave: HomeWave,
-                         _ freq: Double,
-                         _ gain: Double,
-                         band: Bool = false,
-                         lfoRate: Double = 0,
-                         lfoDepth: Double = 0,
-                         glideTau: Double = 0) {
+            ground.amRate = spec.amRate
+            ground.amDepth = spec.amDepth
+            if let band = spec.band {
+                var filter = HomeBiquad()
+                filter.setBandpass(frequency: hz * band.multiple,
+                                   q: band.q,
+                                   sampleRate: sampleRate)
+                ground.band = filter
+            }
+            for partial in spec.partials {
                 var p = HomePartial()
-                p.wave = wave
-                p.freq = freq
-                p.targetFreq = freq
-                p.gain = gain
-                p.throughBand = band
-                p.lfoRate = lfoRate
-                p.lfoDepth = lfoDepth
-                p.freqCoef = glideTau > 0 ? 1 - exp(-1.0 / (glideTau * sampleRate)) : 1
+                p.wave = partial.wave
+                p.freq = hz * partial.multiple
+                p.gain = partial.gain
+                p.throughBand = partial.throughBand
+                p.lfoRate = partial.lfoRate
+                p.lfoDepth = partial.lfoDepth
+                p.freqCoef = partial.glideTau > 0
+                    ? 1 - exp(-1.0 / (partial.glideTau * sampleRate))
+                    : 1
                 ground.partials.append(p)
+                ground.targetFreqs.append(p.freq)
             }
-
-            switch HomeCarrier.technique(forRing: ring) {
-            case .drone:
-                partial(.sine, hz, 1)
-                partial(.sine, hz * 1.0035, 0.8)
-                partial(.triangle, hz * 2, 0.16)
-            case .breath:
-                // The home ring breathes: an LFO on its own amplitude.
-                partial(.sine, hz, 1)
-                partial(.sine, hz * 1.5, 0.3)
-                ground.amRate = 0.14
-                ground.amDepth = 0.55
-            case .breathy:
-                // A sustained voice with air in it.
-                partial(.sine, hz, 0.7)
-                partial(.saw, hz * 1.002, 0.1)
-                var band = HomeBiquad()
-                band.setBandpass(frequency: hz * 4, q: 1.6, sampleRate: sampleRate)
-                ground.band = band
-                partial(.saw, hz * 2.01, 0.05, band: true)
-            case .stepped:
-                // Notes that step rather than glide.
-                partial(.sine, hz, 1)
-                partial(.sine, hz / 2, 0.4)
-                ground.stepBase = hz
-            case .sourceless:
-                // The witness: no fundamental at all, only its overtones.
-                partial(.sine, hz * 2, 0.42)
-                partial(.sine, hz * 3, 0.26)
-                partial(.sine, hz * 5, 0.14)
-            case .triad:
-                // Three that collapse toward one.
-                partial(.sine, hz, 0.7)
-                partial(.sine, hz * 1.26, 0.6, glideTau: 3.4)
-                partial(.sine, hz * 1.5, 0.6, glideTau: 3.4)
-                ground.triadBase = hz
-            case .shepard:
-                // A rising that never arrives.
-                for k in 0..<5 {
-                    let detune = pow(2.0, Double(k) * 3.0 / 1200.0)
-                    let rate = 0.021 * pow(2.0, Double(k) * 40.0 / 1200.0)
-                    partial(.sine, hz * pow(2.0, Double(k) - 1) * detune, 0.22,
-                            lfoRate: rate, lfoDepth: 0.22)
-                }
-            }
+            // The two techniques whose ground keeps moving after it is built.
+            if technique == .stepped { ground.stepBase = hz }
+            if technique == .triad { ground.triadBase = hz }
             return ground
         }
     }
@@ -815,7 +975,7 @@ final class HomeSoundService {
     private func startSchedule() {
         // Rings 4 and 5 step; 4 is the slower of the two.
         for ring in [4, 5] {
-            let period: Double = ring == 4 ? 5.2 : 3.4
+            let period = HomeCarrier.stepPeriod(forRing: ring)
             scheduled.append(Task { @MainActor [weak self] in
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .seconds(period))
@@ -827,28 +987,31 @@ final class HomeSoundService {
         // Ring 8's triad collapses and reopens.
         scheduled.append(Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(14))
+                try? await Task.sleep(for: .seconds(HomeCarrier.triadPeriod))
                 if Task.isCancelled { return }
                 self?.advanceTriad()
             }
         })
     }
 
+    /// Rings 4 and 5: the **first** partial steps, as Design's `st` does.
     private func advanceStep(ring: Int) {
         guard isBuilt, let ground = ground(atIndex: ring - 1) else { return }
-        let steps: [Double] = [1, 9.0 / 8.0, 5.0 / 4.0, 3.0 / 2.0]
-        ground.stepIndex = (ground.stepIndex + 1) % steps.count
-        guard !ground.partials.isEmpty else { return }
-        ground.partials[0].targetFreq = ground.stepBase * steps[ground.stepIndex]
+        guard !ground.targetFreqs.isEmpty else { return }
+        ground.stepIndex = (ground.stepIndex + 1) % HomeCarrier.steps.count
+        ground.targetFreqs[0] = ground.stepBase * HomeCarrier.steps[ground.stepIndex]
     }
 
+    /// Ring 8: the **second and third** partials collapse toward the first, and
+    /// reopen to where the table put them.
     private func advanceTriad() {
         guard isBuilt, let ground = ground(atIndex: 7) else { return }
-        guard ground.partials.count >= 3 else { return }
+        guard ground.targetFreqs.count >= 3 else { return }
         ground.triadCollapsed.toggle()
         let hz = ground.triadBase
-        ground.partials[1].targetFreq = ground.triadCollapsed ? hz : hz * 1.26
-        ground.partials[2].targetFreq = ground.triadCollapsed ? hz : hz * 1.5
+        let open = HomeCarrier.ground(forRing: 8).partials
+        ground.targetFreqs[1] = ground.triadCollapsed ? hz : hz * open[1].multiple
+        ground.targetFreqs[2] = ground.triadCollapsed ? hz : hz * open[2].multiple
     }
 
     private func ground(atIndex index: Int) -> HomeGround? {
@@ -889,7 +1052,8 @@ final class HomeSoundService {
         let first = max(0, min(1, a))
         let second = max(0, min(1, b))
         state.lowpassTarget = HomeCarrier.filterCutoff(adaptation: first)
-        state.fifthFreqTarget = HomeCarrier.carrierFor(ring: ring, syllable: syllable) * 1.5
+        state.fifthFreqTarget = HomeCarrier.carrierFor(ring: ring, syllable: syllable)
+            * HomeCarrier.fifthRatio
         state.fifthGainTarget = HomeCarrier.fifthGain(b: second, ring: ring)
         state.airGainTarget = HomeCarrier.airGain(adaptation: first)
         state.airFreqTarget = HomeCarrier.airCutoff(adaptation: first)

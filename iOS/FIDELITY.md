@@ -89,6 +89,14 @@ touching them must be reviewed against the prototype/rulings by whoever owns the
   table, not the ring service's incomplete constants — see the errata ruling of
   2026-09-07), the 49-syllable varṇamālā, the 12 just intervals, the withheld fifth, and
   the one air layer. No syllable means the bare root; the descent is silent until 3.9.
+  **Every number in `homes-sound.js` lives in `HomeCarrier` and nowhere else** — the ten
+  time constants, the nine ground voicings, the strike envelope, the stepped and triad
+  movements — and `HomeSoundTests` asserts each one against Design's file, so a constant
+  that drifts fails the build rather than quietly becoming a different instrument. The
+  engine half keeps no numbers of its own. Two orderings are load-bearing and tested:
+  the varṇamālā's (it *is* the interval) and each ground's partials (rings 4 and 5 step
+  their first, ring 8 collapses its second and third). Changing a value here changes the
+  sound of every Home at once; change Design's file first, or not at all.
 
 ## Design §4 stretches — disposition
 
