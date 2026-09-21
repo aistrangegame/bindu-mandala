@@ -620,6 +620,21 @@ enum HomeGrammar {
         func displacement(time: Double, amplitude: Double) -> HomeOffset {
             HomeGrammar.displace(physics, time: time, phase: phase ?? 0, amplitude: amplitude)
         }
+
+        /// **What her room's premise becomes** past the second adaptation.
+        ///
+        /// The deep term, and the thing this type was missing. The Phase 3.1
+        /// review found the second adaptation was one generic intensification in
+        /// all 102 rooms, and located the reason exactly here: *"the
+        /// `HomeGrammar.Reading` the pose receives carries no deep term it could
+        /// read."* ``HomeLabel/deep`` said what the reversal *was* in words and
+        /// nothing said what the room should *do*.
+        ///
+        /// It is her archetype's, because that is whose premise it is — Design
+        /// authors one reversal per archetype in `homes-grammar.js`, and the
+        /// eight rooms it wrote by hand carry their own instead
+        /// (``RoomMechanisms/forRoom(_:)``).
+        var becoming: HomeBecoming { .archetype(archetype) }
     }
 
     /// Read one Śakti into her room's grammar, from plain values.

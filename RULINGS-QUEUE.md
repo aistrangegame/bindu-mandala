@@ -25,3 +25,13 @@ Questions the laws, the rulings, the brief and Design's handoff could not answer
 **What depends on it:** nothing. It is one line in one view, and putting it back is an afternoon.
 
 **If you want it back:** say so, and say whether it should be her name's line or its own — it would go under the third beat, where her quality stands.
+
+## 3 · The climb's rail of nine ticks — dropped, for the same reason as the beat pips
+
+**2026-09-21, Phase 3.2.** Design's Axis puts nine ticks down the right edge of the climb: the āvaraṇa you are in is lit, the ones you have already met are dimmed, and the rest are faint. The climb does **not** show it.
+
+**Recommended answer, and what the build did:** leave it out. It is the rite's three beat pips (item 2's sibling, already dropped) over a whole instrument — a readout of where you are and of how much of the mandala you have met — and it is the one thing on the climb that would tell you something is keeping track of you. What replaces it is the whole point of the phase: the air is thicker, the light comes from somewhere else, the world's clock runs at a different rate, and you know where you are because the weather tells you. The āvaraṇa's **name** is still drawn, softly, because a name is not a measure.
+
+**What depends on it:** nothing. It is one overlay in one view.
+
+**If you want it back:** say so, and say whether the *met* ones should be marked differently from the rest — that is the half that is a practice readout, and it could be left out while the nine positions stay.

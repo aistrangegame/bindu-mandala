@@ -316,17 +316,39 @@ final class RoomSceneTests: XCTestCase {
         XCTAssertEqual(nothing.emission(at: .centre), 0, accuracy: 1e-12)
     }
 
-    /// **A mechanism can only return actions on surfaces.**
+    /// **A mechanism can only return actions on surfaces, and distances for the
+    /// surfaces the room already has.**
     ///
-    /// The binding condition for Phase 3.3, which builds the eight authored
-    /// rooms. The hook's return type is the whole of it: there is no path out
-    /// of a mechanism for a node, a mesh, a light or a shape, and the stage it
-    /// is handed carries no scene for it to reach around into.
+    /// The binding condition for Phase 3.3, which builds the authored rooms. The
+    /// hook's return types are the whole of it: there is no path out of a
+    /// mechanism for a node, a mesh, a light or a shape, and the stage it is
+    /// handed carries no scene for it to reach around into.
+    ///
+    /// Phase 3.3 added the second hook — ``RoomSurfaceMechanism/stations(at:stage:)``
+    /// — because a ceiling that descends and a floor that lets go are two of the
+    /// eight rooms Design authored, and neither of them is an object added to a
+    /// room. It is held to the same standard: its return type is a distance per
+    /// surface, over an enum with four cases and no way to grow a fifth.
     func testAMechanismCanOnlyReturnActionsOnSurfaces() throws {
         let source = try renderSource("RoomScene.swift")
         XCTAssertTrue(source.contains(
             "func actions(at chamberTime: TimeInterval, stage: RoomStage) -> [RoomSurfaceKind: [SurfaceAction]]"),
             "the mechanism hook's signature has changed — it is the binding condition for the authored eight")
+        XCTAssertTrue(source.contains(
+            "func stations(at chamberTime: TimeInterval, stage: RoomStage) -> [RoomSurfaceKind: Double]"),
+            "the station hook's signature has changed — a reversal must not be able to return a body")
+
+        // Every requirement of the protocol answers in value types, and none of
+        // them can carry a piece of SceneKit out.
+        let protocolBody = try XCTUnwrap(
+            source.range(of: "protocol RoomSurfaceMechanism {").map {
+                String(source[$0.upperBound...].prefix(while: { $0 != "}" }))
+            },
+            "the mechanism protocol has been renamed or removed")
+        for scenekit in ["SCN", "UIView", "CALayer", "MTL"] {
+            XCTAssertFalse(protocolBody.contains(scenekit),
+                           "a mechanism can now hand back \(scenekit) — the binding condition is open")
+        }
 
         // The stage vends materials and numbers, and nothing that could hold a
         // child.
