@@ -180,7 +180,7 @@ struct KnownRoom: RoomSurfaceMechanism {
                           axes: axes, material: material)
         let narrowed = 1 - b * Self.poolNarrows
         marks.append(RingOne.mark(here, from: before,
-                                  reach: figure.reach(Self.poolSize) * narrowed,
+                                  reach: RingOne.reach(figure.reach(Self.poolSize) * narrowed),
                                   size: 1,
                                   travel: figure.length(Self.sweepAcrossFar),
                                   // The only light in the room, and brighter once
@@ -213,11 +213,22 @@ struct KnownRoom: RoomSurfaceMechanism {
                         along: figure.length(along),
                         axes: axes, material: material),
             into: 0)
-        // Where the walker is, on the surface's own coordinates: the near edge,
-        // which on a floor or a canopy is where he is standing and on a working
-        // face is the middle of the panel in front of him.
+        // **Where the walker actually is**, read off the room's own units rather
+        // than assumed to be the material's edge.
+        //
+        // A floor's `v` runs to `(v - 0.5) · extent` in **z**
+        // (``RoomScene/mesh(of:extent:orientation:resolution:)``) and the eye
+        // stands at `+`` ``RoomUnits/eyeZ``, so his standing point is a little
+        // past the middle and `v = 1` is most of a room *behind* him. Pinned
+        // there, the one lit mark in this room left the frame entirely at the
+        // moment it turns and rests on him, with half of it hanging off the edge
+        // of the surface. On a working face he is in front of the panel's middle,
+        // which is what the middle already says.
         let onHim = RingOne.Place(
-            at: SurfaceCoordinate(u: 0.5, v: axes.alongIsRise ? 0.5 : 1).clamped,
+            at: SurfaceCoordinate(u: 0.5,
+                                  v: axes.alongIsRise
+                                      ? 0.5
+                                      : 0.5 + material.reach(worldUnits: RoomUnits.eyeZ)).clamped,
             into: 0)
         return searching.drawn(toward: onHim, by: b)
     }

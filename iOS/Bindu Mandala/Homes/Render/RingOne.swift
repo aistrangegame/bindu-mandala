@@ -90,6 +90,55 @@ enum RingOne {
     /// surface, and a single one is never the surface.
     static let widestMark: Double = RoomReversal.answeringSpan / 2
 
+    /// **The narrowest a mark may be and still be a mark**: one cell of the
+    /// surface's own mesh.
+    ///
+    /// A surface is meshed and lit at ``RoomScene/resolution`` points a side, and
+    /// both the relief and the emission are read **at those points and nowhere
+    /// else**. A mark narrower than the gap between them therefore has no vertex
+    /// inside it: it moves no material, and because light here is only ever a
+    /// property of a disturbance, it emits nothing either. It is not faint, it is
+    /// absent.
+    ///
+    /// That is not hypothetical arithmetic. Ring 1's second render put eighty-five
+    /// of a Mudrā's eighty-six marks under this number — every sample of all five
+    /// vaults, at four tenths of a cell — so what the walker stood in was the one
+    /// disc the seal holds and no seal; and Sarva-Yoni's whole vessel, veins and
+    /// all, was under it for the first adaptation and the hold, so her room was
+    /// empty until the turn. The cause is ``Figure``: a figure scaled down to fit
+    /// the picture scales its parts with it, and a part of a part is very small.
+    ///
+    /// Ring 2 has guarded this since it was built
+    /// (`testHerMarksStandClearOfTheStonesOwnGrain`); Ring 1 now keeps the floor
+    /// rather than the check alone.
+    /// It lives in ``RoomInscription/narrowestMark`` now, beside the mesh's own
+    /// resolution, because Ring 2's own marks turned out to fall under it too —
+    /// the smallest of the seven a Karṣiṇī draws is 0.86 of a cell on a floor or
+    /// a canopy — and there cannot be two answers to what the material can carry.
+    static var narrowestMark: Double { RoomInscription.narrowestMark }
+
+    /// A reach the material can actually carry, in the surface's own coordinates:
+    /// never wider than ``widestMark``, and never narrower than ``narrowestMark``.
+    ///
+    /// **A withdrawal is applied after this and never inside it, and that was
+    /// tested the hard way.** A mark giving the room up shrinks by its reach — the
+    /// Siddhi's lent capacity to a fifth of itself, Vaśitva's ring to a quarter —
+    /// and a floor underneath the withdrawal holds it open instead: measured, the
+    /// capacity that Design shrinks by four fifths came back the same size it
+    /// began, and `testTheCapacityShrinksWhileTheRoomTakesItOver` said so at once.
+    /// A capacity that is still there was never lent, and that is a worse failure
+    /// than a mark that grows too small to see at the very end of a stay, which is
+    /// what *lent* looks like.
+    ///
+    /// So a room scales its figure through here and then multiplies by however
+    /// much of the room it is giving up. A mark that is **narrowing rather than
+    /// leaving** — Vaśitva's pool of attention, which is the only light in that
+    /// room and is coming to rest on him rather than going — passes through here
+    /// afterwards, because that one has to be seen at the end.
+    static func reach(_ surfaceUnits: Double) -> Double {
+        min(widestMark, max(narrowestMark, surfaceUnits))
+    }
+
     /// **A figure, brought into the picture the walker is actually looking at.**
     ///
     /// Design's Ring 1 rooms are halls — a box thirteen across, a sphere
@@ -146,9 +195,12 @@ enum RingOne {
         /// A length in Design's room, in this one's scene units.
         func length(_ designUnits: Double) -> Double { RingOne.inRoom(designUnits) * scale }
 
-        /// A size in Design's room, in this surface's own coordinates.
+        /// A size in Design's room, in this surface's own coordinates — and never
+        /// narrower than the material can carry, because a figure that has been
+        /// scaled down to fit the picture has scaled its marks down with it.
+        /// ``RingOne/narrowestMark`` is the whole of that reasoning.
         func reach(_ designUnits: Double) -> Double {
-            min(RingOne.widestMark, material.reach(worldUnits: length(designUnits)))
+            RingOne.reach(material.reach(worldUnits: length(designUnits)))
         }
     }
 
@@ -257,9 +309,13 @@ enum RingOne {
     /// while it was still there, which is a different thing from leaving.
     /// `testEverySiddhiMarkStandsClearOfTheStonesOwnGrain` holds every room in
     /// the ring to it.
+    /// It lives in ``RoomInscription/depth(size:on:)`` now, beside the mark depth
+    /// it is the floor of, because Ring 2 needed the same answer for the same
+    /// reason and the instrument has already paid once for a rule that was
+    /// written down twice. Ring 1 keeps the name its rooms and its suites speak
+    /// in.
     static func depth(size: Double, on material: RoomMaterial) -> Double {
-        let floor = min(material.grainRelief, RoomInscription.markDepth)
-        return floor + (RoomInscription.markDepth - floor) * min(1, max(0, size))
+        RoomInscription.depth(size: size, on: material)
     }
 
     static func mark(_ here: Place, from before: Place,

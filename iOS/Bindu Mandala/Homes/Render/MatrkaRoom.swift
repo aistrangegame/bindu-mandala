@@ -175,10 +175,26 @@ struct MatrkaRoom: RoomSurfaceMechanism {
         // `m.scale.y = 1 + b * 3.4` on a bar that stands in a ring of radius 6.4;
         // the bound is her own count, because `n` letters on a ring of radius `r`
         // are touching when each is `π · r / n` across. See the header.
-        let radius = figure.reach(Self.ringRadius)
+        // **And a ring wide enough to hold that many letters the material can
+        // carry.** Her count is this family's fifth channel, and a figure scaled
+        // down to fit the picture takes the letters down with it: on a floor four
+        // body-heights across, Design's own letter comes out at a third of a mesh
+        // cell, where it moves no material and therefore lights none of it
+        // (``RingOne/narrowestMark``) — which is not fourteen faint letters, it is
+        // none.
+        //
+        // So where a letter has fallen under the mesh, **the ring opens by exactly
+        // the factor the letter had to**, and the proportion between the two —
+        // which is her count, and the only thing that separates a row of five from
+        // a row of fourteen — is the one Design drew. A letter is then one cell
+        // and the ring carries `π · 6.4 / (n · 0.75)` of them: 5.4 letter-widths of
+        // room to grow at five, and 1.9 at fourteen.
+        let oneLetter = material.reach(worldUnits: figure.length(Self.letterWidth))
+        let opens = oneLetter > 1e-12 ? max(1, RingOne.narrowestMark / oneLetter) : 1
+        let radius = min(RoomReversal.answeringSpan,
+                         material.reach(worldUnits: figure.length(Self.ringRadius)) * opens)
         let touching = .pi * radius / Double(letters)
-        let reach = min(touching,
-                        figure.reach(Self.letterWidth) * (1 + b * Self.lettersGrow))
+        let reach = RingOne.reach(min(touching, oneLetter * opens * (1 + b * Self.lettersGrow)))
 
         var marks: [SurfaceAction] = []
         marks.reserveCapacity(letters + 1)

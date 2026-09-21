@@ -385,6 +385,51 @@ enum RoomInscription {
     /// another costume.
     static let markDepth: Double = RoomUnits.roomHeight / 20
 
+    /// **How deep a mark goes, and the floor no mark falls below.**
+    ///
+    /// The dhātu's grain stands a fortieth of a body high
+    /// (``RoomMaterial/grainRelief``) and one mark's own depth is a twentieth, so
+    /// a mark at half strength is *exactly* the grain and a mark below that is
+    /// invisible — not faint, invisible, since what the walker sees is a raking
+    /// light falling across relief and the relief it falls across is the grain's.
+    ///
+    /// The finding is ``CrossingRoom``'s, written down when Ring 2's lengths were
+    /// still read against the surface rather than against the body — *"seven
+    /// rings, buried"* — and it was enforced only in Ring 1 until Ring 2's own
+    /// marks were measured mark by mark rather than at their deepest. Four of the
+    /// seven a Karṣiṇī draws stood under the banding they were cut into for the
+    /// whole of every stay, in ten of the sixteen rooms. It is here, beside
+    /// ``markDepth``, because it is the instrument's answer to *how deep may
+    /// anything go* and there cannot be two of those.
+    ///
+    /// So the grain is the floor and one mark's depth is the ceiling, and `size`
+    /// — how large this mark is against the largest the room makes — moves it
+    /// between them. Many parts may still share the **light**; they do not share
+    /// their footing. A mark that is *giving the room up* therefore withdraws by
+    /// its **reach** and never by its depth: a mark that grew shallower would
+    /// stop being seen while it was still there, which is a different thing from
+    /// leaving.
+    static func depth(size: Double, on material: RoomMaterial) -> Double {
+        let floor = min(material.grainRelief, markDepth)
+        return floor + (markDepth - floor) * min(1, max(0, size))
+    }
+
+    /// **The narrowest a mark may be and still be a mark**: one cell of the
+    /// surface's own mesh.
+    ///
+    /// A surface is meshed and lit at ``RoomScene/resolution`` points a side, and
+    /// both ``RoomMaterial/relief(at:)`` and ``RoomMaterial/emission(at:)`` are
+    /// read **at those points and nowhere else**. A mark narrower than the gap
+    /// between two of them has no vertex inside it: it moves no material, and
+    /// because light here is only ever a property of a disturbance, it emits
+    /// nothing either. It is not faint, it is absent.
+    ///
+    /// It is the same number for every surface, which is the point — a floor is
+    /// four body-heights across and a working face is one, so the same mark is
+    /// four times smaller in a floor's own coordinates, and what a floor can
+    /// carry is four times larger a thing.
+    static let narrowestMark: Double = 1 / Double(RoomScene.resolution)
+
     /// The verb one moving part is performing at this instant.
     static func verb(for part: AttributeMotion, previous: AttributeMotion) -> SurfaceVerb {
         let dy = (part.y - previous.y) / sampleGap

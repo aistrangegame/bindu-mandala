@@ -259,7 +259,7 @@ struct MudraRoom: RoomSurfaceMechanism {
         let breath = 1 + Self.heldBreathes * sin(chamberTime * Self.heldBreathRate)
         let wants = material.reach(worldUnits: figure.length(Self.heldSize / 2))
             * breath * (1 + b * Self.heldOpens)
-        let heldReach = min(figure.reach(Self.footRadius), min(RingOne.widestMark, wants))
+        let heldReach = RingOne.reach(min(figure.reach(Self.footRadius), wants))
         let heldGlow = max(0, Self.heldAtRest + Self.heldSettling * k
                            - b * Self.heldReleases) / Self.heldCeiling
         let beyond = figure.length(Self.heldStands)

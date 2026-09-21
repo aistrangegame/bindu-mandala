@@ -105,8 +105,21 @@ struct CrossingRoom: RoomSurfaceMechanism {
     /// first moment and the room would have no crossing in it at all.
     static let answerLag: TimeInterval = 3.2
 
-    /// Design's `ph + 0.5` — the far half a half-turn out of step.
-    static let counterPhase: Double = 0.5
+    /// **The far half, out of step with the near half.**
+    ///
+    /// Design's `ph + 0.5`, read off the kernel rather than typed
+    /// (``HomeGrammar/counterPhase(of:)``) — because for half the fifty kinds a
+    /// half turn of phase is an *identity*. Their terms are `|sin|`, whose period
+    /// is half a turn, so the far half came back the near half exactly: measured
+    /// on the shipped sixteen, the five rooms whose physics is Water's welling or
+    /// Earth's settling had no counterpoint in them at all, and the separation
+    /// the suite was reading was the static offset between where Design stands
+    /// the two halves. A ring named for the crossing had none in nearly half of
+    /// it. Where a half turn says nothing, a quarter does.
+    ///
+    /// Design's number is unchanged everywhere it says something; what is read
+    /// off the kernel is *how much of a turn a turn is* for this Śakti's physics.
+    var counterPhase: Double { HomeGrammar.counterPhase(of: physics) }
 
     /// Design's own per-mark spread within a half: `ph + i / 14`, fourteen being
     /// the two halves' marks counted together.
@@ -384,7 +397,7 @@ struct CrossingRoom: RoomSurfaceMechanism {
         let drift = HomeGrammar.displace(
             physics,
             time: chamberTime + (answering ? Self.answerLag : 0),
-            phase: phase + spread + (answering ? Self.counterPhase : 0),
+            phase: phase + spread + (answering ? counterPhase : 0),
             amplitude: Self.travel)
 
         // Which of Design's three axes runs along the surface and which runs
@@ -407,7 +420,14 @@ struct CrossingRoom: RoomSurfaceMechanism {
     /// exists exactly as far as the surface moved.
     func mark(_ here: Place, from before: Place,
               size: Double, glow: Double, material: RoomMaterial) -> SurfaceAction {
-        let reach = material.reach(worldUnits: Self.inRoom(size))
+        // …and never narrower than the material can carry. Design's smallest ring
+        // is 0.7 of her room, which on a floor or a canopy — four body-heights
+        // across against a working face's one — comes out at 0.86 of a mesh cell,
+        // and a mark with no vertex inside it moves nothing and therefore lights
+        // nothing (``RoomInscription/narrowestMark``). The ring's own check read
+        // only the widest of the fourteen, so it never saw it.
+        let reach = max(RoomInscription.narrowestMark,
+                        material.reach(worldUnits: Self.inRoom(size)))
 
         // How far this half's travel has carried it against the stone. A mark
         // driven into the material is deeper; one drawn back out of it is
@@ -428,11 +448,21 @@ struct CrossingRoom: RoomSurfaceMechanism {
         // One mark's depth, and **never more than one mark's worth**:
         // ``RoomInscription/markDepth`` is the instrument's own answer to how
         // deep anything may go, and fourteen marks do not get fourteen answers.
-        // Deep enough to be read over the stone's own grain, which stands a
-        // fortieth of a body high — a mark shallower than the grain is a mark
-        // nobody can see.
+        //
+        // **And never less than the stone's own grain**, which is the other half
+        // of the same answer and was missing here until the ring was measured
+        // mark by mark. Read at the first adaptation across all sixteen: in the
+        // ten rooms whose kernel has no term into the material on a working face
+        // the lean is pinned at its floor for the whole stay, and four of the
+        // seven rings she draws stood *under* the banding they were cut into —
+        // which is the "seven rings, buried" this file's own header records as
+        // fixed, still true for four of them. The near half carries no light of
+        // its own, so a ring under the grain is not a faint ring, it is nothing.
+        // ``RoomInscription/depth(size:on:)`` is the floor, and it is the same
+        // floor Ring 1 keeps.
         let relative = min(1, max(0.2, size / Self.answeringSize))
-        let depth = RoomInscription.markDepth * relative * (0.55 + 0.45 * pressed)
+        let depth = RoomInscription.depth(size: relative * (0.55 + 0.45 * pressed),
+                                          on: material)
 
         let motion = Self.motion(here, span: material.span)
         let previous = Self.motion(before, span: material.span)

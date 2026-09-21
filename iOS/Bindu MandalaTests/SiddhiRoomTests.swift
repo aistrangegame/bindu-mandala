@@ -39,6 +39,27 @@ final class SiddhiRoomTests: XCTestCase {
         HomesCorpus.resolvedRooms().filter { (1...10).contains($0.row.position) }
     }
 
+    /// A body altitude that puts her mark on one named surface, read off
+    /// ``RoomUnits/surface(forBodyAltitude:)`` rather than chosen — two of the
+    /// authored rooms below are *about* where a thing stands on the surface, and
+    /// both of them read differently on a floor and on a working face.
+    private static func altitude(landingOn surface: RoomSurfaceKind) -> Double? {
+        stride(from: 0.0, through: 1.0, by: 0.01)
+            .first { RoomUnits.surface(forBodyAltitude: $0) == surface }
+    }
+
+    /// One instant of a stay, at a chosen altitude.
+    private static func stage(bodyAltitude: Double, at t: TimeInterval, seed: Int) -> RoomStage {
+        var materials: [RoomSurfaceKind: RoomMaterial] = [:]
+        for kind in RoomSurfaceKind.allCases {
+            materials[kind] = RoomMaterial(surface: kind, seed: seed)
+        }
+        return RoomStage(placement: RoomUnits.placement(bodyAltitude: bodyAltitude, chamberTime: t),
+                         settling: HomeGrammar.settling(chamberTime: t),
+                         deep: HomeGrammar.deepProgress(chamberTime: t),
+                         materials: materials)
+    }
+
     // MARK: - 1 · each of the ten reaches her own room, by position
 
     /// **The dispatch is decided by position and by nothing else.**
@@ -254,6 +275,178 @@ final class SiddhiRoomTests: XCTestCase {
                                """)
             }
         }
+    }
+
+    // MARK: - 5b · the two authored rooms whose content is *where* it stands
+
+    /// **Mahimā's procession runs toward the walker and past him, and not the
+    /// other way round.**
+    ///
+    /// A surface's `v` runs to `(v - 0.5) · extent`
+    /// (``RoomScene/mesh(of:extent:orientation:resolution:)``): on a floor that is
+    /// **z**, so the far edge is `v = 0` and the walker's own standing point is
+    /// ``RoomUnits/eyeZ`` past the middle. Read the other way round — and it was —
+    /// the twenty-four frames receded from behind him toward the far wall, and the
+    /// ten the turn adds, whose whole sentence is *there was no near wall either*,
+    /// landed on the far half of the floor on top of the ones already standing
+    /// there. Nothing in the suite read a frame's position, so all of it was green.
+    func testMahimasProcessionAdvancesTowardTheWalkerAndPastHim() throws {
+        let ground = try XCTUnwrap(Self.altitude(landingOn: .ground))
+        let room = EndlessRoom()
+
+        // At the opening the twenty-four stand evenly down the whole run, the
+        // first of them at the far edge.
+        let opening = Self.stage(bodyAltitude: ground, at: 0, seed: 2)
+        let atRest = try XCTUnwrap(room.actions(at: 0, stage: opening)[.ground])
+        XCTAssertEqual(atRest.count, EndlessRoom.frames * EndlessRoom.marksPerFrame,
+                       "the procession is not twenty-four frames before the premise turns")
+        XCTAssertEqual(atRest.first?.at.v ?? -1, 0, accuracy: 1e-9,
+                       "the first frame does not stand at the far edge of the material")
+        XCTAssertEqual(atRest.last?.at.v ?? -1,
+                       Double(EndlessRoom.frames - 1) / Double(EndlessRoom.frames),
+                       accuracy: 1e-9,
+                       "the last frame of the procession is not the one nearest the walker")
+
+        // …and they advance: a frame that has travelled further stands further
+        // along the material.
+        let moved = try XCTUnwrap(room.actions(at: 1, stage: Self.stage(bodyAltitude: ground,
+                                                                       at: 1, seed: 2))[.ground])
+        XCTAssertGreaterThan(moved.first?.at.v ?? 0, atRest.first?.at.v ?? 0,
+                             "the procession is running away from the walker")
+
+        // And the ten that continue once the premise turns stand in the near
+        // stretch — past the walker's own standing point, which is where he had
+        // taken the room to end.
+        let t = HomeMemory.secondAdaptationEnd
+        let turned = try XCTUnwrap(room.actions(at: t, stage: Self.stage(bodyAltitude: ground,
+                                                                        at: t, seed: 2))[.ground])
+        XCTAssertEqual(turned.count,
+                       (EndlessRoom.frames + EndlessRoom.framesBehind) * EndlessRoom.marksPerFrame)
+        let behind = turned.suffix(EndlessRoom.framesBehind * EndlessRoom.marksPerFrame)
+        let standsAt = 0.5 + RoomUnits.eyeZ / RoomUnits.extent
+        XCTAssertGreaterThanOrEqual(behind.map(\.at.v).min() ?? 0, 0.5,
+                                    """
+                                    the frames that continue past the walker are standing in the \
+                                    far half of the room. *There was no near wall either* is about \
+                                    the stretch behind him.
+                                    """)
+        XCTAssertGreaterThan(behind.map(\.at.v).max() ?? 0, standsAt,
+                             "not one of the ten has passed the walker's own standing point")
+    }
+
+    /// **And the procession is one widening mouth on every surface**, rather than
+    /// twenty-four frames clamped to one width.
+    ///
+    /// On a working face Design's widest frame is four times what the material can
+    /// hold, and clamped frame by frame all twenty-four came out identical with
+    /// forty-eight of their hundred and twenty marks standing on the material's
+    /// own edge — which is ``RingOne/Figure``'s own finding: *a ring whose marks
+    /// are clamped onto the edge of the material is not a ring, it is a heap*.
+    func testMahimasProcessionKeepsItsWideningMouthOnAWorkingFace() throws {
+        for kind in [RoomSurfaceKind.face, .ground] {
+            let altitude = try XCTUnwrap(Self.altitude(landingOn: kind))
+            let stage = Self.stage(bodyAltitude: altitude, at: 0, seed: 2)
+            let marks = try XCTUnwrap(EndlessRoom().actions(at: 0, stage: stage)[kind])
+            let widths = Set(marks.map { String(format: "%.5f", $0.reach) })
+            XCTAssertEqual(widths.count, EndlessRoom.frames,
+                           """
+                           on a \(kind.rawValue) the twenty-four frames come in \(widths.count) \
+                           widths. Design's `r = 6 + i * 0.52` is a widening mouth rather than a \
+                           tunnel of one bore.
+                           """)
+            let onTheEdge = marks.filter { $0.at.u <= 1e-9 || $0.at.u >= 1 - 1e-9 }
+            XCTAssertTrue(onTheEdge.isEmpty,
+                          """
+                          \(onTheEdge.count) of the procession's marks stand on the material's own \
+                          edge on a \(kind.rawValue).
+                          """)
+        }
+    }
+
+    /// **Vaśitva's pool of attention comes to rest on the walker — in front of the
+    /// eye, and wholly on the material.**
+    ///
+    /// It is the one lit mark in that room, and it was pinned to the material's
+    /// near edge on the reading that a floor's near edge is where he is standing.
+    /// It is not: he stands ``RoomUnits/eyeZ`` past the middle, and that edge is
+    /// most of a room behind him. At *it has turned, and it rests on you* the only
+    /// light in the room left the frame entirely.
+    func testVasitvasPoolComesToRestInFrontOfTheEye() throws {
+        for kind in RoomSurfaceKind.allCases where kind != .wall {
+            let altitude = try XCTUnwrap(Self.altitude(landingOn: kind))
+            let t = HomeMemory.secondAdaptationEnd
+            let stage = Self.stage(bodyAltitude: altitude, at: t, seed: 6)
+            let marks = try XCTUnwrap(KnownRoom().actions(at: t, stage: stage)[kind])
+            // The pool is the last thing the room does, and the only mark in it
+            // she lights: the pillars and the seat are pressed and unlit, and the
+            // archetype's own answering mark — which is not hers — is laid down
+            // before the room's own.
+            let pool = try XCTUnwrap(marks.last)
+            XCTAssertGreaterThan(pool.glow, 0,
+                                 "the pool of attention is the one light in Vaśitva's room")
+            let standsAt = kind == .face ? 0.5 : 0.5 + RoomUnits.eyeZ / RoomUnits.span(of: kind)
+            XCTAssertEqual(pool.at.v, standsAt, accuracy: 1e-6,
+                           """
+                           on a \(kind.rawValue) the pool comes to rest at \(pool.at.v) and the \
+                           walker stands at \(standsAt). The room's own sentence is that its light \
+                           ends up on him.
+                           """)
+            XCTAssertLessThanOrEqual(pool.at.v + pool.reach, 1 + 1e-9,
+                                     "half the pool is hanging off the edge of the material")
+            XCTAssertGreaterThanOrEqual(pool.at.v - pool.reach, -1e-9)
+        }
+    }
+
+    // MARK: - 5c · the ten, told apart by their geometry
+
+    /// **Every pair of the five the grammar speaks for, above Design's tenth.**
+    ///
+    /// The Mudrās have had this check since they were built and Ring 2 has its
+    /// own; the Siddhis and the Mātṛkās never did, and the family measure next
+    /// door averages pairs rather than asking each one. Measured here pair by
+    /// pair, with the authored five printed beside it rather than folded in —
+    /// Ruling 10 exempts a hand-built room from the grammar-only proof, and an
+    /// authored room is an outlier in whichever family it sits in by construction.
+    func testEveryPairOfTheGrammarBuiltSiddhisDivergesOnGeometry() {
+        let seats = RingOneFingerprint.ringOne(HomesCorpus.resolvedRooms())
+            .filter { (1...10).contains($0.position) }
+        XCTAssertEqual(seats.count, 10, "Ring 1's first ten seats are not all built")
+        let grammared = seats.filter(\.grammared)
+        XCTAssertEqual(grammared.count, 5, "the five the grammar speaks for are not five")
+
+        var blurred: [String] = []
+        var closest = (pair: "—", divergence: Double.infinity)
+        for (index, a) in grammared.enumerated() {
+            for b in grammared[(index + 1)...] {
+                let d = RingOneFingerprint.divergence(a.print, b.print)
+                if d < closest.divergence { closest = ("kp \(a.position) ↔ kp \(b.position)", d) }
+                if d <= RingOneFingerprint.threshold {
+                    blurred.append("kp \(a.position) ↔ kp \(b.position) — "
+                                   + String(format: "%.3f", d))
+                }
+            }
+        }
+        // …and the authored five against the whole ten, printed only.
+        var authored = (pair: "—", divergence: Double.infinity)
+        for a in seats where !a.grammared {
+            for b in seats where b.position != a.position {
+                let d = RingOneFingerprint.divergence(a.print, b.print)
+                if d < authored.divergence {
+                    authored = ("kp \(a.position) ↔ kp \(b.position)", d)
+                }
+            }
+        }
+        print("SIDDHI_DIVERGENCE {\"closest\":\"\(closest.pair)\","
+              + String(format: "\"divergence\":%.4f,", closest.divergence)
+              + "\"authoredClosest\":\"\(authored.pair)\","
+              + String(format: "\"authoredDivergence\":%.4f}", authored.divergence))
+        XCTAssertTrue(blurred.isEmpty,
+                      """
+                      \(blurred.count) pair(s) of the grammar-built Siddhis blur into one another. \
+                      Could this room belong to any other Śakti? Fix the room; never lower the \
+                      threshold.
+                      \(blurred.joined(separator: "\n"))
+                      """)
     }
 
     // MARK: - 6 · nothing stands in her layer

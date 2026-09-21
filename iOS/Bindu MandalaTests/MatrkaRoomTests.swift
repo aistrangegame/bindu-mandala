@@ -281,4 +281,46 @@ final class MatrkaRoomTests: XCTestCase {
             }
         }
     }
+
+    // MARK: - 7 · the eight, told apart by their geometry
+
+    /// **Every pair of the eight, above Design's tenth.**
+    ///
+    /// The Mudrās have had this check since they were built and Ring 2 has its
+    /// own; the Mātṛkās never did, and the family measure in ``MudraRoomTests``
+    /// averages pairs rather than asking each one. It matters most here: the eight
+    /// are the one family whose rooms differ by a **count** — 5, 8, 11, 14 and then
+    /// those four again — so two of the eight carry the same number of letters, and
+    /// everything that tells them apart after that is her own row.
+    func testEveryPairOfTheEightDivergesOnGeometry() {
+        let seats = RingOneFingerprint.ringOne(HomesCorpus.resolvedRooms())
+            .filter { (11...18).contains($0.position) }
+        XCTAssertEqual(seats.count, 8, "the eight Mātṛkās are not all built")
+        XCTAssertTrue(seats.allSatisfy(\.grammared),
+                      "Design authored none of the Mātṛkās; one of these is not the grammar speaking")
+
+        var blurred: [String] = []
+        var closest = (pair: "—", divergence: Double.infinity)
+        var pairs = 0
+        for (index, a) in seats.enumerated() {
+            for b in seats[(index + 1)...] {
+                pairs += 1
+                let d = RingOneFingerprint.divergence(a.print, b.print)
+                if d < closest.divergence { closest = ("kp \(a.position) ↔ kp \(b.position)", d) }
+                if d <= RingOneFingerprint.threshold {
+                    blurred.append("kp \(a.position) ↔ kp \(b.position) — "
+                                   + String(format: "%.3f", d))
+                }
+            }
+        }
+        XCTAssertEqual(pairs, 28, "eight rooms is twenty-eight pairs")
+        print("MATRKA_DIVERGENCE {\"pairs\":\(pairs),\"closest\":\"\(closest.pair)\","
+              + String(format: "\"divergence\":%.4f}", closest.divergence))
+        XCTAssertTrue(blurred.isEmpty,
+                      """
+                      \(blurred.count) pair(s) of the eight Mothers blur into one another. Could \
+                      this room belong to any other Śakti? Fix the room; never lower the threshold.
+                      \(blurred.joined(separator: "\n"))
+                      """)
+    }
 }

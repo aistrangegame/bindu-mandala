@@ -280,6 +280,43 @@ enum HomeGrammar {
     /// a ring's marks.
     static let widestTerm: Double = 2.2
 
+    /// **A half turn of the kernel's own cycle, which is not always a half turn
+    /// of her phase.**
+    ///
+    /// A room that runs two things in opposite phase — Ring 2's crossing is the
+    /// instrument's one — adds a half turn to one of them. That is Design's own
+    /// `ph + 0.5`, and for half the kinds below it is an **identity**: their terms
+    /// are `|sin|`, whose period is half a turn, so `|sin(θ + π)| = |sin θ|` and
+    /// the far half comes back the near half exactly. Measured on the shipped
+    /// sixteen, Water's welling and Earth's settling — five of Ring 2's rooms —
+    /// had no counterpoint in them at all; what looked like one was the static
+    /// offset between where Design stands the two halves, moving as one rigid
+    /// body from the first moment.
+    ///
+    /// So the counter-phase is read off the kernel rather than typed: where a
+    /// half turn says nothing, a **quarter** does, and `|cos|` against `|sin|` is
+    /// as far out of step as a folded sine can be. It is here, beside the kernel,
+    /// for ``widestTerm``'s reason — it is a fact *about* the kernel, and a table
+    /// of which kinds fold would drift the moment a kind was added. Nothing here
+    /// consults a name.
+    static func counterPhase(of kind: HomePhysics) -> Double {
+        foldedKinds.contains(kind) ? 0.25 : 0.5
+    }
+
+    /// The kinds a half turn of phase leaves exactly where they were — every kind
+    /// whose terms are all `|sin|`, and the two that never move at all. Asked of
+    /// the kernel itself, over a spread of moments, rather than listed.
+    private static let foldedKinds: Set<HomePhysics> = Set(
+        HomePhysics.allCases.filter { kind in
+            stride(from: 0.0, through: 24.0, by: 0.7).allSatisfy { t in
+                let near = displace(kind, time: t, phase: 0.13, amplitude: 1)
+                let far = displace(kind, time: t, phase: 0.63, amplitude: 1)
+                return abs(near.x - far.x) < 1e-9
+                    && abs(near.y - far.y) < 1e-9
+                    && abs(near.z - far.z) < 1e-9
+            }
+        })
+
     /// How her physics moves a thing, in her own phase.
     ///
     /// A pure function of `(kind, time, phase, amplitude)` — the same four

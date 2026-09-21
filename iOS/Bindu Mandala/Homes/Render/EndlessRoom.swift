@@ -74,6 +74,11 @@ struct EndlessRoom: RoomSurfaceMechanism {
     static let frameSize: Double = 6
     static let frameSizeStep: Double = 0.52
 
+    /// …and how wide the last of them is, which is what has to fit the material.
+    static var widestFrame: Double {
+        frameSize + Double(max(frames, framesBehind) - 1) * frameSizeStep
+    }
+
     /// Design's own light on a frame, at the height of its arc and at its ends:
     /// `Math.sin(Math.PI * clamp01(…)) * 0.95 + 0.06`.
     static let frameBrightest: Double = 0.95
@@ -117,7 +122,24 @@ struct EndlessRoom: RoomSurfaceMechanism {
         let surface = stage.placement.surface
         guard let material = stage.materials[surface] else { return [:] }
         let b = stage.deep
-        let axes = RoomUnits.axes(of: surface)
+
+        // **The procession is one figure and not twenty-four.** Where the widest
+        // frame does not fit the material, the whole run of them is scaled by the
+        // same number rather than each frame being clamped on its own — which is
+        // ``RingOne/Figure``'s rule, applied by hand here because that type bounds
+        // a figure by the picture at *one* distance and this procession is the one
+        // thing in Ring 1 that runs down the room's own depth. Clamped frame by
+        // frame it was a tunnel of one bore: on a working face all twenty-four
+        // came out the same width with forty-eight of their hundred and twenty
+        // marks standing on the material's own edge, and Design's widening mouth
+        // was gone.
+        // …and *including the marks it is made of*, or the widest frame's own ends
+        // stand on the material's edge with half of each mark hanging over it.
+        let widest = material.reach(worldUnits: RingOne.inRoom(Self.widestFrame))
+            * (1 + Self.markShare)
+        let fits = widest > RoomReversal.answeringSpan
+            ? RoomReversal.answeringSpan / widest
+            : 1
 
         var marks: [SurfaceAction] = []
         marks.reserveCapacity((Self.frames + Self.framesBehind) * Self.marksPerFrame)
@@ -135,9 +157,9 @@ struct EndlessRoom: RoomSurfaceMechanism {
         //
         // Twenty-four frames evenly spaced down the whole run of the material and
         // advancing with the clock, wrapping when they reach the walker. Where
-        // `away` is `0` the frame is at the far edge and where it is `1` it is at
-        // his feet; on a working face, which has no depth to recede along, the
-        // procession climbs instead — ``RoomUnits/axes(of:)`` settles which.
+        // `away` is `0` the frame is at the far edge and where it is `1` it has
+        // come past him; on a working face, which has no depth to recede along,
+        // the same run climbs the panel instead — see ``frame(away:size:depth:glow:fits:material:)``.
         for index in 0..<Self.frames {
             let offset = Double(index) / Double(Self.frames)
             let away = Self.wrapped(offset + chamberTime * Self.flows)
@@ -149,7 +171,7 @@ struct EndlessRoom: RoomSurfaceMechanism {
                                                     + Double(index) * Self.frameSizeStep,
                                                 depth: depth,
                                                 glow: lit * share,
-                                                axes: axes,
+                                                fits: fits,
                                                 material: material))
         }
 
@@ -170,7 +192,7 @@ struct EndlessRoom: RoomSurfaceMechanism {
                                                     + Double(index) * Self.frameSizeStep,
                                                 depth: depth,
                                                 glow: lit * share,
-                                                axes: axes,
+                                                fits: fits,
                                                 material: material))
         }
         return [surface: marks]
@@ -192,6 +214,11 @@ struct EndlessRoom: RoomSurfaceMechanism {
     /// enough that a line is not a bar.
     static let marksPerFrame = 5
 
+    /// How wide one of those marks is, against the frame's own half-width: its
+    /// own spacing and a fifth again, which is close enough to read as one line
+    /// across the room and far enough that a line is not a bar.
+    static let markShare: Double = 1.2 / Double(marksPerFrame - 1)
+
     /// One frame of the procession, as a line of marks across the room.
     ///
     /// They are **impressions** — pressed in and held, the roundest of the five —
@@ -199,15 +226,25 @@ struct EndlessRoom: RoomSurfaceMechanism {
     /// it. The procession's motion is the frames replacing one another, not any
     /// one of them ploughing across the floor.
     static func frame(away: Double, size: Double, depth: Double, glow: Double,
-                      axes: RoomUnits.SurfaceAxes, material: RoomMaterial) -> [SurfaceAction] {
-        // The far edge of the material is `v = 0` on a floor or a canopy, where
-        // the surface runs away from the walker, and `v = 1` on a face, where it
-        // runs up past him.
-        let v = axes.alongIsRise ? away : 1 - away
+                      fits: Double, material: RoomMaterial) -> [SurfaceAction] {
+        // **`away` is `v`, on every surface**, and the two were inverted until the
+        // room was read against the mesh. A surface's `v` runs to `(v - 0.5) ·
+        // extent` (``RoomScene/mesh(of:extent:orientation:resolution:)``): on a
+        // floor or a canopy that is **z**, so the far edge is `v = 0` and the
+        // walker's own standing point is a little past `v = 0.5`; on a working
+        // face it is **y**, so the procession climbs the panel as `v` rises.
+        // Either way a frame that has travelled further has a larger `v`.
+        //
+        // Read the other way round — and it was — the twenty-four receded from
+        // behind the walker toward the far wall and wrapped there, and the ten
+        // that continue *past him* landed on the far half of the floor on top of
+        // the ones already there. *There was no near wall either*, which is the
+        // whole content of this room's reversal, never arrived anywhere at all.
+        let v = away
         let half = min(RoomReversal.answeringSpan,
-                       material.reach(worldUnits: RingOne.inRoom(size)))
+                       material.reach(worldUnits: RingOne.inRoom(size)) * fits)
         let steps = Double(max(1, marksPerFrame - 1))
-        let reach = min(RingOne.widestMark, half / steps * 1.2)
+        let reach = RingOne.reach(half * markShare)
         return (0..<marksPerFrame).map { index in
             let across = -half + Double(index) / steps * half * 2
             return .impression(at: SurfaceCoordinate(u: 0.5 + across, v: v).clamped,

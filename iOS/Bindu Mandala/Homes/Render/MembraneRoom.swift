@@ -168,10 +168,18 @@ struct MembraneRoom: RoomSurfaceMechanism {
         let centre = stage.placement.coordinate
         let br = sin(chamberTime * Self.breathRate)
 
-        // The whole vessel as one figure: the outermost of the three beyond is
-        // what has to fit, so the room keeps its shape rather than losing its
-        // furthest source over the edge of the material.
-        let figure = RingOne.Figure(spread: Self.vesselRadius * (Self.nested.last ?? 1),
+        // **The vessel he is in is what the picture is sized on.**
+        //
+        // It was the outermost of the three *beyond* — `3.2 ×` the vessel's own
+        // radius — and the cost was the whole first adaptation and the hold:
+        // sized against a figure three times too wide, the vessel crushed to a
+        // ninth of the panel and every one of its seventy-three marks came out
+        // narrower than one cell of the mesh, which is not a faint room, it is an
+        // empty one (``RingOne/narrowestMark``). The three beyond are dormant
+        // until the second adaptation; they cannot be what the room is scaled to.
+        // They are laid into the material outside the vessel instead, in Design's
+        // own proportions, below.
+        let figure = RingOne.Figure(spread: Self.vesselRadius,
                                     part: Self.apertureSize,
                                     on: material,
                                     bodyAltitude: stage.placement.bodyAltitude)
@@ -205,8 +213,8 @@ struct MembraneRoom: RoomSurfaceMechanism {
                                     worldUnits: axes.along(
                                         design: figure.length(Self.apertureStands),
                                         rise: figure.length(Self.apertureLow)))).clamped,
-            reach: min(RingOne.widestMark,
-                       material.reach(worldUnits: figure.length(Self.apertureSize / 2)) * opened),
+            reach: RingOne.reach(
+                material.reach(worldUnits: figure.length(Self.apertureSize / 2)) * opened),
             depth: RingOne.depth(size: 1, on: material),
             glow: min(1, opened / (Self.apertureAtRest + Self.apertureSettling
                                    + Self.apertureOpens))))
@@ -234,8 +242,8 @@ struct MembraneRoom: RoomSurfaceMechanism {
         // profile term takes it from 0.39 of the radius out to all of it and back
         // — so its samples stand about a twelfth of that radius apart, and a mark
         // a little over half that reads as one continuous line.
-        let veinReach = min(RingOne.widestMark,
-                            material.reach(worldUnits: figure.length(Self.veinRadius)) * 0.08)
+        let veinReach = RingOne.reach(
+            material.reach(worldUnits: figure.length(Self.veinRadius)) * 0.08)
         for index in 0..<Self.veins {
             for sample in 0..<Self.veinSamples {
                 let point = Self.vein(index, sample: sample, breath: br)
@@ -256,13 +264,31 @@ struct MembraneRoom: RoomSurfaceMechanism {
         // material raised from beneath, still the material — because a source
         // beyond this one is not a hole in this one.
         guard b > 0 else { return [surface: marks] }
+
+        // **Outside the vessel, and inside the material.** A ring of twelve marks
+        // is as wide as its own spacing, so how wide they are follows from how far
+        // out the ring stands; and the furthest any of them can stand is half the
+        // surface less the marks it is made of, or the whole ring hangs over the
+        // edge. Design's `1.55, 2.3, 3.2` are multiples of the vessel's radius in
+        // a room the walker stands in the middle of — carried onto a surface
+        // literally they are three times wider than the material, and what the
+        // walker would see is twelve marks piled on its rim. So the proportions
+        // are kept and the span they are laid across is the material's.
+        func ringMark(at radius: Double) -> Double {
+            RingOne.reach(.pi * radius / Double(Self.nestedSamples) * 1.2)
+        }
+        let vessel = material.reach(worldUnits: figure.length(Self.vesselRadius))
+        let furthest = max(vessel,
+                           RoomReversal.answeringSpan - ringMark(at: RoomReversal.answeringSpan))
+        let outermost = Self.nested.last ?? 1
+
         for (index, scale) in Self.nested.enumerated() {
             let arrived = min(1, max(0, b * Self.nestedArrives - Double(index) * Self.nestedLags))
             guard arrived > 0 else { continue }
             let lit = arrived * (Self.nestedBrightest - Double(index) * Self.nestedDims)
-            let radius = material.reach(worldUnits: figure.length(Self.vesselRadius * scale))
-            let reach = min(RingOne.widestMark,
-                            .pi * radius / Double(Self.nestedSamples) * 1.2)
+            let beyond = outermost > 1 ? (scale - 1) / (outermost - 1) : 1
+            let radius = vessel + (furthest - vessel) * beyond
+            let reach = ringMark(at: radius)
             for sample in 0..<Self.nestedSamples {
                 let a = Double(sample) / Double(Self.nestedSamples) * 2 * .pi
                 marks.append(.swell(at: SurfaceCoordinate(u: centre.u + cos(a) * radius,

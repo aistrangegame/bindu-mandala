@@ -364,14 +364,36 @@ final class CrossingRoomTests: XCTestCase {
             guard let built = crossing(room) else { continue }
             let apart = Self.halfSeparation(built, room: room, at: Self.firstAdaptation)
             let one = Self.halfSeparation(built, room: room, at: Self.pastTheSecond)
+            let step = Self.halfCorrelation(built, room: room)
             print("RING2_CROSSING {\"kp\":\(row.position),"
-                  + String(format: "\"apartAtFirst\":%.4f,\"apartPastSecond\":%.6f}", apart, one))
+                  + String(format: "\"apartAtFirst\":%.4f,\"apartPastSecond\":%.6f,", apart, one)
+                  + String(format: "\"correlation\":%.4f}", step))
             XCTAssertGreaterThan(apart, 0.01,
                                  """
                                  khaḍgamālā \(row.position): the two halves are already together at \
                                  the first adaptation. There is no counterpoint, so there is nothing \
                                  for the second adaptation to resolve.
                                  """)
+            // **And they have to be out of step, not merely apart.** The line
+            // above can be passed by a room with no crossing in it at all: Design
+            // stands the two halves at different places, and that static offset
+            // alone is 0.11 in all sixteen — eleven times the bar — so it was
+            // being passed that way. Design's `ph + 0.5` is an identity for every
+            // kernel whose terms are `|sin|`, so the far half of Water's welling
+            // and Earth's settling came back the near half exactly, offset by
+            // nothing but the 3.2-second lag, and five of the sixteen rooms were a
+            // rigid pair of clusters from the first moment.
+            //
+            // One motion delayed correlates at about `+0.97` over the first
+            // adaptation; two motions in opposite phase correlate negative. The
+            // bar sits between them and nowhere near either.
+            XCTAssertLessThan(step, 0.5,
+                              """
+                              khaḍgamālā \(row.position): the far half correlates \(step) with the \
+                              near half over the whole first adaptation. That is one motion in two \
+                              places with a delay between them, not two halves running her physics \
+                              in opposite phase, and the second adaptation has nothing to resolve.
+                              """)
             XCTAssertLessThan(one, apart * 0.05,
                               """
                               khaḍgamālā \(row.position): the far half has not converged. The drawing \
@@ -536,28 +558,46 @@ final class CrossingRoomTests: XCTestCase {
     func testHerMarksStandClearOfTheStonesOwnGrain() {
         for (row, room) in karsinis() {
             guard let built = crossing(room) else { continue }
-            let stage = Self.stage(room: room, at: Self.firstAdaptation)
-            guard let material = stage.materials[stage.placement.surface] else { continue }
-            let marks = built.actions(at: Self.firstAdaptation, stage: stage)[stage.placement.surface] ?? []
-            let deepest = marks.map(\.depth).max() ?? 0
-            let widest = marks.map(\.reach).max() ?? 0
-            XCTAssertGreaterThan(deepest, material.grainRelief,
-                                 """
-                                 khaḍgamālā \(row.position): her deepest mark is \(deepest) and the \
-                                 stone's own grain stands \(material.grainRelief). Nothing she does \
-                                 can be seen.
-                                 """)
-            XCTAssertLessThanOrEqual(deepest, RoomInscription.markDepth + 1e-9,
-                                     """
-                                     khaḍgamālā \(row.position) digs past one mark's worth. The room \
-                                     is not a quarry, and fourteen marks do not get fourteen answers \
-                                     to how deep anything may go.
-                                     """)
-            // …and wide enough that the mesh can carry it: the surface is meshed
-            // at 64 a side, so a mark narrower than a cell is a mark with no
-            // vertices in it.
-            XCTAssertGreaterThan(widest, 1 / Double(RoomScene.resolution),
-                                 "khaḍgamālā \(row.position)'s marks are narrower than one mesh cell")
+            // **Every mark, at several moments of the stay.** This read
+            // `marks.map(\.depth).max()` — the deepest of the fourteen at one
+            // instant — and passed on rooms where four of the seven she draws
+            // stood under the banding for the whole stay: the near half carries no
+            // light of its own, so a ring under the grain is not a faint ring, it
+            // is nothing. Ring 1's sibling check has always asked it of every mark
+            // (`testEverySiddhiMarkStandsClearOfTheStonesOwnGrain`).
+            for t in [0, 24, Self.firstAdaptation, HomeMemory.holdEnd, Self.pastTheSecond] {
+                let stage = Self.stage(room: room, at: t)
+                guard let material = stage.materials[stage.placement.surface] else { continue }
+                let marks = built.actions(at: t, stage: stage)[stage.placement.surface] ?? []
+                XCTAssertEqual(marks.count, CrossingRoom.marksPerHalf * 2,
+                               "khaḍgamālā \(row.position) is not two halves of seven at \(t)s")
+                for (index, mark) in marks.enumerated() where mark.reach > 0 {
+                    XCTAssertGreaterThanOrEqual(mark.depth, material.grainRelief - 1e-9,
+                                                """
+                                                khaḍgamālā \(row.position), mark \(index) at \(t)s \
+                                                is \(mark.depth) deep and the stone's own grain \
+                                                stands \(material.grainRelief). It cannot be seen.
+                                                """)
+                    XCTAssertLessThanOrEqual(mark.depth, RoomInscription.markDepth + 1e-9,
+                                             """
+                                             khaḍgamālā \(row.position) digs past one mark's worth \
+                                             at \(t)s. The room is not a quarry, and fourteen marks \
+                                             do not get fourteen answers to how deep anything may go.
+                                             """)
+                    // …and wide enough that the mesh can carry it: the surface is
+                    // meshed at 64 a side, so a mark narrower than a cell is a mark
+                    // with no vertices in it — and the smallest ring she draws is
+                    // 0.86 of one on a floor or a canopy, which is why
+                    // ``RoomInscription/narrowestMark`` is now the floor under it
+                    // and this reads *at least* rather than *more than*.
+                    XCTAssertGreaterThanOrEqual(mark.reach,
+                                                RoomInscription.narrowestMark - 1e-9,
+                                                """
+                                                khaḍgamālā \(row.position), mark \(index) at \(t)s \
+                                                is narrower than one mesh cell.
+                                                """)
+                }
+            }
         }
     }
 
@@ -674,6 +714,65 @@ final class CrossingRoomTests: XCTestCase {
     }
 
     // MARK: - Reading a room
+
+    /// **Whether the two halves are running her physics in opposite phase, or the
+    /// same motion twice with a delay between them.**
+    ///
+    /// The distance between them cannot answer that. Design stands the two halves
+    /// at different places, and that offset alone is 0.11 in every one of the
+    /// sixteen — eleven times the bar the suite was asking — so a room whose far
+    /// half is an exact copy of its near half passes a separation check from the
+    /// first moment. What tells them apart is **correlation**: subtract each
+    /// half's own average over the stay, and ask how the two travel together. One
+    /// motion delayed by Design's 3.2 seconds comes back at about `+0.97`, because
+    /// the kernel's terms turn at a tenth of a radian a second and three seconds
+    /// is nothing to them. Two motions in opposite phase come back negative.
+    ///
+    /// Read in the room's own three registers and in scene units, which is
+    /// ``CrossingRoom/motion(_:span:)``'s convention: across the surface, along
+    /// it, and **into** it — because on a working face the axis a drawing Karṣiṇī
+    /// moves on is the one that runs into the material, so her counterpoint is
+    /// carried in the depth of what she cuts rather than in where it stands.
+    private static func halfCorrelation(_ built: CrossingRoom, room: HomeRoom) -> Double {
+        let moments = Array(stride(from: 0.0, through: HomeMemory.firstAdaptation, by: 2))
+        var total = 0.0, counted = 0
+        for index in 0..<CrossingRoom.marksPerHalf {
+            var near: [[Double]] = [], far: [[Double]] = []
+            for t in moments {
+                let stage = stage(room: room, at: t)
+                let surface = stage.placement.surface
+                guard let material = stage.materials[surface] else { continue }
+                func read(_ answering: Bool) -> [Double] {
+                    let place = built.place(index: index, answering: answering, at: t,
+                                            surface: surface, material: material)
+                    let motion = CrossingRoom.motion(place, span: material.span)
+                    return [motion.x, motion.y, motion.z]
+                }
+                near.append(read(false))
+                far.append(read(true))
+            }
+            guard near.count > 2 else { continue }
+            func centred(_ series: [[Double]]) -> [[Double]] {
+                let mean = (0..<3).map { axis in
+                    series.map { $0[axis] }.reduce(0, +) / Double(series.count)
+                }
+                return series.map { row in (0..<3).map { row[$0] - mean[$0] } }
+            }
+            let a = centred(near), b = centred(far)
+            var dot = 0.0, na = 0.0, nb = 0.0
+            for step in 0..<a.count {
+                for axis in 0..<3 {
+                    dot += a[step][axis] * b[step][axis]
+                    na += a[step][axis] * a[step][axis]
+                    nb += b[step][axis] * b[step][axis]
+                }
+            }
+            guard na > 1e-12, nb > 1e-12 else { continue }
+            total += dot / (na * nb).squareRoot()
+            counted += 1
+        }
+        return counted > 0 ? total / Double(counted) : 1
+    }
 
     /// How far the far half still stands from the near half, in the working
     /// surface's own coordinates, averaged over the seven.

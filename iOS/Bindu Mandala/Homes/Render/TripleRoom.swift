@@ -165,9 +165,8 @@ struct TripleRoom: RoomSurfaceMechanism {
         // the first adaptation is a room going quiet as it comes together.
         let lit = Self.ghostAtRest + apart * Self.ghostApart
         let share = RingOne.lightShare(of: Self.ghosts * Self.loops * Self.loopSamples)
-        let reach = min(RingOne.widestMark,
-                        material.reach(worldUnits: figure.length(Self.seatRadius))
-                        * 2.4 / Double(Self.loopSamples))
+        let reach = RingOne.reach(material.reach(worldUnits: figure.length(Self.seatRadius))
+                                  * 2.4 / Double(Self.loopSamples))
 
         // **How far off the surface a frame stands is how much of a mark it
         // makes there**, which is the reading ``MudraRoom`` makes of its own
@@ -234,10 +233,9 @@ struct TripleRoom: RoomSurfaceMechanism {
                                   v: centre.v + material.reach(
                                     worldUnits: axes.along(design: sealAt,
                                                            rise: -sealAt))).clamped,
-            reach: min(RingOne.widestMark,
-                       material.reach(worldUnits: figure.length(
-                        Self.sealRadius * (Self.sealSize + arrived * Self.sealArrives
-                                           + b * Self.sealDeepens)))),
+            reach: RingOne.reach(material.reach(worldUnits: figure.length(
+                Self.sealRadius * (Self.sealSize + arrived * Self.sealArrives
+                                   + b * Self.sealDeepens)))),
             depth: RingOne.depth(size: 1, on: material),
             glow: min(1, arrived * Self.sealBright + b * Self.sealDeepLight)))
 

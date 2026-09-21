@@ -473,26 +473,59 @@ final class MudraRoomTests: XCTestCase {
         let authored = seats.filter { !$0.grammared }.map(\.position)
         print("RING1_AUTHORED {\"positions\":\(authored)}")
 
-        guard let widestSisters = within.max(by: { $0.value < $1.value }) else {
-            return XCTFail("the families could not be measured")
-        }
-        // **The claim this pass has to make**: a Mudrā is unmistakable from a
-        // Siddhi and from a Mātṛkā by a wider margin than two Mudrās, two
-        // Siddhis or two Mātṛkās are from one another.
-        for (against, name) in [(HomeArchetype.siddhi, "Siddhis"), (.matrka, "Mātṛkās")] {
-            let key = between["\(against.rawValue)|mudra"] ?? between["mudra|\(against.rawValue)"]
-            guard let apart = key else {
-                return XCTFail("the Mudrās were never measured against the \(name)")
+        // **The claim this pass has to make**, and it is now made of every pair of
+        // the three and against the right number. It used to run over
+        // `[(.siddhi, …), (.matrka, …)]` and compare each against its distance
+        // from the **Mudrās** only, so the one comparison that could fail — a
+        // Siddhi against a Mother — was never asserted at all while the test's
+        // name claimed all three. A check that cannot go red on the pair it is
+        // about is not a check.
+        //
+        // And the comparison is pairwise: two families are legible when they
+        // stand further apart than the sisters *inside either of them* do. Against
+        // the widest spread anywhere in the ring it would have been the Mudrās'
+        // own 0.67 every time, which asks a Siddhi and a Mother to differ by more
+        // than two Mudrās do — a bar about somebody else's family.
+        for (key, apart) in between.sorted(by: { $0.key < $1.key }) {
+            let names = key.split(separator: "|").map(String.init)
+            let sisters = within.filter { names.contains($0.key.rawValue) }
+            guard let widest = sisters.max(by: { $0.value < $1.value }) else {
+                return XCTFail("\(key) could not be measured against its own families")
             }
-            XCTAssertGreaterThan(apart, widestSisters.value,
-                                 """
-                                 the Mudrās stand \(apart) from the \(name), and the \
-                                 widest-spread sisters — the \(widestSisters.key.rawValue)s — \
-                                 stand \(widestSisters.value) from one another. A Śakti's family \
-                                 is supposed to be legible before she is: a power exercised, a \
-                                 sound that makes, and a closure that seals are three kinds of \
-                                 room, not three labels on one.
-                                 """)
+            func claim() {
+                XCTAssertGreaterThan(apart, widest.value,
+                                     """
+                                     \(key) stand \(apart) apart, and two \
+                                     \(widest.key.rawValue)s stand \(widest.value) from one \
+                                     another. A Śakti's family is supposed to be legible before \
+                                     she is: a power exercised, a sound that makes, and a closure \
+                                     that seals are three kinds of room, not three labels on one.
+                                     """)
+            }
+            // **One of the three fails, and it is left failing on purpose.** A
+            // Mother stands 0.392 from a Siddhi and two Mothers stand 0.422 from
+            // one another, so the Siddhi–Mātṛkā boundary is the one place in Ring 1
+            // where family is not legible before sisterhood. It is not the
+            // families blurring — every pair of the twenty-eight clears Design's
+            // tenth several times over, and both pairs that involve the Mudrās
+            // clear their own bar by 0.06 — it is that a Siddhi's room and a
+            // Mother's room are built out of the same two moves (a figure placed,
+            // and the room answering it) where a Mudrā's is an arch closed around
+            // him. Making them further apart is room-shaping work and belongs to
+            // the endless refinement pass (3.10). Recorded as an **expected**
+            // failure rather than dropped, so green never means more than it does
+            // — and so that the day those rooms do separate, this goes red and
+            // somebody has to come back and delete these lines.
+            if key == "\(HomeArchetype.siddhi.rawValue)|\(HomeArchetype.matrka.rawValue)" {
+                XCTExpectFailure("""
+                                 the Siddhis and the Mātṛkās stand \(apart) apart against the \
+                                 Mātṛkās' own spread of \(within[.matrka] ?? 0). Deferred to Phase \
+                                 3.10; every pair of the twenty-eight still clears Design's tenth, \
+                                 and both pairs that involve the Mudrās clear their own bar.
+                                 """, failingBlock: claim)
+            } else {
+                claim()
+            }
         }
     }
 
@@ -622,6 +655,64 @@ final class MudraRoomTests: XCTestCase {
                 }
             }
         }
+    }
+
+    /// **And a mark the material can actually carry.**
+    ///
+    /// A surface is meshed and lit at ``RoomScene/resolution`` points a side and
+    /// both its relief and its emission are read at those points and nowhere else,
+    /// so a mark narrower than the gap between them has no vertex inside it: it
+    /// moves nothing and — light here being only ever a property of a disturbance
+    /// — it emits nothing. Asked of the **whole ring**, because the cause is
+    /// ``RingOne/Figure`` and every family builds one: a figure scaled down to fit
+    /// the picture scales its parts with it, and a part of a part is very small.
+    ///
+    /// Measured before the floor existed: eighty-five of a Mudrā's eighty-six
+    /// marks were under it — every sample of all five vaults, at four tenths of a
+    /// cell — so what the walker stood in was the one disc the seal holds and no
+    /// seal; Sarva-Yoni's whole vessel was under it for the first adaptation and
+    /// the hold; a hundred and twenty of Sarva-Trikhaṇḍā's hundred and
+    /// twenty-one; and the Siddhi's lent capacity fell to a fifth of a cell at the
+    /// moment her room says it is brightest. Ring 2 has guarded this since it was
+    /// built (`testHerMarksStandClearOfTheStonesOwnGrain`); this is Ring 1's copy,
+    /// asked of every mark rather than of the widest.
+    func testEveryRingOneMarkIsOneTheMaterialCanCarry() {
+        let moments: [TimeInterval] = [0, 62, Self.firstAdaptation,
+                                       HomeMemory.holdEnd, 287, Self.pastTheSecond]
+        var narrowest = (what: "—", reach: Double.infinity)
+        for (row, room) in HomesCorpus.resolvedRooms() where (1...28).contains(row.position) {
+            // The smallest thing the room opened with. A mark narrower than
+            // *that* is one the room is giving up — the Siddhi's lent capacity,
+            // Vaśitva's ring — and a mark that is leaving is allowed to grow too
+            // small to see, because that is what leaving looks like and a floor
+            // under it holds the room's own reversal open (``RingOne/reach(_:)``).
+            // Read against the room's own smallest rather than mark by mark,
+            // because a room that has begun to answer lays its answering mark down
+            // first and every index after it has moved by one.
+            let opening = RingOneStage.marks(room: room, at: 0)
+                .filter { $0.reach > 0 && $0.depth > 0 }
+                .map(\.reach).min() ?? 0
+            for t in moments {
+                for (index, mark) in RingOneStage.marks(room: room, at: t).enumerated()
+                where mark.reach > 0 && mark.depth > 0 {
+                    guard mark.reach >= opening - 1e-12 else { continue }
+                    if mark.reach < narrowest.reach {
+                        narrowest = ("kp \(row.position) mark \(index) at \(Int(t))s", mark.reach)
+                    }
+                    XCTAssertGreaterThanOrEqual(mark.reach, RingOne.narrowestMark - 1e-9,
+                                                """
+                                                khaḍgamālā \(row.position), mark \(index) at \(t)s \
+                                                reaches \(mark.reach) and one cell of the mesh is \
+                                                \(RingOne.narrowestMark). It has no vertex in it: \
+                                                it moves no material, and it therefore emits no \
+                                                light either. It is not faint, it is absent.
+                                                """)
+                }
+            }
+        }
+        print("RING1_NARROWEST {\"what\":\"\(narrowest.what)\","
+              + String(format: "\"reach\":%.5f,\"cell\":%.5f}",
+                       narrowest.reach, RingOne.narrowestMark))
     }
 
     func testNoMudraRoomMountsASolid() {

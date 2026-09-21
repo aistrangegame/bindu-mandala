@@ -181,6 +181,11 @@ struct SiddhiRoom: RoomSurfaceMechanism {
                      + Self.lentBurnsSettling * k
                      + Self.lentBurnsDeep * b) / Self.lentBurnsCeiling
         marks.append(RingOne.mark(here, from: before,
+                                  // **The shrink is applied after the figure's own
+                                  // floor and never under it** (``RingOne/reach(_:)``):
+                                  // a capacity held open at one mesh cell is a
+                                  // capacity that was never lent, which is this
+                                  // room's whole premise reversed back again.
                                   reach: figure.reach(Self.lentSize) * shrink,
                                   size: 1,
                                   travel: travel,
