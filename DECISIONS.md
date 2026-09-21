@@ -378,3 +378,45 @@ No assertion about a room could have found this. A picture of it did, in one gla
 ### The suite
 
 438 tests, 0 failures, 10 skipped (the gated bench windows), zero Swift warnings, on a simulator reserved to this branch. Sixteen of them are the rite's.
+
+## 2026-09-21 · Phase 3.1, reviewed — five findings fixed, one scheduled
+
+The render spine and the rite were read back against the renderer ruling and the laws. Six findings; five were real and are fixed here, and the sixth is real but belongs to a later phase and is recorded rather than argued away.
+
+### The binding condition had a fifth register, and it was open
+
+`RoomScene` vended its three depth-layer roots and its camera as internal `let`s. **`let` on a class-typed property stops the property being reassigned and does nothing whatever about the node it points at** — and `RoomDriver.scene` is internal too, so `driver.scene.herLayer.addChildNode(SCNNode(geometry: SCNSphere(radius: 0.4)))` compiled from any view that owns a driver and would have put exactly the lit lozenge the ruling forbids into any of the 102 rooms. `solidsInHerLayer` could not see it: it is only ever read on a freshly constructed room. `RoomScene.swift`'s own header asserted the opposite.
+
+The ruling names this as its own precondition — *"if Phase 3.1 cannot express 'an action on the room's own material' as the only way to mount an attribute, then the aniconic risk is unbounded"* — so this is the one finding that reopened it. All four roots are now `private`, and what a caller gets is facts: `layerName(_:)`, `childCount(in:)`, `solids(in:)`, `adaptingSurfaces`, `eye`. `private(set)` would not have been enough, and the check that keeps it shut is on the source rather than on a value: `testNoRoomHandsOutItsSceneGraph` reads `RoomScene.swift` off disk and fails the build if any stored property of a type in it names an `SCNNode`, `SCNScene`, `SCNGeometry`, `SCNMaterial`, `SCNLight`, `SCNMorpher`, `SCNCamera` or `SCNView`.
+
+`RoomDriver.scene` is left internal deliberately. Once the spine vends no node, a `RoomScene` is not a mounting point for anything, and the tests need a live driver's room to read `posedAt`, `breathedAt` and `capture`. The door that was open is the one that is shut.
+
+### The rite's motion flag and the view's were two flags
+
+`RiteOfEnteringView` renders by `forceReduceMotion || the environment` and built its ceremony from `forceReduceMotion` alone. The production door — `RiteOfEnteringView.entering(_:remembering:)` — leaves `forceReduceMotion` false, so **a walker with iOS Reduce Motion switched on got the still rendering path driving an animated ceremony**: one evaluation, no `TimelineView`, landing at the instant the beat opened. Her phrase at 0.003 alpha, her Devanāgarī wholly masked, her roots at nothing, and `frame.prompt` still `nil` because the beat had not finished writing — with no second frame coming to correct any of it. A touch reset the stage and reproduced it for the next beat. The crossing failed the same way: an easing stretch sampled once, with the render loop stopped, leaves him at the door he started from.
+
+A `View`'s `init` is not in the environment, so the ceremony is now built with **no** motion setting at all and takes one in `adoptMotion()` — on appearance and on every change of `accessibilityReduceMotion`. `RiteOfEntering.adopt(reduceMotion:at:)` applies the same two facts `crossing` and `releasing` already carry to a ceremony that has already begun: the beat is written, and the walker steps to his station. `forceReduceMotion` now travels that same road, which is what makes the hosted test real — `\.accessibilityReduceMotion` is read-only in `EnvironmentValues` and cannot be injected at all, so a test that set both halves could never have seen the gap between them.
+
+### Two of the five verbs had no end
+
+`SurfaceAction.relief(at:)` cuts off at four reaches, on the note that this is *"past the crack's own tail, which is the longest of the five"*. It was not. `furrow`'s profile is a function of `du` only — no `dv` term at all — so it held its whole depth for every `v` and the cutoff ended it at **100%** of its depth; `crack` falls off as `exp(-|dv|/3reach)` and was still at **26%**. On the floor, for one part of one attribute at its resting size, that is a 0.32-unit vertical wall across the room with a hard-edged rectangle of the mark's own light lying on it — square ends, discrete, an object, which is what the five verbs exist to prevent. It is reachable today: `RoomInscription.verb` returns `.furrow` whenever a part travels across the material.
+
+The two directional verbs are now given a length that closes smoothly exactly at the cutoff. `testEveryVerbReachesNothingAtItsOwnCutoff` walks all five around their own cutoff square and holds both the relief and the emission to nothing there — the check that would have caught it.
+
+### The ember was offset upward in every room
+
+`RoomLightRig.install` and `RoomScene.pose` both put the mark's ember at `placement.height + roomHeight * 0.12` with no branch on the surface. For a Śakti whose altitude is the crown that is **above her own ceiling**: the canopy's normals point down into the room, so the one surface her attribute acts on receives nothing at all from the light that is supposed to be coming out of it. The key does not save it either — it is a directional light aimed down at the floor for almost the whole stay. Her marked surface was lit by the flat ambient and its own emission alone, and the grain the stone carries *"so a raking light has something to fall across"* was invisible. That is the authoring defect Design's verification pass named, with Ring 1's Mātṛkās reading as one flat plane.
+
+`RoomUnits.emberOffset(for:)` is now one distance and three directions — above a floor, below a canopy, in front of a face — and both call sites read it. The whole-frame legibility spread could not see this (the floor carries it) and ring 7 could not either (the pearl world's fog masks a flat ceiling completely), so `testACanopyRoomsCeilingIsNotAFlatPlane` reads the top of the frame, in ring 8.
+
+### The mark's light stood still while the mark travelled
+
+Every surface's emission map was baked from `shapes.last` — the material at 347 s — while the mesh being rendered until the second adaptation is `shapes[0]`, and all three morph targets carry identical texture coordinates. The mark's own surface coordinate is `0.5 + mount.z/extent` and `mount.z` runs −4.6 → −1.2, so for the whole of a first visit the glow sat about 3.4 scene units in front of the impression it was supposed to be coming out of — on undisturbed floor, with the eye 7.8 units away. The arithmetic inside `RoomMaterial.emission(at:)` holds; the scene applied the wrong moment's map to the geometry, which is the binding condition's *"a mark that does nothing to the surface emits nothing"* broken one level up.
+
+A texture cannot morph, so the light is carried at the same three moments the shape is — one per channel of the emission map — and weighed by the same two morph weights in a `.surface` shader modifier. The blend is exact at the three moments and linear between them, which is what the geometry does. `testTheMarksLightTravelsWithTheMark` asserts the light travels the same distance across the floor that the mark does; before the fix the three channels were one baked moment and that difference was exactly zero.
+
+### The 94 grammar rooms do not yet reverse — recorded, not built
+
+Design is explicit that *"the second adaptation is never 'more of the same': in every room it REVERSES the room's own premise"*, and `homes-grammar.js` authors a different reversal for each archetype. What the spine carries is the reversal's **stage** — the mark widening and nearing, the key handing its work to the mark, the gradient turning toward her — and it is the same stage in all 102 rooms. `HomeGrammar.Reading.displacement(time:amplitude:)` takes no deep term, and `HomeLabel.deep` is computed for all 94 grammar rooms and consumed by nothing.
+
+**Not built here, and the reason is scope rather than disagreement.** Authoring nine archetype reversals in the surface vocabulary is a design act, not a review fix, and it belongs with the rooms: Phase 3.3 for the authored eight and 3.4–3.6 for the rings, through the `RoomSurfaceMechanism` door the spine already offers. What is fixed here is the overclaim — `RoomScene.swift`'s header now names what the spine does not yet carry, so the gap is a scheduled item rather than a property of the layer all 102 rooms are built on.

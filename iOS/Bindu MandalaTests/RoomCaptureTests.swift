@@ -99,6 +99,8 @@ final class RoomCaptureTests: XCTestCase {
              room(position: 77, ring: 6, bodilyLocation: "forehead", tattva: "Tejas")),
             ("ring 7 · the crown · pearl, SOURCELESS",
              room(position: 93, ring: 7, bodilyLocation: "crown", tattva: "Vāk")),
+            ("ring 8 · the crown · her mark overhead, with a key light",
+             room(position: 99, ring: 8, bodilyLocation: "crown", tattva: "Icchā")),
         ]
 
         for (what, room) in rooms {
@@ -124,6 +126,49 @@ final class RoomCaptureTests: XCTestCase {
                                      exactly the defect Design hit with Ring 1's Mātṛkās.
                                      """)
             }
+        }
+    }
+
+    /// **A canopy room's ceiling is lit, and it is the light in her own mark
+    /// that lights it.**
+    ///
+    /// A Śakti felt at the crown acts on the canopy, and the canopy's normals
+    /// point down into the room — so a light above it contributes nothing to
+    /// it. The ember was offset upward in every room, which put a crown Śakti's
+    /// ember on the far side of her own ceiling; the key is above the canopy
+    /// for almost the whole stay, and a directional light pointing down at the
+    /// floor never reaches an upward-facing surface at all. Her marked surface
+    /// was therefore lit by the flat ambient alone, with the grain the stone
+    /// carries — *"so a raking light has something to fall across"* — invisible.
+    ///
+    /// The whole-frame spread cannot see this: the floor and the walls carry it.
+    /// Ring 7 cannot see it either, because the pearl world's luminous fog masks
+    /// a flat ceiling completely. So this reads the top of the frame, in a ring
+    /// that is not the seventh.
+    func testACanopyRoomsCeilingIsNotAFlatPlane() throws {
+        let crown = room(position: 99, ring: 8, bodilyLocation: "crown", tattva: "Icchā")
+        XCTAssertEqual(RoomUnits.surface(forBodyAltitude: crown.bodyAltitude), .canopy,
+                       "this room's mark is not overhead, and the check proves nothing")
+
+        let scene = RoomScene(room: crown)
+        for (when, t) in [("the first adaptation", HomeMemory.firstAdaptation),
+                          ("past the second", HomeMemory.secondAdaptationEnd)] {
+            guard let image = scene.capture(size: Self.captureSize, atSceneTime: t) else {
+                return XCTFail("the crown room could not be rendered offscreen")
+            }
+            let overhead = Self.luminance(of: image, topFraction: 0.5)
+            print("ROOM_CANOPY {\"when\":\"\(when)\","
+                  + String(format: "\"meanLuma\":%.4f,\"minLuma\":%.4f,\"maxLuma\":%.4f}",
+                           overhead.mean, overhead.min, overhead.max))
+            XCTAssertGreaterThan(overhead.mean, 0.01,
+                                 "\(when): the ceiling her mark is in rendered black")
+            XCTAssertGreaterThan(overhead.max - overhead.min, 0.02,
+                                 """
+                                 \(when): the upper half of a crown Śakti's room is one flat plane. \
+                                 Nothing with a direction is reaching the only surface her attribute \
+                                 acts on — which is the authoring defect Design's verification pass \
+                                 named, with Ring 1's Mātṛkās.
+                                 """)
         }
     }
 
@@ -272,7 +317,10 @@ final class RoomCaptureTests: XCTestCase {
 
     /// The darkest, brightest and mean luminance of a render, on a coarse grid.
     /// Design's invariant 7 and FIDELITY's contrast floor both live here.
-    private static func luminance(of image: CGImage) -> (min: Double, max: Double, mean: Double) {
+    /// `topFraction` reads only the top of the frame, for the surfaces a
+    /// whole-frame reading cannot see past the floor.
+    private static func luminance(of image: CGImage,
+                                  topFraction: Double = 1) -> (min: Double, max: Double, mean: Double) {
         let side = 64
         var pixels = [UInt8](repeating: 0, count: side * side * 4)
         guard let context = CGContext(data: &pixels, width: side, height: side,
@@ -282,8 +330,11 @@ final class RoomCaptureTests: XCTestCase {
         else { return (0, 0, 0) }
         context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
 
+        // `CGContext` draws bottom-up, so the top of the frame is the end of
+        // the buffer.
+        let rows = Swift.max(1, Int(Double(side) * Swift.min(1, Swift.max(0, topFraction))))
         var low = 1.0, high = 0.0, total = 0.0
-        for index in stride(from: 0, to: pixels.count, by: 4) {
+        for index in stride(from: (side - rows) * side * 4, to: pixels.count, by: 4) {
             let luma = (0.2126 * Double(pixels[index])
                         + 0.7152 * Double(pixels[index + 1])
                         + 0.0722 * Double(pixels[index + 2])) / 255
@@ -291,6 +342,6 @@ final class RoomCaptureTests: XCTestCase {
             high = Swift.max(high, luma)
             total += luma
         }
-        return (low, high, total / Double(side * side))
+        return (low, high, total / Double(side * rows))
     }
 }

@@ -39,9 +39,35 @@ import UIKit
 // the mark it made and nothing else. `testHerLayerHoldsNoSolid` walks the
 // graph and fails the build if a geometry ever appears under it.
 //
-// The `SCNScene` itself is deliberately not exposed. A room is installed into a
+// **And the graph is not handed out, in any register.** The `SCNScene` is
+// private, and so are all four node roots. This is not tidiness: `let` on a
+// class-typed property stops the property being reassigned and does nothing
+// whatever about the node it points at, so a vended `herLayer` — even a
+// `private(set)` one — is a mounting point for the free-standing lit solid, in
+// any of the 102 rooms, reachable from any view that owns a driver. The four
+// registers ``RoomMaterial`` closes are closed in the type system, the
+// arithmetic, the protocol and the vocabulary; the scene graph is the fifth,
+// and it is closed here by there being no property to reach.
+//
+// What a caller gets instead is facts: ``layerName(_:)``, ``childCount(in:)``,
+// ``solids(in:)``, ``adaptingSurfaces``, ``eye``. A room is installed into a
 // view or captured; it never hands out a root node for something to be added
 // to. That is the same rule as ``RoomMaterial``'s, one level up.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// WHAT THE SPINE DOES NOT YET CARRY
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Design's second adaptation *"is never 'more of the same': in every room it
+// REVERSES the room's own premise"* (`homes-chambers.js`), and `homes-grammar.js`
+// authors a different reversal for each archetype. What is here is the reversal's
+// **stage** — the mark widening and nearing, the key handing its work to the
+// mark, the gradient turning toward her — and it is the same stage in all 102
+// rooms. The reversals themselves arrive through ``RoomSurfaceMechanism``, which
+// is scheduled for the authored eight in Phase 3.3 and for the grammar rooms
+// with their rings. Until then the 94 grammar rooms intensify rather than
+// reverse, and `DECISIONS.md` carries that as a scheduled gap rather than a
+// property of the spine.
 
 /// What a mechanism is handed, and the only thing it can do with it.
 ///
@@ -140,14 +166,27 @@ final class RoomScene {
 
     // MARK: - Design's three depth layers, as named node roots
 
-    /// Layer 1 — the building: the floor, the canopy, the walls, her face.
-    let building = SCNNode()
-    /// Layer 2 — the world: the āvaraṇa's weather and the light it arrives by.
-    let weather = SCNNode()
-    /// Layer 3 — her mechanism. **No geometry, ever.** See the header.
-    let herLayer = SCNNode()
+    /// Which of Design's three depth layers is being asked about.
+    ///
+    /// A layer is something to ask a question of, never something to be handed:
+    /// the roots below are private, and what a caller gets back is a fact. See
+    /// the header — a `let` on a class-typed property stops reassignment and
+    /// not mutation, so vending the node at all would leave her layer open to
+    /// exactly the free-standing lit solid the ruling forbids.
+    enum Layer: String, CaseIterable, Equatable {
+        /// Layer 1 — the building: the floor, the canopy, the walls, her face.
+        case building
+        /// Layer 2 — the world: the āvaraṇa's weather and the light it arrives by.
+        case world
+        /// Layer 3 — her mechanism. **No geometry, ever.** See the header.
+        case her
+    }
 
-    let cameraNode = SCNNode()
+    private let building = SCNNode()
+    private let weather = SCNNode()
+    private let herLayer = SCNNode()
+
+    private let cameraNode = SCNNode()
 
     // MARK: - The surfaces
 
@@ -174,9 +213,23 @@ final class RoomScene {
     private var emberNode: SCNNode?
     private var keyNode: SCNNode?
     private var motesMaterial: SCNMaterial?
-    /// The material of the surface her attribute acts on. Its emission is the
-    /// light in the marks she has made, and it rises as the stay deepens.
-    private var markedMaterial: SCNMaterial?
+    /// Every surface that carries marks. Its emission is the light in what was
+    /// made in it, and it rises as the stay deepens. Usually one — the surface
+    /// her altitude puts her on — and a list because Phase 3.3's mechanisms
+    /// mark surfaces her attribute never touches.
+    private var litSurfaces: [SCNMaterial] = []
+
+    /// Which of the stay's three moments the marks' light is showing, at the
+    /// instant the room was last posed.
+    ///
+    /// **The same three weights the geometry is morphed by**, and that identity
+    /// is the point: the light in a mark is a property of the mark, so it has
+    /// to move with it. Baking one moment's light and holding it still while
+    /// the mark travels across the surface would put a lit patch on material
+    /// nothing had happened to — which is condition 3 of the binding condition
+    /// broken by the scene, however the arithmetic reads inside
+    /// ``RoomMaterial/emission(at:)``.
+    private(set) var markLightWeights: SIMD3<Double> = SIMD3(1, 0, 0)
 
     // MARK: - Constants
 
@@ -323,9 +376,8 @@ final class RoomScene {
             riserNode.scale = SCNVector3(1, Float(max(0.001, pose.placement.height - RoomUnits.floorY)), 1)
         }
 
-        emberNode?.position = SCNVector3(0,
-                                         Float(pose.placement.height + RoomUnits.roomHeight * 0.12),
-                                         Float(pose.placement.depth))
+        let ember = RoomUnits.emberPoint(for: pose.placement)
+        emberNode?.position = SCNVector3(Float(ember.x), Float(ember.y), Float(ember.z))
         emberNode?.light?.intensity = CGFloat(pose.emberStrength)
 
         if let keyNode {
@@ -339,13 +391,23 @@ final class RoomScene {
         cameraNode.position = SCNVector3(Float(pose.eye.x), Float(pose.eye.y), Float(pose.eye.z))
         cameraNode.eulerAngles = SCNVector3(Float(pose.eyePitch), 0, 0)
 
-        // The marks are lit as they are made: the emission map is the whole
-        // stay's marks, and how much of it is showing is the stay's own two
-        // adaptations. A texture cannot morph; an intensity can.
-        markedMaterial?.emission.intensity =
-            CGFloat(Self.markEmissionFloor
-                    + (Self.markEmissionCeiling - Self.markEmissionFloor)
-                      * (0.45 * pose.settling + 0.55 * pose.deep))
+        // The marks are lit as they are made — *where* they are made as much as
+        // *when*. A texture cannot morph, so the surface's light is carried at
+        // the same three moments the surface's shape is, one to a channel, and
+        // weighed here by the same two morph weights. How much of it is showing
+        // is the stay's own two adaptations, which is an intensity.
+        markLightWeights = SIMD3(max(0, 1 - pose.firstWeight - pose.secondWeight),
+                                 pose.firstWeight,
+                                 pose.secondWeight)
+        let showing = CGFloat(Self.markEmissionFloor
+                              + (Self.markEmissionCeiling - Self.markEmissionFloor)
+                                * (0.45 * pose.settling + 0.55 * pose.deep))
+        for surface in litSurfaces {
+            surface.emission.intensity = showing
+            surface.setValue(NSNumber(value: Float(markLightWeights.x)), forKey: "uOpening")
+            surface.setValue(NSNumber(value: Float(markLightWeights.y)), forKey: "uFirst")
+            surface.setValue(NSNumber(value: Float(markLightWeights.z)), forKey: "uSecond")
+        }
 
         breathe(at: pose.worldTime)
         motesMaterial?.setValue(NSNumber(value: Float(pose.deep)), forKey: "uDeep")
@@ -422,16 +484,64 @@ final class RoomScene {
         return renderer.snapshot(atTime: 0, with: size, antialiasingMode: .none).cgImage
     }
 
-    /// How many meshes stand under her own layer. The binding condition, as a
-    /// number the tests can read: it is zero, in every room, forever.
-    var solidsInHerLayer: Int {
+    // MARK: - What the graph will answer, without handing itself over
+
+    private func root(of layer: Layer) -> SCNNode {
+        switch layer {
+        case .building: return building
+        case .world:    return weather
+        case .her:      return herLayer
+        }
+    }
+
+    /// The name SceneKit carries for one layer.
+    func layerName(_ layer: Layer) -> String? { root(of: layer).name }
+
+    /// How many nodes stand directly under one layer.
+    func childCount(in layer: Layer) -> Int { root(of: layer).childNodes.count }
+
+    /// How many meshes stand anywhere under one layer.
+    func solids(in layer: Layer) -> Int {
         var count = 0
         func walk(_ node: SCNNode) {
             if node.geometry != nil { count += 1 }
             node.childNodes.forEach(walk)
         }
-        walk(herLayer)
+        walk(root(of: layer))
         return count
+    }
+
+    /// How many meshes stand under her own layer. The binding condition, as a
+    /// number the tests can read: it is zero, in every room, forever.
+    var solidsInHerLayer: Int { solids(in: .her) }
+
+    /// One of the building's surfaces, as the facts a check needs about it.
+    struct SurfaceFacts: Equatable {
+        let name: String
+        /// How many morph targets it carries. Two: the two adaptations.
+        let adaptations: Int
+        /// Whether they blend normalised. Additively they would overshoot every
+        /// mark by the whole of the first adaptation.
+        let isNormalised: Bool
+    }
+
+    /// Every surface of the building that adapts.
+    var adaptingSurfaces: [SurfaceFacts] {
+        building.childNodes.compactMap { node in
+            guard let morpher = node.morpher else { return nil }
+            return SurfaceFacts(name: node.name ?? "?",
+                                adaptations: morpher.targets.count,
+                                isNormalised: morpher.calculationMode == .normalized)
+        }
+    }
+
+    /// Where the eye stands, in scene units. Read-only: the camera is put where
+    /// it goes by ``pose(at:)`` and moved along the crossing by
+    /// ``stand(atApproach:)``, and by nothing else anywhere.
+    var eye: SIMD3<Double> {
+        SIMD3(Double(cameraNode.position.x),
+              Double(cameraNode.position.y),
+              Double(cameraNode.position.z))
     }
 
     // MARK: - The surfaces, built
@@ -440,9 +550,9 @@ final class RoomScene {
         let geometries = shapes.map {
             Self.mesh(of: $0, extent: RoomUnits.extent, orientation: .floor)
         }
-        let material = Self.stone(ink, roughness: 0.95, emission: shapes.last)
+        let material = Self.stone(ink, roughness: 0.95, marks: shapes)
         material.name = "ground"
-        if receivingSurface == .ground { markedMaterial = material }
+        register(lit: material)
         geometries.forEach { $0.materials = [material] }
         groundNode.geometry = geometries[0]
         groundNode.name = "ground"
@@ -456,9 +566,9 @@ final class RoomScene {
         let geometries = shapes.map {
             Self.mesh(of: $0, extent: RoomUnits.extent, orientation: .ceiling)
         }
-        let material = Self.stone(ink, roughness: 0.98, emission: shapes.last)
+        let material = Self.stone(ink, roughness: 0.98, marks: shapes)
         material.name = "canopy"
-        if receivingSurface == .canopy { markedMaterial = material }
+        register(lit: material)
         geometries.forEach { $0.materials = [material] }
         canopyNode.geometry = geometries[0]
         canopyNode.name = "canopy"
@@ -479,9 +589,9 @@ final class RoomScene {
         let geometries = shapes.map {
             Self.mesh(of: $0, extent: RoomUnits.faceSpan, orientation: .face)
         }
-        let material = Self.stone(ink, roughness: 0.92, emission: shapes.last)
+        let material = Self.stone(ink, roughness: 0.92, marks: shapes)
         material.name = "face"
-        markedMaterial = material
+        register(lit: material)
         material.isDoubleSided = true
         geometries.forEach { $0.materials = [material] }
         faceNode.geometry = geometries[0]
@@ -492,7 +602,7 @@ final class RoomScene {
 
         let riser = SCNBox(width: CGFloat(RoomUnits.faceSpan * 0.55), height: 1,
                            length: CGFloat(RoomUnits.faceSpan * 0.3), chamferRadius: 0)
-        riser.materials = [Self.stone(ink, roughness: 0.95, emission: nil)]
+        riser.materials = [Self.stone(ink, roughness: 0.95, marks: [])]
         riserNode.geometry = riser
         riserNode.name = "riser"
         riserNode.pivot = SCNMatrix4MakeTranslation(0, -0.5, 0)
@@ -501,7 +611,7 @@ final class RoomScene {
     }
 
     private func buildWalls(ink: UIColor) {
-        let material = Self.stone(ink, roughness: 0.94, emission: nil)
+        let material = Self.stone(ink, roughness: 0.94, marks: [])
         material.name = "wall"
         material.isDoubleSided = true
         let height = RoomUnits.roomHeight * 1.6
@@ -690,19 +800,57 @@ final class RoomScene {
     /// light in a room's material**, and it exists because
     /// ``RoomMaterial/emission(at:)`` cannot return anything where the material
     /// is undisturbed.
-    static func stone(_ ink: UIColor, roughness: Double, emission: RoomMaterial?) -> SCNMaterial {
+    ///
+    /// `marks` is the surface at the stay's three moments, in the same order the
+    /// three meshes are generated in. One channel each, weighed by
+    /// ``markBlend``, so the light travels with the mark rather than standing
+    /// still in the texture while the mark moves out from under it.
+    static func stone(_ ink: UIColor, roughness: Double, marks: [RoomMaterial]) -> SCNMaterial {
         let m = SCNMaterial()
         m.lightingModel = .blinn
         m.diffuse.contents = ink
         m.specular.contents = UIColor(white: CGFloat(max(0, 1 - roughness)) * 0.5, alpha: 1)
         m.shininess = 0.04
         m.isLitPerPixel = true
-        if let emission, !emission.isUndisturbed {
-            m.emission.contents = emissionMap(of: emission)
+        if marks.contains(where: { !$0.isUndisturbed }) {
+            m.emission.contents = emissionMap(of: marks)
             m.emission.intensity = 0.34
+            m.shaderModifiers = [.surface: markBlend]
+            // Seeded as `Float`, for the reason the motes are: SceneKit keys a
+            // shader argument by the type it first sees.
+            m.setValue(NSNumber(value: Float(1)), forKey: "uOpening")
+            m.setValue(NSNumber(value: Float(0)), forKey: "uFirst")
+            m.setValue(NSNumber(value: Float(0)), forKey: "uSecond")
         }
         return m
     }
+
+    /// A surface that carries marks, so its light can be posed with the stay.
+    private func register(lit material: SCNMaterial) {
+        guard material.emission.contents != nil else { return }
+        litSurfaces.append(material)
+    }
+
+    /// The three moments' light, weighed exactly as the three meshes are.
+    ///
+    /// The whole of the fix this modifier exists for is that a texture cannot
+    /// morph. The mesh passes through three shapes and the mark travels across
+    /// the surface as it goes — Design's mount brings the attribute toward the
+    /// walker through the second adaptation — while the texture's coordinates
+    /// never move. One baked moment therefore lands its light on whatever the
+    /// surface happens to be doing at that coordinate now, which for most of a
+    /// first visit is undisturbed material. Three moments, one per channel,
+    /// weighed by the morph's own weights, put the light back in the mark.
+    static let markBlend = """
+    #pragma arguments
+    float uOpening;
+    float uFirst;
+    float uSecond;
+    #pragma body
+    float3 moments = _surface.emission.rgb;
+    float lit = moments.r * uOpening + moments.g * uFirst + moments.b * uSecond;
+    _surface.emission = float4(lit, lit, lit, _surface.emission.a);
+    """
 
     /// The surface's own emission, as a small map.
     ///
@@ -714,19 +862,22 @@ final class RoomScene {
     /// choice: a single-channel 8-bit `CGImage` reaches Metal as
     /// `r8Unorm_sRGB`, which the simulator's device rejects with a hard
     /// assertion — `pixelFormat (11) is not a valid MTLPixelFormat` — and takes
-    /// the whole test process down with it. Grey in RGB is the same light and
-    /// a format every device carries.
-    static func emissionMap(of material: RoomMaterial, side: Int = 64) -> CGImage? {
+    /// the whole test process down with it. A format every device carries.
+    ///
+    /// The three channels are the surface's light at the stay's three moments,
+    /// in order. ``markBlend`` weighs them; nothing else ever reads one alone.
+    static func emissionMap(of moments: [RoomMaterial], side: Int = 64) -> CGImage? {
+        guard let last = moments.indices.last else { return nil }
         var pixels = [UInt8](repeating: 0, count: side * side * 4)
         for j in 0..<side {
             for i in 0..<side {
-                let lit = material.emission(at: SurfaceCoordinate(u: Double(i) / Double(side - 1),
-                                                                  v: Double(j) / Double(side - 1)))
-                let value = UInt8(min(255, max(0, lit * 255)))
+                let point = SurfaceCoordinate(u: Double(i) / Double(side - 1),
+                                              v: Double(j) / Double(side - 1))
                 let offset = (j * side + i) * 4
-                pixels[offset] = value
-                pixels[offset + 1] = value
-                pixels[offset + 2] = value
+                for channel in 0..<3 {
+                    let lit = moments[min(channel, last)].emission(at: point)
+                    pixels[offset + channel] = UInt8(min(255, max(0, lit * 255)))
+                }
                 pixels[offset + 3] = 255
             }
         }

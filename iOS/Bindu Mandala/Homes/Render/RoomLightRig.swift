@@ -197,9 +197,8 @@ struct RoomLightRig {
         let emberNode = SCNNode()
         emberNode.light = ember
         emberNode.name = "ember"
-        emberNode.position = SCNVector3(0,
-                                        Float(placement.height + RoomUnits.roomHeight * 0.12),
-                                        Float(placement.depth))
+        let at = RoomUnits.emberPoint(for: placement)
+        emberNode.position = SCNVector3(Float(at.x), Float(at.y), Float(at.z))
         mechanism.addChildNode(emberNode)
 
         return (keyNode, emberNode)

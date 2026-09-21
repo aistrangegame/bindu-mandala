@@ -188,12 +188,24 @@ struct SurfaceAction: Equatable {
         // left to a falloff that rounds to nothing, because a room's surface is
         // meshed at four thousand points and a form can carry sixty parts: the
         // cutoff is what makes the height field O(what was marked) instead of
-        // O(everything × everyone). Four reaches is past the crack's own tail,
-        // which is the longest of the five.
+        // O(everything × everyone).
         let cutoff = reach * 4
         if abs(du) > cutoff || abs(dv) > cutoff { return 0 }
         let r = (du * du + dv * dv).squareRoot() / reach
         let along = abs(du) / reach
+
+        // **A stroke has to end, not be sawn off.** Three of the five verbs are
+        // round — they fall away in every direction at once, and are already
+        // nothing long before the cutoff. Two of them run *along* `v`: a furrow
+        // holds its whole depth for the length of the stroke, and a crack is
+        // still at a quarter of its own when the cutoff arrives. Without this
+        // they would each stop at a vertical cliff of a mark's depth, with a
+        // hard-edged rectangle of the mark's own light on top of it — which is
+        // to say, a discrete object with square ends, which is the one thing
+        // the five verbs exist to prevent. So the two directional verbs are
+        // given a length, and it closes smoothly exactly where the cutoff is.
+        // `testEveryVerbReachesNothingAtItsOwnCutoff` holds all five to it.
+        let ends = 1 - RoomMaterial.smooth(abs(dv) / cutoff)
 
         let shape: Double
         switch verb {
@@ -201,14 +213,16 @@ struct SurfaceAction: Equatable {
             shape = exp(-r * r * 2.2)
         case .furrow:
             // A trough across `u`, running the length of `v`; the material it
-            // displaced stands up as a lip on either side.
+            // displaced stands up as a lip on either side, and the stroke
+            // finishes rather than running on to the edge of the material.
             let trough = exp(-along * along * 4.5)
             let lip = exp(-pow((along - 1.15) * 2.6, 2)) * 0.32
-            shape = trough - lip
+            shape = (trough - lip) * ends
         case .crack:
             // Narrow and hard-edged, and it does not close: the falloff is
-            // linear in the distance rather than Gaussian.
-            shape = max(0, 1 - along * 6) * exp(-abs(dv) / max(reach * 3, 0.0001))
+            // linear in the distance rather than Gaussian. Across its width,
+            // that is — along its length it runs out, the way a split does.
+            shape = max(0, 1 - along * 6) * exp(-abs(dv) / max(reach * 3, 0.0001)) * ends
         case .swell:
             shape = exp(-r * r * 1.1)
         case .compaction:

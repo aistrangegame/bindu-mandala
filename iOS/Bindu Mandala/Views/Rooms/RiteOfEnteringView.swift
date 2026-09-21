@@ -108,9 +108,13 @@ struct RiteOfEnteringView: View {
         self.mechanism = mechanism
         self.onEntered = onEntered
         self.forceReduceMotion = forceReduceMotion
+        // **Built without a motion setting, on purpose.** A `View`'s `init` is
+        // not in the environment, so `forceReduceMotion` is only half the answer
+        // here and the half it is missing is the one a real walker uses. The
+        // ceremony takes the whole answer in `adoptMotion()`, on appearance and
+        // on every change, and there is exactly one place it can come from.
         _rite = State(initialValue: RiteOfEntering(compression: compression,
-                                                   headStart: headStart,
-                                                   reduceMotion: forceReduceMotion))
+                                                   headStart: headStart))
         _clock = State(initialValue: RoomClock.held())
         _approach = State(initialValue: RoomApproachSource.atTheDoor())
     }
@@ -137,6 +141,7 @@ struct RiteOfEnteringView: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { touch() }
         .onAppear { open() }
+        .onChange(of: environmentReduceMotion) { _, _ in adoptMotion() }
         .onDisappear { crossing?.cancel() }
         .ignoresSafeArea()
     }
@@ -261,8 +266,21 @@ struct RiteOfEnteringView: View {
     /// The first beat's tone lands as the crossing opens — Design's
     /// `beginEnter`, which strikes before the walker has done anything.
     private func open() {
-        approach.set(rite.approach)
+        adoptMotion()
         strike(.phrase)
+    }
+
+    /// The ceremony takes the motion setting the walker's device is carrying.
+    ///
+    /// The rite is built in `init`, which is not in the environment, so this is
+    /// the first moment the real answer is known — and
+    /// ``RiteOfEntering/adopt(reduceMotion:at:)`` is where the ceremony's flag
+    /// and the one this view renders by are made the same flag. Without it a
+    /// walker with the system's own Reduce Motion on is drawn once, at the
+    /// instant each beat opened, and stays blank.
+    private func adoptMotion() {
+        rite.adopt(reduceMotion: reduceMotion)
+        approach.set(rite.approach)
     }
 
     private func touch() {

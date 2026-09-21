@@ -256,12 +256,12 @@ final class RiteOfEnteringTests: XCTestCase {
         let her = room()
         let scene = RoomScene(room: her)
         scene.pose(at: 0)
-        let standing = scene.cameraNode.position.z
+        let standing = scene.eye.z
         scene.stand(atApproach: 0)
-        XCTAssertGreaterThan(scene.cameraNode.position.z, standing,
+        XCTAssertGreaterThan(scene.eye.z, standing,
                              "standing at the far end of the crossing did not move the eye back")
         scene.stand(atApproach: 1)
-        XCTAssertEqual(scene.cameraNode.position.z, standing, accuracy: 1e-4)
+        XCTAssertEqual(scene.eye.z, standing, accuracy: 1e-4)
 
         // The crossing adds nothing to the room: the binding condition still holds.
         XCTAssertEqual(scene.solidsInHerLayer, 0,
@@ -692,6 +692,115 @@ final class RiteOfEnteringTests: XCTestCase {
         }
     }
 
+    // MARK: - The walker's own motion setting
+
+    /// **The ceremony's flag and the one the view renders by are one flag.**
+    ///
+    /// The production door — ``RiteOfEnteringView/entering(_:remembering:)`` —
+    /// leaves `forceReduceMotion` false, so a walker whose device has Reduce
+    /// Motion switched on used to get the still rendering path driving an
+    /// animated ceremony: drawn once, at the instant each beat opened, with her
+    /// phrase at nothing, her name wholly masked and no prompt, and no second
+    /// frame coming. This is that, as arithmetic.
+    func testTheCeremonyAdoptsTheWalkersOwnMotionSetting() throws {
+        let epoch: TimeInterval = 10
+
+        // Built the way the production door builds it — animated — and then
+        // handed the setting the walker's device is actually carrying.
+        var rite = RiteOfEntering(compression: 1, reduceMotion: false, now: epoch)
+        XCTAssertFalse(rite.frame(at: epoch).isSettled,
+                       "an animated ceremony is already settled at the instant it opens")
+        rite.adopt(reduceMotion: true, at: epoch)
+        XCTAssertTrue(rite.reduceMotion)
+
+        var now = epoch
+        var seen: [RiteBeat] = []
+        for _ in 1...RiteBeat.allCases.count {
+            let frame = rite.frame(at: now)
+            seen.append(try XCTUnwrap(frame.beat))
+            XCTAssertTrue(frame.isSettled,
+                          """
+                          \(String(describing: frame.beat)) is drawn mid-writing on a path that draws \
+                          once and never again — which is a blank threshold, not a still one.
+                          """)
+            XCTAssertNotNil(frame.prompt,
+                            "\(String(describing: frame.beat)) shows no prompt, and nothing will come to add one")
+            XCTAssertEqual(rite.approach.motion, .still,
+                           "the walker is easing toward his station with the render loop stopped")
+            now += 1
+            rite.touch(at: now)
+        }
+        XCTAssertEqual(seen, [.phrase, .written, .roots], "a beat was dropped")
+
+        // It follows the setting back off again, and the beat then writes from
+        // now rather than from an instant that has already passed.
+        var animated = RiteOfEntering(compression: 1, reduceMotion: true, now: epoch)
+        animated.adopt(reduceMotion: false, at: epoch + 90)
+        XCTAssertFalse(animated.reduceMotion)
+        XCTAssertEqual(animated.writing(at: epoch + 90), 0, accuracy: 1e-9,
+                       "the beat is already written the moment motion comes back")
+        XCTAssertTrue(animated.frame(at: epoch + 90 + animated.writingDuration).isSettled)
+
+        // Adopting what it already has changes nothing at all.
+        var settled = RiteOfEntering(compression: 1, reduceMotion: true, now: epoch)
+        let unchanged = settled
+        settled.adopt(reduceMotion: true, at: epoch + 5)
+        XCTAssertEqual(settled, unchanged)
+
+        // **And there is one road in.** The view builds the ceremony with no
+        // motion setting at all — `init` is not in the environment and cannot
+        // know the real one — and the flag can only arrive through the
+        // environment-aware `adoptMotion()`, on appearance and on every change.
+        let view = try XCTUnwrap(LawSource.production("RiteOfEnteringView.swift"))
+        let code = String(view.lexed.masked)
+        let built = Rx.all(#"RiteOfEntering\(compression:[^)]*\)"#, code)
+        XCTAssertEqual(built.count, 1, "the ceremony is built in \(built.count) places")
+        XCTAssertFalse(built.first?.contains("reduceMotion") ?? true,
+                       """
+                       the ceremony is constructed with a motion setting: \(built.first ?? ""). \
+                       `init` cannot see the environment, so whatever it is given there is half an \
+                       answer — and the half it is missing is the one a real walker's device supplies.
+                       """)
+        XCTAssertEqual(Rx.all(#"rite\.adopt\(reduceMotion:\s*reduceMotion\)"#, code).count, 1,
+                       "the ceremony adopts the walker's motion setting somewhere other than one place")
+        XCTAssertTrue(code.contains(".onChange(of: environmentReduceMotion)"),
+                      "the ceremony no longer follows the setting when the walker changes it mid-rite")
+        XCTAssertTrue(code.contains(".onAppear { open() }"),
+                      "the ceremony no longer takes the setting when it appears")
+    }
+
+    /// The same thing in a hosted view, end to end.
+    ///
+    /// The defect lived in the gap between the flag the ceremony was built with
+    /// and the flag the view renders by, and the old hosted test could not see
+    /// it because `forceReduceMotion` filled both. It no longer fills either:
+    /// the rite is built with no motion setting and adopts one on appearance,
+    /// so this drives exactly the road a walker with the system switch on is on.
+    func testAReduceMotionWalkerIsCarriedToHisStation() throws {
+        let her = room()
+        let window = host(her, reduceMotion: true)
+        defer { teardown(window) }
+        pump(seconds: 1.0)
+
+        let view = try XCTUnwrap(sceneView(in: window), "the rite put no room on screen")
+        XCTAssertFalse(view.isPlaying, "reduce motion must stop the render loop")
+
+        // He is at the first beat's station, not still at the door. With an
+        // animated ceremony under a stopped render loop he never leaves the
+        // door: the easing is sampled once, at the instant it began.
+        let standing = Double(try XCTUnwrap(view.pointOfView?.position.z))
+        XCTAssertEqual(standing, RoomUnits.eyeDepth(approach: RiteOfEntering.stations[1]),
+                       accuracy: 1e-3,
+                       """
+                       the walker is at \(standing) and the first beat's station is at \
+                       \(RoomUnits.eyeDepth(approach: RiteOfEntering.stations[1])). Under reduced motion \
+                       the crossing is quantized — he steps to his station — and with the render loop \
+                       stopped an easing crossing simply leaves him at the door.
+                       """)
+        XCTAssertLessThan(standing, RoomUnits.eyeDepth(approach: 0) - 1e-3,
+                          "the ceremony opened and the walker did not move at all")
+    }
+
     // MARK: - It arrives at a real room
 
     /// The rite is not a screen shown before a room: the room is underneath it
@@ -771,11 +880,19 @@ final class RiteOfEnteringTests: XCTestCase {
 
     private var retained: UIWindow?
 
-    private func host(_ her: HomeRoom) -> UIWindow {
+    /// The view is hosted the way the app hosts it. `reduceMotion` goes in
+    /// through `forceReduceMotion`, which since the review reaches the ceremony
+    /// by the **same** road the environment's own flag does — the rite is built
+    /// with no motion setting at all and takes one in `adoptMotion()` — so this
+    /// really does drive the path a walker with the system switch on is on.
+    /// (`\.accessibilityReduceMotion` is read-only in `EnvironmentValues`, so
+    /// the environment cannot be injected here at all.)
+    private func host(_ her: HomeRoom, reduceMotion: Bool = false) -> UIWindow {
         let rite = RiteOfEnteringView(room: her,
                                       words: garimaWords,
                                       syllable: nil,
-                                      compression: 1)
+                                      compression: 1,
+                                      forceReduceMotion: reduceMotion)
         let controller = UIHostingController(rootView: rite.statusBarHidden(true))
         controller.view.backgroundColor = .black
 

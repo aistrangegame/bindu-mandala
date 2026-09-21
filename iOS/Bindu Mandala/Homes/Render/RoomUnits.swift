@@ -335,6 +335,39 @@ enum RoomUnits {
                              coordinate: coordinate)
     }
 
+    /// How far the mark's own ember stands off the surface it was made in.
+    ///
+    /// **Off, not up.** The ember is the light *in* a mark, so it belongs on
+    /// the walker's side of the material the mark is in — above a floor, below
+    /// a canopy, in front of a face. Reading "off" as "up" everywhere puts a
+    /// crown Śakti's ember on the far side of her own ceiling: the canopy's
+    /// normals point down into the room, so the surface her mark is in receives
+    /// nothing at all from the light that is supposed to be coming out of it,
+    /// and the grain this file gives the stone — which exists so that a raking
+    /// light has something to fall across — goes unlit for the whole stay. That
+    /// is the authoring defect Design's own verification pass named, with Ring
+    /// 1's Mātṛkās reading as one flat plane.
+    ///
+    /// An eighth of a body-height, and it is one distance for all three: what
+    /// changes between surfaces is which way *off* points, not how far.
+    static let emberStandOff: Double = roomHeight * 0.12
+
+    /// Which way off the surface, in scene units.
+    static func emberOffset(for surface: RoomSurfaceKind) -> SIMD3<Double> {
+        switch surface {
+        case .ground, .wall: return SIMD3(0, emberStandOff, 0)
+        case .canopy:        return SIMD3(0, -emberStandOff, 0)
+        case .face:          return SIMD3(0, 0, emberStandOff)
+        }
+    }
+
+    /// Where the ember stands for one placement — the mark, offset onto the
+    /// walker's side of the material it is in.
+    static func emberPoint(for placement: RoomPlacement) -> SIMD3<Double> {
+        let offset = emberOffset(for: placement.surface)
+        return SIMD3(offset.x, placement.height + offset.y, placement.depth + offset.z)
+    }
+
     /// What one unit of Design's mount scale is worth on a surface.
     ///
     /// A quarter of a body-height. At rest the mount is `0.9`, so her footprint

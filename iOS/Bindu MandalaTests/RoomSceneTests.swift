@@ -353,7 +353,7 @@ final class RoomSceneTests: XCTestCase {
                            attribute in every room is an action on the room's own material — an \
                            impression, a furrow, a crack, a swell — and never a free-standing lit solid.
                            """)
-            XCTAssertGreaterThan(scene.herLayer.childNodes.count, 0,
+            XCTAssertGreaterThan(scene.childCount(in: .her), 0,
                                  "her layer is empty — the light in her mark is missing")
         }
     }
@@ -519,31 +519,245 @@ final class RoomSceneTests: XCTestCase {
     /// Design's three depth layers are really three, named, and populated.
     func testTheThreeDepthLayersAreNamedAndPopulated() {
         let scene = RoomScene(room: heartRoom)
-        XCTAssertEqual(scene.building.name, "building")
-        XCTAssertEqual(scene.weather.name, "world")
-        XCTAssertEqual(scene.herLayer.name, "her mechanism")
+        XCTAssertEqual(scene.layerName(.building), "building")
+        XCTAssertEqual(scene.layerName(.world), "world")
+        XCTAssertEqual(scene.layerName(.her), "her mechanism")
 
-        XCTAssertGreaterThanOrEqual(scene.building.childNodes.count, 4,
+        XCTAssertGreaterThanOrEqual(scene.childCount(in: .building), 4,
                                     "the building is missing surfaces")
-        XCTAssertGreaterThanOrEqual(scene.weather.childNodes.count, 2,
+        XCTAssertGreaterThanOrEqual(scene.childCount(in: .world), 2,
                                     "the world has no weather and no light")
         XCTAssertEqual(scene.receivingSurface, .face,
                        "a Śakti felt at the heart should be acting on a face")
 
         // The building's surfaces really morph: base plus two targets, which is
         // the pattern the spike proved.
-        var morphed = 0
-        for node in scene.building.childNodes where node.morpher != nil {
-            morphed += 1
-            XCTAssertEqual(node.morpher?.targets.count, 2,
-                           "\(node.name ?? "?") does not carry both adaptations")
-            XCTAssertEqual(node.morpher?.calculationMode, .normalized,
-                           "additive morphing would overshoot every mark by a whole adaptation")
+        let adapting = scene.adaptingSurfaces
+        for surface in adapting {
+            XCTAssertEqual(surface.adaptations, 2,
+                           "\(surface.name) does not carry both adaptations")
+            XCTAssertTrue(surface.isNormalised,
+                          "additive morphing would overshoot every mark by a whole adaptation")
         }
-        XCTAssertGreaterThanOrEqual(morphed, 3, "only \(morphed) surfaces adapt")
+        XCTAssertGreaterThanOrEqual(adapting.count, 3, "only \(adapting.count) surfaces adapt")
+    }
+
+    // MARK: - The binding condition · the scene graph
+
+    /// **No room hands out its scene graph.**
+    ///
+    /// The fifth register, and the one a comment cannot hold: `let` on a
+    /// class-typed property stops the property being reassigned and does
+    /// nothing at all about the node it points at. A vended `herLayer` — even
+    /// a `private(set)` one — is a mounting point, and
+    /// `driver.scene.herLayer.addChildNode(SCNNode(geometry: SCNSphere(...)))`
+    /// would compile from any view in the app and put exactly the lit lozenge
+    /// the ruling forbids into any of the 102 rooms. `solidsInHerLayer` cannot
+    /// see it, because it is only ever read on a freshly built room.
+    ///
+    /// So the check is on the source: every SceneKit object the spine holds is
+    /// private, and what callers get is facts.
+    func testNoRoomHandsOutItsSceneGraph() throws {
+        let source = try renderSource("RoomScene.swift")
+        var vended: [String] = []
+        for line in source.components(separatedBy: .newlines) {
+            // Exactly one level of indentation: a stored property of a type,
+            // rather than a local inside one of its methods.
+            guard line.hasPrefix("    let ") || line.hasPrefix("    var ")
+                    || line.hasPrefix("    private(set) ") else { continue }
+            for scenekit in ["SCNNode", "SCNScene", "SCNGeometry", "SCNMaterial",
+                             "SCNLight", "SCNMorpher", "SCNCamera", "SCNView"]
+            where line.contains(scenekit) {
+                vended.append(line.trimmingCharacters(in: .whitespaces))
+            }
+        }
+        XCTAssertTrue(vended.isEmpty,
+                      """
+                      the spine vends a piece of its own scene graph:
+                      \(vended.joined(separator: "\n"))
+                      A `let` on a class-typed property stops reassignment, not mutation, so this is a \
+                      place to mount a free-standing lit solid in any of the 102 rooms. Make it \
+                      private and vend the fact instead — `layerName(_:)`, `childCount(in:)`, \
+                      `solids(in:)`, `adaptingSurfaces`, `eye`.
+                      """)
+
+        // And the fact-vending really is read-only: every accessor above
+        // answers with a value type or a string, so there is nothing to hold.
+        let scene = RoomScene(room: solesRoom)
+        XCTAssertEqual(scene.layerName(.her), "her mechanism")
+        XCTAssertEqual(scene.solids(in: .her), 0)
+        XCTAssertGreaterThan(scene.solids(in: .building), 0,
+                             "the building has no geometry — the walk is not reading")
+    }
+
+    // MARK: - The five verbs, at their own edges
+
+    /// **A stroke ends; it is not sawn off.**
+    ///
+    /// ``SurfaceAction/relief(at:)`` cuts off at four reaches, which is past the
+    /// tail of the three round verbs. It was not past the other two: a `furrow`
+    /// has no falloff along `v` at all, so the cutoff ended it at 100% of its
+    /// depth, and a `crack` was still at 26% of its own. On the floor that is a
+    /// third of a body-height of vertical wall running across the room, with a
+    /// hard-edged rectangle of the mark's own light lying on top of it — square
+    /// ends, discrete, an object. Every verb now reaches nothing at its own
+    /// cutoff, in relief and in emission both.
+    func testEveryVerbReachesNothingAtItsOwnCutoff() {
+        let reach = 0.03, depth = RoomInscription.markDepth
+        for verb in SurfaceVerb.allCases {
+            let action = Self.action(verb, at: .centre, reach: reach, depth: depth, glow: 1)
+            var material = RoomMaterial(surface: .ground, seed: 4, grainRelief: 0)
+            material.receive(action)
+
+            // Walk the cutoff's own square, just inside it, in both axes.
+            let cutoff = reach * 4
+            for step in 0...24 {
+                let t = -1 + 2 * Double(step) / 24
+                for edge in [SurfaceCoordinate(u: 0.5 + t * cutoff, v: 0.5 + cutoff * 0.999),
+                             SurfaceCoordinate(u: 0.5 + t * cutoff, v: 0.5 - cutoff * 0.999),
+                             SurfaceCoordinate(u: 0.5 + cutoff * 0.999, v: 0.5 + t * cutoff),
+                             SurfaceCoordinate(u: 0.5 - cutoff * 0.999, v: 0.5 + t * cutoff)] {
+                    XCTAssertLessThan(abs(action.relief(at: edge)), depth * 0.02,
+                                      """
+                                      \(verb.rawValue) is still \(abs(action.relief(at: edge)) / depth * 100)% \
+                                      of its depth where the cutoff drops it to zero — a cliff of a mark's \
+                                      whole depth, which reads as an edge of an object.
+                                      """)
+                    XCTAssertLessThan(material.emission(at: edge), 0.02,
+                                      """
+                                      \(verb.rawValue) is still lighting the material where the cutoff \
+                                      drops it to nothing — a hard-edged rectangle of light.
+                                      """)
+                }
+            }
+
+            // …and it is still a mark in the middle, so the taper did not
+            // simply erase the verb.
+            XCTAssertGreaterThan(abs(action.relief(at: .centre)), depth * 0.5,
+                                 "\(verb.rawValue) no longer marks the material at its own centre")
+            XCTAssertGreaterThan(material.emission(at: .centre), 0.5,
+                                 "\(verb.rawValue) no longer lights its own centre")
+        }
+    }
+
+    // MARK: - The mark's light is in the mark
+
+    /// **The light travels with the mark.**
+    ///
+    /// The surface's emission is a texture and a texture cannot morph, while
+    /// the mark itself travels: Design's mount brings the attribute from a
+    /// depth of `-4.6` to `-1.2` through the second adaptation, which on the
+    /// floor is most of a body-height of travel in surface coordinates. Baking
+    /// one moment's light therefore lands it where nothing has happened for the
+    /// whole of the other two. Three moments, one per channel, weighed by the
+    /// morph's own weights.
+    func testTheMarksLightTravelsWithTheMark() throws {
+        let scene = RoomScene(room: solesRoom)
+        let moments: [TimeInterval] = [0, HomeMemory.firstAdaptation, HomeMemory.secondAdaptationEnd]
+        let marked = try moments.map { try XCTUnwrap(scene.shaped(at: $0)[.ground]) }
+        let map = try XCTUnwrap(RoomScene.emissionMap(of: marked),
+                                "the marked floor built no emission map")
+
+        // The mark itself travels, or this check proves nothing.
+        let opening = RoomUnits.placement(bodyAltitude: solesRoom.bodyAltitude, chamberTime: 0)
+        let deep = RoomUnits.placement(bodyAltitude: solesRoom.bodyAltitude,
+                                       chamberTime: HomeMemory.secondAdaptationEnd)
+        let travel = deep.coordinate.v - opening.coordinate.v
+        XCTAssertGreaterThan(travel, 0.1, "her mark no longer travels across the floor")
+
+        // …and the light travels with it, by the same distance. Before this,
+        // every channel was one baked moment and the three lights were the
+        // same light: the difference below was exactly zero.
+        let lit = try (0..<3).map {
+            try XCTUnwrap(Self.litCentre(of: map, channel: $0),
+                          "channel \($0) of the emission map is dark")
+        }
+        XCTAssertEqual(lit[2] - lit[0], travel, accuracy: travel * 0.5,
+                       """
+                       her mark travels \(travel) across the floor and the light in it travels \
+                       \(lit[2] - lit[0]). A mark that does nothing to the surface emits nothing, \
+                       so a surface nothing has happened to must not be lit.
+                       """)
+        XCTAssertEqual(lit[1], lit[0], accuracy: 0.03,
+                       "the mount does not move before the hold ends, so this light must not either")
+
+        // The weights the three moments are blended by are the morph's own, at
+        // every instant of a whole stay.
+        for t in stride(from: 0.0, through: HomeMemory.secondAdaptationEnd, by: 17.0) {
+            scene.pose(at: t)
+            let pose = RoomPose(sceneTime: t, room: solesRoom)
+            XCTAssertEqual(scene.markLightWeights.y, pose.firstWeight, accuracy: 1e-9)
+            XCTAssertEqual(scene.markLightWeights.z, pose.secondWeight, accuracy: 1e-9)
+            XCTAssertEqual(scene.markLightWeights.x + scene.markLightWeights.y
+                           + scene.markLightWeights.z, 1, accuracy: 1e-9,
+                           "at t=\(Int(t)) the mark's light is brighter or dimmer than the marks that made it")
+        }
+    }
+
+    // MARK: - The ember
+
+    /// **The ember stands on the walker's side of the surface it is in.**
+    ///
+    /// It is the light *in* a mark, so a floor's is above it and a canopy's is
+    /// below it. Offsetting upward in every room puts a crown Śakti's ember on
+    /// the far side of her own ceiling, whose normals point down into the room —
+    /// so the one surface her attribute acts on receives nothing at all from the
+    /// light that is supposed to be coming out of it.
+    func testTheEmberStandsOnTheWalkersSideOfTheSurface() {
+        for (altitude, surface) in [(HomeGrammar.bodyAltitude(bodilyLocation: "soles"), RoomSurfaceKind.ground),
+                                    (HomeGrammar.bodyAltitude(bodilyLocation: "crown"), .canopy),
+                                    (HomeGrammar.bodyAltitude(bodilyLocation: "heart"), .face)] {
+            let placement = RoomUnits.placement(bodyAltitude: altitude, chamberTime: 0)
+            XCTAssertEqual(placement.surface, surface)
+            let ember = RoomUnits.emberPoint(for: placement)
+
+            switch surface {
+            case .ground:
+                XCTAssertGreaterThan(ember.y, placement.height, "the floor's ember is under the floor")
+                XCTAssertLessThan(ember.y, RoomUnits.canopyY, "the floor's ember is through the ceiling")
+            case .canopy:
+                XCTAssertLessThan(ember.y, placement.height,
+                                  """
+                                  the canopy's ember is above the canopy — outside the room, on the far \
+                                  side of the only surface her mark is in. The ceiling's normals point \
+                                  down, so it receives nothing from it.
+                                  """)
+                XCTAssertGreaterThan(ember.y, RoomUnits.floorY, "the canopy's ember is under the floor")
+            case .face, .wall:
+                XCTAssertGreaterThan(ember.z, placement.depth,
+                                     "the face's ember is behind the face it is meant to light")
+                XCTAssertLessThan(ember.z, RoomUnits.eyeZ, "the face's ember is behind the walker")
+            }
+        }
+
+        // One distance for all four: what changes is which way off points.
+        for surface in RoomSurfaceKind.allCases {
+            let o = RoomUnits.emberOffset(for: surface)
+            XCTAssertEqual((o.x * o.x + o.y * o.y + o.z * o.z).squareRoot(),
+                           RoomUnits.emberStandOff, accuracy: 1e-9,
+                           "\(surface.rawValue)'s ember stands a different distance off")
+        }
     }
 
     // MARK: - Helpers
+
+    /// Where one channel's light sits on an emission map, as a `v` coordinate:
+    /// the brightness-weighted centre of it. `nil` where the channel is dark.
+    private static func litCentre(of image: CGImage, channel: Int) -> Double? {
+        guard let raw = image.dataProvider?.data else { return nil }
+        let data = raw as Data
+        let side = image.width
+        var weight = 0.0
+        var moment = 0.0
+        for j in 0..<side {
+            for i in 0..<side {
+                let value = Double(data[(j * side + i) * 4 + channel])
+                weight += value
+                moment += value * Double(j) / Double(side - 1)
+            }
+        }
+        return weight > 0 ? moment / weight : nil
+    }
 
     /// One action of each verb, built through the only constructors there are.
     private static func action(_ verb: SurfaceVerb, at point: SurfaceCoordinate,

@@ -149,7 +149,12 @@ struct RiteOfEntering: Equatable {
     /// compression. `0` for a room never stood in.
     let headStart: TimeInterval
 
-    let reduceMotion: Bool
+    /// Whether this walker's device is carrying motion at all.
+    ///
+    /// **Not `let`, and that is the whole of a real defect.** A ceremony is made
+    /// before its view is in the environment, so the flag it is constructed with
+    /// is not necessarily the one the view branches on — see ``adopt(reduceMotion:at:)``.
+    private(set) var reduceMotion: Bool
 
     private(set) var stage: Stage
     /// When the current stage opened, on the reference-date clock.
@@ -203,6 +208,50 @@ struct RiteOfEntering: Equatable {
     static func clampedCompression(_ raw: Double) -> Double {
         guard raw.isFinite else { return 1 }
         return min(1, max(HomeMemory.compressionFloor, raw))
+    }
+
+    /// Adopt the motion setting the walker's device is actually carrying.
+    ///
+    /// **The two flags have to be one flag, and this is where they are made
+    /// one.** ``RiteOfEnteringView`` branches its rendering on
+    /// `forceReduceMotion || the environment`, while the ceremony can only be
+    /// constructed with the first of those — a `View`'s `init` is not in the
+    /// environment yet. So a walker with the system's own Reduce Motion switched
+    /// on used to get the **still** rendering path — one evaluation, no timeline
+    /// — driving an **animated** ceremony. That single evaluation lands at the
+    /// instant the beat opened: her phrase at nothing, her Devanāgarī wholly
+    /// masked, her roots at nothing, and `frame.prompt` still `nil` because the
+    /// beat has not finished writing. Nothing re-renders, so it stays that way,
+    /// and a touch only reproduces it for the next beat. A wordless, promptless
+    /// threshold, at every one of the 102 doors.
+    ///
+    /// Turning it on settles the ceremony where the still path expects to find
+    /// it: the beat is written (``writing(at:)``), and the walker **steps** to
+    /// his station rather than easing toward it on a loop that is not running.
+    /// Those are the same two facts `crossing` and `releasing` already carry;
+    /// this applies them to a ceremony that has already begun.
+    mutating func adopt(reduceMotion on: Bool,
+                        at now: TimeInterval = Date().timeIntervalSinceReferenceDate) {
+        guard on != reduceMotion else { return }
+        reduceMotion = on
+        switch stage {
+        case .beat:
+            approach = on
+                ? .standing(at: approach.to)
+                : RoomApproach.crossing(from: approach.value(at: now), to: approach.to,
+                                        at: now, reduceMotion: false)
+            // Turning it back on mid-beat needs no clock at all — a beat under
+            // reduced motion is written the moment it opens. Turning it off
+            // does: the beat writes itself from here rather than from an
+            // instant that has already passed.
+            if !on { stageOpenedAt = now }
+        case .crossing:
+            approach = on
+                ? .arrived
+                : RoomApproach.releasing(from: approach.value(at: now), at: now, reduceMotion: false)
+        case .inside:
+            break
+        }
     }
 
     // MARK: · The beat's own clock
