@@ -1,8 +1,13 @@
 // The light pass for `GarimaSceneKitRoom.swift`, and nothing else.
 //
 // Spike apparatus. It is named after the one Swift file that uses it and has no
-// other caller; when the renderer decision is taken, this file leaves with that
-// file. It carries no figure and no glyph — it is a gradient, a set of shafts and
+// other caller; when the spike is removed, this file leaves with it.
+//
+// Unlike every Swift file beside it, this one DOES reach a Release build: a
+// `.metal` file cannot be `#if DEBUG`-ed out of a target, so it compiles into
+// `default.metallib` either way. That is the canvas spike's headline finding and
+// the renderer ruling's second limb. The production pass Phase 3.1 built from it
+// is `Homes/Render/RoomLightPass.metal`. It carries no figure and no glyph — it is a gradient, a set of shafts and
 // a bloom, which is to say light, which is what a room is made of.
 //
 // Every colour it is handed comes from `Theme/Atmosphere.swift` through Swift. It
