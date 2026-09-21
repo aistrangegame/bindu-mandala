@@ -1,6 +1,14 @@
-// Measuring apparatus, not part of the app. The whole Spike folder is compiled
-// out of Release, so nothing here can exist in a build that reaches Neev. The test
-// action builds Debug, so every spike test still sees it.
+// Measuring apparatus, not part of the app. Every Swift file in the Spike folder
+// is compiled out of Release, so none of it can exist in a build that reaches
+// Neev. The test action builds Debug, so every spike test still sees it.
+//
+// **One file in this folder is the exception, and it is named rather than
+// buried:** `GarimaSceneKitRoom.metal` compiles into `default.metallib` in
+// Release regardless of `#if DEBUG`, because a `.metal` file cannot be
+// conditionally compiled out of a target. The renderer ruling recorded this as
+// the canvas spike's headline finding. Phase 3.1's own pass lives at
+// `Homes/Render/RoomLightPass.metal`, which is production code; this one stays
+// beside the room that is its only caller and leaves with it.
 #if DEBUG
 import SwiftUI
 import SceneKit
@@ -484,7 +492,7 @@ private struct Strata {
         // or the mark reads as a lozenge lying on the floor rather than a hollow
         // pressed into it.
         let dx = (u - 0.5) * Self.extent
-        let dz = (v - 0.5) * Self.extent - Double(RoomScene.markPosition.z)
+        let dz = (v - 0.5) * Self.extent - Double(GarimaRoomScene.markPosition.z)
         let r = (dx * dx + dz * dz).squareRoot()
         y -= exp(-(r * r) / 70) * 0.62 * thickness * Self.relief
 
@@ -591,7 +599,11 @@ private struct Strata {
 
 /// Every node the room has, kept as values so the driver can pose them without
 /// searching the graph by name each frame.
-private final class RoomScene {
+/// Renamed from `RoomScene` when Phase 3.1 gave that name to the render spine
+/// at `Homes/Render/RoomScene.swift`. This is the spike's own scene, which the
+/// spine supersedes; the name moved rather than the file, because the ruling
+/// names the production file and this one leaves with the spike.
+private final class GarimaRoomScene {
 
     let scene = SCNScene()
     let cameraNode = SCNNode()
@@ -955,7 +967,7 @@ private final class RoomScene {
         groundNode.morpher?.setWeight(CGFloat(pose.thickening), forTargetAt: 0)
         groundNode.morpher?.setWeight(CGFloat(pose.plinth), forTargetAt: 1)
         // Her physics, on the room itself: `settle` only ever sinks.
-        groundNode.position.y = Float(RoomScene.floorY + pose.settleOffset)
+        groundNode.position.y = Float(GarimaRoomScene.floorY + pose.settleOffset)
 
         // The mark brightens and widens as the room reverses.
         markNode.scale = SCNVector3(Float(pose.markScale), Float(pose.markScale), Float(pose.markScale))
@@ -975,7 +987,7 @@ private final class RoomScene {
         rakingLightNode.position = SCNVector3(Float(pose.rakingPosition.x),
                                              Float(pose.rakingPosition.y),
                                              Float(pose.rakingPosition.z))
-        rakingLightNode.look(at: SCNVector3(0, Float(RoomScene.floorY), -6))
+        rakingLightNode.look(at: SCNVector3(0, Float(GarimaRoomScene.floorY), -6))
 
         rimNode.childNodes.first?.geometry?.firstMaterial?.transparency = CGFloat(pose.rimOpacity)
 
@@ -1059,8 +1071,8 @@ extension GarimaSceneKitRoom {
             // the bed is crushed and rides up on the plinth's crest at the reversal,
             // because it is the same arithmetic in both cases.
             let bedding = Strata(seed: ingredients.khadgamalaPosition)
-                .height(u: 0.5, v: RoomScene.markV, thickness: k, plinth: b)
-            self.markY = RoomScene.floorY + bedding + 0.10 + motion.y
+                .height(u: 0.5, v: GarimaRoomScene.markV, thickness: k, plinth: b)
+            self.markY = GarimaRoomScene.floorY + bedding + 0.10 + motion.y
 
             // The eye. Back, as well as up. At the reversal you are standing on what the
             // pressing built, and the only way to *see* that you are standing on it
@@ -1075,10 +1087,10 @@ extension GarimaSceneKitRoom {
             // is the whole claim the room is making.
             let bedUnderEye = Strata(seed: ingredients.khadgamalaPosition)
                 .footing(u: 0.5,
-                         v: 0.5 + eyeZ / RoomScene.extent,
+                         v: 0.5 + eyeZ / GarimaRoomScene.extent,
                          thickness: k, plinth: b)
-            let stand = RoomScene.eyeHeight(altitude: ingredients.altitude) - RoomScene.floorY
-            self.eyeY = RoomScene.floorY + stand + bedUnderEye + motion.y
+            let stand = GarimaRoomScene.eyeHeight(altitude: ingredients.altitude) - GarimaRoomScene.floorY
+            self.eyeY = GarimaRoomScene.floorY + stand + bedUnderEye + motion.y
             // Tipped a little toward the floor from the first frame, because her
             // gravity is at the soles; tipped further as the mass arrives; and then
             // opened again as the plinth carries you up. The whole range is small on
@@ -1131,7 +1143,7 @@ private struct SceneLayer: UIViewRepresentable {
 /// racing the frame being drawn.
 private final class Driver: NSObject, SCNSceneRendererDelegate {
 
-    let room: RoomScene
+    let room: GarimaRoomScene
     private let clock: SpikeMetrics.Clock
     private var reduceMotion: Bool
 
@@ -1144,7 +1156,7 @@ private final class Driver: NSObject, SCNSceneRendererDelegate {
          clock: SpikeMetrics.Clock,
          reduceMotion: Bool) {
         let started = CACurrentMediaTime()
-        self.room = RoomScene(ingredients: ingredients)
+        self.room = GarimaRoomScene(ingredients: ingredients)
         self.clock = clock
         self.reduceMotion = reduceMotion
         self.builtAt = started
@@ -1279,7 +1291,7 @@ extension GarimaSceneKitRoom {
         // rest height put the bloom below the bottom of the frame while the ember it
         // is supposed to be blooming from was in plain sight.
         let dy = pose.markY - pose.eyeY
-        let dz = Double(RoomScene.markPosition.z) - pose.eyeZ
+        let dz = Double(GarimaRoomScene.markPosition.z) - pose.eyeZ
         let c = cos(-pose.eyePitch), s = sin(-pose.eyePitch)
         let y = dy * c - dz * s
         let z = dy * s + dz * c
