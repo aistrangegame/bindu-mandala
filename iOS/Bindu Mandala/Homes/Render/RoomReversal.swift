@@ -281,7 +281,16 @@ enum RoomMechanisms {
             case .siddhi: return SiddhiRoom(reading)
             case .matrka: return MatrkaRoom(reading)
             case .mudra:  return MudraRoom(reading)
-            default: return GrammarReversal(reading)
+            default:
+                // Rings 3–9, the outer climb — six archetypes across fifty-eight
+                // seats. ``OuterRings/outerRoom(_:)`` is the **one place** a built
+                // outer archetype is named, so each of the six rings arrives by
+                // changing its own single line there rather than by six passes
+                // over this switch; that is also why the six are not spelled out
+                // here. `nil` from it means *not built yet*, and she keeps her
+                // ring's own turn in the meantime rather than none, because a room
+                // that does not reverse is a loop.
+                return OuterRings.outerRoom(reading) ?? GrammarReversal(reading)
             }
         case .seat:
             return nil
@@ -299,11 +308,13 @@ enum RoomMechanisms {
         case .endless:  return EndlessRoom()
         case .known:    return KnownRoom()
         // Pass three built the two Design named among the Mudrās and never
-        // finished: khaḍgamālā 27 is the membrane and 28 is the triple. Only the
-        // Bindu's own room is left, and it waits for Ring 9.
+        // finished: khaḍgamālā 27 is the membrane and 28 is the triple.
         case .membrane: return MembraneRoom()
         case .triple:   return TripleRoom()
-        case .dissolve: return nil
+        // And Ring 9 built the last of the eight. The grammar declines to speak
+        // for the Bindu (``HomeRooms/grammarRings`` stops at 8), so kp 102 has
+        // no other way to a room: this line is the whole of ring nine.
+        case .dissolve: return DissolveRoom()
         }
     }
 

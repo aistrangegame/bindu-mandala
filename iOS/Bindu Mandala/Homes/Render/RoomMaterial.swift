@@ -114,6 +114,20 @@ struct SurfaceAction: Equatable {
     let depth: Double
     /// How hard the mark's edge is, `0` soft to `1` sharp.
     let edge: Double
+
+    /// **How far past its own reach an action still moves material**, as a
+    /// multiple of the reach.
+    ///
+    /// It is a fact about the profiles below rather than a tuning: three of the
+    /// five verbs are round and are already nothing long before this, but a
+    /// **furrow** holds its whole depth for the length of its stroke and a
+    /// **crack** is still at a quarter of its own when it arrives, so both of them
+    /// are closed smoothly at exactly this distance. Which makes it the answer to
+    /// a question a room that lays out a *figure* has to ask: how much clear
+    /// material one mark needs around it before it stops reaching its neighbours.
+    /// ``BodilessRoom`` asks it of the ring its eight effects stand on, so their
+    /// strokes close around the absence at its centre instead of across it.
+    static let cutoffReaches: Double = 4
     /// How much the **surface's own emission** rises inside the mark, `0…1`.
     ///
     /// Not a brightness and not a light: it is scaled by the mark's own relief,
@@ -189,7 +203,7 @@ struct SurfaceAction: Equatable {
         // meshed at four thousand points and a form can carry sixty parts: the
         // cutoff is what makes the height field O(what was marked) instead of
         // O(everything × everyone).
-        let cutoff = reach * 4
+        let cutoff = reach * SurfaceAction.cutoffReaches
         if abs(du) > cutoff || abs(dv) > cutoff { return 0 }
         let r = (du * du + dv * dv).squareRoot() / reach
         let along = abs(du) / reach

@@ -235,9 +235,54 @@ enum HomeGrammar {
                     pattern: #"para-bindu|totality|source-beauty"#, kind: .centre),
         PhysicsRule(js: #"/[śs]akti|s[āa]marthya|power|capacity/"#,
                     pattern: #"[śs]akti|s[āa]marthya|power|capacity"#, kind: .surge),
+
+        // ── the three words the outer climb speaks that Design's fifty do not ──
+        //
+        // **Appended, never interleaved**, exactly as the body zones were: every
+        // one of these stands behind all fifty of Design's, so nothing that
+        // resolved before resolves anywhere else now, and the orderings the suite
+        // pins — the elements before `ākarṣaṇa`, `source` before `icchā` — are
+        // untouched.
+        //
+        // They are here because Phase 3.6 read Design's own rings 3–9 cards
+        // through the classifier before building the outer climb, and **three of
+        // the fifty-eight reach no rule at all**: Priyatā at kp 69, Saubhāgya at
+        // kp 76, and Cāpa at kp 96. A Śakti with no rule falls to
+        // ``HomePhysics/breathe``, which is one generic vertical — the very
+        // failure Design's own audit found under seventy-eight of a hundred and
+        // two rooms, and the thing the fifty rules exist to prevent. Three rooms
+        // in rings 5 and 8 were going to be built on it.
+        //
+        // **And the kañcukas were deliberately left alone.** The Phase 3.1 record
+        // named a gap — Māyā, Kāla, Niyati, Rāga, Vidyā, Kalā, the Spanda words,
+        // Saṃskāra, Vṛtti and Guṇa have no rule — and said the fix belonged with
+        // the live rows. Read against Design's own cards, which it states are the
+        // base's own fields, **not one of those words appears in any of the 102**.
+        // The gap is in the synthetic test corpus's vocabulary, not in what the
+        // rows actually say, and widening the classifier to cover words the base
+        // does not use would be inventing vocabulary to make a test look fuller.
+        // The three below are the opposite case: real card words, with no rule.
+        /// Priyatā — innate dearness, and her seat is the Heart. Not bliss's kind
+        /// under another name: ``HomePhysics/swell`` is the material
+        /// rising from beneath, which is what dearness does in a chest, and it is
+        /// the kind ``HomePhysics/swell`` was already given for `ānanda`.
+        PhysicsRule(js: #"/priyat[āa]|dearness|\bdear\b|beloved/"#,
+                    pattern: #"priyat[āa]|dearness|\bdear\b|beloved"#, kind: .swell),
+        /// Saubhāgya — good fortune. Design already rules `maṅgala|auspicious` to
+        /// ``HomePhysics/brighten``, and auspiciousness and good fortune are the
+        /// same motion under two names; giving it a different one would be saying
+        /// something about the row the row does not say.
+        PhysicsRule(js: #"/saubh[āa]gya|good[- ]fortune|fortunate/"#,
+                    pattern: #"saubh[āa]gya|good[- ]fortune|fortunate"#, kind: .brighten),
+        /// Cāpa — the sugarcane bow, held at *"cosmic bow-tension"*. A drawn bow
+        /// is stored potential and nothing else, which is ``HomePhysics/compress``
+        /// — the kind Design gives the seed: drawn back along the room's own depth
+        /// and never released.
+        PhysicsRule(js: #"/c[āa]pa\b|sugarcane|bow-tension|\bbow\b/"#,
+                    pattern: #"c[āa]pa\b|sugarcane|bow-tension|\bbow\b"#, kind: .compress),
     ]
 
-    /// The fifty, compiled, in order. A pattern that fails to compile is simply
+    /// The fifty-three, compiled, in order. A pattern that fails to compile is simply
     /// absent, which `testTheClassifierIsWhole` turns into a loud failure
     /// rather than a crash at static-initialisation time.
     static let compiledPhysicsRules: [(rule: PhysicsRule, regex: NSRegularExpression)] =
