@@ -50,6 +50,10 @@ struct WorldClimbView: View {
     /// Forced on for tests and captures; otherwise the environment decides.
     let forceReduceMotion: Bool
 
+    /// Called once, when he has crossed off the axis — the Field takes him off
+    /// it. See ``TheWayOut``.
+    let onLeft: (() -> Void)?
+
     @Environment(\.accessibilityReduceMotion) private var environmentReduceMotion
 
     @State private var climb: WorldClimbSource
@@ -61,9 +65,11 @@ struct WorldClimbView: View {
 
     init(live: [Int: HomeWorlds.LiveFacts] = [:],
          startingAtRing ring: Int = 1,
-         forceReduceMotion: Bool = false) {
+         forceReduceMotion: Bool = false,
+         onLeft: (() -> Void)? = nil) {
         self.live = live
         self.forceReduceMotion = forceReduceMotion
+        self.onLeft = onLeft
         _climb = State(initialValue: WorldClimbSource(
             .standing(atFraction: Double(max(1, min(HomeWorlds.rings.count, ring)) - 1))))
     }
@@ -79,6 +85,12 @@ struct WorldClimbView: View {
         .background(Color.ground)
         .contentShape(Rectangle())
         .gesture(rising)
+        // The same way out of the axis as out of a room, drawn by the same file
+        // and held for the same length of crossing. There is nothing here for
+        // the hold to unwind — the climb has no approach, only a height — so it
+        // stands the crossing's own length and then he is off it. One way out of
+        // the Homes layer, learned once.
+        .theWayOut(reduceMotion: reduceMotion, onOut: { onLeft?() })
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(worldName(atFraction: climb.value())))
         .accessibilityAdjustableAction { direction in
@@ -173,7 +185,12 @@ struct WorldClimbView: View {
                 .tracking(1.6)
                 .foregroundStyle(Color.cream)
                 .opacity(Self.nameFloor + (1 - Self.nameFloor) * (1 - settled))
-                .padding(.bottom, 44)
+                // Clear of ``TheWayOut``'s own line, which stands at the foot of
+                // the frame here exactly as it does in a room. The instruction
+                // is the lowest thing on any Homes surface and the world's own
+                // name stands above it, because the name belongs to the world
+                // and the instruction belongs to the walker.
+                .padding(.bottom, 124)
         }
         .allowsHitTesting(false)
     }

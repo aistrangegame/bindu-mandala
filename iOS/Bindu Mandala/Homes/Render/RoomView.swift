@@ -144,6 +144,24 @@ struct RoomView: View {
     let approach: RoomApproachSource?
     /// Forced on for tests and captures; otherwise the environment decides.
     let forceReduceMotion: Bool
+    /// How many times the walker has been moved — the still path's redraw
+    /// token, and the same device ``WorldClimbView`` carries as `steps`.
+    ///
+    /// **It is not decoration, and the room did not always have one.** With the
+    /// render loop stopped, the room is posed once and the light pass evaluated
+    /// once, and the only thing that can ask for another of either is SwiftUI
+    /// updating this view. ``RoomApproachSource`` is a *reference*, held so the
+    /// driver can read it on SceneKit's thread without re-rendering the tree —
+    /// so moving the walker changes nothing SwiftUI can see, and the redraw that
+    /// followed a touch was incidental rather than declared. A reduce-motion
+    /// walker was carried to his station by an update somebody else happened to
+    /// cause; two more stored properties on the rite were enough to stop that
+    /// happening, and he stood at the door for the whole ceremony.
+    ///
+    /// Bumping this makes the ask explicit: the walker moved, so the still room
+    /// needs a frame. Callers that never move him leave it at zero and pose
+    /// exactly once, which is what ``RoomDriver/posesApplied`` asserts.
+    let moves: Int
 
     @Environment(\.accessibilityReduceMotion) private var environmentReduceMotion
 
@@ -151,12 +169,14 @@ struct RoomView: View {
          clock: RoomClock = RoomClock(),
          mechanism: RoomSurfaceMechanism? = nil,
          approach: RoomApproachSource? = nil,
-         forceReduceMotion: Bool = false) {
+         forceReduceMotion: Bool = false,
+         moves: Int = 0) {
         self.room = room
         self.clock = clock
         self.mechanism = mechanism
         self.approach = approach
         self.forceReduceMotion = forceReduceMotion
+        self.moves = moves
     }
 
     private var reduceMotion: Bool { forceReduceMotion || environmentReduceMotion }
@@ -165,9 +185,9 @@ struct RoomView: View {
         GeometryReader { geo in
             ZStack {
                 RoomSceneLayer(room: room, clock: clock, mechanism: mechanism,
-                               approach: approach, reduceMotion: reduceMotion)
+                               approach: approach, reduceMotion: reduceMotion, moves: moves)
                 RoomLightPassLayer(room: room, clock: clock, approach: approach,
-                                   reduceMotion: reduceMotion, size: geo.size)
+                                   reduceMotion: reduceMotion, size: geo.size, moves: moves)
                     .allowsHitTesting(false)
             }
         }
@@ -185,6 +205,11 @@ struct RoomSceneLayer: UIViewRepresentable {
     let mechanism: RoomSurfaceMechanism?
     let approach: RoomApproachSource?
     let reduceMotion: Bool
+    /// The still path's redraw token — see ``RoomView/moves``. It is read by
+    /// nothing in this layer on purpose: what it does is make this view *differ*
+    /// when the walker has moved, so SwiftUI calls `updateUIView` and the room
+    /// is posed where he now stands.
+    let moves: Int
 
     func makeCoordinator() -> RoomDriver {
         RoomDriver(room: room, clock: clock, mechanism: mechanism,
@@ -297,6 +322,8 @@ struct RoomLightPassLayer: View {
     let approach: RoomApproachSource?
     let reduceMotion: Bool
     let size: CGSize
+    /// The still path's redraw token — see ``RoomView/moves``.
+    let moves: Int
 
     var body: some View {
         Group {

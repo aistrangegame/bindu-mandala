@@ -23,6 +23,26 @@ import SwiftUI
 // ninth — and her room resolves as he comes.
 //
 // ─────────────────────────────────────────────────────────────────────────────
+// AND IT IS ALSO THE ROOM, LEFT
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Phase 3.7. Because this file is the room rather than a screen in front of it,
+// the way out belongs here too: there is nowhere else that holds her clock, her
+// approach and her dwelling, and a second view that did would be a second room.
+//
+// ``TheWayOut`` draws the instruction and owns the gesture; what this file adds
+// is the three things only a room can say. The crossing out is the release run
+// the other way, at the same rate, through the same air. The stay is measured to
+// the instant he began to cross rather than to the instant the surface went
+// away, because the walk out is no more time in her room than the walk in was.
+// And what the stay was worth is handed to ``HomeMemoryStore`` exactly once — the
+// write that makes the *next* ceremony shorter, and the reason a compression
+// that has existed since Phase 3.1 has never yet had anything to compress.
+//
+// The way out is not offered during the ceremony, and ``TheWayOut/shown`` says
+// why: a threshold is not a dialog and has no cancel on it.
+//
+// ─────────────────────────────────────────────────────────────────────────────
 // THE CHAMBER CLOCK DOES NOT RUN DURING THE RITE
 // ─────────────────────────────────────────────────────────────────────────────
 //
@@ -61,6 +81,17 @@ struct RiteOfEnteringView: View {
     let mechanism: RoomSurfaceMechanism?
     /// Called once, when he is inside.
     let onEntered: (() -> Void)?
+    /// Called once, when he has crossed out — the surface that presented this
+    /// room is what takes him off it. See ``TheWayOut``.
+    let onLeft: (() -> Void)?
+    /// What the stay was worth, in real seconds, handed over exactly once.
+    ///
+    /// It is a closure rather than a store for the same reason ``dwelling`` is:
+    /// this file draws a room and knows nothing about SwiftData. The real door,
+    /// ``entering(_:remembering:)``, hands it ``HomeMemoryStore/record(khadgamalaPosition:dwell:)``
+    /// — which is what makes the *next* ceremony shorter, and is the first time
+    /// in the instrument that a compression has had anything to compress.
+    let recording: ((TimeInterval) -> Void)?
     /// What this stay records once he is in — the R11 silence and the once-ever
     /// first dwelling. `nil` for a preview, a capture, or a room stood in with no
     /// Śakti row behind it.
@@ -80,6 +111,23 @@ struct RiteOfEnteringView: View {
     @State private var clock: RoomClock
     @State private var approach: RoomApproachSource
     @State private var crossing: Task<Void, Never>?
+    /// What the stay was worth at the instant he began to cross out. The walk
+    /// out is no more time in her room than the walk in was, so the stay is
+    /// measured where it ends rather than where the surface goes away — and a
+    /// walker who lets go of the crossing and stays on goes on accruing it.
+    @State private var stayEndedAt: TimeInterval?
+    /// The stay is handed over once, by whichever comes first — the way out, or
+    /// the surface going away under him.
+    @State private var handedOver = false
+    /// How many times the walker has been moved on his crossing.
+    ///
+    /// The still path's redraw token (``RoomView/moves``). ``RoomApproachSource``
+    /// is a reference so the driver can read the walker's distance on SceneKit's
+    /// own thread without re-rendering the tree — which means moving him changes
+    /// nothing SwiftUI can see, and with the render loop stopped the room is
+    /// never asked for another frame. Every place this file moves him bumps
+    /// this, so the ask is declared rather than incidental.
+    @State private var moves = 0
 
     // MARK: · Type, which is the only thing this file chooses
     //
@@ -112,13 +160,17 @@ struct RiteOfEnteringView: View {
          headStart: TimeInterval = 0,
          dwelling: HomeDwelling? = nil,
          forceReduceMotion: Bool = false,
-         onEntered: (() -> Void)? = nil) {
+         onEntered: (() -> Void)? = nil,
+         onLeft: (() -> Void)? = nil,
+         recording: ((TimeInterval) -> Void)? = nil) {
         self.room = room
         self.words = words
         self.syllable = syllable
         self.mechanism = mechanism
         self.dwelling = dwelling
         self.onEntered = onEntered
+        self.onLeft = onLeft
+        self.recording = recording
         self.forceReduceMotion = forceReduceMotion
         // **Built without a motion setting, on purpose.** A `View`'s `init` is
         // not in the environment, so `forceReduceMotion` is only half the answer
@@ -139,7 +191,8 @@ struct RiteOfEnteringView: View {
                      clock: clock,
                      mechanism: mechanism,
                      approach: approach,
-                     forceReduceMotion: reduceMotion)
+                     forceReduceMotion: reduceMotion,
+                     moves: moves)
                 .allowsHitTesting(false)
 
             if rite.isCeremonial {
@@ -152,12 +205,18 @@ struct RiteOfEnteringView: View {
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { touch() }
+        .theWayOut(reduceMotion: reduceMotion,
+                   shown: !rite.isCeremonial,
+                   onBegan: { seconds in unwind(over: seconds) },
+                   onLetGo: { holdOn() },
+                   onOut: { out() })
         .onAppear { open() }
         .onChange(of: environmentReduceMotion) { _, _ in adoptMotion() }
         .onDisappear {
             crossing?.cancel()
             // He has left. A mark that had not arrived does not arrive.
             dwelling?.end()
+            handOverTheStay()
         }
         .ignoresSafeArea()
     }
@@ -296,14 +355,20 @@ struct RiteOfEnteringView: View {
     /// instant each beat opened, and stays blank.
     private func adoptMotion() {
         rite.adopt(reduceMotion: reduceMotion)
-        approach.set(rite.approach)
+        stand(at: rite.approach)
+    }
+
+    /// Where he stands now, and the room asked for a frame that says so.
+    private func stand(at approach: RoomApproach) {
+        self.approach.set(approach)
+        moves &+= 1
     }
 
     private func touch() {
         guard case .beat = rite.stage else { return }
         let now = Date().timeIntervalSinceReferenceDate
         let landed = rite.touch(at: now)
-        approach.set(rite.approach)
+        stand(at: rite.approach)
 
         if let landed {
             strike(landed)
@@ -324,7 +389,7 @@ struct RiteOfEnteringView: View {
     private func arrive() {
         let now = Date().timeIntervalSinceReferenceDate
         rite.arrive(at: now)
-        approach.set(rite.approach)
+        stand(at: rite.approach)
         // The room opens where her accumulated dwell has earned, and he is
         // never told that it did.
         clock.begin(opening: rite.headStart, at: now)
@@ -334,6 +399,61 @@ struct RiteOfEnteringView: View {
         // cannot stand at two different instants (``HomeDwelling``'s header).
         dwelling?.begin(clock: clock)
         onEntered?()
+    }
+
+    // MARK: - What the way out does
+
+    /// The crossing out: the release, run the other way.
+    ///
+    /// ``RoomApproach/releasing(from:at:reduceMotion:)`` carries him the last of
+    /// the distance to her at a steady rate; this is the same stretch with its
+    /// ends exchanged, so the eye stands away from her through the āvaraṇa's own
+    /// air over exactly as long as the hold lasts. Nothing else in the room
+    /// moves: the fog is a distance band and the world's veil does the rest, the
+    /// way it did on the way in.
+    ///
+    /// Under reduced motion there is no unwinding at all — the hold is a touch,
+    /// this is never called, and he steps out. Quantized, never disabled.
+    private func unwind(over seconds: TimeInterval) {
+        guard !rite.isCeremonial else { return }
+        let now = Date().timeIntervalSinceReferenceDate
+        // The stay ends where he decides it ends, not where the surface goes.
+        if stayEndedAt == nil { stayEndedAt = clock.elapsed(now: now) }
+        // A mark that has not arrived does not arrive while he is on his way out.
+        dwelling?.end()
+        stand(at: RoomApproach(from: approach.value(at: now), to: 0,
+                               since: now, motion: .steady(seconds: max(0, seconds))))
+    }
+
+    /// He let go of the crossing. The room closes on him at Design's own
+    /// station rate, the stay is no longer over, and the two marks are live
+    /// again — a walker who thought about leaving and did not has not left.
+    private func holdOn() {
+        guard !rite.isCeremonial, stayEndedAt != nil else { return }
+        stayEndedAt = nil
+        let now = Date().timeIntervalSinceReferenceDate
+        stand(at: RoomApproach.crossing(from: approach.value(at: now), to: 1,
+                                        at: now, reduceMotion: reduceMotion))
+        dwelling?.begin(clock: clock)
+    }
+
+    /// He is outside. The stay is handed over, then the surface takes him off.
+    private func out() {
+        crossing?.cancel()
+        dwelling?.end()
+        handOverTheStay()
+        onLeft?()
+    }
+
+    /// What the stay was worth, handed over exactly once.
+    ///
+    /// A room he never entered has nothing to hand over — the clock is still
+    /// held at her threshold — and a stay that has already been handed over is
+    /// not handed over twice, whichever of the two doors closes first.
+    private func handOverTheStay() {
+        guard !handedOver, !clock.isHeld else { return }
+        handedOver = true
+        recording?(max(0, stayEndedAt ?? clock.elapsed()))
     }
 
     private func strike(_ beat: RiteBeat) {
@@ -356,7 +476,8 @@ extension RiteOfEnteringView {
                          remembering store: HomeMemoryStore,
                          mechanism: RoomSurfaceMechanism? = nil,
                          forceReduceMotion: Bool = false,
-                         onEntered: (() -> Void)? = nil) -> RiteOfEnteringView? {
+                         onEntered: (() -> Void)? = nil,
+                         onLeft: (() -> Void)? = nil) -> RiteOfEnteringView? {
         guard let room = HomeRooms.resolve(shakti), let position = shakti.khadgamalaPosition else {
             return nil
         }
@@ -374,7 +495,19 @@ extension RiteOfEnteringView {
                                     memory: store.memory(for: position),
                                     marks: HomeDwelling.forRoom(shakti, context: store.context)),
                                   forceReduceMotion: forceReduceMotion,
-                                  onEntered: onEntered)
+                                  onEntered: onEntered,
+                                  onLeft: onLeft,
+                                  // The only write a stay makes to what her room
+                                  // remembers, and the one that was missing: the
+                                  // ceremony has been able to compress since
+                                  // Phase 3.1 and nothing had ever recorded a
+                                  // stay for it to compress against. It is
+                                  // phone-only by construction — `HomeMemoryStore`
+                                  // touches neither `AirtableService` nor the
+                                  // ledger, which is R17 at the data layer.
+                                  recording: { dwell in
+                                      store.record(khadgamalaPosition: position, dwell: dwell)
+                                  })
     }
 }
 

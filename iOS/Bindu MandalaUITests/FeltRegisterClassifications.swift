@@ -140,6 +140,28 @@ enum FeltRegisterClassifications {
          + "the action, and sorted last so the two Recognition lines are still what the screen "
          + "says first. Their words and their 2.6 / 4.1 / 5.1 second staging are untouched."),
 
+        // ── Phase 3.7 · the two doors ───────────────────────────────────────
+        //
+        // This file was written for a phase that was forbidden to re-compose a
+        // screen, and it says so in its own header. Phase 3.7 is the phase whose
+        // whole job is to add one thing to two screens: until it landed, the
+        // rite of entering, the hundred and two rooms and the nine-āvaraṇa climb
+        // were unreachable from the shipping shell — built, tested, and dead.
+        // So these are not Phase 4 moves that slipped through; they are the two
+        // doors, named, with what each one costs measured rather than estimated.
+        ("detail", "Be with her",
+         "Phase 3.7. The way into her room, in the Detail's footer above “I feel her”. It is "
+         + "outside the ScrollView, so it grows downward from the scroll's own edge and **nothing "
+         + "on the Detail moves**: there is no accompanying shift entry, and any movement of an "
+         + "existing element here is still a failure."),
+        ("field", "Rise through the nine",
+         "Phase 3.7. The way onto the axis, under the Field's own “NINE RINGS · ONE HUNDRED AND "
+         + "TWO” — the one screen in the app whose subject is the nine. It costs 52 pt (a 44 pt "
+         + "target and the header stack's 8 pt spacing); 8 of them are paid for out of the "
+         + "header's own bottom padding, 14 → 6, because a 15 pt line centred in a 44 pt target "
+         + "already stands about fourteen points clear of its own box. The other 44 are the shift "
+         + "entry below."),
+
         ("settings", "text|Settings|1",
          "A second \"Settings\" — the principal toolbar item that says the sheet's name in "
          + "Cormorant (§4.5). `.navigationTitle(\"Settings\")` stays beneath it, because "
@@ -153,13 +175,30 @@ enum FeltRegisterClassifications {
         ClassifiedShift(screen: "detail", keyContains: "button|", maxDelta: 17, reason: cormorant),
 
         // ── The Field ────────────────────────────────────────────────────────
-        ClassifiedShift(screen: "field", keyContains: "|", maxDelta: 2.5, reason:
+        //
+        // **Phase 3.7 raised this bound from 2.5 pt to 46.5, and that is a real
+        // loss of resolution on this one screen — written down rather than
+        // waved past.** The door to the axis stands in the header, so everything
+        // under it settles by the 44 pt the door costs after the 8 the header's
+        // own padding gives back, **plus** the 2.5 this entry already carried:
+        // the two causes are in the same stack and add. Measured rather than
+        // estimated — the largest move on the running app is 45.42 pt, and the
+        // bound is the sum of the two classified causes rather than that
+        // reading rounded up. A tighter bound is not available: the shift is a
+        // single rigid translation of the whole list, and this file's vocabulary
+        // is a per-element maximum. What is still caught is any element that
+        // moves *further* than the door pushed it, and every arrival, which
+        // needs its own sentence above.
+        ClassifiedShift(screen: "field", keyContains: "|", maxDelta: 46.5, reason:
             "\"NINE RINGS · ONE HUNDRED AND TWO\" was 10.5 pt at 0.45 α — under the floor on both "
             + "counts — and is now 11.5 at 0.55 (§4.1). The header is a point taller, so the rings "
             + "under it begin a point lower. The ring row's seat count grew the same point and "
             + "carries its chevron with it. The threshold row's 8 pt of new touch area is paid for "
             + "in that row's own padding and costs the seats nothing — and on a simulator with no "
-            + "āvaraṇa the row is not there to grow, which is why that padding asks first."),
+            + "āvaraṇa the row is not there to grow, which is why that padding asks first."
+            + "\n\n"
+            + "Phase 3.7 adds the 44 pt the door to the axis stands in, above every ring. The "
+            + "door's own entry in `appeared` has the arithmetic."),
 
         // ── The Bindu's descent ──────────────────────────────────────────────
         ClassifiedShift(screen: "mandala-descent", keyContains: "↑ return to the field",

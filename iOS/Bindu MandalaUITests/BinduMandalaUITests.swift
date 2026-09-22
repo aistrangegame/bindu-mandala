@@ -10,50 +10,6 @@ final class BinduMandalaUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    // MARK: - Delivering a press the simulator cannot silently swallow
-
-    /// Press `element` and wait for `expected` to appear — re-pressing, up to
-    /// `attempts` times, only while the button is still there to press.
-    ///
-    /// `XCUIElement.tap()` is a reliable way to *attempt* a press, not to land
-    /// one. XCTest attaches a virtual HID digitizer to the simulator, plays a
-    /// path through it (touch-down, touch-up 50 ms later) and tears the service
-    /// down ~180 ms after attaching. When the host is loaded the playback is
-    /// descheduled between the two frames, the lift never reaches backboardd,
-    /// and backboardd cancels the still-live contact as the digitizer goes away:
-    ///
-    ///     BackBoard:TouchEvents  cancel -- digitizer did disappear:
-    ///       <BKDirectTouchState …; contacts: [touchIdentifier: 1; touching; locked;
-    ///        … sceneID:com.ashrey.bindu-mandala-default]>
-    ///     BackBoard:TouchEvents  canceling paths … -- HID
-    ///
-    /// UIKit delivers that to the app as `UITouchPhaseCancelled`, and SwiftUI
-    /// correctly discards a cancelled press — the `Button`'s action never runs,
-    /// nothing changes on screen, and the app is right to do nothing. XCTest is
-    /// unaware: it still reports "Synthesize event" as succeeded and then waits
-    /// out the full timeout for a consequence nobody ever asked for.
-    ///
-    /// So the retry is not extra patience for a slow app — each attempt gets the
-    /// same budget a single `tap()` had, and a press is only re-sent when the
-    /// button is *still hittable*, which it is not once a cover has presented.
-    /// An app that truly fails to respond fails this exactly as before.
-    @discardableResult
-    private func press(_ element: XCUIElement,
-                       until expected: XCUIElement,
-                       attempts: Int = 3,
-                       eachTimeout: TimeInterval) -> Bool {
-        for attempt in 0..<attempts {
-            if attempt > 0 && !element.isHittable {
-                // Something did happen — the press landed after all, or a cover
-                // is up. Don't press blind; just wait it out.
-                return expected.waitForExistence(timeout: eachTimeout)
-            }
-            element.tap()
-            if expected.waitForExistence(timeout: eachTimeout) { return true }
-        }
-        return false
-    }
-
     /// Today with a rich Ring-2 Karṣiṇī (kp 29, Kāmākarṣiṇī — carries a phonetic).
     private func launchToday() -> XCUIApplication {
         let app = XCUIApplication()
@@ -86,5 +42,56 @@ final class BinduMandalaUITests: XCTestCase {
         let felt = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'felt here'")).firstMatch
         XCTAssertTrue(press(feelHer, until: felt, eachTimeout: 20),
                       "Recognition ceremony should show 'she was felt here'")
+    }
+}
+
+// MARK: - Delivering a press the simulator cannot silently swallow
+//
+// Shared with every tap-driven suite in this target rather than kept private to
+// one class. The flake it absorbs is a property of the simulator, not of the
+// screen being driven — a second copy of it would be a second place to weaken.
+
+extension XCTestCase {
+
+    /// Press `element` and wait for `expected` to appear — re-pressing, up to
+    /// `attempts` times, only while the button is still there to press.
+    ///
+    /// `XCUIElement.tap()` is a reliable way to *attempt* a press, not to land
+    /// one. XCTest attaches a virtual HID digitizer to the simulator, plays a
+    /// path through it (touch-down, touch-up 50 ms later) and tears the service
+    /// down ~180 ms after attaching. When the host is loaded the playback is
+    /// descheduled between the two frames, the lift never reaches backboardd,
+    /// and backboardd cancels the still-live contact as the digitizer goes away:
+    ///
+    ///     BackBoard:TouchEvents  cancel -- digitizer did disappear:
+    ///       <BKDirectTouchState …; contacts: [touchIdentifier: 1; touching; locked;
+    ///        … sceneID:com.ashrey.bindu-mandala-default]>
+    ///     BackBoard:TouchEvents  canceling paths … -- HID
+    ///
+    /// UIKit delivers that to the app as `UITouchPhaseCancelled`, and SwiftUI
+    /// correctly discards a cancelled press — the `Button`'s action never runs,
+    /// nothing changes on screen, and the app is right to do nothing. XCTest is
+    /// unaware: it still reports "Synthesize event" as succeeded and then waits
+    /// out the full timeout for a consequence nobody ever asked for.
+    ///
+    /// So the retry is not extra patience for a slow app — each attempt gets the
+    /// same budget a single `tap()` had, and a press is only re-sent when the
+    /// button is *still hittable*, which it is not once a cover has presented.
+    /// An app that truly fails to respond fails this exactly as before.
+    @discardableResult
+    func press(_ element: XCUIElement,
+               until expected: XCUIElement,
+               attempts: Int = 3,
+               eachTimeout: TimeInterval) -> Bool {
+        for attempt in 0..<attempts {
+            if attempt > 0 && !element.isHittable {
+                // Something did happen — the press landed after all, or a cover
+                // is up. Don't press blind; just wait it out.
+                return expected.waitForExistence(timeout: eachTimeout)
+            }
+            element.tap()
+            if expected.waitForExistence(timeout: eachTimeout) { return true }
+        }
+        return false
     }
 }
