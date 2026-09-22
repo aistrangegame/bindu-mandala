@@ -424,7 +424,7 @@ enum OuterRings {
     static func outerRoom(_ reading: HomeGrammar.Reading) -> RoomSurfaceMechanism? {
         switch reading.archetype {
         case .bodiless:  return BodilessRoom(reading)   // ring 3 · Phase 3.6, built
-        case .cosmic:    return nil                     // ring 4 · Sampradāya
+        case .cosmic:    return CosmicRoom(reading)     // ring 4 · Phase 3.6, built
         case .giving:    return nil                     // ring 5 · Kulottīrṇa
         case .revealing: return nil                     // ring 6 · Nigarbha
         case .sounding:  return nil                     // ring 7 · the Vāsinīs
