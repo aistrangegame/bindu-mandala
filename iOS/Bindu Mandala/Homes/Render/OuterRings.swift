@@ -426,7 +426,7 @@ enum OuterRings {
         case .bodiless:  return BodilessRoom(reading)   // ring 3 · Phase 3.6, built
         case .cosmic:    return nil                     // ring 4 · Sampradāya
         case .giving:    return nil                     // ring 5 · Kulottīrṇa
-        case .revealing: return nil                     // ring 6 · Nigarbha
+        case .revealing: return RevealingRoom(reading)  // ring 6 · Phase 3.6, built
         case .sounding:  return nil                     // ring 7 · the Vāsinīs
         case .sourcing:  return nil                     // ring 8 · the Triad
         case .siddhi, .matrka, .mudra, .crossed: return nil
