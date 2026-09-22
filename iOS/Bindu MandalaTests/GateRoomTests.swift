@@ -568,14 +568,16 @@ final class GateRoomTests: XCTestCase {
     /// resolved against the surfaces *that* room actually has, and the two are
     /// never the same stone.
     ///
-    /// **One hundred and one, not one hundred and two, and the exception is
-    /// recorded rather than filled in.** The ninth āvaraṇa holds one Śakti,
-    /// Mahātripurasundarī at khaḍgamālā 102, and the grammar declines to speak for
-    /// her — ``HomeRooms/grammarRings`` stops at eight, because the Bindu's room is
-    /// authored (`chamberDissolve`, *"the room stops being a room"*). She has no
-    /// archetype to inherit a turn from, and inventing one would be exactly the
-    /// generic intensification this term replaces. Her room arrives with the rest
-    /// of the authored eight.
+    /// **All one hundred and two, and the one exception this check used to carry
+    /// is now filled.** The ninth āvaraṇa holds one Śakti, Mahātripurasundarī at
+    /// khaḍgamālā 102, and the grammar declines to speak for her —
+    /// ``HomeRooms/grammarRings`` stops at eight, because the Bindu's room is
+    /// authored (`chamberDissolve`, *"the room stops being a room"*). She had no
+    /// archetype to inherit a turn from and none was invented for her; Phase 3.6
+    /// built her room instead (``DissolveRoom``), and its reversal is Design's own
+    /// — the enclosure gives way and the source arrives where he is standing. So
+    /// `silent` is now empty, and it stays asserted: a room that turns up in it is
+    /// a room that holds still past the second adaptation, which is a loop.
     func testEveryRoomReversesAndTheWorkAlwaysMoves() throws {
         var reversing = 0
         var silent: [Int] = []
@@ -606,12 +608,12 @@ final class GateRoomTests: XCTestCase {
                                  "khaḍgamālā \(room.position)'s reversal moves nothing in the room")
             reversing += 1
         }
-        XCTAssertEqual(reversing, 101, "only \(reversing) rooms carry a reversal")
-        XCTAssertEqual(silent, [102],
+        XCTAssertEqual(reversing, 102, "only \(reversing) rooms carry a reversal")
+        XCTAssertEqual(silent, [],
                        """
-                       the rooms with no reversal are \(silent) and they should be exactly the Bindu's. \
-                       A room that turned up here unexpectedly is a room that holds still past the \
-                       second adaptation, which is a loop rather than a room.
+                       the rooms with no reversal are \(silent), and since Phase 3.6 built the Bindu \
+                       there should be none. A room that turns up here is a room that holds still past \
+                       the second adaptation, which is a loop rather than a room.
                        """)
     }
 

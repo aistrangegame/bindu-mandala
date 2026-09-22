@@ -126,6 +126,9 @@ final class AirtableService {
             // Union the server's Letter-Written ledger into the local dedup set
             // so a reinstall or second device never re-logs a letter (§0.6).
             await reconcileLedgeredLetters(token: token, shaktis: sk)
+            // …and the same for the two once-ever milestones, so a reinstall
+            // cannot re-log a Full Circle or a First Dwelling the ledger holds.
+            await reconcileLedgeredMilestones(token: token)
             // After the field data is local, rebuild the recognition log if the
             // device has none — the path home after a reinstall/recovery.
             await restoreRecognitionsIfLocalEmpty(context: context)
@@ -842,10 +845,49 @@ extension AirtableService {
                 increment: 1,
                 context: context
             )
+            // …and, if this gesture was itself a first, the circle may have just
+            // closed on it.
+            if isFirst {
+                await closeTheCircle(token: token, item: item, context: context)
+            }
             return true
         } catch {
             log.error("Recognition write failed: \(Self.describe(error), privacy: .public)")
             return false
+        }
+    }
+
+    /// **Full Circle** — once ever, when the 102nd first-felt lands.
+    ///
+    /// Asked only when this gesture was itself a first recognition, and only
+    /// while the milestone is unwritten: that is at most a hundred and two narrow
+    /// reads in a whole practice, and none at all afterwards.
+    ///
+    /// *How far round has he come* is asked of the **ledger** and not of this
+    /// phone, which is R17 working as intended — App Activity is the single
+    /// record, so the count that decides the milestone is one the server holds
+    /// and a reinstall cannot reset. The count never reaches the walker; it
+    /// decides a row in the archive and nothing else (law 2).
+    ///
+    /// Fire-and-forget and fail-quiet: a recognition is never held up, never
+    /// failed, and never retried because of a milestone. The next first
+    /// recognition asks again, and if there is no next one the ledger is simply
+    /// missing one row of its own commentary — which is a smaller loss than a
+    /// recognition that did not land.
+    private func closeTheCircle(token: String,
+                                item: PendingRecognition,
+                                context: ModelContext) async {
+        guard !Self.hasLedgeredMilestone(.fullCircle) else { return }
+        do {
+            let felt = try await feltOnServer(token: token)
+            guard ActivityLedger.isFullCircle(felt: felt) else { return }
+            await recordMilestone(.fullCircle,
+                                  row: ActivityLedger.fullCircle(
+                                    shaktiRecordId: item.shaktiRecordId,
+                                    name: shaktiName(recordId: item.shaktiRecordId, context: context),
+                                    at: item.feltAt))
+        } catch {
+            log.error("Circle count read failed: \(Self.describe(error), privacy: .public)")
         }
     }
 
@@ -1249,6 +1291,7 @@ extension AirtableService {
 
     private static let pendingActivityKey = "pendingActivities"
     private static let ledgeredLettersKey = "ledgeredLetters"
+    private static let ledgeredMilestonesKey = "ledgeredMilestones"
 
     /// Write one event to the ledger by its parts — the shape `saveLetter`
     /// uses (and the shape build 36 queued). Fire-and-forget; on failure the
@@ -1293,6 +1336,125 @@ extension AirtableService {
                                                  name: shakti.name,
                                                  durationSec: durationSec,
                                                  at: at))
+    }
+
+    // MARK: The two once-ever milestones (Full Circle · First Dwelling)
+
+    /// Has this milestone already been written, as far as this install knows?
+    ///
+    /// Per-install on its own, which is why it is only half the guard — see
+    /// ``reconcileLedgeredMilestones(token:)``.
+    static func hasLedgeredMilestone(_ milestone: ActivityLedger.Milestone) -> Bool {
+        let held = UserDefaults.standard.stringArray(forKey: ledgeredMilestonesKey) ?? []
+        return held.contains(milestone.rawValue)
+    }
+
+    static func markMilestoneLedgered(_ milestone: ActivityLedger.Milestone) {
+        var held = UserDefaults.standard.stringArray(forKey: ledgeredMilestonesKey) ?? []
+        guard !held.contains(milestone.rawValue) else { return }
+        held.append(milestone.rawValue)
+        UserDefaults.standard.set(held, forKey: ledgeredMilestonesKey)
+    }
+
+    /// Write one once-ever milestone, if it has never been written.
+    ///
+    /// **Three guards, in order, and the middle one is the point.** The local
+    /// set first, because it costs nothing; then the **server's own view**,
+    /// read at the moment of writing, because the local set is per-install and
+    /// a reinstall or a second device would otherwise log the milestone again —
+    /// which is exactly what the letter ledger did until §0.6. Only then the
+    /// row. The local set is marked whichever of the two answered, so the read
+    /// happens once and not on every gesture afterwards.
+    ///
+    /// Fire-and-forget, like every other ledger write: a failure queues and
+    /// drains with the rest, and nothing about the walker's stay depends on it.
+    /// Nothing is shown, ever — law 2. The instrument knows; he does not.
+    func recordMilestone(_ milestone: ActivityLedger.Milestone,
+                         row: @autoclosure () -> PendingActivity) async {
+        if syncIsDisabled() { return }
+        if Self.hasLedgeredMilestone(milestone) { return }
+        if let token = pat, await milestoneOnServer(token: token, milestone) {
+            log.notice("\(milestone.rawValue, privacy: .public) already on the server — not written again")
+            Self.markMilestoneLedgered(milestone)
+            return
+        }
+        Self.markMilestoneLedgered(milestone)
+        await logActivity(row())
+    }
+
+    /// `First Dwelling` — the first time a second adaptation was reached, in any
+    /// room. Wired from ``HomeDwelling``; nothing else calls it.
+    func recordFirstDwelling(shakti: Shakti, chamberTime: Double, at: Date = .now) async {
+        guard let recordId = shakti.airtableRecordId, !recordId.isEmpty else {
+            log.notice("Milestone: no airtableRecordId — skipping Airtable write")
+            return
+        }
+        await recordMilestone(.firstDwelling,
+                              row: ActivityLedger.firstDwelling(shaktiRecordId: recordId,
+                                                                name: shakti.name,
+                                                                chamberTime: chamberTime,
+                                                                at: at))
+    }
+
+    /// Is this milestone already in the ledger? One narrow read, fail-**closed**
+    /// on a network error: an unanswered question about a once-ever row is
+    /// answered by not writing it, because a missing milestone can be written on
+    /// the next gesture and a duplicated one cannot be taken back.
+    private func milestoneOnServer(token: String,
+                                   _ milestone: ActivityLedger.Milestone) async -> Bool {
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.ledgeredMilestones,
+                sort: [],
+                fields: [ActivityLedger.Field.activityType],
+                byFieldId: false
+            )
+            return ActivityLedger.ledgered(in: rows).contains(milestone)
+        } catch {
+            log.error("Milestone read failed: \(Self.describe(error), privacy: .public)")
+            return true
+        }
+    }
+
+    /// Server-derived milestone dedup, the letter's §0.6 pattern for a row that
+    /// is once in a practice rather than once per Śakti. One read per sync: any
+    /// milestone the ledger already holds is marked locally, so a fresh install
+    /// of the app on a walker who has already come full circle never writes the
+    /// row a second time.
+    ///
+    /// Failure is logged and non-fatal — the local set still governs, and
+    /// ``recordMilestone(_:row:)`` reads the server again before it writes.
+    private func reconcileLedgeredMilestones(token: String) async {
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.ledgeredMilestones,
+                sort: [],
+                fields: [ActivityLedger.Field.activityType],
+                byFieldId: false
+            )
+            let held = ActivityLedger.ledgered(in: rows)
+            var marked = 0
+            for milestone in held where !Self.hasLedgeredMilestone(milestone) {
+                Self.markMilestoneLedgered(milestone)
+                marked += 1
+            }
+            log.notice("Milestone ledger: \(held.count) on server, \(marked) newly marked locally")
+        } catch {
+            log.error("Milestone ledger read failed: \(Self.describe(error), privacy: .public)")
+        }
+    }
+
+    /// How many **distinct** Śaktis the ledger holds a `Shakti Recognized` row
+    /// for — the ledger answering its own question, which is R17 working as
+    /// intended: App Activity is the single record, so *how far round has he
+    /// come* is a fact about the ledger and not about this phone.
+    private func feltOnServer(token: String) async throws -> Int {
+        try await linkedShaktis(token: token,
+                                type: ActivityLedger.ActivityType.shaktiRecognized).count
     }
 
     /// One ledger row per event. A linked item gets the same create-time
@@ -1460,10 +1622,19 @@ extension AirtableService {
     /// every `Letter Written` row. The ledger is read by field *name*,
     /// matching its writes, and only the link column comes back.
     private func fetchLetterWrittenLinks(token: String) async throws -> Set<String> {
+        try await linkedShaktis(token: token, type: ActivityLedger.ActivityType.letterWritten)
+    }
+
+    /// The Śakti record ids linked from every row of one `Activity Type`.
+    ///
+    /// The letter's own read, generalised — the Full Circle guard asks the same
+    /// question of `Shakti Recognized`, and two copies of one paged GET is how
+    /// the instrument has paid twice for a rule written down twice before.
+    private func linkedShaktis(token: String, type: String) async throws -> Set<String> {
         let rows: [ActivityLedger.Row] = try await fetch(
             token: token,
             table: ActivityLedger.tableId,
-            filter: "{\(ActivityLedger.Field.activityType)}='\(ActivityLedger.ActivityType.letterWritten)'",
+            filter: ActivityLedger.ofType(type),
             sort: [],
             fields: [ActivityLedger.Field.linkToMandala],
             byFieldId: false

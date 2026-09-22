@@ -857,8 +857,12 @@ enum LedgerIsTheRecord {
 
     /// What makes a row an *event* row. If any of this appears outside the
     /// ledger's own file, something else has learned to write events.
+    /// Phase 3.6 added the two once-ever milestones the brief keeps — `Full
+    /// Circle` and `First Dwelling` — and they are held to exactly the same
+    /// rule: an event's name is a fact about the ledger and lives in its file.
     static let eventVocabulary = [
         "Shakti Recognized", "Ring Crossed", "Silence Held", "Letter Written",
+        "Full Circle", "First Dwelling",
         "Activity Type",
     ]
 

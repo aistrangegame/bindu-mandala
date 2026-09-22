@@ -61,6 +61,16 @@ struct RiteOfEnteringView: View {
     let mechanism: RoomSurfaceMechanism?
     /// Called once, when he is inside.
     let onEntered: (() -> Void)?
+    /// What this stay records once he is in — the R11 silence and the once-ever
+    /// first dwelling. `nil` for a preview, a capture, or a room stood in with no
+    /// Śakti row behind it.
+    ///
+    /// **It draws nothing and it is asked nothing.** ``HomeDwelling`` has no
+    /// property a view could read, so the ceremony can carry it without the
+    /// silence ever becoming something on screen — which is Ruling 11's *never
+    /// displayed* and law 2's *no count* held by the shape of the type rather
+    /// than by care.
+    let dwelling: HomeDwelling?
     /// Forced on for tests and captures; otherwise the environment decides.
     let forceReduceMotion: Bool
 
@@ -100,12 +110,14 @@ struct RiteOfEnteringView: View {
          mechanism: RoomSurfaceMechanism? = nil,
          compression: Double,
          headStart: TimeInterval = 0,
+         dwelling: HomeDwelling? = nil,
          forceReduceMotion: Bool = false,
          onEntered: (() -> Void)? = nil) {
         self.room = room
         self.words = words
         self.syllable = syllable
         self.mechanism = mechanism
+        self.dwelling = dwelling
         self.onEntered = onEntered
         self.forceReduceMotion = forceReduceMotion
         // **Built without a motion setting, on purpose.** A `View`'s `init` is
@@ -142,7 +154,11 @@ struct RiteOfEnteringView: View {
         .accessibilityAction { touch() }
         .onAppear { open() }
         .onChange(of: environmentReduceMotion) { _, _ in adoptMotion() }
-        .onDisappear { crossing?.cancel() }
+        .onDisappear {
+            crossing?.cancel()
+            // He has left. A mark that had not arrived does not arrive.
+            dwelling?.end()
+        }
         .ignoresSafeArea()
     }
 
@@ -312,6 +328,11 @@ struct RiteOfEnteringView: View {
         // The room opens where her accumulated dwell has earned, and he is
         // never told that it did.
         clock.begin(opening: rite.headStart, at: now)
+        // …and the stay begins, which is the only thing in the instrument that
+        // records a silence. It is begun on **her own clock**, the one the room
+        // beneath these words is being drawn by, so the dwelling and the room
+        // cannot stand at two different instants (``HomeDwelling``'s header).
+        dwelling?.begin(clock: clock)
         onEntered?()
     }
 
@@ -345,6 +366,13 @@ extension RiteOfEnteringView {
                                   mechanism: mechanism,
                                   compression: store.compression(for: position),
                                   headStart: store.headStart(for: position),
+                                  // What this stay records, and never shows.
+                                  // `memory(for:)` is a pure read — a room never
+                                  // stood in answers with a transient row and
+                                  // nothing enters the store.
+                                  dwelling: HomeDwelling(
+                                    memory: store.memory(for: position),
+                                    marks: HomeDwelling.forRoom(shakti, context: store.context)),
                                   forceReduceMotion: forceReduceMotion,
                                   onEntered: onEntered)
     }

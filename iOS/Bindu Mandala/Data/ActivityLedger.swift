@@ -79,6 +79,101 @@ enum ActivityLedger {
         static let ringCrossed      = "Ring Crossed"
         /// The R11 silence dwell.
         static let silenceHeld      = "Silence Held"
+        /// Once ever: the 102nd Śakti felt for the first time.
+        static let fullCircle       = "Full Circle"
+        /// Once ever: a second adaptation reached, in any room.
+        static let firstDwelling    = "First Dwelling"
+    }
+
+    // MARK: - The two once-ever milestones
+
+    /// The two milestones Build Brief v2 puts in Phase 3.6 — and only the two.
+    ///
+    /// The brief named three. **`Deepest Ring Reached` is dropped**, and the
+    /// reasoning is in `DECISIONS.md` under the charter's §4 table: `Ring
+    /// Crossed` already fires once per new-deepest ring (`DescentState.enter`
+    /// returns `true` only on a crossing that goes deeper than any before it),
+    /// so a `Deepest Ring Reached` row would duplicate it exactly, row for row
+    /// and instant for instant.
+    ///
+    /// Both of the survivors are **once ever, not once per anything**, which is
+    /// a different guard from every other row in this file: a recognition is
+    /// once per gesture, a `Silence Held` is once per visit, a `Letter Written`
+    /// is once per Śakti. These are once in a practice. A local flag alone
+    /// cannot carry that — it is per-install, so a reinstall or a second device
+    /// would log the milestone again, which is exactly what the letter ledger
+    /// did until §0.6's server-derived reconcile. So each of these carries the
+    /// same two-part guard the letter has: a local set, and a read of the
+    /// ledger's own view that unions into it
+    /// (`AirtableService.reconcileLedgeredMilestones`).
+    ///
+    /// Neither is ever shown. They are rows in the archive, and law 2 means the
+    /// walker is never told that his circle closed or that he dwelt for the
+    /// first time — the instrument knows; he does not get a score.
+    enum Milestone: String, CaseIterable, Equatable {
+        /// The 102nd first-felt: every seat of the khaḍgamālā has been stood in.
+        case fullCircle
+        /// The first time any room's second adaptation was reached.
+        case firstDwelling
+
+        /// Its `Activity Type` option, born on first write by `typecast: true`.
+        var activityType: String {
+            switch self {
+            case .fullCircle:   return ActivityType.fullCircle
+            case .firstDwelling: return ActivityType.firstDwelling
+            }
+        }
+    }
+
+    /// How many Śaktis have to have been felt for the circle to have closed:
+    /// all of them. Read off ``KhadgamalaMap`` rather than typed, because the
+    /// number of seats is that file's fact and not this one's.
+    static var fullCircleAt: Int { KhadgamalaMap.total }
+
+    /// Has the circle closed? `felt` is how many **distinct** Śaktis the ledger
+    /// holds a `Shakti Recognized` row for, counted *after* this gesture's row.
+    ///
+    /// `>=` and not `==`: a base that somehow held 103 would otherwise never
+    /// close the circle at all, and a milestone that can be missed by a stray
+    /// row is worse than one that fires a row late.
+    static func isFullCircle(felt: Int) -> Bool { felt >= fullCircleAt }
+
+    /// A `Full Circle` row, linked to the Śakti whose first recognition closed
+    /// it. No Notes, no count anywhere in the words — *every seat* is a fact
+    /// about the khaḍgamālā, not a number about him.
+    static func fullCircle(shaktiRecordId: String, name shaktiName: String,
+                           at: Date) -> PendingActivity {
+        let name = shaktiName.isEmpty ? "A Śakti" : shaktiName
+        return PendingActivity(
+            type: ActivityType.fullCircle,
+            linkRecordId: shaktiRecordId,
+            name: "The khaḍgamālā — come full circle",
+            detail: "Every seat has been felt · closed at \(name) · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.mandala,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at)
+        )
+    }
+
+    /// A `First Dwelling` row, linked to the Śakti in whose room the second
+    /// adaptation was first reached. `Duration (sec)` carries the chamber clock
+    /// it was reached on — the archive's own record of how long it took, and
+    /// never a thing the walker is shown.
+    static func firstDwelling(shaktiRecordId: String, name shaktiName: String,
+                              chamberTime: Double, at: Date) -> PendingActivity {
+        let name = shaktiName.isEmpty ? "A Śakti" : shaktiName
+        return PendingActivity(
+            type: ActivityType.firstDwelling,
+            linkRecordId: shaktiRecordId,
+            name: "\(name) — the first dwelling",
+            detail: "A second adaptation reached · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.silence,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            durationSec: chamberTime
+        )
     }
 
     /// `Gesture Source` options — where the gesture originated.
@@ -271,6 +366,19 @@ enum ActivityLedger {
         and([isMandala, isType(ActivityType.ringCrossed)])
     }
 
+    /// Every row of one `Activity Type` — the shape the server-derived dedups
+    /// read by. `Letter Written`'s links, and the two once-ever milestones.
+    static func ofType(_ type: String) -> String {
+        "{\(Field.activityType)}='\(escaped(type))'"
+    }
+
+    /// The two milestones as the server holds them: any row of either type,
+    /// written by this instrument. One read answers both guards.
+    static var ledgeredMilestones: String {
+        and([isMandala,
+             "OR(" + Milestone.allCases.map { isType($0.activityType) }.joined(separator: ", ") + ")"])
+    }
+
     // MARK: - Rows as the API returns them (field names; no `returnFieldsByFieldId`)
 
     struct Row: Decodable, Equatable {
@@ -306,6 +414,18 @@ enum ActivityLedger {
                 case durationSec   = "Duration (sec)"
             }
         }
+    }
+
+    /// **Which of the once-ever milestones the ledger already holds**, read off
+    /// the rows a milestone read returns.
+    ///
+    /// Pure, and that is deliberate: the guard that matters for `Full Circle`
+    /// and `First Dwelling` is the *server-derived* half, and a guard that can
+    /// only be exercised by making a network call is a guard nothing checks. A
+    /// reinstall is this function against a cleared local set.
+    static func ledgered(in rows: [Row]) -> Set<Milestone> {
+        let held = Set(rows.compactMap { $0.fields.activityType })
+        return Set(Milestone.allCases.filter { held.contains($0.activityType) })
     }
 
     /// True only when the row links `linkRecordId` *and* carries `feltAt` to
