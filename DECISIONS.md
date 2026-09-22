@@ -1826,3 +1826,101 @@ He is right and I had been regressing. The delivery path is automated and proven
 4. Ship through Xcode Cloud, confirm the sync and recognition-write path in the build logs, leave `ARRIVAL.md`.
 
 **Explicitly after the MVP ships, as later builds, not before:** 3.8 the library fold, 3.9 the descent and the carrier in every room, and Phase 5's light. Each is real work and none of it is what makes the difference between a build worth installing and one that is not.
+
+## 2026-09-21 · Phase 3.6 · the 102 rooms, whole — the merge, and the first whole-instrument check
+
+Five branches came together on `phase-3-6`: `rings-456` (Ring 4 Sampradāya, Ring 5 Kulottīrṇa),
+`rings-789` (Rings 7, 8, 9 plus the R11 silence dwell and the two once-ever ledger events), the
+`ring-6-revealing` checkpoint, and `origin/main`. With Ring 3 already on the branch, that is the
+whole outer climb, and with it **all 102 seats have a room for the first time.**
+
+### Ring 6 was not in `rings-456`, and the name said it was
+
+The branch is called `rings-456` and holds rings 4 and 5. Ring 6, the ten Nigarbhas, was left on
+`ring-6-revealing` as *"Checkpoint: ring6's work, written but never verified"* — one of the four
+salvaged when six room agents were fanned out at once and the test hosts hung. Merging only the two
+branches this pass was handed would have left ten Śaktis falling through to the bare archetype turn
+while every check went on saying green, because until this pass there was no check that asked about
+all 102 at once. The checkpoint was merged, and it compiled and passed unmodified — 508 lines of
+`RevealingRoom.swift` and 594 of its suite, written by an agent that never got to build them.
+
+### Every collision, and how it was resolved
+
+Four files were touched by more than one branch. None was resolved by taking a side.
+
+| File | Who touched it | Resolution |
+|---|---|---|
+| `Homes/Render/OuterRings.swift` | all three ring branches | **Union.** Each branch flips its own line of `outerRoom(_:)` from `nil` to its room. Git auto-merged 4 and 5 against 7 and 8 (the hunks do not overlap); ring 6 conflicted and was resolved by hand to all six built. This is the file's own design — *"each of the six rings arrives by changing exactly one line here"* — so the collision was expected and the faithful resolution is every line taken. |
+| `DECISIONS.md` | `rings-789`, `origin/main` | **Both kept**, in that order. Append-only by charter §4. |
+| `PROGRESS.md` | `rings-789`, `origin/main` | **Both kept**: the three ring entries, then main's plan-to-completion. |
+| `RoomReversal.swift`, `AirtableService.swift`, `RiteOfEnteringView.swift`, `LawsTests.swift`, `GateRoomTests.swift` | `rings-789` only | No collision. Recorded because a reader would expect one. |
+
+Nothing was dropped. The whole-instrument check below is what proves that rather than the diff.
+
+### The check that could not be run until now
+
+`WholeInstrumentTests` asks the four questions the building can only be asked whole:
+
+1. **All 102 resolve by position**, and the rings hold 28, 16, 8, 14, 10, 10, 12, 3, 1.
+2. **Nobody is on a shared room.** Two of them, and they are different failures: `.seat`, the
+   gem-lit fall-through the resolution gives a Śakti it has nothing to say about — empty — and the
+   **bare archetype turn** (`GrammarReversal` / `ArchetypeReversal`), which is the more dangerous
+   because it looks built: the room reverses, the light moves, and everyone in the ring is standing
+   in the same one. Also empty. Before this merge fifty-eight seats were on the second.
+3. **Design's eight arrive at their positions** — 1 contract, 2 endless, 3 release, 4 press,
+   6 known, 27 membrane, 28 triple, 102 dissolve — asserted as the **concrete mechanism type**, not
+   as the enum case, because the case is satisfied by the placeholder turn that stands in for a room
+   Design named and Code had not built. And nobody else is authored.
+4. **Sister divergence in all nine rings, and all 102 legible at both adaptations.**
+
+### The finding: a ruler wide enough to truncate nobody drowns the rooms that make few marks
+
+The first run failed twice — Ring 1 kp **3 and 4 at 0.037**, and Ring 4 kp 56 and 64 at 0.073 —
+both under Design's tenth. kp 3 and kp 4 are `release` and `press`, Design's own authored opposites
+and the Gate itself. Two rooms that could not be more different should not have been able to fail.
+
+They had not. **The ruler was measuring its own empty slots.** The print width was taken as the most
+marks any room of the ring makes, plus two, so that nothing anywhere was truncated — and Ring 1's
+rooms are wildly uneven, one of them working a hundred and seventy-two marks where the Gate's two
+work a handful. At a width of 174 the Gate's prints came out nine parts padding to one part room,
+and the padding matched, because an unused slot reads `a|<slot>|-` in every room that has one.
+
+The fix is at the comparison and not at the width: **a component both prints left empty is not read
+at all.** It cannot hide a difference — the skipped components are identical *and* silent in both
+rooms — it only stops the absence of a mark from being counted as agreement, and it moves this
+measure back toward Design's own `divergence`, which walked a chamber's real objects and had no
+empty slots to count. The bar was not touched. kp 3 against kp 4 then reads **0.209**, and every
+ring clears the tenth.
+
+This is the dilution Ring 2's suite named, arriving from the other side. `refusesDilution` catches a
+print that is mostly padding in *every* room of a ring; it cannot catch a *pair* that happens to be
+padded in the same places, and it reported a healthy 0.178 constant share for Ring 1 while the Gate
+was reading as one room. Both guards now stand.
+
+### The numbers
+
+Closest pair in each ring, over the components at least one of the two rooms used:
+
+| Ring | Seats | Closest pair | Divergence | Constant share |
+|---|---|---|---|---|
+| 1 · Trailokyamohana | 28 | 3 · 4 | **0.209** | 0.178 |
+| 2 · Sarvāśāparipūraka | 16 | 36 · 44 | **0.414** | 0.117 |
+| 3 · Sarva-Saṅkṣobhaṇa | 8 | 46 · 52 | **0.263** | 0.090 |
+| 4 · Sarva-Saubhāgyadāyaka | 14 | 56 · 64 | **0.108** | 0.070 |
+| 5 · Sarvārthasādhaka | 10 | 67 · 70 | **0.199** | 0.173 |
+| 6 · Sarva-Rakṣākara | 10 | 78 · 84 | **0.344** | 0.317 |
+| 7 · Sarva-Rogahara | 12 | 88 · 96 | **0.303** | 0.143 |
+| 8 · Sarva-Siddhiprada | 3 | 99 · 100 | **0.682** | 0.191 |
+| 9 · Bindu | 1 | — | — | — |
+
+**Nothing blurs.** The narrowest margin in the instrument is Ring 4's kp 56 against kp 64 at 0.108,
+eight thousandths above the bar — the one pair worth watching if Sampradāya is ever touched again,
+and the reason its own suite's finding (one gesture at fourteen distances, told apart by distance
+alone) is the least redundant in the outer climb. Ring 8's three are the furthest apart of any
+ring's closest pair, which is the Triad's own suite paid for twice: kp 99 and kp 101 share one
+physics by Design's rule order, and the room tells them apart by which corner is hers.
+
+All 102 render neither black, nor blown out, nor flat, at the first adaptation and past the second.
+
+**Full suite: 624 tests, 0 failures, 0 Swift warnings.** The eleven skips are the opt-in spike
+benchmarks, unchanged.
