@@ -1,4 +1,4 @@
-button|#nd Avaraṇa, ##, ›|0|0.00|105.50|375.00|84.00
+button|#nd Avaraṇa, #, ›|0|0.00|105.50|375.00|84.00
 button|Ah · han · KAH · rah · kar · shi · nee, She who attracts the I-sense|0|0.00|300.50|375.00|45.50
 button|Aht · MAH · kar · shi · nee, She who attracts the Self|0|0.00|801.00|375.00|45.50
 button|Am · RI · tah · kar · shi · nee, She who attracts Immortality|0|0.00|846.50|375.00|45.50
@@ -16,7 +16,7 @@ button|Shab · DAH · kar · shi · nee, She who attracts Sound|0|0.00|346.00|37
 button|Smri · TYAH · kar · shi · nee, She who attracts Memory|0|0.00|664.50|375.00|45.50
 button|Spar · SHAH · kar · shi · nee, She who attracts Touch|0|0.00|391.50|375.00|45.50
 button||0|315.00|36.00|44.00|44.00
-text|##|0|337.00|130.00|14.00|13.00
+text|#|0|337.00|130.00|14.00|13.00
 text|#nd Avaraṇa|0|88.00|134.75|109.50|25.50
 text|NINE RINGS · ONE HUNDRED AND TWO|0|48.25|78.50|278.50|13.00
 text|The Field|0|124.25|34.00|126.50|36.50

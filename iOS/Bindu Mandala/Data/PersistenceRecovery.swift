@@ -35,6 +35,18 @@ enum PersistenceRecovery {
             return ModelConfiguration(schema: schema)
         }
 
+        // 0 — a UI-test launch that asked for a store of its own. Nothing on
+        //     disk is opened, moved or deleted; the practitioner's store is
+        //     simply not consulted. DEBUG-only, by `AppRuntime`.
+        if AppRuntime.usesEphemeralStore {
+            do {
+                let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                return try ModelContainer(for: schema, configurations: config)
+            } catch {
+                log.error("Ephemeral store failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
         // 1 — the normal on-disk store, migrated by the versioned plan.
         do {
             return try ModelContainer(for: schema,

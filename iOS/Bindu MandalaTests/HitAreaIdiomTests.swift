@@ -189,6 +189,27 @@ final class HitAreaIdiomTests: XCTestCase {
                       "the rename field's grown box is not tappable")
     }
 
+    /// The Portrait's export is behind a long press on the artwork, and every
+    /// layer inside that artwork sets `.allowsHitTesting(false)` — so the ZStack
+    /// had no hit-testable content and the press had nothing to land on. Its hit
+    /// area was not 41 pt, as audit §H4 measured from the button it opens; it was
+    /// nothing at all, and `HitAreaTests` could not reach the sheet on a running
+    /// app. A `.contentShape` over the artwork's own square is what makes the
+    /// gesture real. It draws nothing, so the composition does not move.
+    func testThePortraitsArtworkIsPressable() {
+        guard let f = file("Views/Memory/PortraitMandalaView.swift") else {
+            return XCTFail("PortraitMandalaView is gone")
+        }
+        guard let mandala = Rx.first(#"private var mandala: some View \{[\s\S]*?\n    \}"#, f.text) else {
+            return XCTFail("`mandala` is gone from PortraitMandalaView")
+        }
+        XCTAssertTrue(mandala.contains("onLongPressGesture"),
+                      "the Portrait no longer offers the hold that makes the image")
+        XCTAssertTrue(Rx.matches(#"\.contentShape\("#, mandala),
+                      "the long press sits on an artwork whose every layer refuses hit testing, "
+                      + "so it can never fire — the export is unreachable, not small")
+    }
+
     // MARK: The growth is paid for — the numbers, not just the intent
     //
     // Each line is the *other side* of a growth above. Remove a compensation

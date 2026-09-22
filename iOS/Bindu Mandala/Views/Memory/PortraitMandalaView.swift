@@ -129,6 +129,12 @@ struct PortraitMandalaView: View {
 
     private var mandala: some View {
         portraitArtwork(diameter: diameter)
+            // Every layer inside the artwork sets `.allowsHitTesting(false)`, so
+            // the ZStack has no hit-testable content of its own and the long
+            // press below had nothing at all to land on — the export was
+            // unreachable, not merely small. The shape is the artwork's own
+            // square; it draws nothing and moves nothing.
+            .contentShape(Rectangle())
             .onLongPressGesture(minimumDuration: 0.9) { holdToExport() }
     }
 

@@ -1,4 +1,4 @@
-button|# AM|0|252.50|198.00|80.50|34.50
+button|# ~|0|252.50|198.00|80.50|34.50
 button|#nd Avaraṇa|0|0.00|108.50|375.00|84.00
 button|Ah · han · KAH · rah · kar · shi · nee, not yet written to|0|0.00|340.50|375.00|73.50
 button|Aht · MAH · kar · shi · nee, not yet written to|0|0.00|1154.50|375.00|73.50
@@ -40,7 +40,7 @@ image|Forward|8|347.00|811.50|5.50|9.50
 image|Forward|9|347.00|885.50|5.50|9.50
 switch|Let her arrive|0|42.00|152.00|291.00|28.00
 switch||0|272.00|152.00|63.00|28.00
-text|# AM|0|264.50|205.00|40.50|20.50
+text|# ~|0|264.50|205.00|40.50|20.50
 text|#nd Avaraṇa|0|88.00|137.75|109.50|25.50
 text|Ahaṅkārākarṣiṇī|0|43.00|354.50|145.00|24.50
 text|Ahaṅkārākarṣiṇī|1|56.00|376.00|104.00|19.50

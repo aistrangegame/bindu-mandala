@@ -78,15 +78,51 @@ struct ElementFrame: Equatable {
     /// 3:47 PM"), the threshold counts its seats — so a label carries digits
     /// that are different on every run. Digits are blanked for *identity* only;
     /// nothing here is ever read back to a walker.
+    ///
+    /// A **run** of digits collapses to one `#`, not one `#` per digit. Blanking
+    /// them one for one still lets the clock change the key: a baseline recorded
+    /// at 9:07 PM says `#:## PM` and the same screen read at 10:07 says
+    /// `##:## PM`, so the element reports as gone and a stranger reports as new —
+    /// a suite that goes red at ten o'clock and green at nine. The count of
+    /// digits is never anything this harness needs.
+    ///
+    /// The meridiem goes the same way. `SHE WAS FELT HERE · #:# PM` and
+    /// `#:# AM` are the same fact — the ceremony saying the hour back — and a
+    /// baseline recorded before midnight must not report the whole line gone and
+    /// a stranger arrived at ten past twelve. A run that starts in the evening
+    /// and ends after it is exactly the run this suite is for.
     /// The smallest distance any anchor travelled, signed.
     static func displacement(_ was: [Double], _ now: [Double]) -> Double {
         zip(was, now).map { $1 - $0 }.min(by: { abs($0) < abs($1) }) ?? 0
     }
 
     static func normalize(_ label: String) -> String {
-        String(label.map { $0.isNumber ? "#" : $0 })
+        var out = ""
+        var inDigits = false
+        for ch in label {
+            if ch.isNumber {
+                if !inDigits { out.append("#"); inDigits = true }
+            } else {
+                inDigits = false
+                out.append(ch)
+            }
+        }
+        return ElementFrame.foldClock(out)
             .replacingOccurrences(of: "\n", with: " ")
             .replacingOccurrences(of: "|", with: "/")
+    }
+
+    /// A blanked clock, with its meridiem folded: `#:# PM` → `#:# ~`. Scoped to
+    /// a meridiem that actually follows a blanked number, so "AM" as a word in a
+    /// walker's own sentence is left alone.
+    private static let clock = try? NSRegularExpression(pattern: "(#(?::#)*) (AM|PM)")
+
+    static func foldClock(_ s: String) -> String {
+        guard let clock else { return s }
+        let ns = s as NSString
+        return clock.stringByReplacingMatches(in: s, options: [],
+                                              range: NSRange(location: 0, length: ns.length),
+                                              withTemplate: "$1 ~")
     }
 }
 
@@ -102,7 +138,17 @@ struct SnapshotScreen {
     /// Time for staged arrivals to finish after `settles` is true. A screen read
     /// mid-stage reports a different set of elements every run.
     var afterSettle: TimeInterval = 1.6
-    static let base = ["SKIP_SUMMONS", "SKIP_HOMECOMING", "SYNC_OFF", "ENERGY_POS=29"]
+    /// `EPHEMERAL_STORE` is what makes this suite re-runnable. Two things in a
+    /// single `xcodebuild test` write a recognition — the shipped
+    /// `BinduMandalaUITests`, which runs before this class, and the ceremony
+    /// screen at the end of the roster below — and a Field read off a store that
+    /// remembers one says "felt here" beside a Śakti's name, which is a
+    /// different screen than the one every baseline was recorded from. With a
+    /// store of its own, each launch reads the instrument as a new install does,
+    /// and nothing it writes outlives it. The disk is never touched;
+    /// `EphemeralStoreTests` holds that, and holds the argument to DEBUG.
+    static let base = ["SKIP_SUMMONS", "SKIP_HOMECOMING", "SYNC_OFF",
+                       "ENERGY_POS=29", "EPHEMERAL_STORE"]
 
     static func text(_ app: XCUIApplication, _ fragment: String, _ timeout: TimeInterval = 25) -> Bool {
         app.staticTexts

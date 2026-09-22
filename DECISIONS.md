@@ -1588,3 +1588,37 @@ Three of them draw a shape — a capsule, a rounded box — that is the *backgro
 **The snapshot harness measures displacement, not size.** A string that grows because its type grew has not moved — it is anchored where its stack put it and the growth came out the other side. So an element's displacement on an axis is the smallest distance any of its three anchors travelled (leading edge, centre, trailing edge): if one held still, the element held still and only grew. A string shoved down by a taller neighbour has no anchor that held, and all three report the same shove. Without this the first run reported every widened label as a lateral move of half its growth, which is noise that would have buried the real ones.
 
 **Two things the harness has to be told, and now says out loud.** The ceremony screen *writes* — `AUTO_RECOGNIZE` records a real local recognition — so it runs last, and the Detail is captured on kp 33 rather than today's kp 29, because Her Moments would otherwise grow a row on every pass and the screen's geometry would differ from itself. A simulator that has been felt in still shows "felt here" on the Field next time, so the run erases its simulators first and the test fails with that instruction rather than with a mysterious diff. And the film is a cover over Settings — a `fullScreenCover` leaves the tree beneath it in the accessibility tree — so it is read as *what the cover added*, subtracting the screen underneath, rather than as nine tenths of a scrolled sheet whose last visible field prompt depends on where the flick stopped.
+## 2026-09-22 · Phase 4, run through — what the scaffolding said when it was finally run
+
+The previous run wrote the three suites and died before it ever executed them. Built and run, the branch was **552 unit tests green on the first build** — the legibility sweep, the hit-area ledger and the device slips all held — and the XCUITests, which had never been executed at all, were **red in seven places**. Every one of them is written down here, because a verification harness that has never run is a claim, and the difference between the claim and the fact is the whole reason this phase exists.
+
+### Two things in the harness that were reading the clock, not the composition
+
+**A run of digits is one `#`, not one `#` per digit.** `ElementFrame.normalize` blanked digits one for one, so the ceremony's own line — `SHE WAS FELT HERE · 9:07 PM` — recorded as `#:## PM` and came back at ten o'clock as `##:## PM`. A different key is a *gone* element and a *new* one, so the suite reported the Recognition screen half-destroyed and half-invented, every night, for one hour in twelve.
+
+**And the meridiem with it.** The Pro Max run crossed midnight and the same line went from `PM` to `AM`. `#:# PM` → `#:# ~`, scoped to a meridiem that follows a blanked number so a walker's own "AM" would be left alone. Both foldings were applied to the committed baselines mechanically — the same transformation on the stored key and the live one, never a re-record.
+
+### The ordering hole, and the answer that removes the requirement entirely
+
+`BinduMandalaUITests.testFeelHerOpensRecognition` records a real recognition, and it sorts before `FeltRegisterSnapshots`. So in a single `xcodebuild test` the Field was always read off a store that remembered one, said "felt here" beside Kāmākarṣiṇī, and reported a composition change that was really the container remembering the last run. The harness's own answer was "erase the simulator between passes", which is an instruction nobody will follow at two in the morning.
+
+**`EPHEMERAL_STORE`** replaces it: a UI-test launch opens a fresh in-memory store and leaves the disk alone, so every screen reads the instrument exactly as a new install does — which is the state every baseline was recorded in — and nothing a test writes outlives it. The suite is now order-independent and re-runnable, proved by running it green on a simulator that was *deliberately left dirty* from the previous pass.
+
+Law 8 is why it is shaped the way it is: the argument exists only under `#if DEBUG`, and the branch returns before anything on disk is opened, preserved or removed. `EphemeralStoreTests` holds both halves and holds it off by default.
+
+### Four controls the XCUITest could not reach, and why each one could not
+
+- **The film's CLOSE.** `OPEN_FILM` is read in `SettingsView`'s own state, so launching with it and never opening Settings measured nothing at all. The test opens Settings now.
+- **The Field's threshold row.** The predicate asked for `Āvaraṇa` and the row announces itself as "2nd Avaraṇa" — `[c]` folds case but not diacritics, so it matched nothing. `[cd]`, and the row is measured wherever it exists.
+- **The threshold and the celestial strip, where the data is not there.** Both are `if let` on rows that live only in Airtable; under `SYNC_OFF` there is no āvaraṇa and no Nityā, and the committed `rite` baseline shows the strip as the moon glyph with no button beneath it. A data absence and a control under the floor are not allowed to look alike, so each is measured where it exists and **skipped out loud** where it does not, with its source pin named in the skip.
+- **The Portrait's export — and this one was a real defect, not a harness gap.** Every layer of the artwork sets `.allowsHitTesting(false)`, so the ZStack had no hit-testable content and the long press that makes the image **had nothing to land on**. The export has never been reachable. Audit §H4 measured it at ≈41 pt from the button it opens; the truth was that the button never appeared. A `.contentShape(Rectangle())` over the artwork's own square fixes it — it draws nothing and moves nothing — and `HitAreaIdiomTests` now holds the gesture and its shape together.
+
+### The one live number this harness will not pretend to read
+
+Inside the export sheet, **everything reports at about 0.96 of the points it is laid out in**: the pill and "close" both declare `minHeight: 44` and both come back 42.25, and the 16 pt Cormorant line between them reports 18.9 where it sets at 19.7. A reported height in there is not points on a screen. Growing the pill until the *reported* number cleared 44 would have meant fattening a drawn capsule by six points to satisfy a measurement that means nothing — the loud mistake §4 warns about. So this control's floor is held at the source, on the ledger that reads the real file, and the XCUITest proves the thing that was actually broken: that the sheet opens at all.
+
+### Where the felt register stands
+
+Green on all three device classes — iPhone 17 Pro Max, iPhone 17 and an SE-class screen — with the ten-screen composition lock passing against the pre-Phase-4 baselines on every one of them. 552 unit tests and 11 UI tests, 0 failures, 0 Swift warnings. Two UI tests skip with their reason on a simulator that has never synced; both are pinned at the source.
+
+**Contention, named rather than worked around.** A second branch was building and testing on this host throughout. `kAXErrorIPCTimeout`, "Early unexpected exit" and a 403-second launch all appeared and all passed on retry, unchanged — the charter's rule held exactly as written, and nothing was edited to make a busy machine go quiet.
