@@ -43,7 +43,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("Settings")
-                        .font(.custom(AppFont.cormorant, size: 19))
+                        .font(AppFont.sanskrit(19))
                         .tracking(0.6)
                         .foregroundStyle(Color.cream)
                 }
@@ -61,7 +61,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 18) {
                 Toggle(isOn: $summonsEnabled) {
                     Text("Let her arrive")
-                        .font(.custom(AppFont.cormorant, size: 18))
+                        .font(AppFont.sanskrit(18))
                         .foregroundStyle(Color.cream)
                 }
                 .tint(Color.gold)
@@ -72,7 +72,7 @@ struct SettingsView: View {
                 if summonsEnabled {
                     HStack {
                         Text("She arrives")
-                            .font(.system(size: 14))
+                            .font(AppFont.label(14))
                             .foregroundStyle(Color.cream.opacity(0.7))
                         Spacer()
                         Picker("", selection: $summonsHour) {
@@ -89,7 +89,7 @@ struct SettingsView: View {
                 }
 
                 Text("Once a day, never twice. If the rite is already done, she lets the evening pass in stillness.")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
@@ -106,7 +106,7 @@ struct SettingsView: View {
                 fieldRow(position: 14, defaultName: "Ram",
                          hint: "Holds her frequency.")
                 Text("These names appear on each Śakti's Detail screen and may be edited freely. They are personal to this practitioner.")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
@@ -116,7 +116,7 @@ struct SettingsView: View {
     private var bijaSection: some View {
         sectionShell("Bīja") {
             Text("Bīja values follow Airtable when connected. When offline, the cached syllables are used. Tap any bīja in a Śakti's Detail screen to hear her tone.")
-                .font(.custom(AppFont.cormorantItalic, size: 14))
+                .font(AppFont.voice(14))
                 .foregroundStyle(Color.cream.opacity(0.65))
                 .lineSpacing(5)
         }
@@ -130,7 +130,7 @@ struct SettingsView: View {
                     filmPresented = true
                 } label: {
                     Text("Remember the descent")
-                        .font(.custom(AppFont.cormorant, size: 18))
+                        .font(AppFont.sanskrit(18))
                         .tracking(0.6)
                         .foregroundStyle(Color.gold)
                         .frame(maxWidth: .infinity)
@@ -142,7 +142,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 Text("Each ring you have crossed, opening one by one.")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
@@ -154,7 +154,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Button(action: reEnterHomecoming) {
                     Text("Re-enter the Homecoming")
-                        .font(.custom(AppFont.cormorant, size: 18))
+                        .font(AppFont.sanskrit(18))
                         .tracking(0.6)
                         .foregroundStyle(Color.gold)
                         .frame(maxWidth: .infinity)
@@ -166,7 +166,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 Text("She will greet you again, as on the first day.")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
@@ -185,7 +185,7 @@ struct SettingsView: View {
                                              @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(title.uppercased())
-                .font(.system(size: 11.5))
+                .font(AppFont.label(11.5))
                 .tracking(2.2)
                 .foregroundStyle(Color.gold.opacity(0.85))
             content()
@@ -207,7 +207,7 @@ struct SettingsView: View {
                         .fill(shakti.cluster.color)
                         .frame(width: 6, height: 6)
                     Text(shakti.name)
-                        .font(.custom(AppFont.cormorant, size: 16))
+                        .font(AppFont.sanskrit(16))
                         .foregroundStyle(Color.cream)
                     Spacer()
                 }
@@ -217,7 +217,7 @@ struct SettingsView: View {
                     placeholder: defaultName
                 )
                 Text(hint)
-                    .font(.custom(AppFont.cormorantItalic, size: 12))
+                    .font(AppFont.voice(12))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .padding(.top, 4)
             }
@@ -269,7 +269,7 @@ private struct FieldNameField: View {
             ),
             prompt: Text(placeholder).foregroundStyle(Color.cream.opacity(0.55))
         )
-        .font(.custom(AppFont.cormorant, size: 18))
+        .font(AppFont.sanskrit(18))
         .foregroundStyle(Color.cream)
         .tint(Color.gold)
         .padding(.horizontal, 12)

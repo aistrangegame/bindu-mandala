@@ -39,6 +39,8 @@ struct LivingMandalaView: View {
     @State private var seats: [MandalaWorld.Seat] = []
     @State private var atmos: [Int: Atmosphere] = [:]
     @State private var countByKp: [Int: Int] = [:]
+    /// What each seat says to a voice, composed when the field changes (§4.4).
+    @State private var voices: [Int: MandalaVoice.Spoken] = [:]
 
     @State private var variant: TimeVariant = LunarPhaseService.currentTimeVariant()
     @State private var appliedLaunchArgs = false
@@ -63,6 +65,17 @@ struct LivingMandalaView: View {
                         countByKp: countByKp, flash: flash, constellation: constellation,
                         constellationStart: constellationStart,
                         tier: camera.tier, reduceMotion: reduceMotion)
+
+                    // The drawing has no accessibility tree; this is it. It
+                    // draws nothing and hit-tests nothing — the gesture catcher
+                    // below is still the only thing a finger reaches — and it
+                    // goes out of the tree entirely once the Bindu has opened,
+                    // so a voice is never offered a field that is no longer
+                    // there.
+                    MandalaAccessibilityLayer(
+                        camera: camera, size: geo.size, seats: seats, voices: voices,
+                        reachable: reachableKp, onActivate: activate)
+                        .accessibilityHidden(descent)
                 }
                 gestureCatcher
                 header
@@ -121,10 +134,10 @@ struct LivingMandalaView: View {
     private var header: some View {
         VStack(spacing: 5) {
             Text("Śrī Yantra")
-                .font(.custom(AppFont.cormorant, size: 24)).tracking(1.4)
+                .font(AppFont.sanskrit(24)).tracking(1.4)
                 .foregroundStyle(Color.cream)
             Text(tierHint)
-                .font(.system(size: 11.5)).tracking(1.6)
+                .font(AppFont.label(11.5)).tracking(1.6)
                 .foregroundStyle(Color.cream.opacity(0.55))
         }
         .padding(.top, 8)
@@ -253,10 +266,36 @@ struct LivingMandalaView: View {
 
     private func handleTap(at location: CGPoint) {
         guard let seat = nearestSeat(to: location) else { return }
+        activate(seat)
+    }
+
+    /// What arriving at a seat does — the fall to the Bindu at ring 9, her
+    /// significance on a first arrival, her full presence on a second.
+    ///
+    /// Lifted out of `handleTap(at:)` because a tap is no longer the only way
+    /// to arrive. VoiceOver does not hit-test: it activates an element's own
+    /// action, so `MandalaAccessibilityLayer` calls this directly. One function,
+    /// so the two ways in cannot drift into two different instruments.
+    private func activate(_ seat: MandalaWorld.Seat) {
         let ring = seat.shakti.ringNumber ?? 2
         if ring == 9 { openDescent(); return }
         if let f = focus, f.id == seat.id { Haptics.medium(); detailFor = seat.shakti }
         else { flyTo(seat) }
+    }
+
+    /// Which seats answer right now. When a seat is focused the field dims and
+    /// only she and her family are tappable; `nearestSeat(to:)` reads this set
+    /// and so does the spoken layer — so a voice is never offered a hundred
+    /// seats that have stopped responding.
+    ///
+    /// A set rather than a predicate, and computed once rather than per seat:
+    /// `familyKp` filters all 102 rows every time it is read, and both callers
+    /// ask about every seat there is. As a predicate that is ten thousand
+    /// comparisons per frame of a drag, for a fact that changes only when the
+    /// focus does.
+    private var reachableKp: Set<Int> {
+        guard let focused = focus else { return Set(seats.map(\.id)) }
+        return familyKp.union([focused.id])
     }
 
     /// Nearest tappable seat to a screen point. When a seat is focused, the dimmed
@@ -264,13 +303,8 @@ struct LivingMandalaView: View {
     private func nearestSeat(to point: CGPoint) -> MandalaWorld.Seat? {
         var best: MandalaWorld.Seat?
         var bestD = CGFloat.greatestFiniteMagnitude
-        let focusing = focus != nil
-        for seat in seats {
-            if focusing {
-                let k = kp(seat)
-                let isFocus = focus?.id == seat.id
-                if !isFocus && !familyKp.contains(k) { continue }
-            }
+        let reachable = reachableKp
+        for seat in seats where reachable.contains(seat.id) {
             let s = camera.screen(for: seat.point)
             let d = hypot(s.x - point.x, s.y - point.y)
             if d < bestD { bestD = d; best = seat }
@@ -383,13 +417,16 @@ struct LivingMandalaView: View {
         seats = MandalaWorld.seats(from: shaktis)
         var a: [Int: Atmosphere] = [:]
         var c: [Int: Int] = [:]
+        var v: [Int: MandalaVoice.Spoken] = [:]
         for s in shaktis {
             let k = s.khadgamalaPosition ?? s.position
             a[k] = Atmosphere.derive(from: s, at: variant)
             c[k] = s.serverRecognitionCount ?? 0
+            v[k] = MandalaVoice.spoken(for: s)
         }
         atmos = a
         countByKp = c
+        voices = v
     }
 
     private func applyLaunchArgs() {

@@ -43,7 +43,7 @@ struct RiteBlockView: View {
                 Circle().fill(atmo.accent).frame(width: 8, height: 8)
             }
             Text(kickerLabel.uppercased())
-                .font(.system(size: 11.5, weight: .regular))
+                .font(AppFont.label(11.5))
                 .tracking(3.0)
                 .foregroundStyle(atmo.accentBright)
         }
@@ -60,7 +60,7 @@ struct RiteBlockView: View {
     private func name(size: Double) -> some View {
         Button(action: ctx.onOpenDetail) {
             Text(c.name)
-                .font(.custom(AppFont.cormorant, size: size))
+                .font(AppFont.sanskrit(size))
                 .fontWeight(.light)
                 .tracking(size * 0.05)
                 .lineSpacing(2)
@@ -79,7 +79,7 @@ struct RiteBlockView: View {
     @ViewBuilder private var phon: some View {
         if let p = c.phonetic {
             Text(p.uppercased())
-                .font(.system(size: 12.5, weight: .regular))
+                .font(AppFont.label(12.5))
                 .tracking(3.0)
                 .foregroundStyle(Color.cream.opacity(0.5))
                 .padding(.top, 12)
@@ -90,7 +90,7 @@ struct RiteBlockView: View {
     private var know: some View {
         Button(action: ctx.onOpenDetail) {
             Text("know her ›")
-                .font(.custom(AppFont.cormorantItalic, size: 15))
+                .font(AppFont.voice(15))
                 .tracking(0.9)
                 .foregroundStyle(atmo.accentBright.opacity(0.92))
                 .padding(.vertical, 12)
@@ -114,7 +114,7 @@ struct RiteBlockView: View {
     @ViewBuilder private var quality: some View {
         if !c.quality.isEmpty {
             Text(c.quality)
-                .font(.custom(AppFont.cormorant, size: 25))
+                .font(AppFont.sanskrit(25))
                 .lineSpacing(4)
                 .foregroundStyle(atmo.accentBright)
                 .multilineTextAlignment(ctx.textAlign)
@@ -125,7 +125,7 @@ struct RiteBlockView: View {
 
     private var prompt: some View {
         Text("\u{201C}\(c.prompt)\u{201D}")
-            .font(.custom(AppFont.cormorantItalic, size: 20))
+            .font(AppFont.voice(20))
             .lineSpacing(6)
             .foregroundStyle(Color.cream.opacity(0.82))
             .multilineTextAlignment(ctx.textAlign)

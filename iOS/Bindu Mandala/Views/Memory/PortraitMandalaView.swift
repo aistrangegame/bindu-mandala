@@ -103,11 +103,11 @@ struct PortraitMandalaView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Text("THE PORTRAIT MANDALA")
-                .font(.system(size: 11))
+                .font(AppFont.label(11))
                 .tracking(3.2)
                 .foregroundStyle(Color.gold.opacity(0.70))
             Text("your face in the instrument")
-                .font(.custom(AppFont.cormorantItalic, size: 17))
+                .font(AppFont.voice(17))
                 .tracking(0.3)
                 .foregroundStyle(Color.cream.opacity(0.62))
         }
@@ -118,7 +118,7 @@ struct PortraitMandalaView: View {
 
     private var whisper: some View {
         Text("she is felt, not measured")
-            .font(.custom(AppFont.cormorantItalic, size: 13))
+            .font(AppFont.voice(13))
             .tracking(0.5)
             .foregroundStyle(Color.cream.opacity(0.55))
             .multilineTextAlignment(.center)
@@ -585,13 +585,13 @@ private struct ShareSheetView: View {
                 .padding(.top, 24)
 
             Text("a portrait of your attention")
-                .font(.custom(AppFont.cormorantItalic, size: 16))
+                .font(AppFont.voice(16))
                 .tracking(0.4)
                 .foregroundStyle(Color.cream.opacity(0.60))
 
             ShareLink(item: image, preview: SharePreview("Bindu Mandala Portrait", image: image)) {
                 Text("hold this image".uppercased())
-                    .font(.system(size: 11))
+                    .font(AppFont.label(11))
                     .tracking(2.4)
                     .foregroundStyle(Color.cream)
                     .padding(.horizontal, 28)
@@ -604,7 +604,7 @@ private struct ShareSheetView: View {
             .buttonStyle(.plain)
 
             Button("close") { dismiss() }
-                .font(.custom(AppFont.cormorantItalic, size: 14))
+                .font(AppFont.voice(14))
                 .foregroundStyle(Color.cream.opacity(0.55))
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())

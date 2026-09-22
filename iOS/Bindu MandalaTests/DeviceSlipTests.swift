@@ -94,10 +94,16 @@ final class DeviceSlipTests: XCTestCase {
         }) else { return XCTFail("the Detail no longer prints her quality description") }
 
         let font = site.chain.prefix(160)
-        XCTAssertTrue(font.contains("AppFont.cormorant"),
+        // Cormorant is reached through `AppFont.sanskrit` / `.voice` since §4.3
+        // made the tokens scale (`Font.custom(_:size:relativeTo:)`); the face is
+        // the same face, and naming the token here rather than the PostScript
+        // name is what keeps this check about the *face* and not about the
+        // spelling of the call.
+        XCTAssertTrue(font.contains("AppFont.sanskrit") || font.contains("AppFont.voice")
+                      || font.contains("AppFont.cormorant"),
                       "the one body paragraph on the Detail is still set in a system sans "
                       + "(device audit, Also-observed 6) — \(font)")
-        XCTAssertFalse(font.contains(".font(.system("),
+        XCTAssertFalse(font.contains(".font(.system(") || font.contains("AppFont.label("),
                        "the system face is back on the quality paragraph — \(font)")
     }
 
@@ -108,7 +114,8 @@ final class DeviceSlipTests: XCTestCase {
                       + "system's face (device audit, Also-observed 6)")
         guard let item = Rx.first(#"ToolbarItem\(placement: \.principal\)[\s\S]{0,400}?\n {16}\}"#, f.text)
         else { return XCTFail("the principal toolbar item is gone") }
-        XCTAssertTrue(item.contains("AppFont.cormorant"),
+        XCTAssertTrue(item.contains("AppFont.sanskrit") || item.contains("AppFont.voice")
+                      || item.contains("AppFont.cormorant"),
                       "the Settings title is in the toolbar but not in Cormorant")
         XCTAssertTrue(item.contains("\"Settings\""),
                       "the principal item says something other than the sheet's own name")

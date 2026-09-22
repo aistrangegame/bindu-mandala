@@ -137,14 +137,14 @@ struct WellView: View {
             // The title keeps clear of the hamburger's lane on both sides (it
             // ran into it on the SE), shrinking rather than colliding.
             Text("Your Letters to Them")
-                .font(.custom(AppFont.cormorant, size: 30))
+                .font(AppFont.sanskrit(30))
                 .tracking(1.6)
                 .foregroundStyle(Color.gold)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .padding(.horizontal, 52)
             Text("Speak to her directly. She is listening.".uppercased())
-                .font(.system(size: 11))
+                .font(AppFont.label(11))
                 .tracking(2.4)
                 .foregroundStyle(Color.cream.opacity(0.5))
                 .multilineTextAlignment(.center)
@@ -203,7 +203,7 @@ private struct WellRing: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 10) {
                         Text(ringName)
-                            .font(.custom(AppFont.cormorant, size: 21))
+                            .font(AppFont.sanskrit(21))
                             .tracking(0.6)
                             .foregroundStyle(open ? ringAtmo.accentBright : Color.cream)
                         if holdsWriting {
@@ -215,14 +215,14 @@ private struct WellRing: View {
                     }
                     if let sub = avarana?.subtitle, !sub.isEmpty {
                         Text(sub)
-                            .font(.custom(AppFont.cormorantItalic, size: 14.5))
+                            .font(AppFont.voice(14.5))
                             .foregroundStyle(Color.cream.opacity(0.55))
                     }
                 }
                 Spacer(minLength: 8)
 
                 Text("›")
-                    .font(.system(size: 15))
+                    .font(AppFont.label(15))
                     .foregroundStyle(Color.cream.opacity(0.5))
                     .rotationEffect(.degrees(open ? 90 : 0))
             }
@@ -282,23 +282,23 @@ private struct WellRing: View {
                 .padding(.top, 8)
             VStack(alignment: .leading, spacing: 4) {
                 Text(shakti.name)
-                    .font(.custom(AppFont.cormorant, size: 20))
+                    .font(AppFont.sanskrit(20))
                     .tracking(1.0)
                     .foregroundStyle(Color.cream)
                 if let firstLine {
                     Text(firstLine)
-                        .font(.custom(AppFont.cormorantItalic, size: 14))
+                        .font(AppFont.voice(14))
                         .foregroundStyle(Color.cream.opacity(0.6))
                         .lineLimit(2)
                 } else {
                     Text("You can speak to her here")
-                        .font(.custom(AppFont.cormorantItalic, size: 14))
+                        .font(AppFont.voice(14))
                         .foregroundStyle(Color.cream.opacity(0.5))
                 }
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")
-                .font(.system(size: 11))
+                .font(AppFont.label(11))
                 .foregroundStyle(Color.cream.opacity(0.3))
                 .padding(.top, 12)
         }
@@ -374,7 +374,7 @@ struct LetterEditorView: View {
                         // screen's three rule-4 sites — see the errata entry
                         // "Phase-4 items that landed inside Phase 2".
                         Text("Speak to her directly. She is listening.")
-                            .font(.custom(AppFont.cormorantItalic, size: 19))
+                            .font(AppFont.voice(19))
                             .foregroundStyle(Color.cream.opacity(0.5))
                             .padding(.horizontal, 26)
                             .padding(.top, 18)
@@ -382,7 +382,7 @@ struct LetterEditorView: View {
                     }
                     TextEditor(text: $draft.text)
                         .focused($focused)
-                        .font(.custom(AppFont.cormorant, size: 19))
+                        .font(AppFont.sanskrit(19))
                         .foregroundStyle(Color.cream.opacity(0.92))
                         .tint(Color.gold)
                         .scrollContentBackground(.hidden)
@@ -417,14 +417,14 @@ struct LetterEditorView: View {
                     Text("The Well").tracking(0.8)
                 }
                 .foregroundStyle(Color.gold)
-                .font(.system(size: 14))
+                .font(AppFont.label(14))
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Spacer()
             Text(shakti.name)
-                .font(.custom(AppFont.cormorant, size: 16))
+                .font(AppFont.sanskrit(16))
                 .tracking(1.2)
                 .foregroundStyle(Color.cream.opacity(0.8))
             Spacer()

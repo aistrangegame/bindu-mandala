@@ -172,13 +172,13 @@ struct DailyRiteView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Text(label)
-                            .font(.system(size: 11.5))
+                            .font(AppFont.label(11.5))
                             .tracking(1.0)
                             .foregroundStyle(Color.cream.opacity(0.62))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                         Text("›")
-                            .font(.system(size: 12))
+                            .font(AppFont.label(12))
                             .foregroundStyle(atmo.accentBright.opacity(0.75))
                     }
                     .padding(.horizontal, 24)
@@ -240,11 +240,11 @@ struct DailyRiteView: View {
         VStack(spacing: 14) {
             Button(action: triggerRecognition) {
                 Text("I feel her")
-                    .font(.custom(AppFont.cormorant, size: 23))
+                    .font(AppFont.sanskrit(23))
                     .tracking(2.0)
                     .foregroundStyle(Color.cream)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 60)
+                    .frame(minHeight: 60)
                     .background(
                         Capsule()
                             .fill(LinearGradient(colors: [Color.accentRed,
@@ -258,7 +258,7 @@ struct DailyRiteView: View {
             .accessibilityLabel("I feel her — record recognition of \(content.spokenName)")
 
             Text("\(content.kp) of 102" + (content.bija.map { " · bīja \($0)" } ?? ""))
-                .font(.system(size: 11))
+                .font(AppFont.label(11))
                 .tracking(1.6)
                 .foregroundStyle(Color.cream.opacity(0.55))
         }

@@ -70,6 +70,14 @@ enum FeltRegisterClassifications {
         + "which renders in the system face, to a principal toolbar item in Cormorant (§4.5), "
         + "which is a point or two of navigation-bar height. Every card is in the same order at "
         + "the same margin."
+        + "\n\n"
+        + "§4.3 adds a fraction of a point per row on top of that, and the bound went from 11 to "
+        + "14 to hold it. A scaled token is `Font.custom(_:size:relativeTo:)` rather than "
+        + "`Font.custom(_:size:)`, and a font measured against a text style carries that style's "
+        + "own line metrics — the same glyphs at the same point size, in a line box a hair "
+        + "taller. On one row it is invisible; Settings is eight cards deep, so its last two rows "
+        + "settled 12.5 pt against the 11 that had been classified. Measured, not estimated: on "
+        + "every other screen in the roster, nothing moved past the bound it already had."
 
     /// §4.2, the reported frame rather than the drawn one.
     private static let reportedFrame =
@@ -86,6 +94,52 @@ enum FeltRegisterClassifications {
     ///
     /// `screen` and `keyContains` read the same way they do in a shift.
     static let appeared: [(screen: String, keyContains: String, reason: String)] = [
+        // ── §4.4 · the Mandala, reachable ───────────────────────────────────
+        //
+        // The living Mandala is one `Canvas`, and a canvas has no accessibility
+        // tree — audit §H5: *"the 102 seats are invisible to VoiceOver."*
+        // `MandalaAccessibilityLayer` is the tree the drawing does not have: one
+        // element per seat that is on the screen, one per enclosure whose ring
+        // is, each standing where the canvas drew the thing it speaks for.
+        //
+        // **Nothing drawn changed.** Every element is a `Color.clear` and the
+        // whole layer is `allowsHitTesting(false)`, so the field's pan, pinch
+        // and tap still belong to the one gesture catcher underneath and not a
+        // pixel moved. What arrived is a hundred and eleven *announcements* —
+        // the composition of the spoken screen, which did not exist at all
+        // before. iOS reports them as buttons, because an element carrying an
+        // activate action is a button; that is why they are visible to this
+        // reader rather than invisible to it.
+        //
+        // Two entries per screen, because a seat and an enclosure say different
+        // things: every seat ends "…of the one hundred and two." and every
+        // enclosure names its form. On a simulator with `SYNC_OFF` only Ring 2's
+        // sixteen are seated, so sixteen and one arrive; on the full instrument
+        // it is a hundred and two and nine.
+        ("mandala", "of the one hundred and two.",
+         "§4.4. One spoken element per seated Śakti, standing where the canvas drew her. "
+         + "Nothing drawn moved: the layer is `Color.clear` and hit-tests nothing."),
+        ("mandala", "enclosure. ",
+         "§4.4. One spoken element per enclosure whose ring is on the screen, standing where "
+         + "the canvas writes its name."),
+
+        // The Detail is a `fullScreenCover`, and a cover leaves the screen
+        // beneath it in the tree — the committed baseline for `detail` carries
+        // the Mandala's own header and zoom column for exactly that reason. So
+        // the same seventeen arrive here, from the same layer, behind the sheet.
+        ("detail", "of the one hundred and two.",
+         "§4.4, behind the cover — the Detail's baseline already carries the Mandala beneath it."),
+        ("detail", "enclosure. ",
+         "§4.4, behind the cover — the Detail's baseline already carries the Mandala beneath it."),
+
+        // ── §4.4 · the tap-anywhere exit ────────────────────────────────────
+        ("recognition", "Close this moment and return.",
+         "§4.4. The whole ceremony is the way out, which gives a sighted walker a target the "
+         + "size of the glass and a VoiceOver walker nothing at all — there is no element under "
+         + "the finger to find. This is that element: `Color.clear`, hit-tests nothing, carries "
+         + "the action, and sorted last so the two Recognition lines are still what the screen "
+         + "says first. Their words and their 2.6 / 4.1 / 5.1 second staging are untouched."),
+
         ("settings", "text|Settings|1",
          "A second \"Settings\" — the principal toolbar item that says the sheet's name in "
          + "Cormorant (§4.5). `.navigationTitle(\"Settings\")` stays beneath it, because "
@@ -124,10 +178,10 @@ enum FeltRegisterClassifications {
             + "lines, their words and their 2.6 / 4.1 / 5.1 second staging are untouched."),
 
         // ── Settings ─────────────────────────────────────────────────────────
-        ClassifiedShift(screen: "settings", keyContains: "text|", maxDelta: 11, reason: settingsTitles),
-        ClassifiedShift(screen: "settings", keyContains: "button|", maxDelta: 11, reason: settingsTitles),
-        ClassifiedShift(screen: "settings", keyContains: "switch|", maxDelta: 11, reason: settingsTitles),
-        ClassifiedShift(screen: "settings", keyContains: "field|", maxDelta: 11, reason:
+        ClassifiedShift(screen: "settings", keyContains: "text|", maxDelta: 14, reason: settingsTitles),
+        ClassifiedShift(screen: "settings", keyContains: "button|", maxDelta: 14, reason: settingsTitles),
+        ClassifiedShift(screen: "settings", keyContains: "switch|", maxDelta: 14, reason: settingsTitles),
+        ClassifiedShift(screen: "settings", keyContains: "field|", maxDelta: 14, reason:
             settingsTitles + " The rename field also carries 2 pt of new touch area under its box "
             + "(§4.2) — the box itself is the size it was drawn, and the hint below gives the 2 pt "
             + "back, so nothing under it moves."),

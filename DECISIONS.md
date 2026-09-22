@@ -1622,3 +1622,125 @@ Inside the export sheet, **everything reports at about 0.96 of the points it is 
 Green on all three device classes — iPhone 17 Pro Max, iPhone 17 and an SE-class screen — with the ten-screen composition lock passing against the pre-Phase-4 baselines on every one of them. 552 unit tests and 11 UI tests, 0 failures, 0 Swift warnings. Two UI tests skip with their reason on a simulator that has never synced; both are pinned at the source.
 
 **Contention, named rather than worked around.** A second branch was building and testing on this host throughout. `kAXErrorIPCTimeout`, "Early unexpected exit" and a 403-second launch all appeared and all passed on retry, unchanged — the charter's rule held exactly as written, and nothing was edited to make a busy machine go quiet.
+
+## 2026-09-22 · Phase 4.3 and 4.4 — Dynamic Type, and VoiceOver on the Mandala
+
+### 4.4 · The 102 seats speak, and they are `other` elements rather than buttons
+
+The living Mandala is one `Canvas`. Its strokes are not views, so to VoiceOver the
+whole instrument was a blank rectangle — audit §H5's finding, and the reason the
+brief calls this the item that makes the instrument reachable at all.
+`MandalaAccessibilityLayer` is the tree the drawing does not have: one element per
+seat that is on the screen, one per enclosure whose ring is, each standing exactly
+where the canvas drew the thing it speaks for.
+
+**They declare no `.isButton` trait, and iOS gives them one anyway.** The intent was
+to keep them out of every suite that reads buttons off these screens —
+`HitAreaTests` measures every button's touch area on the running app,
+`FeltRegisterSnapshots` records every button's frame as the composition, and
+`SnapshotScreen.tapHamburger` finds the menu *by being the button in the
+top-trailing corner*. The first run said otherwise: all seventeen came back as
+`button`, because an accessibility element that carries an activate action **is** a
+button as far as the system is concerned, and these carry one so a voice can arrive
+at a seat. That is the right answer for the walker and it is not negotiable away, so
+it was written down instead: `FeltRegisterClassifications.appeared` now names the
+seats and the enclosures on the two screens the layer reaches, with the reason.
+Nothing drawn moved — the elements are `Color.clear` and hit-test nothing — and the
+hit-area walk was measured on the running app with them present and stayed green,
+because each is exactly the 44 × 44 the same rule asks of every other control.
+
+One hazard is left standing rather than papered over: `tapHamburger` finds a button
+by its corner, and a seat can sit in that corner. It reaches for the menu on one
+screen only, the Well, where the Mandala is not on the screen at all. If a later
+pass opens the menu from the Mandala, that helper needs a name to find rather than
+a corner.
+
+**The layer draws nothing and hit-tests nothing.** `allowsHitTesting(false)`, so the
+field's pan, pinch and tap all still belong to the one gesture catcher underneath
+and `nearestSeat(to:)` stays the single answer to "which seat is this". VoiceOver
+never hit-tests — it performs the element's own action — so `handleTap(at:)` was
+split: it finds the nearest seat and hands it to `activate(_:)`, and the spoken
+layer hands the same seat to the same function. One door, two ways to reach it, and
+a test that reads both files and holds them to it.
+
+**Her seat is spoken in words, not numerals.** A khaḍgamālā position is identity and
+the charter permits saying it. It is said as *"twenty-ninth of the one hundred and
+two"* rather than *"29 of 102"* — which means the whole spoken surface contains no
+numeral at all, and the never-measure detector has nothing to weigh. `LawsTests`
+already pins one non-identity digit shape in the tree; this phase adds none.
+
+**The transliteration, never the diacritics and never the Devanāgarī.** Sixteen of
+the 102 carry a `phonetic` field; the other 86 do not, and the brief says to speak
+the transliteration we have. `MandalaVoice.romanised(_:)` is an explicit table
+rather than a `stripDiacritics` transform, because stripping is wrong exactly where
+it matters: it turns `ś` into `s`, and *Sparsakarsini* is a different word from
+*Sparshakarshini*. The 16 phonetics are also repaired for an ear — the middle dots
+become spaces, and a syllable written in full capitals (`SHAH`, a stress mark to a
+reader) is title-cased, because a synthesiser spells an all-caps word out. The
+Devanāgarī line on the Detail is labelled as *what it is* and its string is never
+handed to a voice.
+
+**The labels are composed when the field changes, not when the camera moves.** The
+host rebuilds the spoken layer on every camera change, and a drag is sixty of those
+a second; romanising 102 names inside that is 102 string walks per frame on the
+screen the whole instrument is reached through. `MandalaVoice.spoken(for:)` runs in
+`rebuild()`, beside the atmospheres that are precomputed for the same reason, and
+the layer does geometry and nothing else. Both halves are held by a test that reads
+the two files.
+
+### 4.3 · Dynamic Type — three scaled tokens, and nine written-down exceptions
+
+Audit §H5 counted 152 fixed-size font sites in Views, zero text styles, zero
+`relativeTo:`. `AppFont` now vends three scaled tokens — `sanskrit` and `voice` as
+`Font.custom(_:size:relativeTo:)`, and `label` through `UIFontMetrics`, because
+`Font.system(size:)` has no `relativeTo:` of its own — and every meaningful site in
+the shipped screens goes through them.
+
+**The designed size is still the designed size.** At the default content size every
+token returns exactly the point size written at the call site, which is why the
+composition baselines recorded before this phase still pass unchanged. A test
+asserts that directly, because if it ever stops being true every `.geom` file in
+`iOS/SnapshotBaselines/` is measuring a different app.
+
+**A size is measured against the style it is nearest**, one table in `AppFont`, so
+no call site makes the judgement. This decides how *fast* a size grows: at the
+largest accessibility setting `caption2` roughly triples while `largeTitle` grows by
+about half. A 60 pt name that tripled would be four words on nine lines; an 11 pt
+strip that grew by half would still be unreadable.
+
+**Nine sites keep a fixed size, each pinned by exact file-and-source in
+`ScaledType.fixedByDesign`:** the three canvas-drawn strings the brief excepts in as
+many words (they have no line box to wrap into and no stack to push — growing them
+would overlap the seats they name, and §4.4 hands the same three strings to
+VoiceOver, which scales with the voice instead); the five marks centred in a fixed
+target (`+`, `−`, `⤢`, `♪`, `×`, `‹`), which are clipped rather than read if they
+grow past their own disc; and two drawings measured from the screen at run time
+rather than chosen — the ceremony's ghost bīja at 300 × the focal scale, and the
+Rite's name, already fitted to its box and then shrunk again. A tenth, the rite of
+entering's stroke-drawn Devanāgarī, is pinned rather than reached into: `Views/Rooms/`
+belongs to the open Phase 3 branch and the charter's parallelism rule is disjoint
+files. The pin is compared in both directions, so an exception whose site has gone
+fails as loudly as a new raw size.
+
+**Fixed heights became floors.** Four buttons and a bīja block stood in
+`.frame(height:)` — a box that cannot grow with its contents. They are
+`.frame(minHeight:)` now: the same number at the default size, a floor rather than a
+ceiling above it. A test refuses any `Text` with a font whose chain contains a fixed
+height, with one pinned exception: the card's close is the mark `×` at a fixed size
+in the 44 × 44 target `HitAreaIdiomTests` holds it to, where a floor would be a
+floor under something that cannot rise.
+
+**One number moved that was not type.** Settings' last two rows settled 12.5 pt
+against the 11 pt already classified for §4.1, and the bound went to 14. A scaled
+token is `Font.custom(_:size:relativeTo:)` rather than `Font.custom(_:size:)`, and a
+font measured against a text style carries that style's own line metrics: the same
+glyphs at the same point size, in a line box a hair taller. On one row it is
+invisible; Settings is eight cards deep. It is written into the classification with
+that sentence. Nothing on any other screen in the roster moved past a bound it
+already had.
+
+**What is not done, and why.** The zoom column's four glyphs and the card's close
+carry no accessibility label — audit §H5 lists them, and naming them changes what
+the composition snapshots read, so it is not folded into a type migration. The nine
+enclosures are spoken but the Mandala's header, its zoom column and the significance
+card are left at their existing accessibility, for the same reason.

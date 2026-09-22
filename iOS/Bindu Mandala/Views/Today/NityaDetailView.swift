@@ -29,13 +29,13 @@ struct NityaDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     Text(display.name)
-                        .font(.custom(AppFont.cormorant, size: 42))
+                        .font(AppFont.sanskrit(42))
                         .tracking(2.5)
                         .foregroundStyle(Color.cream)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(display.tithiLabel)
-                        .font(.system(size: 11.5))
+                        .font(AppFont.label(11.5))
                         .tracking(2.4)
                         .foregroundStyle(Color.gold.opacity(0.7))
 
@@ -48,7 +48,7 @@ struct NityaDetailView: View {
                     //  depended on the null-in-seed `quality` field.)
                     if !display.framing.isEmpty {
                         Text(display.framing)
-                            .font(.custom(AppFont.cormorantItalic, size: 21))
+                            .font(AppFont.voice(21))
                             .tracking(0.3)
                             .lineSpacing(4)
                             .foregroundStyle(Color.gold)
@@ -58,7 +58,7 @@ struct NityaDetailView: View {
                     // The fixed devotional prose — what a Nityā *is*. Always shown,
                     // per the prototype (rendered outside its full-moon branch).
                     Text(display.body)
-                        .font(.custom(AppFont.cormorant, size: 16.5))
+                        .font(AppFont.sanskrit(16.5))
                         .tracking(0.2)
                         .lineSpacing(6)
                         .foregroundStyle(Color.cream.opacity(0.7))

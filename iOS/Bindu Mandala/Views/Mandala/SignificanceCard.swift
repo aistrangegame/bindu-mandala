@@ -29,7 +29,7 @@ struct SignificanceCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(familyLabel.uppercased())
-                    .font(.system(size: 11.5))
+                    .font(AppFont.label(11.5))
                     .tracking(2.4)
                     .foregroundStyle(atmo.accentBright)
                 Spacer()
@@ -45,23 +45,23 @@ struct SignificanceCard: View {
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(shakti.name)
-                        .font(.custom(AppFont.cormorant, size: 30))
+                        .font(AppFont.sanskrit(30))
                         .foregroundStyle(Color.cream)
                     if let phonetic {
                         Text(phonetic.uppercased())
-                            .font(.system(size: 11.5)).tracking(2)
+                            .font(AppFont.label(11.5)).tracking(2)
                             .foregroundStyle(Color.cream.opacity(0.55))
                             .padding(.top, 7)
                     }
                     if !shakti.quality.trimmingCharacters(in: .whitespaces).isEmpty {
                         Text(shakti.quality)
-                            .font(.custom(AppFont.cormorant, size: 18))
+                            .font(AppFont.sanskrit(18))
                             .foregroundStyle(atmo.accentBright)
                             .padding(.top, 9)
                     }
                     if familyCount > 0 {
                         Text("threaded to \(familyCount) \(familyCount == 1 ? "sister" : "sisters")")
-                            .font(.custom(AppFont.cormorantItalic, size: 13))
+                            .font(AppFont.voice(13))
                             .foregroundStyle(Color.cream.opacity(0.5))
                             .padding(.top, 8)
                     }
@@ -71,11 +71,11 @@ struct SignificanceCard: View {
                     Button(action: onSound) {
                         VStack(spacing: 4) {
                             Text(bijaSyllable)
-                                .font(.custom(AppFont.cormorant, size: 40))
+                                .font(AppFont.sanskrit(40))
                                 .foregroundStyle(Color.gold)
                                 .shadow(color: atmo.glow, radius: 18)
                             Text("SOUND HER")
-                                .font(.system(size: 11.5)).tracking(1.8)
+                                .font(AppFont.label(11.5)).tracking(1.8)
                                 .foregroundStyle(Color.cream.opacity(0.55))
                         }
                     }
@@ -85,7 +85,7 @@ struct SignificanceCard: View {
 
             if let significance {
                 Text(significance)
-                    .font(.custom(AppFont.cormorantItalic, size: 14))
+                    .font(AppFont.voice(14))
                     .lineSpacing(4)
                     .foregroundStyle(Color.cream.opacity(0.72))
                     .lineLimit(3)
@@ -94,11 +94,11 @@ struct SignificanceCard: View {
 
             Button(action: onOpenDetail) {
                 Text("enter her presence")
-                    .font(.custom(AppFont.cormorant, size: 17))
+                    .font(AppFont.sanskrit(17))
                     .tracking(1.6)
                     .foregroundStyle(Color.cream)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 46)
+                    .frame(minHeight: 46)
                     .background(Capsule().fill(Color.accentRed))
             }
             .buttonStyle(.plain)

@@ -115,11 +115,11 @@ struct ShaktiDetailView: View {
             showRecognition = true
         } label: {
             Text("I feel her")
-                .font(.custom(AppFont.cormorant, size: 20))
+                .font(AppFont.sanskrit(20))
                 .tracking(2.4)
                 .foregroundStyle(Color.cream)
                 .frame(maxWidth: .infinity)
-                .frame(height: 56)
+                .frame(minHeight: 56)
                 .background(
                     Capsule()
                         .fill(LinearGradient(
@@ -144,7 +144,7 @@ struct ShaktiDetailView: View {
                 HStack(spacing: 6) {
                     Text("‹").font(.system(size: 22, weight: .light))
                     Text(backLabel)
-                        .font(.custom(AppFont.cormorantItalic, size: 16))
+                        .font(AppFont.voice(16))
                         .tracking(0.4)
                 }
                 .foregroundStyle(Color.gold)
@@ -155,7 +155,7 @@ struct ShaktiDetailView: View {
             Spacer()
             if let kp = shakti.khadgamalaPosition {
                 Text("\(kp) · 102")
-                    .font(.system(size: 11))
+                    .font(AppFont.label(11))
                     .tracking(1.6)
                     .foregroundStyle(Color.cream.opacity(0.55))
             }
@@ -170,14 +170,14 @@ struct ShaktiDetailView: View {
     private var heroSection: some View {
         VStack(spacing: 0) {
             Text(heroKicker)
-                .font(.system(size: 11))
+                .font(AppFont.label(11))
                 .tracking(3.0)
                 .foregroundStyle(atmo.accentBright)
                 .multilineTextAlignment(.center)
                 .padding(.bottom, 18)
 
             Text(shakti.name)
-                .font(.custom(AppFont.cormorant, size: 44))
+                .font(AppFont.sanskrit(44))
                 .fontWeight(.light)
                 .tracking(1.5)
                 .foregroundStyle(Color.cream)
@@ -190,14 +190,20 @@ struct ShaktiDetailView: View {
 
             if let dev = shakti.devanagari, !dev.isEmpty {
                 Text(dev)
-                    .font(.system(size: 22))
+                    .font(AppFont.label(22))
                     .foregroundStyle(Color.cream.opacity(0.7))
                     .padding(.top, 12)
+                    // §4.4. Handed to a voice as text, this line is read out
+                    // character by character — `\u{0938}`, `\u{094D}`, `\u{092A}` — which tells
+                    // a walker nothing and takes a long time doing it. The line
+                    // is labelled as *what it is*; her name itself has already
+                    // been spoken above, transliterated.
+                    .accessibilityLabel(MandalaVoice.devanagariLabel)
             }
 
             if !shakti.phonetic.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(shakti.phonetic.uppercased())
-                    .font(.system(size: 12))
+                    .font(AppFont.label(12))
                     .tracking(2.6)
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .padding(.top, 12)
@@ -211,7 +217,7 @@ struct ShaktiDetailView: View {
             let quality = shakti.quality.trimmingCharacters(in: .whitespaces)
             if !quality.isEmpty {
                 Text(shakti.quality)
-                    .font(.custom(AppFont.cormorant, size: 23))
+                    .font(AppFont.sanskrit(23))
                     .tracking(0.4)
                     .foregroundStyle(atmo.accentBright)
                     .multilineTextAlignment(.center)
@@ -222,7 +228,7 @@ struct ShaktiDetailView: View {
             let qDesc = shakti.qualityDescription.trimmingCharacters(in: .whitespaces)
             if !qDesc.isEmpty {
                 Text(shakti.qualityDescription)
-                    .font(.custom(AppFont.cormorant, size: 15))
+                    .font(AppFont.sanskrit(15))
                     .lineSpacing(6)
                     .foregroundStyle(Color.cream.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -240,7 +246,7 @@ struct ShaktiDetailView: View {
                         .frame(width: 7, height: 7)
                         .shadow(color: seatColor.opacity(0.7), radius: 4)
                     Text(shakti.cluster.label.uppercased())
-                        .font(.system(size: 11))
+                        .font(AppFont.label(11))
                         .tracking(1.8)
                         .foregroundStyle(Color.cream.opacity(0.5))
                 }
@@ -319,14 +325,14 @@ struct ShaktiDetailView: View {
             let color = pillColor(for: shakti.status)
             VStack(spacing: 8) {
                 Text(shakti.status.label.uppercased())
-                    .font(.system(size: 11.5))
+                    .font(AppFont.label(11.5))
                     .tracking(2.0)
                     .foregroundStyle(color)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 6)
                     .background(Capsule().stroke(color, lineWidth: 1))
                 Text(shakti.status == .embodied ? "she lives in you" : "felt into being")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
             }
         }
@@ -337,7 +343,7 @@ struct ShaktiDetailView: View {
         let breath = 0.55 + 0.45 * Double(breathPhase)
         return VStack(spacing: -12) {
             Text(shakti.status.label.uppercased())
-                .font(.system(size: 11.5))
+                .font(AppFont.label(11.5))
                 .tracking(2.0)
                 .foregroundStyle(color)
                 .padding(.horizontal, 16)
@@ -378,7 +384,7 @@ struct ShaktiDetailView: View {
                     }
                 }
             Text("hold to cross into \(target.label.lowercased())")
-                .font(.custom(AppFont.cormorantItalic, size: 13))
+                .font(AppFont.voice(13))
                 .foregroundStyle(Color.cream.opacity(0.5))
         }
     }
@@ -423,7 +429,7 @@ struct ShaktiDetailView: View {
         if !shakti.somaticPoetry.trimmingCharacters(in: .whitespaces).isEmpty {
             section("Somatic Signature", divider: true) {
                 Text(shakti.somaticPoetry)
-                    .font(.custom(AppFont.cormorantItalic, size: 17))
+                    .font(AppFont.voice(17))
                     .lineSpacing(8)
                     .foregroundStyle(Color.cream.opacity(0.75))
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -466,27 +472,27 @@ struct ShaktiDetailView: View {
                         }
                     }
                     Text(parsed.syllable)
-                        .font(.custom(AppFont.cormorant, size: 84))
+                        .font(AppFont.sanskrit(84))
                         .fontWeight(.light)
                         .foregroundStyle(Color.gold)
                         .shadow(color: bijaSounding ? atmo.accent : atmo.glow,
                                 radius: bijaSounding ? 70 : 40)
                         .scaleEffect(1 + bijaPulse * 0.05)
                 }
-                .frame(height: 118)
+                .frame(minHeight: 118)
                 .contentShape(Rectangle())
                 .onTapGesture { soundBija() }
                 .accessibilityLabel("Bija syllable: \(parsed.syllable). Tap to hear.")
                 .accessibilityAddTraits(.isButton)
 
                 Text(bijaSounding ? "SOUNDING" : "TAP TO SOUND HER")
-                    .font(.system(size: 11.5))
+                    .font(AppFont.label(11.5))
                     .tracking(2.2)
                     .foregroundStyle(bijaSounding ? atmo.accentBright : Color.cream.opacity(0.55))
 
                 if let description = parsed.description {
                     Text(description)
-                        .font(.custom(AppFont.cormorantItalic, size: 14))
+                        .font(AppFont.voice(14))
                         .lineSpacing(8)
                         .foregroundStyle(Color.cream.opacity(0.55))
                         .multilineTextAlignment(.center)
@@ -532,7 +538,7 @@ struct ShaktiDetailView: View {
                     }
                     .frame(width: 28, height: 28)
                     Text(shakti.tattva)
-                        .font(.system(size: 15))
+                        .font(AppFont.label(15))
                         .foregroundStyle(Color.cream.opacity(0.7))
                 }
             }
@@ -542,11 +548,11 @@ struct ShaktiDetailView: View {
     private var fieldConnectionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Field Connection — \(shakti.fieldName ?? "")".uppercased())
-                .font(.system(size: 11))
+                .font(AppFont.label(11))
                 .tracking(2.0)
                 .foregroundStyle(Color.cream.opacity(0.5))
             Text(shakti.fieldNote ?? "")
-                .font(.custom(AppFont.cormorantItalic, size: 15))
+                .font(AppFont.voice(15))
                 .lineSpacing(7)
                 .foregroundStyle(Color.cream.opacity(0.65))
         }
@@ -592,7 +598,7 @@ struct ShaktiDetailView: View {
                     .fill(Color.gold.opacity(0.3))
                     .frame(width: 32, height: 0.5)
                 Text(v)
-                    .font(.custom(AppFont.cormorantItalic, size: 16))
+                    .font(AppFont.voice(16))
                     .tracking(0.6)
                     .lineSpacing(7)
                     .foregroundStyle(Color.gold)
@@ -609,7 +615,7 @@ struct ShaktiDetailView: View {
         if let v = shakti.iconography, !v.isEmpty {
             section("Iconography") {
                 Text(v)
-                    .font(.custom(AppFont.cormorantItalic, size: 14.5))
+                    .font(AppFont.voice(14.5))
                     .lineSpacing(8)
                     .foregroundStyle(Color.cream.opacity(0.58))
                     .fixedSize(horizontal: false, vertical: true)
@@ -630,7 +636,7 @@ struct ShaktiDetailView: View {
                     .frame(height: 1)
                     .padding(.bottom, 22)
                 Text(v)
-                    .font(.custom(AppFont.cormorantItalic, size: 16))
+                    .font(AppFont.voice(16))
                     .tracking(0.2)
                     .lineSpacing(9)
                     .foregroundStyle(Color.gold)
@@ -646,7 +652,7 @@ struct ShaktiDetailView: View {
         if let v = shakti.shaktiFamilyRaw, !v.isEmpty {
             section("Lineage") {
                 Text(v)
-                    .font(.custom(AppFont.cormorantItalic, size: 13.5))
+                    .font(AppFont.voice(13.5))
                     .lineSpacing(6)
                     .foregroundStyle(Color.cream.opacity(0.58))
                     .fixedSize(horizontal: false, vertical: true)
@@ -660,7 +666,7 @@ struct ShaktiDetailView: View {
         if let v = shakti.shaktiFunction, !v.isEmpty {
             section("Cosmic Function") {
                 Text(v)
-                    .font(.system(size: 13.5))
+                    .font(AppFont.label(13.5))
                     .lineSpacing(6)
                     .foregroundStyle(Color.cream.opacity(0.58))
                     .fixedSize(horizontal: false, vertical: true)
@@ -674,7 +680,7 @@ struct ShaktiDetailView: View {
         if let v = shakti.etymology, !v.isEmpty {
             section("Etymology") {
                 Text(v)
-                    .font(.custom(AppFont.cormorantItalic, size: 14))
+                    .font(AppFont.voice(14))
                     .lineSpacing(7)
                     .foregroundStyle(Color.cream.opacity(0.58))
                     .fixedSize(horizontal: false, vertical: true)
@@ -703,7 +709,7 @@ struct ShaktiDetailView: View {
                 } label: {
                     HStack(spacing: 12) {
                         Text(goDeeperExpanded ? "less" : "go deeper")
-                            .font(.custom(AppFont.cormorantItalic, size: 14))
+                            .font(AppFont.voice(14))
                             .tracking(1.4)
                             .foregroundStyle(Color.gold.opacity(0.78))
                         Rectangle()
@@ -749,7 +755,7 @@ struct ShaktiDetailView: View {
                     .padding(.bottom, 12)
             }
             Text(title.uppercased())
-                .font(.system(size: 11.5))
+                .font(AppFont.label(11.5))
                 .tracking(2.0)
                 .foregroundStyle(Color.cream.opacity(0.55))
                 .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)
@@ -767,7 +773,7 @@ struct ShaktiDetailView: View {
         if !loc.isEmpty {
             section("Bodily Seat") {
                 Text(loc)
-                    .font(.system(size: 15))
+                    .font(AppFont.label(15))
                     .foregroundStyle(Color.cream.opacity(0.7))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -835,7 +841,7 @@ private struct HerMomentsList: View {
                 }
             } else {
                 Text("She has not been felt here yet.")
-                    .font(.custom(AppFont.cormorantItalic, size: 14))
+                    .font(AppFont.voice(14))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .padding(.vertical, 6)
             }
@@ -854,18 +860,18 @@ private struct HerMomentsList: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(timestamp)
-                        .font(.system(size: 12))
+                        .font(AppFont.label(12))
                         .tracking(0.7)
                         .foregroundStyle(Color.cream.opacity(0.55))
                     if let moonPhase, !moonPhase.isEmpty {
                         Text("· \(moonPhase.lowercased())")
-                            .font(.custom(AppFont.cormorantItalic, size: 12))
+                            .font(AppFont.voice(12))
                             .foregroundStyle(Color.cream.opacity(0.50))
                     }
                 }
                 if let note, !note.isEmpty {
                     Text(note)
-                        .font(.custom(AppFont.cormorantItalic, size: 13))
+                        .font(AppFont.voice(13))
                         .foregroundStyle(Color.cream.opacity(0.6))
                 }
             }
