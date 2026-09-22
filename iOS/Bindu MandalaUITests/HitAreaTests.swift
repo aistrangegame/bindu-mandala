@@ -68,14 +68,13 @@ final class HitAreaTests: XCTestCase {
         assertReachable(control, "TheHundredTwoView · the threshold ›")
     }
 
-    // 3 · The descent film's only exit.
+    // 3 · The descent film's only exit. Opened by `OPEN_FILM` rather than by
+    //     scrolling Settings to its fourth card: that route needs four flicks
+    //     down a sheet whose height differs by device, and it failed outright on
+    //     a loaded host — which is a test that reports on the machine it ran on
+    //     rather than on the control it is named after.
     func testFilmCloseIsReachable() {
-        let app = launch(["START_TAB=well"])
-        SnapshotScreen.openSettings(app)
-        let open = app.buttons
-            .matching(NSPredicate(format: "label CONTAINS[c] 'Remember the descent'")).firstMatch
-        XCTAssertTrue(open.waitForExistence(timeout: 20), "Settings never offered the descent")
-        open.tap()
+        let app = launch(["START_TAB=well", "OPEN_FILM"])
         let control = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'close'")).firstMatch
         assertReachable(control, "DescentFilmView · CLOSE")
     }

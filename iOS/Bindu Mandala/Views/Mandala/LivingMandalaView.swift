@@ -124,8 +124,8 @@ struct LivingMandalaView: View {
                 .font(.custom(AppFont.cormorant, size: 24)).tracking(1.4)
                 .foregroundStyle(Color.cream)
             Text(tierHint)
-                .font(.system(size: 9.5)).tracking(1.6)
-                .foregroundStyle(Color.cream.opacity(0.42))
+                .font(.system(size: 11.5)).tracking(1.6)
+                .foregroundStyle(Color.cream.opacity(0.55))
         }
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -175,10 +175,27 @@ struct LivingMandalaView: View {
                 .font(.system(size: 20))
                 .foregroundStyle(active ? Color.gold : Color.cream.opacity(0.6))
                 .frame(width: 46, height: 46)
-                .background(Circle().fill(Color.ground.opacity(0.55))
+                .background(Circle().fill(controlWash)
                     .overlay(Circle().stroke(active ? Color.gold : dayAtmo.accentSoft, lineWidth: 1)))
         }
         .buttonStyle(.plain)
+    }
+
+    /// The ground under the zoom column. A flat disc — one opacity all the way
+    /// out to its rim — stamps a hard dark circle over any seat lit behind the
+    /// column (device audit, Also-observed 5). This is dense under the glyph,
+    /// where it has to be for the glyph to read against a lit seat, and reaches
+    /// *nothing* at the rim, so her light carries through the column instead of
+    /// ending at an edge.
+    private var controlWash: RadialGradient {
+        RadialGradient(
+            stops: [
+                .init(color: Color.ground.opacity(0.72), location: 0.0),
+                .init(color: Color.ground.opacity(0.64), location: 0.5),
+                .init(color: Color.ground.opacity(0.26), location: 0.82),
+                .init(color: Color.ground.opacity(0.0), location: 1.0),
+            ],
+            center: .center, startRadius: 0, endRadius: 23)
     }
 
     @ViewBuilder

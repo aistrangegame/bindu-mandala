@@ -66,7 +66,7 @@ struct AvaranaThresholdView: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(ordinal(ring)) Āvaraṇa · \(avarana.enclosureForm)".uppercased())
-                    .font(.system(size: 10.5))
+                    .font(.system(size: 11.5))
                     .tracking(2.4)
                     .foregroundStyle(Color.gold.opacity(0.75))
                 Text("\(avarana.shaktiCount) śakti\(avarana.shaktiCount == 1 ? "" : "s")")

@@ -101,9 +101,9 @@ struct TheHundredTwoView: View {
                 .tracking(1.6)
                 .foregroundStyle(Color.cream)
             Text("NINE RINGS · ONE HUNDRED AND TWO")
-                .font(.system(size: 10.5))
+                .font(.system(size: 11.5))
                 .tracking(2.4)
-                .foregroundStyle(Color.cream.opacity(0.45))
+                .foregroundStyle(Color.cream.opacity(0.55))
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 14)
@@ -210,7 +210,7 @@ private struct FieldRing: View {
 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("\(seats.count)")
-                        .font(.system(size: 10.5))
+                        .font(.system(size: 11.5))
                         .tracking(1.0)
                         .foregroundStyle(ringAtmo.accentBright)
                     Text("›")
@@ -239,7 +239,7 @@ private struct FieldRing: View {
             HStack(alignment: .center, spacing: 10) {
                 if let form = avarana?.enclosureForm, !form.isEmpty {
                     Text(form.uppercased())
-                        .font(.system(size: 10))
+                        .font(.system(size: 11.5))
                         .tracking(2.4)
                         .foregroundStyle(ringAtmo.accentBright)
                 }
@@ -255,15 +255,16 @@ private struct FieldRing: View {
                             .font(.custom(AppFont.cormorantItalic, size: 14))
                             .tracking(0.4)
                             .foregroundStyle(ringAtmo.accentBright)
-                            .padding(.vertical, 10)
+                            .padding(.vertical, 14)
+                            .frame(minHeight: 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 26)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
+            .padding(.top, avarana == nil ? 8 : 4)
+            .padding(.bottom, avarana == nil ? 12 : 8)
 
             ForEach(seats) { seat in
                 seatRow(seat)

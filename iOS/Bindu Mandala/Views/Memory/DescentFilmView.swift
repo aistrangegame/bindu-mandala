@@ -57,17 +57,19 @@ struct DescentFilmView: View {
             VStack {
                 Spacer()
                 progressDots
-                    .padding(.bottom, 14)
+                    .padding(.bottom, 10)
                 Button { dismiss() } label: {
                     Text("close".uppercased())
                         .font(.system(size: 11))
                         .tracking(2.4)
                         .foregroundStyle(Color.cream.opacity(0.55))
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 16)
                         .padding(.horizontal, 22)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .padding(.bottom, 24)
+                .padding(.bottom, 20)
             }
         }
         .contentShape(Rectangle())

@@ -120,7 +120,7 @@ struct PortraitMandalaView: View {
         Text("she is felt, not measured")
             .font(.custom(AppFont.cormorantItalic, size: 13))
             .tracking(0.5)
-            .foregroundStyle(Color.cream.opacity(0.40))
+            .foregroundStyle(Color.cream.opacity(0.55))
             .multilineTextAlignment(.center)
             .padding(.horizontal, 40)
     }
@@ -591,6 +591,9 @@ private struct ShareSheetView: View {
                     .padding(.horizontal, 28)
                     .padding(.vertical, 14)
                     .background(Capsule().fill(Color.accentRed))
+                    .padding(.bottom, 4)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -599,7 +602,6 @@ private struct ShareSheetView: View {
                 .foregroundStyle(Color.cream.opacity(0.55))
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
-                .padding(.top, 4)
                 .buttonStyle(.plain)
 
             Spacer()

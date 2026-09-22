@@ -197,36 +197,79 @@ final class HitAreaIdiomTests: XCTestCase {
     // it here, in a second.
 
     func testEveryGrowthHasItsCompensationBesideIt() {
-        let ledger: [(path: String, needle: String, why: String)] = [
-            ("Views/Common/TheHundredTwoView.swift", ".padding(.top, avarana == nil ? 8 : 4)",
+        /// `within` is the enclosing function or type the compensation belongs
+        /// to, as a regex over the real source. Without it the needles are
+        /// substrings of a whole file — `.padding(.top, 4)` would be satisfied
+        /// by any four points anywhere in three hundred lines, and the ledger
+        /// would pass while the compensation it names had been deleted.
+        ///
+        /// `times` is how often the needle should be found in that region.
+        /// Eight are a compensation that has to be **there**, exactly once —
+        /// twice is as wrong as none, because then nobody knows which is the one
+        /// that pays. The ninth is a padding that had to **go**, and a ledger
+        /// that could only assert presence would have had nothing to say about
+        /// it.
+        let ledger: [(path: String, within: String, needle: String, times: Int, why: String)] = [
+            ("Views/Common/TheHundredTwoView.swift", #"private var expandedBody[\s\S]*?\n    \}"#,
+             ".padding(.top, avarana == nil ? 8 : 4)",
+             1,
              "the threshold row's 8 pt of new target comes out of this padding (was 8) — and "
              + "only when there is an āvaraṇa, because without one the whole caption collapses "
              + "and there is no grown target to pay for"),
-            ("Views/Common/TheHundredTwoView.swift", ".padding(.bottom, avarana == nil ? 12 : 8)",
+            ("Views/Common/TheHundredTwoView.swift", #"private var expandedBody[\s\S]*?\n    \}"#,
+             ".padding(.bottom, avarana == nil ? 12 : 8)",
+             1,
              "and out of this one (was 12), under the same condition"),
-            ("Views/Memory/DescentFilmView.swift", ".padding(.bottom, 10)",
+            ("Views/Memory/DescentFilmView.swift", #"progressDots\n[\s\S]*?\n            \}"#,
+             ".padding(.bottom, 10)",
+             1,
              "CLOSE's 8 pt comes out of the dots' bottom padding (was 14)"),
-            ("Views/Memory/DescentFilmView.swift", ".padding(.bottom, 20)",
+            ("Views/Memory/DescentFilmView.swift", #"progressDots\n[\s\S]*?\n            \}"#,
+             ".padding(.bottom, 20)",
+             1,
              "and out of the button's own bottom padding (was 24)"),
-            ("Views/Today/DailyRiteView.swift", "VStack(spacing: -1)",
+            ("Views/Today/DailyRiteView.swift", #"private func celestialStrip[\s\S]*?\n    \}"#,
+             "VStack(spacing: -1)",
+             1,
              "the celestial strip's 8 pt comes out of the strip's spacing (was 7)"),
-            ("Views/Common/ShaktiDetailView.swift", "VStack(spacing: -12)",
+            ("Views/Common/ShaktiDetailView.swift", #"private func crossingPill[\s\S]*?\n    \}"#,
+             "VStack(spacing: -12)",
+             1,
              "the crossing pill's 20 pt comes out of the pill stack's spacing (was 8)"),
-            ("Views/Today/Rite/RiteBlockView.swift", ".padding(.top, 8)",
+            ("Views/Today/Rite/RiteBlockView.swift", #"private var know[\s\S]*?\n    \}"#,
+             ".padding(.top, 8)",
+             1,
              "“know her ›”'s 2 pt comes off the block's top padding (was 10)"),
-            ("Views/Common/SettingsView.swift", ".padding(.top, 4)",
-             "the rename field's 2 pt comes off the hint's top padding (6 spelled out, minus 2)"),
-            ("Views/Memory/PortraitMandalaView.swift", "Button(\"close\") { dismiss() }",
-             "the export pill's 4 pt comes off “close”, which no longer carries .padding(.top, 4)"),
+            ("Views/Common/SettingsView.swift", #"private func fieldRow[\s\S]*?\n    \}"#,
+             ".padding(.top, 4)",
+             1,
+             "the rename field's 2 pt comes off the hint's top gap (6, spelled out as 0 spacing "
+             + "with 6 under the name row and 4 above the hint)"),
+            ("Views/Memory/PortraitMandalaView.swift",
+             #"Button\("close"\)[\s\S]{0,300}?\.buttonStyle\(\.plain\)"#,
+             ".padding(.top, 4)",
+             0,
+             "the export pill's 4 pt comes off “close”, which gave up its own top padding. This "
+             + "is the one entry that asserts an **absence**: put those 4 pt back without taking "
+             + "them off the pill and the two controls drift apart by eight"),
         ]
+        XCTAssertGreaterThanOrEqual(ledger.count, 9,
+                                    "the compensation ledger shrank — a growth has lost its other side")
         var failures: [String] = []
         for entry in ledger {
             guard let f = file(entry.path) else {
                 failures.append("\(entry.path) is gone")
                 continue
             }
-            if !f.text.contains(entry.needle) {
-                failures.append("\(entry.path): `\(entry.needle)` is gone — \(entry.why)")
+            guard let region = Rx.first(entry.within, f.text) else {
+                failures.append("\(entry.path): the region `\(entry.within)` is gone, so the "
+                                + "compensation below cannot be found where it belongs — \(entry.why)")
+                continue
+            }
+            let hits = region.components(separatedBy: entry.needle).count - 1
+            if hits != entry.times {
+                failures.append("\(entry.path): `\(entry.needle)` appears \(hits) time(s) in its own "
+                                + "region, not \(entry.times) — \(entry.why)")
             }
         }
         XCTAssertTrue(failures.isEmpty,

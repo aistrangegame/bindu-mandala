@@ -29,7 +29,7 @@ struct SignificanceCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(familyLabel.uppercased())
-                    .font(.system(size: 9.5))
+                    .font(.system(size: 11.5))
                     .tracking(2.4)
                     .foregroundStyle(atmo.accentBright)
                 Spacer()
@@ -49,8 +49,8 @@ struct SignificanceCard: View {
                         .foregroundStyle(Color.cream)
                     if let phonetic {
                         Text(phonetic.uppercased())
-                            .font(.system(size: 10)).tracking(2)
-                            .foregroundStyle(Color.cream.opacity(0.5))
+                            .font(.system(size: 11.5)).tracking(2)
+                            .foregroundStyle(Color.cream.opacity(0.55))
                             .padding(.top, 7)
                     }
                     if !shakti.quality.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -75,8 +75,8 @@ struct SignificanceCard: View {
                                 .foregroundStyle(Color.gold)
                                 .shadow(color: atmo.glow, radius: 18)
                             Text("SOUND HER")
-                                .font(.system(size: 10)).tracking(1.8)
-                                .foregroundStyle(Color.cream.opacity(0.42))
+                                .font(.system(size: 11.5)).tracking(1.8)
+                                .foregroundStyle(Color.cream.opacity(0.55))
                         }
                     }
                     .buttonStyle(.plain)

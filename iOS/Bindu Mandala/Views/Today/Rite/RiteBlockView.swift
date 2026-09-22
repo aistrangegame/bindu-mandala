@@ -94,10 +94,12 @@ struct RiteBlockView: View {
                 .tracking(0.9)
                 .foregroundStyle(atmo.accentBright.opacity(0.92))
                 .padding(.vertical, 12)
+                .padding(.top, 2)
+                .frame(minHeight: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.top, 10)
+        .padding(.top, 8)
         .frame(maxWidth: .infinity, alignment: alignment)
     }
 

@@ -157,7 +157,7 @@ struct ShaktiDetailView: View {
                 Text("\(kp) · 102")
                     .font(.system(size: 11))
                     .tracking(1.6)
-                    .foregroundStyle(Color.cream.opacity(0.45))
+                    .foregroundStyle(Color.cream.opacity(0.55))
             }
         }
         .padding(.horizontal, 22)
@@ -199,7 +199,7 @@ struct ShaktiDetailView: View {
                 Text(shakti.phonetic.uppercased())
                     .font(.system(size: 12))
                     .tracking(2.6)
-                    .foregroundStyle(Color.cream.opacity(0.48))
+                    .foregroundStyle(Color.cream.opacity(0.55))
                     .padding(.top, 12)
             }
 
@@ -222,7 +222,7 @@ struct ShaktiDetailView: View {
             let qDesc = shakti.qualityDescription.trimmingCharacters(in: .whitespaces)
             if !qDesc.isEmpty {
                 Text(shakti.qualityDescription)
-                    .font(.system(size: 14))
+                    .font(.custom(AppFont.cormorant, size: 15))
                     .lineSpacing(6)
                     .foregroundStyle(Color.cream.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -280,7 +280,7 @@ struct ShaktiDetailView: View {
     /// Palette per level, mirroring the prototype: cream → soft → accent → bright.
     private func nodeColor(_ index: Int) -> Color {
         switch index {
-        case 0:  return Color.cream.opacity(0.4)
+        case 0:  return Color.cream.opacity(0.55)
         case 1:  return atmo.accentSoft
         case 2:  return atmo.accent
         default: return atmo.accentBright
@@ -319,7 +319,7 @@ struct ShaktiDetailView: View {
             let color = pillColor(for: shakti.status)
             VStack(spacing: 8) {
                 Text(shakti.status.label.uppercased())
-                    .font(.system(size: 10.5))
+                    .font(.system(size: 11.5))
                     .tracking(2.0)
                     .foregroundStyle(color)
                     .padding(.horizontal, 16)
@@ -327,7 +327,7 @@ struct ShaktiDetailView: View {
                     .background(Capsule().stroke(color, lineWidth: 1))
                 Text(shakti.status == .embodied ? "she lives in you" : "felt into being")
                     .font(.custom(AppFont.cormorantItalic, size: 13))
-                    .foregroundStyle(Color.cream.opacity(0.42))
+                    .foregroundStyle(Color.cream.opacity(0.55))
             }
         }
     }
@@ -335,9 +335,9 @@ struct ShaktiDetailView: View {
     private func crossingPill(target: ShaktiStatus) -> some View {
         let color = nodeColor(currentLevel)
         let breath = 0.55 + 0.45 * Double(breathPhase)
-        return VStack(spacing: 8) {
+        return VStack(spacing: -12) {
             Text(shakti.status.label.uppercased())
-                .font(.system(size: 10.5))
+                .font(.system(size: 11.5))
                 .tracking(2.0)
                 .foregroundStyle(color)
                 .padding(.horizontal, 16)
@@ -353,7 +353,9 @@ struct ShaktiDetailView: View {
                     }
                 )
                 .scaleEffect(1 + Double(advanceProgress) * 0.03)
-                .contentShape(Capsule())
+                .padding(.bottom, 20)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
                 .onLongPressGesture(
                     minimumDuration: 0.75,
                     maximumDistance: 40,
@@ -408,7 +410,7 @@ struct ShaktiDetailView: View {
 
     private func pillColor(for status: ShaktiStatus) -> Color {
         switch status {
-        case .mapped:    return Color.cream.opacity(0.35)
+        case .mapped:    return Color.cream.opacity(0.55)
         case .exploring: return Color.gold.opacity(0.55)
         case .active:    return Color.gold
         case .embodied:  return Color.clusterInner
@@ -478,9 +480,9 @@ struct ShaktiDetailView: View {
                 .accessibilityAddTraits(.isButton)
 
                 Text(bijaSounding ? "SOUNDING" : "TAP TO SOUND HER")
-                    .font(.system(size: 10))
+                    .font(.system(size: 11.5))
                     .tracking(2.2)
-                    .foregroundStyle(bijaSounding ? atmo.accentBright : Color.cream.opacity(0.4))
+                    .foregroundStyle(bijaSounding ? atmo.accentBright : Color.cream.opacity(0.55))
 
                 if let description = parsed.description {
                     Text(description)
@@ -747,7 +749,7 @@ struct ShaktiDetailView: View {
                     .padding(.bottom, 12)
             }
             Text(title.uppercased())
-                .font(.system(size: 10.5))
+                .font(.system(size: 11.5))
                 .tracking(2.0)
                 .foregroundStyle(Color.cream.opacity(0.55))
                 .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)

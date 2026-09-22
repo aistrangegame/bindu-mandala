@@ -230,9 +230,9 @@ struct RecognitionMomentView: View {
                 }
 
                 Text("Tap anywhere to close".uppercased())
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
                     .tracking(2)
-                    .foregroundStyle(Color.cream.opacity(0.40))
+                    .foregroundStyle(Color.cream.opacity(0.50))
                     .padding(.bottom, 36)
             }
         }

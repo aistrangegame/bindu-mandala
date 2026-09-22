@@ -78,6 +78,20 @@ enum FeltRegisterClassifications {
         + "untouched — so what changed is the box iOS hit-tests and VoiceOver announces, which is "
         + "exactly the point of §4.2. Audit §H4 measured this one at about 19 pt tall."
 
+    /// Elements that are on a screen now and were not before. A movement bound
+    /// cannot stand in for one of these: `keyContains: "|"` matches every key
+    /// there is, and three of the entries below are written that way, so a
+    /// blanket allowance would have let any screen grow anything at all. This
+    /// list is separate, exact, and there is one entry in it.
+    ///
+    /// `screen` and `keyContains` read the same way they do in a shift.
+    static let appeared: [(screen: String, keyContains: String, reason: String)] = [
+        ("settings", "text|Settings|1",
+         "A second \"Settings\" — the principal toolbar item that says the sheet's name in "
+         + "Cormorant (§4.5). `.navigationTitle(\"Settings\")` stays beneath it, because "
+         + "VoiceOver and the back stack read that one; only the rendering was wrong."),
+    ]
+
     static let shifts: [ClassifiedShift] = [
 
         // ── The Detail ───────────────────────────────────────────────────────
@@ -110,10 +124,6 @@ enum FeltRegisterClassifications {
             + "lines, their words and their 2.6 / 4.1 / 5.1 second staging are untouched."),
 
         // ── Settings ─────────────────────────────────────────────────────────
-        ClassifiedShift(screen: "settings", keyContains: "text|Settings|1", maxDelta: 0, reason:
-            "A second \"Settings\" — the principal toolbar item that says the sheet's name in "
-            + "Cormorant (§4.5). `.navigationTitle(\"Settings\")` stays beneath it, because "
-            + "VoiceOver and the back stack read that one; only the rendering was wrong."),
         ClassifiedShift(screen: "settings", keyContains: "text|", maxDelta: 11, reason: settingsTitles),
         ClassifiedShift(screen: "settings", keyContains: "button|", maxDelta: 11, reason: settingsTitles),
         ClassifiedShift(screen: "settings", keyContains: "switch|", maxDelta: 11, reason: settingsTitles),

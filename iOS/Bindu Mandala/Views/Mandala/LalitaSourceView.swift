@@ -75,7 +75,7 @@ struct LalitaSourceView: View {
             Spacer()
             emerge(delay: 0.15) {
                 Text("NINTH ĀVARAṆA · THE BINDU")
-                    .font(.system(size: 10.5)).tracking(3.2).foregroundStyle(gold)
+                    .font(.system(size: 11.5)).tracking(3.2).foregroundStyle(gold)
             }
             emerge(delay: 0.3) {
                 Text("the point that contains all points")
@@ -135,7 +135,7 @@ struct LalitaSourceView: View {
                             .foregroundStyle(gold)
                             .shadow(color: sounded ? gold : .clear, radius: 22)
                         Text("SOUND THE SOURCE")
-                            .font(.system(size: 10)).tracking(2).foregroundStyle(Color.cream.opacity(0.5))
+                            .font(.system(size: 11.5)).tracking(2).foregroundStyle(Color.cream.opacity(0.55))
                     }
                 }
                 .buttonStyle(.plain)
@@ -165,10 +165,12 @@ struct LalitaSourceView: View {
                     Text("↑ return to the field")
                         .font(.custom(AppFont.cormorantItalic, size: 15))
                         .foregroundStyle(Color.cream.opacity(0.55))
+                        .padding(.top, 14)
+                        .padding(.bottom, 30)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 14)
-                .padding(.bottom, 30)
             }
         }
     }

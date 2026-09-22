@@ -35,7 +35,7 @@ struct NityaDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(display.tithiLabel)
-                        .font(.system(size: 10))
+                        .font(.system(size: 11.5))
                         .tracking(2.4)
                         .foregroundStyle(Color.gold.opacity(0.7))
 

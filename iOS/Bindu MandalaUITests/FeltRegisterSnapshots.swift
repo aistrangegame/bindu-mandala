@@ -102,14 +102,6 @@ struct SnapshotScreen {
     /// Time for staged arrivals to finish after `settles` is true. A screen read
     /// mid-stage reports a different set of elements every run.
     var afterSettle: TimeInterval = 1.6
-    /// A screen this one is presented *over*. A `fullScreenCover` does not take
-    /// the tree beneath it out of the accessibility tree, so the film's reading
-    /// is nine tenths Settings — a sheet scrolled to its own bottom, whose last
-    /// visible field prompt depends on where the flick stopped. Naming the screen
-    /// underneath subtracts every element it already accounted for, and what is
-    /// left is the cover: the film, and the one control on it.
-    var over: String?
-
     static let base = ["SKIP_SUMMONS", "SKIP_HOMECOMING", "SYNC_OFF", "ENERGY_POS=29"]
 
     static func text(_ app: XCUIApplication, _ fragment: String, _ timeout: TimeInterval = 25) -> Bool {
@@ -151,14 +143,44 @@ struct SnapshotScreen {
         if settings.exists { settings.tap() }
     }
 
-    // Two screens of the audit's list are not here, and the reason is data, not
-    // effort: `AvaranaThresholdView` and `NityaDetailView` render rows that live
-    // only in Airtable. `ShaktiBootstrap` seeds the sixteen Ring-2 Śaktis and
-    // nothing else, so a simulator with `SYNC_OFF` has no āvaraṇa and no Nityā to
-    // open, and a launch argument pointed at either one quietly no-ops. Their
-    // strings are held to rule 4 by `LegibilityTests`, which reads the source
-    // rather than the screen, and their geometry is unproven here. Said plainly
-    // rather than papered over.
+    // FOUR SCREENS OF THE AUDIT'S LIST ARE NOT HERE, and each reason is written
+    // down rather than papered over.
+    //
+    // Two have no content to render. `AvaranaThresholdView` and `NityaDetailView`
+    // show rows that live only in Airtable; `ShaktiBootstrap` seeds the sixteen
+    // Ring-2 Śaktis and nothing else, so a simulator with `SYNC_OFF` has no
+    // āvaraṇa and no Nityā to open, and a launch argument pointed at either one
+    // quietly no-ops.
+    //
+    // Two were **removed after their baselines were read back**, because what had
+    // been recorded for them was not a picture of them:
+    //
+    //  · `film`. The Way Behind was reached by opening Settings and flicking up
+    //    four times, and a `fullScreenCover` leaves the sheet beneath it in the
+    //    accessibility tree. Subtracting the `settings` reading could not clear
+    //    it, because `settings` is read *unscrolled* and the film's approach
+    //    scrolls: the rows exposed below the fold are new keys, so what landed in
+    //    `film.geom` was a hundred lines of Settings at whatever height four
+    //    flicks happened to leave them. A baseline that is a function of a flick
+    //    is not a baseline. (`OPEN_FILM` now opens the film directly, which is
+    //    what `HitAreaTests` uses to measure CLOSE on the running app; the film's
+    //    own composition is unproven here and its two Phase 4 paddings are held
+    //    by `HitAreaIdiomTests`' ledger.)
+    //
+    //  · `homecoming`. `RootView.initialDestination()` falls back to a *same-day
+    //    restore* out of `UserDefaults`, so the screen under the Homecoming is
+    //    wherever the previous screen in this same suite left the app — the
+    //    committed baseline is six sevenths the Portrait Mandala. Its seventh
+    //    line, the one that is actually the Homecoming's, reports as a
+    //    full-screen container whose origin moves with the status bar, and it
+    //    drifted 21.67 pt between two runs of an unchanged tree. Its one Phase 4
+    //    change is the "tap to enter" ghost, which `LegibilityTests` pins to
+    //    exactly 11 pt and 0.5 α.
+    //
+    // Both are recoverable by a later pass: pin `START_TAB` under the Homecoming
+    // and record from the tree as it stood before this phase. Neither is
+    // recoverable by re-recording now, which would only write down the change
+    // this suite exists to catch.
     static let all: [SnapshotScreen] = [
         SnapshotScreen(name: "mandala", arguments: ["START_TAB=mandala"],
                        settles: { text($0, "Śrī Yantra") }),
@@ -190,33 +212,9 @@ struct SnapshotScreen {
         SnapshotScreen(name: "memory", arguments: ["START_TAB=memory"],
                        settles: { text($0, "she is felt, not measured") }, afterSettle: 2.4),
 
-        SnapshotScreen(name: "homecoming", arguments: ["FORCE_HOMECOMING"],
-                       settles: { text($0, "You have always felt them.") }, afterSettle: 8.0),
-
         SnapshotScreen(name: "settings", arguments: ["START_TAB=well"],
                        settles: { text($0, "Daily Rhythm") },
                        approach: { openSettings($0) }),
-
-        SnapshotScreen(name: "film", arguments: ["START_TAB=well"],
-                       settles: { button($0, "close") },
-                       approach: { app in
-                           openSettings(app)
-                           let open = app.buttons
-                               .matching(NSPredicate(format: "label CONTAINS[c] 'Remember the descent'"))
-                               .firstMatch
-                           _ = open.waitForExistence(timeout: 10)
-                           // The Way Behind is the fourth card down in Settings
-                           // and off-screen on every width. Four swipes, always
-                           // four, so the sheet ends *clamped at its bottom* —
-                           // "scroll until it is reachable" would stop wherever
-                           // the last flick happened to land, and the geometry
-                           // this screen records would differ every run.
-                           for _ in 0..<4 { app.swipeUp() }
-                           Thread.sleep(forTimeInterval: 1.0)
-                           if open.isHittable { open.tap() }
-                       },
-                       afterSettle: 2.0,
-                       over: "settings"),
 
         // Last, and it has to be last: this is the only screen here that
         // *writes*. The ceremony records a real recognition at `onAppear`, the
@@ -226,7 +224,10 @@ struct SnapshotScreen {
         // means the simulator is dirty afterwards; `testTheSimulatorHasNotBeenFeltIn`
         // is what makes that loud on the next run instead of mysterious.
         SnapshotScreen(name: "recognition", arguments: ["START_TAB=rite", "AUTO_RECOGNIZE"],
-                       settles: { text($0, "felt you back") }, afterSettle: 4.5),
+                       // The whole line, never a fragment of it: `LawsTests`
+                       // holds both Recognition lines verbatim at every site,
+                       // and "felt you back" on its own is a near-miss of one.
+                       settles: { text($0, "and she felt you back") }, afterSettle: 4.5),
     ]
 }
 
@@ -347,11 +348,15 @@ final class FeltRegisterSnapshots: XCTestCase {
     override func setUp() { continueAfterFailure = true }
 
     func testEveryTouchedScreenHoldsItsComposition() throws {
+        // Two screens came off this list when their baselines were read back.
+        // A third that quietly went missing would leave a suite that still says
+        // it locks the felt register and no longer does.
+        XCTAssertEqual(SnapshotScreen.all.count, 10,
+                       "the snapshot roster changed size — a screen cannot leave without the "
+                       + "sentence above `SnapshotScreen.all` saying why")
+
         var failures: [String] = []
         var recorded = 0
-        /// Every screen's key set, so a screen presented over another can take
-        /// out what the one beneath already accounted for.
-        var readings: [String: Set<String>] = [:]
 
         for screen in SnapshotScreen.all {
             let app = XCUIApplication()
@@ -367,11 +372,7 @@ final class FeltRegisterSnapshots: XCTestCase {
 
             let bounds = app.frame
             let device = SnapshotStore.deviceClass(width: bounds.width, height: bounds.height)
-            var frames = ScreenReader.read(app)
-            readings[screen.name] = Set(frames.map(\.key))
-            if let under = screen.over, let beneath = readings[under] {
-                frames = frames.filter { !beneath.contains($0.key) }
-            }
+            let frames = ScreenReader.read(app)
 
             // The ceremony screen writes a recognition, and it survives the run.
             // A Field read on a simulator that remembers one says "felt here"
@@ -413,7 +414,13 @@ final class FeltRegisterSnapshots: XCTestCase {
         }
 
         if SnapshotStore.isRecording {
-            XCTAssertGreaterThan(recorded, 0, "recording mode wrote nothing")
+            // A recording run compared nothing, so it fails — always. Left as a
+            // pass, a `.record` marker somebody forgot to delete (or committed)
+            // turns this whole suite into a machine that writes down whatever it
+            // sees and reports success. That is the one failure a composition
+            // lock cannot survive.
+            XCTFail("recorded \(recorded) baseline(s) and compared nothing. Delete "
+                    + "iOS/SnapshotBaselines/.record and run again to judge.")
             return
         }
         XCTAssertTrue(failures.isEmpty,
@@ -431,9 +438,14 @@ final class FeltRegisterSnapshots: XCTestCase {
 
         for (key, was) in baseByKey.sorted(by: { $0.key < $1.key }) {
             guard let now = liveByKey[key] else {
-                if ClassifiedShift.allowance(screen: screen, key: key) == nil {
-                    out.append("\(device)/\(screen): gone — \(key)")
-                }
+                // A `ClassifiedShift` bounds how far something *moved*. It has
+                // nothing to say about something that is no longer on the
+                // screen, and letting it answer here was a hole wide enough to
+                // drive a whole control through: three of the entries below are
+                // written `keyContains: "|"`, which is in every key there is, so
+                // every screen they cover could have lost any element it liked
+                // and stayed green. A disappearance is always a failure.
+                out.append("\(device)/\(screen): gone — \(key)")
                 continue
             }
             // A string that grew because its type grew has not *moved*: it is
@@ -460,7 +472,14 @@ final class FeltRegisterSnapshots: XCTestCase {
         }
 
         for (key, _) in liveByKey.sorted(by: { $0.key < $1.key }) where baseByKey[key] == nil {
-            if ClassifiedShift.allowance(screen: screen, key: key) == nil {
+            // Same again, the other way round: a new element is a change to the
+            // composition, which is the one thing this phase may not make. It
+            // needs its own sentence in `FeltRegisterClassifications.appeared`,
+            // naming the screen and the element, not a movement bound that
+            // happens to match every key on the screen.
+            if !FeltRegisterClassifications.appeared.contains(where: {
+                $0.screen == screen && key.contains($0.keyContains)
+            }) {
                 out.append("\(device)/\(screen): new — \(key)")
             }
         }

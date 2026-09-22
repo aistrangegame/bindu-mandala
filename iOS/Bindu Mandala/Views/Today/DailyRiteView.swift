@@ -163,7 +163,7 @@ struct DailyRiteView: View {
     /// the Nityā sheet. Ported from the prototype's celestial strip.
     private func celestialStrip(atmo: Atmosphere) -> some View {
         let slot = nityaSlot
-        return VStack(spacing: 7) {
+        return VStack(spacing: -1) {
             MoonPhaseView().padding(.top, 8)
             if let label = celestialLabel(slot) {
                 Button {
@@ -183,6 +183,8 @@ struct DailyRiteView: View {
                     }
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
+                    .padding(.top, 8)
+                    .frame(minHeight: 44)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -258,7 +260,7 @@ struct DailyRiteView: View {
             Text("\(content.kp) of 102" + (content.bija.map { " · bīja \($0)" } ?? ""))
                 .font(.system(size: 11))
                 .tracking(1.6)
-                .foregroundStyle(Color.cream.opacity(0.44))
+                .foregroundStyle(Color.cream.opacity(0.55))
         }
         .padding(.horizontal, 26)
         .padding(.bottom, 20)
