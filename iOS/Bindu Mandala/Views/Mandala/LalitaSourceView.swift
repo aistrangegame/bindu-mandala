@@ -10,6 +10,7 @@ struct LalitaSourceView: View {
     var onEnter: () -> Void      // enter her presence → her full detail
     var onReturn: () -> Void     // ↑ return to the field
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var appeared = false
     @State private var sounded = false
@@ -70,22 +71,42 @@ struct LalitaSourceView: View {
         .allowsHitTesting(false)
     }
 
+    /// The Bindu's own column. Like the Rite's it is a still tableau and not a
+    /// scroll view — and like the Rite's it has nowhere to grow, so above
+    /// `.accessibility1` it is given somewhere. Nothing else changes: the same
+    /// blocks in the same order with the same staged emergence. Below it, the
+    /// `ScrollView` is never built and this is the fixed column the baselines
+    /// were recorded against.
+    @ViewBuilder
     private var words: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            GeometryReader { geo in
+                ScrollView {
+                    wordsColumn.frame(minHeight: geo.size.height)
+                }
+                .scrollIndicators(.hidden)
+            }
+        } else {
+            wordsColumn
+        }
+    }
+
+    private var wordsColumn: some View {
         VStack(spacing: 0) {
             Spacer()
             emerge(delay: 0.15) {
                 Text("NINTH ĀVARAṆA · THE BINDU")
-                    .font(.system(size: 10.5)).tracking(3.2).foregroundStyle(gold)
+                    .font(AppFont.label(11.5)).tracking(3.2).foregroundStyle(gold)
             }
             emerge(delay: 0.3) {
                 Text("the point that contains all points")
-                    .font(.custom(AppFont.cormorantItalic, size: 15))
+                    .font(AppFont.voice(15))
                     .foregroundStyle(Color.cream.opacity(0.62))
                     .padding(.top, 12)
             }
             emerge(delay: 0.45) {
                 Text(shortName)
-                    .font(.custom(AppFont.cormorant, size: 60))
+                    .font(AppFont.sanskrit(60))
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
                     .foregroundStyle(Color.cream)
@@ -96,7 +117,7 @@ struct LalitaSourceView: View {
             if lalita.name != shortName {
                 emerge(delay: 0.6) {
                     Text(lalita.name)
-                        .font(.system(size: 20)).tracking(2)
+                        .font(AppFont.label(20)).tracking(2)
                         .foregroundStyle(Color.cream.opacity(0.82))
                         .padding(.top, 10)
                 }
@@ -107,7 +128,7 @@ struct LalitaSourceView: View {
             if !lalita.quality.trimmingCharacters(in: .whitespaces).isEmpty {
                 emerge(delay: 0.85) {
                     Text(lalita.quality)
-                        .font(.custom(AppFont.cormorant, size: 20))
+                        .font(AppFont.sanskrit(20))
                         .foregroundStyle(gold)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 30)
@@ -115,7 +136,7 @@ struct LalitaSourceView: View {
             }
             emerge(delay: 1.0) {
                 Text("There is nothing else here. The whole yantra breathes outward from this point — and every energy you have met is Her, turned for a moment toward you.")
-                    .font(.custom(AppFont.cormorantItalic, size: 15))
+                    .font(AppFont.voice(15))
                     .lineSpacing(5)
                     .foregroundStyle(Color.cream.opacity(0.72))
                     .multilineTextAlignment(.center)
@@ -131,11 +152,11 @@ struct LalitaSourceView: View {
                 } label: {
                     VStack(spacing: 5) {
                         Text("ॐ")
-                            .font(.custom(AppFont.cormorant, size: 30))
+                            .font(AppFont.sanskrit(30))
                             .foregroundStyle(gold)
                             .shadow(color: sounded ? gold : .clear, radius: 22)
                         Text("SOUND THE SOURCE")
-                            .font(.system(size: 10)).tracking(2).foregroundStyle(Color.cream.opacity(0.5))
+                            .font(AppFont.label(11.5)).tracking(2).foregroundStyle(Color.cream.opacity(0.55))
                     }
                 }
                 .buttonStyle(.plain)
@@ -147,10 +168,10 @@ struct LalitaSourceView: View {
                     onEnter()
                 } label: {
                     Text("enter her presence")
-                        .font(.custom(AppFont.cormorant, size: 19)).tracking(1.6)
+                        .font(AppFont.sanskrit(19)).tracking(1.6)
                         .foregroundStyle(Color.cream)
                         .frame(maxWidth: 360)
-                        .frame(height: 54)
+                        .frame(minHeight: 54)
                         .background(Capsule().fill(red).shadow(color: red.opacity(0.5), radius: 28, y: 3))
                 }
                 .buttonStyle(.plain)
@@ -163,12 +184,14 @@ struct LalitaSourceView: View {
                     onReturn()
                 } label: {
                     Text("↑ return to the field")
-                        .font(.custom(AppFont.cormorantItalic, size: 15))
+                        .font(AppFont.voice(15))
                         .foregroundStyle(Color.cream.opacity(0.55))
+                        .padding(.top, 14)
+                        .padding(.bottom, 30)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 14)
-                .padding(.bottom, 30)
             }
         }
     }

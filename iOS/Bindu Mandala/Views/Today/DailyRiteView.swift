@@ -9,6 +9,7 @@ import SwiftData
 struct DailyRiteView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \Shakti.position) private var shaktis: [Shakti]
     @Query(sort: \NityaDevi.tithiPosition) private var nityas: [NityaDevi]
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
@@ -89,16 +90,54 @@ struct DailyRiteView: View {
                 .allowsHitTesting(false)
             DepthOverlay()
 
-            VStack(spacing: 0) {
-                celestialStrip(atmo: atmo)
-                Spacer(minLength: 0)
-                centerStack(s: s, content: content, atmo: atmo, plan: plan, comp: comp)
-                    .allowsHitTesting(!plan.veilName)   // the veil name is the door
-                Spacer(minLength: 0)
-                foot(s: s, content: content, atmo: atmo)
+            column(s: s, content: content, atmo: atmo, plan: plan, comp: comp)
+                .opacity(arrived ? 1 : 0)
+                .offset(y: arrived ? 0 : 8)
+        }
+    }
+
+    /// The Rite's own column: the strip at the top, her arrival held in the
+    /// middle by two spacers, the foot at the bottom. A still tableau, and the
+    /// only screen in the app that is deliberately not a scroll view.
+    ///
+    /// **Except at an accessibility type size.** The two `Spacer(minLength: 0)`
+    /// are already at zero on the smallest screen at the default size — the foot
+    /// sits twenty points off the bottom of an SE — so the column has nowhere to
+    /// grow. Type that grows inside a height it cannot exceed does not overflow;
+    /// SwiftUI proposes each string less room and the strings *truncate*, and at
+    /// the largest size the day's question read "“Where does w…" while the moon
+    /// was pushed up under the status bar. A question the walker cannot read is
+    /// not a rite.
+    ///
+    /// So above `.accessibility1` the column is given somewhere to go, and
+    /// nothing else changes: same blocks, same order, same spacers, same
+    /// composition. Below it — every size a walker who has not turned on
+    /// accessibility type will ever see — this is the same fixed `VStack` the
+    /// baselines were recorded against, and `ScrollView` is never built.
+    @ViewBuilder
+    private func column(s: Shakti, content: RiteContent, atmo: Atmosphere,
+                        plan: RitePlan, comp: RiteComposition) -> some View {
+        let stack = VStack(spacing: 0) {
+            celestialStrip(atmo: atmo)
+            Spacer(minLength: 0)
+            centerStack(s: s, content: content, atmo: atmo, plan: plan, comp: comp)
+                .allowsHitTesting(!plan.veilName)   // the veil name is the door
+            Spacer(minLength: 0)
+            foot(s: s, content: content, atmo: atmo)
+        }
+
+        if dynamicTypeSize.isAccessibilitySize {
+            GeometryReader { geo in
+                ScrollView {
+                    // The floor keeps the spacers doing their work whenever the
+                    // column still fits: the tableau holds until it cannot, and
+                    // only then does it scroll.
+                    stack.frame(minHeight: geo.size.height)
+                }
+                .scrollIndicators(.hidden)
             }
-            .opacity(arrived ? 1 : 0)
-            .offset(y: arrived ? 0 : 8)
+        } else {
+            stack
         }
     }
 
@@ -163,7 +202,7 @@ struct DailyRiteView: View {
     /// the Nityā sheet. Ported from the prototype's celestial strip.
     private func celestialStrip(atmo: Atmosphere) -> some View {
         let slot = nityaSlot
-        return VStack(spacing: 7) {
+        return VStack(spacing: -1) {
             MoonPhaseView().padding(.top, 8)
             if let label = celestialLabel(slot) {
                 Button {
@@ -172,17 +211,19 @@ struct DailyRiteView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Text(label)
-                            .font(.system(size: 11.5))
+                            .font(AppFont.label(11.5))
                             .tracking(1.0)
                             .foregroundStyle(Color.cream.opacity(0.62))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                         Text("›")
-                            .font(.system(size: 12))
+                            .font(AppFont.label(12))
                             .foregroundStyle(atmo.accentBright.opacity(0.75))
                     }
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
+                    .padding(.top, 8)
+                    .frame(minHeight: 44)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -238,11 +279,11 @@ struct DailyRiteView: View {
         VStack(spacing: 14) {
             Button(action: triggerRecognition) {
                 Text("I feel her")
-                    .font(.custom(AppFont.cormorant, size: 23))
+                    .font(AppFont.sanskrit(23))
                     .tracking(2.0)
                     .foregroundStyle(Color.cream)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 60)
+                    .frame(minHeight: 60)
                     .background(
                         Capsule()
                             .fill(LinearGradient(colors: [Color.accentRed,
@@ -256,9 +297,9 @@ struct DailyRiteView: View {
             .accessibilityLabel("I feel her — record recognition of \(content.spokenName)")
 
             Text("\(content.kp) of 102" + (content.bija.map { " · bīja \($0)" } ?? ""))
-                .font(.system(size: 11))
+                .font(AppFont.label(11))
                 .tracking(1.6)
-                .foregroundStyle(Color.cream.opacity(0.44))
+                .foregroundStyle(Color.cream.opacity(0.55))
         }
         .padding(.horizontal, 26)
         .padding(.bottom, 20)

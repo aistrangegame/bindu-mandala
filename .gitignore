@@ -48,3 +48,8 @@ iOS/Bindu Mandala/Secrets.plist
 
 # Claude Code per-project local config (permissions, etc.)
 .claude/
+
+# The snapshot recorder is a hand-made marker, never a committed file:
+# committed, it turns every snapshot run into a re-recording and the suite
+# goes green having compared nothing.
+iOS/SnapshotBaselines/.record

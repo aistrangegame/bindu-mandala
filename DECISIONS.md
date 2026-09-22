@@ -1984,3 +1984,357 @@ harness flake must not stand between him and the instrument.
 while bootstrapping ("Early unexpected exit … never finished bootstrapping"), zero events
 synthesized. Nothing in the test or the app can defend against it; it needs an xcodebuild-level
 retry if it recurs in Cloud. Recorded here so it is recognised rather than re-diagnosed.
+## 2026-09-21 · Phase 4.1, 4.2 and 4.5 — the felt register, decided by measurement rather than by eye
+
+Charter §4 hands Phase 4 a mandate with no hands in it: satisfy audit §H's thresholds **through automation**, with XCUITest and snapshot tests in place of a person looking. Ashrey receives the finished experience once. So every call below is a number somebody can re-run, and three new suites hold them.
+
+**Every site was located by its text and its characteristics, never by the audit's line number.** The audit was written against `522cdd3`; Phase 1 deleted seven files, the ledger re-wire reshaped `AirtableService` and `ShaktiDetailView`, and Phase 2 rewrote `WellView` whole. Not one of §H2's or §H4's line numbers still points at what it named. The sweep found 28 live sub-threshold `Text` sites against §H2's 31: the three `WellView` sites were raised in Phase 2 (the errata records them) and the felt-count digit in `TheHundredTwoView` was deleted in Phase 1. Both were left alone, as instructed.
+
+### 4.1 · Where the floor was set, and why not at the floor
+
+FIDELITY rule 4 asks for **≥ 11 pt and ≥ 0.5 α**. Everything raised went **above** it — 11.5 pt, 0.55 α — and only two strings sit exactly *on* it: the ghost exit hints, "tap to enter" (Homecoming) and "Tap anywhere to close" (the Recognition ceremony). §H3 calls them intentional ghosts and §H2 lists them as failures, and both readings are right: they are meant to be barely there, and "barely there" still has a floor. Sitting them at 11/0.5 while everything else clears it is what keeps them ghosts rather than promoting them into instructions — and it makes the pin exact, so a drift in either direction is a red test rather than a matter of taste.
+
+**Judged decorative, and exempt under rule 4's own words.** Six glyphs: the three disclosure chevrons "›" (the Field's ring row, the Well's ring row, Today's celestial strip), the two back arrows "‹" (Detail, the Well letter) and the Significance card's dismissal "×". Each is furniture rather than language — an arrow that rotates to say open or shut carries no words, and every one of them sits beside a label that is held to the full threshold. Nothing else was exempted: the Portrait's "she is felt, not measured" whisper, which the audit called borderline decorative, was raised, because it is the never-measure law spoken to the walker and a law that cannot be read is not a law.
+
+**Two sizes the scanner refuses to evaluate**, pinned rather than guessed: the Rite's veil name and the Rite block's name are `min(nameSize(cap:…) * 1.7, 150)` and never fall under 27 pt. A source scanner that evaluated arithmetic would be a scanner that could be wrong quietly.
+
+**One composition change inside the canvas**, made for legibility and not paid back: the Mandala's deep-zoom bīja line moved from `dotR + 20` to `dotR + 24`. At 10 pt and 8 pt the two lines just cleared each other; at 11.5 pt they would not, and a seed set inside her own name is less legible than either was.
+
+### 4.2 · Eight targets, and the rule that the composition does not move
+
+All eight reach ≥ 44 × 44 by rule 4's own idiom, `.frame(minHeight: 44)` with a `.contentShape`. The instruction was that **growing a hit area must not move the visual composition**, which rules out the obvious form of the idiom, since a control that simply grows pushes its neighbour down. So every growth is a *known* number of points and the same number is taken straight back out of a padding or a spacing beside it:
+
+| Control | Was | Growth | Paid for by |
+|---|---|---|---|
+| LalitaSourceView · "↑ return to the field" | ≈19 pt | none | the padding was on the `Button`, outside the label — moved *inside* it. 62 pt, identical layout |
+| ShaktiDetailView · hold-to-cross pill | ≈25 pt | +20 below the capsule | the pill stack's spacing, 8 → −12 |
+| TheHundredTwoView · "the threshold ›" | ≈37 pt | +8 | the row's own padding, top 8 → 4 and bottom 12 → 8 |
+| DescentFilmView · CLOSE | ≈37 pt | +8 | the dots' bottom padding 14 → 10 and the button's 24 → 20 |
+| DailyRiteView · celestial strip | ≈38 pt | +8 above the line | the strip's spacing, 7 → −1 |
+| PortraitMandalaView · "hold this image" | ≈41 pt | +4 below the capsule | "close" gives up its `.padding(.top, 4)` |
+| SettingsView · rename field | ≈42 pt | +2 below the box | the hint's top gap, 6 → 4 (the stack's spacing spelled out to make room for it) |
+| RiteBlockView · "know her ›" | ≈42 pt | +2 above the words | the block's top padding, 10 → 8 |
+
+Three of them draw a shape — a capsule, a rounded box — that is the *background of a padded label*, so padding added inside would have grown the ring the walker sees. In all three the growth sits after the `.background(…)`, under the shape rather than around it, and a test asserts that ordering. A thumb comes from underneath anyway.
+
+### 4.5 · The device slips
+
+**The seat glow under the zoom column** (device audit, Also-observed 5). The controls carried `Circle().fill(Color.ground.opacity(0.55))` — one value out to the rim — which stamps a hard dark disc over any seat lit behind the column. Replaced with a four-stop radial wash: 0.72 under the glyph, where it has to stay dense for the glyph to read against a lit seat, falling to **exactly zero at the rim**, so her light carries through the column instead of ending at an edge. The test asserts the rim reaches nothing and that the wash never brightens outward (a wash that brightens has a ring in it).
+
+**The two system-sans slips** (Also-observed 6). The Detail's quality paragraph becomes Cormorant at 15 pt — it was the one body text in the instrument still speaking in somebody else's voice. The Settings title now comes from a principal toolbar item in Cormorant; `.navigationTitle("Settings")` stays beneath it, because VoiceOver and the back stack read it and only the *rendering* was wrong.
+
+**Reduce motion, toggled mid-session** (FIDELITY rule 3). `DustMotesView` read the environment at `onAppear` and never again, so a walker who turned the setting on kept a sky full of moving dust until the screen was left. A mote now answers the *change*: a fresh assignment inside a transaction with animations disabled replaces the running `repeatForever` outright, and the mote settles at mid-phase; turned back off, the loop starts again. A test asserts that every repeat in the file lives inside that one gated function, so a second loop cannot appear outside the gate.
+
+**Staged first paint is not investigable here, and is not being quietly dropped.** Also-observed 7 is a frame-timing observation made on a simulator sharing a Mac that was building at the time. There is nothing in the source to assert and nothing a simulator can measure that would mean anything; it belongs with the G5 baseline, which is BLOCKED on the phone in both audit sessions. A test fails if this paragraph stops existing, which is the only way an item with no code in it can be carried.
+
+### What proves it, since nobody will look
+
+- **`LegibilityTests`** (unit) reuses `LawsTests`' Swift lexer — the part that already knows a string literal from code — and adds the walk it never needed: the modifier chain trailing a `Text(…)`, because a string's size and alpha live in the six lines after the call. Three locks: every `Text` in `Views/` against 11 pt and 0.5 α; **no `.font(…)` anywhere in `Views/` under 11 pt at all**, which is what catches type set on a container and inherited; and the two ghosts pinned to exactly the floor. A `.opacity(…)` modifier counts only when its argument is a bare number — `.opacity(arrived ? 1 : 0)` is a staged arrival, rule 3's business, and reading it as alpha 0 would condemn every screen that fades in. Inside a colour expression the dimmer branch of a ternary *is* judged, which is what catches an unlit seat name at 0.42.
+- **`HitAreaTests`** (XCUITest) measures six of the eight on a running app, where `XCUIElement.frame` is the frame iOS hit-tests. The other two cannot be reached by a launched simulator and say so: the crossing pill needs a practice history, and "the threshold ›" needs an āvaraṇa row. **`HitAreaIdiomTests`** (unit) holds all eight at the source, and holds the compensation ledger above — remove a compensation without its growth and it is red in a second rather than a build later.
+- **`FeltRegisterSnapshots`** (XCUITest) is the composition lock, on **iPhone 17 Pro Max, iPhone 17 and an SE-class screen**. A snapshot here is not a PNG: a screen that breathes differs from itself on the next run, and a test that goes red for weather gets muted. It is the screen's *geometry* — every element the accessibility tree exposes, with its frame to a quarter point. The committed baselines are the geometry of `main` **before** this phase, so every element that moves is compared against the pre-change screen, and the only way past a move is to write it into `FeltRegisterClassifications.shifts` with its reason.
+- **`DeviceSlipTests`** (unit) reads the wash's stops, the two faces and the motes' gate.
+
+**Two screens have no picture, and the reason is data, not effort.** `AvaranaThresholdView` and `NityaDetailView` render rows that exist only in Airtable — `ShaktiBootstrap` seeds the sixteen Ring-2 Śaktis and nothing else, so a simulator with `SYNC_OFF` has no āvaraṇa and no Nityā to open, and a launch argument pointed at either quietly no-ops. Their strings are held by `LegibilityTests`, which reads the source rather than the screen. Their geometry is unproven, and saying so is better than seeding fake content to make a test green.
+
+**Errata for the brief.** `OPEN_LETTER=<n>` takes the **khaḍgamālā** position, not the ring-relative 1–16 the device audit recorded: `Shakti.letterKey` is `khadgamalaPosition ?? position + ringStartOffset(2)`, so an unsynced bootstrap row answers to 29–44 and `OPEN_LETTER=1` silently no-ops. Found by driving it, not by reading the note.
+
+### Four calls inside Phase 4 that the sweep itself forced
+
+**The Field's compensation asks whether there is anything to compensate for.** "the threshold ›" and the caption beside it are all `if let avarana`, so before the first sync the whole row collapses to nothing. Taking the 8 pt back from a row that is not there lifted every seat in the ring by 8 pt on a fresh install — the snapshot caught it on both widths. The padding is now a ternary: it pays the 8 pt only when the row exists. Exact in both states, and ugly enough to be obvious.
+
+**The first embodiment node brightens with the pill.** `nodeColor(0)` colours two things: the crossing pill's label at level 0, and the first circle of the four-node embodiment track. Raising it from 0.4 α to 0.55 for the label's sake brightens a 6 pt dot by the same amount. Judged worth it: the alternative is a second colour that means the same thing, and a track whose first node is *below* the legibility floor is a track whose first node cannot be seen either.
+
+**The snapshot harness measures displacement, not size.** A string that grows because its type grew has not moved — it is anchored where its stack put it and the growth came out the other side. So an element's displacement on an axis is the smallest distance any of its three anchors travelled (leading edge, centre, trailing edge): if one held still, the element held still and only grew. A string shoved down by a taller neighbour has no anchor that held, and all three report the same shove. Without this the first run reported every widened label as a lateral move of half its growth, which is noise that would have buried the real ones.
+
+**Two things the harness has to be told, and now says out loud.** The ceremony screen *writes* — `AUTO_RECOGNIZE` records a real local recognition — so it runs last, and the Detail is captured on kp 33 rather than today's kp 29, because Her Moments would otherwise grow a row on every pass and the screen's geometry would differ from itself. A simulator that has been felt in still shows "felt here" on the Field next time, so the run erases its simulators first and the test fails with that instruction rather than with a mysterious diff. And the film is a cover over Settings — a `fullScreenCover` leaves the tree beneath it in the accessibility tree — so it is read as *what the cover added*, subtracting the screen underneath, rather than as nine tenths of a scrolled sheet whose last visible field prompt depends on where the flick stopped.
+## 2026-09-22 · Phase 4, run through — what the scaffolding said when it was finally run
+
+The previous run wrote the three suites and died before it ever executed them. Built and run, the branch was **552 unit tests green on the first build** — the legibility sweep, the hit-area ledger and the device slips all held — and the XCUITests, which had never been executed at all, were **red in seven places**. Every one of them is written down here, because a verification harness that has never run is a claim, and the difference between the claim and the fact is the whole reason this phase exists.
+
+### Two things in the harness that were reading the clock, not the composition
+
+**A run of digits is one `#`, not one `#` per digit.** `ElementFrame.normalize` blanked digits one for one, so the ceremony's own line — `SHE WAS FELT HERE · 9:07 PM` — recorded as `#:## PM` and came back at ten o'clock as `##:## PM`. A different key is a *gone* element and a *new* one, so the suite reported the Recognition screen half-destroyed and half-invented, every night, for one hour in twelve.
+
+**And the meridiem with it.** The Pro Max run crossed midnight and the same line went from `PM` to `AM`. `#:# PM` → `#:# ~`, scoped to a meridiem that follows a blanked number so a walker's own "AM" would be left alone. Both foldings were applied to the committed baselines mechanically — the same transformation on the stored key and the live one, never a re-record.
+
+### The ordering hole, and the answer that removes the requirement entirely
+
+`BinduMandalaUITests.testFeelHerOpensRecognition` records a real recognition, and it sorts before `FeltRegisterSnapshots`. So in a single `xcodebuild test` the Field was always read off a store that remembered one, said "felt here" beside Kāmākarṣiṇī, and reported a composition change that was really the container remembering the last run. The harness's own answer was "erase the simulator between passes", which is an instruction nobody will follow at two in the morning.
+
+**`EPHEMERAL_STORE`** replaces it: a UI-test launch opens a fresh in-memory store and leaves the disk alone, so every screen reads the instrument exactly as a new install does — which is the state every baseline was recorded in — and nothing a test writes outlives it. The suite is now order-independent and re-runnable, proved by running it green on a simulator that was *deliberately left dirty* from the previous pass.
+
+Law 8 is why it is shaped the way it is: the argument exists only under `#if DEBUG`, and the branch returns before anything on disk is opened, preserved or removed. `EphemeralStoreTests` holds both halves and holds it off by default.
+
+### Four controls the XCUITest could not reach, and why each one could not
+
+- **The film's CLOSE.** `OPEN_FILM` is read in `SettingsView`'s own state, so launching with it and never opening Settings measured nothing at all. The test opens Settings now.
+- **The Field's threshold row.** The predicate asked for `Āvaraṇa` and the row announces itself as "2nd Avaraṇa" — `[c]` folds case but not diacritics, so it matched nothing. `[cd]`, and the row is measured wherever it exists.
+- **The threshold and the celestial strip, where the data is not there.** Both are `if let` on rows that live only in Airtable; under `SYNC_OFF` there is no āvaraṇa and no Nityā, and the committed `rite` baseline shows the strip as the moon glyph with no button beneath it. A data absence and a control under the floor are not allowed to look alike, so each is measured where it exists and **skipped out loud** where it does not, with its source pin named in the skip.
+- **The Portrait's export — and this one was a real defect, not a harness gap.** Every layer of the artwork sets `.allowsHitTesting(false)`, so the ZStack had no hit-testable content and the long press that makes the image **had nothing to land on**. The export has never been reachable. Audit §H4 measured it at ≈41 pt from the button it opens; the truth was that the button never appeared. A `.contentShape(Rectangle())` over the artwork's own square fixes it — it draws nothing and moves nothing — and `HitAreaIdiomTests` now holds the gesture and its shape together.
+
+### The one live number this harness will not pretend to read
+
+Inside the export sheet, **everything reports at about 0.96 of the points it is laid out in**: the pill and "close" both declare `minHeight: 44` and both come back 42.25, and the 16 pt Cormorant line between them reports 18.9 where it sets at 19.7. A reported height in there is not points on a screen. Growing the pill until the *reported* number cleared 44 would have meant fattening a drawn capsule by six points to satisfy a measurement that means nothing — the loud mistake §4 warns about. So this control's floor is held at the source, on the ledger that reads the real file, and the XCUITest proves the thing that was actually broken: that the sheet opens at all.
+
+### Where the felt register stands
+
+Green on all three device classes — iPhone 17 Pro Max, iPhone 17 and an SE-class screen — with the ten-screen composition lock passing against the pre-Phase-4 baselines on every one of them. 552 unit tests and 11 UI tests, 0 failures, 0 Swift warnings. Two UI tests skip with their reason on a simulator that has never synced; both are pinned at the source.
+
+**Contention, named rather than worked around.** A second branch was building and testing on this host throughout. `kAXErrorIPCTimeout`, "Early unexpected exit" and a 403-second launch all appeared and all passed on retry, unchanged — the charter's rule held exactly as written, and nothing was edited to make a busy machine go quiet.
+
+## 2026-09-22 · Phase 4.3 and 4.4 — Dynamic Type, and VoiceOver on the Mandala
+
+### 4.4 · The 102 seats speak, and they are `other` elements rather than buttons
+
+The living Mandala is one `Canvas`. Its strokes are not views, so to VoiceOver the
+whole instrument was a blank rectangle — audit §H5's finding, and the reason the
+brief calls this the item that makes the instrument reachable at all.
+`MandalaAccessibilityLayer` is the tree the drawing does not have: one element per
+seat that is on the screen, one per enclosure whose ring is, each standing exactly
+where the canvas drew the thing it speaks for.
+
+**They declare no `.isButton` trait, and iOS gives them one anyway.** The intent was
+to keep them out of every suite that reads buttons off these screens —
+`HitAreaTests` measures every button's touch area on the running app,
+`FeltRegisterSnapshots` records every button's frame as the composition, and
+`SnapshotScreen.tapHamburger` finds the menu *by being the button in the
+top-trailing corner*. The first run said otherwise: all seventeen came back as
+`button`, because an accessibility element that carries an activate action **is** a
+button as far as the system is concerned, and these carry one so a voice can arrive
+at a seat. That is the right answer for the walker and it is not negotiable away, so
+it was written down instead: `FeltRegisterClassifications.appeared` now names the
+seats and the enclosures on the two screens the layer reaches, with the reason.
+Nothing drawn moved — the elements are `Color.clear` and hit-test nothing — and the
+hit-area walk was measured on the running app with them present and stayed green,
+because each is exactly the 44 × 44 the same rule asks of every other control.
+
+One hazard is left standing rather than papered over: `tapHamburger` finds a button
+by its corner, and a seat can sit in that corner. It reaches for the menu on one
+screen only, the Well, where the Mandala is not on the screen at all. If a later
+pass opens the menu from the Mandala, that helper needs a name to find rather than
+a corner.
+
+**The layer draws nothing and hit-tests nothing.** `allowsHitTesting(false)`, so the
+field's pan, pinch and tap all still belong to the one gesture catcher underneath
+and `nearestSeat(to:)` stays the single answer to "which seat is this". VoiceOver
+never hit-tests — it performs the element's own action — so `handleTap(at:)` was
+split: it finds the nearest seat and hands it to `activate(_:)`, and the spoken
+layer hands the same seat to the same function. One door, two ways to reach it, and
+a test that reads both files and holds them to it.
+
+**Her seat is spoken in words, not numerals.** A khaḍgamālā position is identity and
+the charter permits saying it. It is said as *"twenty-ninth of the one hundred and
+two"* rather than *"29 of 102"* — which means the whole spoken surface contains no
+numeral at all, and the never-measure detector has nothing to weigh. `LawsTests`
+already pins one non-identity digit shape in the tree; this phase adds none.
+
+**The transliteration, never the diacritics and never the Devanāgarī.** Sixteen of
+the 102 carry a `phonetic` field; the other 86 do not, and the brief says to speak
+the transliteration we have. `MandalaVoice.romanised(_:)` is an explicit table
+rather than a `stripDiacritics` transform, because stripping is wrong exactly where
+it matters: it turns `ś` into `s`, and *Sparsakarsini* is a different word from
+*Sparshakarshini*. The 16 phonetics are also repaired for an ear — the middle dots
+become spaces, and a syllable written in full capitals (`SHAH`, a stress mark to a
+reader) is title-cased, because a synthesiser spells an all-caps word out. The
+Devanāgarī line on the Detail is labelled as *what it is* and its string is never
+handed to a voice.
+
+**The labels are composed when the field changes, not when the camera moves.** The
+host rebuilds the spoken layer on every camera change, and a drag is sixty of those
+a second; romanising 102 names inside that is 102 string walks per frame on the
+screen the whole instrument is reached through. `MandalaVoice.spoken(for:)` runs in
+`rebuild()`, beside the atmospheres that are precomputed for the same reason, and
+the layer does geometry and nothing else. Both halves are held by a test that reads
+the two files.
+
+### 4.3 · Dynamic Type — three scaled tokens, and nine written-down exceptions
+
+Audit §H5 counted 152 fixed-size font sites in Views, zero text styles, zero
+`relativeTo:`. `AppFont` now vends three scaled tokens — `sanskrit` and `voice` as
+`Font.custom(_:size:relativeTo:)`, and `label` through `UIFontMetrics`, because
+`Font.system(size:)` has no `relativeTo:` of its own — and every meaningful site in
+the shipped screens goes through them.
+
+**The designed size is still the designed size.** At the default content size every
+token returns exactly the point size written at the call site, which is why the
+composition baselines recorded before this phase still pass unchanged. A test
+asserts that directly, because if it ever stops being true every `.geom` file in
+`iOS/SnapshotBaselines/` is measuring a different app.
+
+**A size is measured against the style it is nearest**, one table in `AppFont`, so
+no call site makes the judgement. This decides how *fast* a size grows: at the
+largest accessibility setting `caption2` roughly triples while `largeTitle` grows by
+about half. A 60 pt name that tripled would be four words on nine lines; an 11 pt
+strip that grew by half would still be unreadable.
+
+**Nine sites keep a fixed size, each pinned by exact file-and-source in
+`ScaledType.fixedByDesign`:** the three canvas-drawn strings the brief excepts in as
+many words (they have no line box to wrap into and no stack to push — growing them
+would overlap the seats they name, and §4.4 hands the same three strings to
+VoiceOver, which scales with the voice instead); the five marks centred in a fixed
+target (`+`, `−`, `⤢`, `♪`, `×`, `‹`), which are clipped rather than read if they
+grow past their own disc; and two drawings measured from the screen at run time
+rather than chosen — the ceremony's ghost bīja at 300 × the focal scale, and the
+Rite's name, already fitted to its box and then shrunk again. A tenth, the rite of
+entering's stroke-drawn Devanāgarī, is pinned rather than reached into: `Views/Rooms/`
+belongs to the open Phase 3 branch and the charter's parallelism rule is disjoint
+files. The pin is compared in both directions, so an exception whose site has gone
+fails as loudly as a new raw size.
+
+**Fixed heights became floors.** Four buttons and a bīja block stood in
+`.frame(height:)` — a box that cannot grow with its contents. They are
+`.frame(minHeight:)` now: the same number at the default size, a floor rather than a
+ceiling above it. A test refuses any `Text` with a font whose chain contains a fixed
+height, with one pinned exception: the card's close is the mark `×` at a fixed size
+in the 44 × 44 target `HitAreaIdiomTests` holds it to, where a floor would be a
+floor under something that cannot rise.
+
+**One number moved that was not type.** Settings' last two rows settled 12.5 pt
+against the 11 pt already classified for §4.1, and the bound went to 14. A scaled
+token is `Font.custom(_:size:relativeTo:)` rather than `Font.custom(_:size:)`, and a
+font measured against a text style carries that style's own line metrics: the same
+glyphs at the same point size, in a line box a hair taller. On one row it is
+invisible; Settings is eight cards deep. It is written into the classification with
+that sentence. Nothing on any other screen in the roster moved past a bound it
+already had.
+
+**What is not done, and why.** The zoom column's four glyphs and the card's close
+carry no accessibility label — audit §H5 lists them, and naming them changes what
+the composition snapshots read, so it is not folded into a type migration. The nine
+enclosures are spoken but the Mandala's header, its zoom column and the significance
+card are left at their existing accessibility, for the same reason.
+
+---
+
+## 2026-09-22 · Phase 4 review fixes — the half-point that re-composed the home screen
+
+Seven findings against the 4.1–4.5 branch. Five were real and are fixed; two are
+rejected with a reason. Everything below was proved on a running app, on all three
+device classes, before and after.
+
+**The root of it was one line of arithmetic.** `UIFontMetrics` quantises its answer
+to a third of a point, so a half-point size does not survive the round trip:
+`scaledValue(for: 11.5, compatibleWith: .large)` is **11.666…**, not 11.5. Every
+`AppFont.label(x.5)` site — nine of them, across the Rite, the Detail, Settings, the
+Field, the card, the Bindu, the threshold and the Nityā sheet — was therefore
+shipping **1.45% larger than it was drawn**, and the branch's own
+`testAtTheDefaultSizeNothingMoved` was failing on exactly that, unnoticed because
+the 4.3/4.4 commit was never run. The premise the whole phase rests on — *at the
+default content size every token returns the point size written at the call site* —
+was false the moment it was written down.
+
+**And it had already moved the app's home screen.** The Rite's kicker is one line of
+327.75 pt in a 346 pt column: a quarter of a point of slack. 1.45% of the glyph run
+is about 2.7 pt, so the kicker broke over two lines and, sitting between two
+`Spacer(minLength: 0)`, split the difference and settled the entire centre column —
+her name, her quality, her phonetic, "know her ›" — **seven points down the glass**
+on both phone classes. `FeltRegisterSnapshots` said so on `rite` and `recognition`
+the first time it was asked.
+
+`AppFont.labelPointSize` now normalises the metric against its own answer at
+`.large`: the ratio carries the growth, the designed size is what it grows from. At
+the default category the identity is exact; above it the strip grows in the
+proportion its text style grows. The test asserts the **token** rather than the
+metric, and a second test pins the reason — it asserts that the raw metric really
+does still quantise, so the normalisation cannot be deleted as a no-op without
+somebody meeting the fact that made it necessary. With it, the kicker is 327.75 pt
+on one line again and the composition lock passes on all three classes.
+
+**Nothing was added to hold the kicker on its line.** A `.lineLimit(1)` there would
+have changed the SE, where the baseline shows this string has *always* wrapped to
+two lines at 166.50 × 27.50. The defect was the 1.45%, and the 1.45% is gone.
+
+**Two screens had nowhere to grow, and did not overflow — they were cut.** The Rite
+and the Bindu are the app's two fixed tableaux: a `VStack` between two
+`Spacer(minLength: 0)` that are already at zero on an SE at the default size. Type
+that grows inside a height it cannot exceed does not run off the bottom; SwiftUI
+proposes each string less room and the strings **truncate**. At the largest
+accessibility size the Rite's own question read `“Where does w…` — the most
+meaningful sentence on the home screen — while the moon was pushed up under the
+status bar; the Bindu's closing paragraph lost a fifth of its height the same way.
+Above `.accessibility1` both columns are now wrapped in a `ScrollView` with a
+`minHeight` floor of the screen: the spacers keep doing their work for as long as
+the column fits, and only then does it scroll. Below `.accessibility1` — every size
+a walker who has not turned on accessibility type will ever see — the `ScrollView`
+is never built and the fixed column is the one the baselines were recorded against.
+Enabling Dynamic Type on a composition with nowhere to go is what broke these; the
+fix is to give it somewhere, not to stop it growing.
+
+**The Well's title needed a lower floor, not a second line.** On an SE it is already
+shrinking at the default size to keep clear of the hamburger's lane; once it scaled
+it needed about 0.69 at the largest size, hit its 0.75 floor, and read `Your
+Letters…`. The floor is 0.55. Letting it wrap instead was tried and reverted: a
+second line pushes the whole Well **thirty-eight points** down the SE at the
+*default* size, which the lock caught on `se/well` and `se/settings` — the exact
+composition change this phase is forbidden to make, arrived at while fixing an
+accessibility bug. `minimumScaleFactor` is only ever consulted when the text does
+not fit, so a lower floor costs nothing at any size that fits today.
+
+**The crossing pill's target was about 34 pt, not 44.** It buys the whole target
+with `.padding(.bottom, 20)`, and `VStack(spacing: -12)` pulls the "hold to cross
+into …" caption back up over the lower twelve points of it. A plain `Text` is
+hit-testable and is drawn after the pill, so a thumb landing in that band lands on a
+caption with no gesture and the long press never begins. The caption now says
+`.allowsHitTesting(false)`. Nothing drawn changes and the −12 compensation is
+intact. This is the one of the eight targets no live measurement reaches, because it
+appears only when a Śakti is ready to cross — which is why it was typed correctly,
+locked by `HitAreaIdiomTests` for the idiom, and wrong in fact.
+
+### The two locks that could not fail
+
+**The suite was rotting on the calendar.** `ElementFrame.normalize` folds a digit run
+and a meridiem, but `LunarPhaseService.headerLabel` lands in the key verbatim:
+`WAXING GIBBOUS · #TH NIGHT`. When the phase turns, or on nights 1–3 and 21–23 when
+the suffix folds to `#ST`/`#ND`/`#RD`, the key changes — and a changed key reads as
+`gone`, which this file deliberately makes unclassifiable, plus an unclassified
+`new`. Four failures on two screens on every device class, on the weather, with no
+code change at all: precisely the *"a test that goes red for weather gets muted"*
+outcome the file's own header exists to prevent. `foldMoon` folds the phase and the
+ordinal night the way `foldClock` folds the hour, and the identical transformation
+was applied mechanically to the six committed keys — the same *same transformation
+on the stored key and the live one, never a re-record* discipline the meridiem used.
+The frames needed no help: a shorter phase name re-centres the strip and the
+comparison already takes the smallest of three anchors.
+
+**The largest-size sweep measured only width, and that is what certified the broken
+Rite as green.** Truncation by definition keeps a frame inside its box, so a cut
+string moves no bound; and the vertical axis was skipped outright because *"a
+vertical bound would fail on every scrolling screen"*. Both halves are closed:
+
+- The vertical bound is now asserted **on a screen that has nowhere to scroll**,
+  which is the same judgement the horizontal bound makes, turned ninety degrees.
+  The screen is asked, not assumed, so the Rite and the Bindu are checked below
+  `.accessibility1` and exempt above it, where they now have somewhere to go.
+- A new check reads each screen **twice** — at the default size and at the largest —
+  and matches its strings by the composition lock's own folded key. No public API
+  asks an element whether it was truncated, and the width a label needs cannot be
+  computed without knowing the token it was set in; but one thing is always true and
+  needs neither: **bigger type is never shorter.** A string that occupies less
+  height at the largest size has not re-wrapped, it has been cut. The bar is 8%,
+  which sits above the three per cent a one-line name with `minimumScaleFactor`
+  legitimately gives back to stay on its line, and below one line lost from six.
+  It found the Bindu on its first run — a screen no finding had named.
+
+### Rejected
+
+**`AppFont.label` does not re-resolve while the app is running.** True, and it stays.
+The token builds a concrete `UIFont` at body-evaluation time, so a walker who changes
+the system text size *while Bindu Mandala is running* and returns finds the Cormorant
+strings rescaled and the system-sans strips frozen at the size the app launched with,
+until the next cold launch. There is no fix that is both correct and small: SwiftUI
+invalidates only views that **read** `\.dynamicTypeSize`, and a `ViewModifier` cannot
+read it on a child's behalf, so either all fifty call sites change idiom (and the
+source scanner that polices them changes with them), or the system face is reached by
+its private PostScript name so `Font.custom(_:size:relativeTo:)` can scale it from the
+environment. The first is a fifty-site rewrite plus a scanner rewrite for a walker who
+changes text size mid-session; the second is a private-name dependency under every
+small-caps strip in the app. Neither is what makes this build worth installing, and
+both are larger than everything above put together. Written down here rather than
+fixed, with the route named: `@ScaledMetric` per site, or the `labelPointSize(_:_:
+compatibleWith:)` seam that now exists, taking the category from the environment.
+
+**A live per-string truncation assertion, in the form the finding asked for.**
+XCUITest returns the untruncated label, but the *width that label needs* cannot be
+computed without knowing which token drew it, and the test process has no way to ask.
+The two-reads height comparison above is the same guarantee reached by something that
+is actually true.

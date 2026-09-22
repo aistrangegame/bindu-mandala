@@ -66,11 +66,11 @@ struct AvaranaThresholdView: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(ordinal(ring)) Āvaraṇa · \(avarana.enclosureForm)".uppercased())
-                    .font(.system(size: 10.5))
+                    .font(AppFont.label(11.5))
                     .tracking(2.4)
                     .foregroundStyle(Color.gold.opacity(0.75))
                 Text("\(avarana.shaktiCount) śakti\(avarana.shaktiCount == 1 ? "" : "s")")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.5))
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -79,7 +79,7 @@ struct AvaranaThresholdView: View {
             .padding(.bottom, 12)
 
             Text(avarana.sanskritName)
-                .font(.custom(AppFont.cormorant, size: 34))
+                .font(AppFont.sanskrit(34))
                 .tracking(2.7)
                 .foregroundStyle(Color.gold)
                 .fixedSize(horizontal: false, vertical: true)
@@ -89,7 +89,7 @@ struct AvaranaThresholdView: View {
 
             if let sub = avarana.subtitle, !sub.isEmpty {
                 Text(sub)
-                    .font(.custom(AppFont.cormorantItalic, size: 17))
+                    .font(AppFont.voice(17))
                     .tracking(0.5)
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .fixedSize(horizontal: false, vertical: true)
@@ -106,23 +106,23 @@ struct AvaranaThresholdView: View {
             }
 
             staggeredLine(text: avarana.geometricShape, visible: line3Visible,
-                          font: .custom(AppFont.cormorant, size: 15),
+                          font: AppFont.sanskrit(15),
                           color: Color.cream.opacity(0.82))
 
             staggeredLine(text: avarana.presidingForm, visible: line4Visible,
-                          font: .custom(AppFont.cormorant, size: 14),
+                          font: AppFont.sanskrit(14),
                           color: Color.cream.opacity(0.60))
 
             staggeredLine(text: avarana.yogini, visible: line5Visible,
-                          font: .custom(AppFont.cormorantItalic, size: 13),
+                          font: AppFont.voice(13),
                           color: Color.cream.opacity(0.55))
 
             staggeredLine(text: avarana.mentalState, visible: line6Visible,
-                          font: .custom(AppFont.cormorantItalic, size: 13),
+                          font: AppFont.voice(13),
                           color: Color.cream.opacity(0.55))
 
             staggeredLine(text: avarana.subtleBodyChakra, visible: line7Visible,
-                          font: .custom(AppFont.cormorant, size: 12),
+                          font: AppFont.sanskrit(12),
                           color: Color.gold.opacity(0.85),
                           tracking: 1.2)
         }
@@ -161,7 +161,7 @@ struct AvaranaThresholdView: View {
 
             if let conn = avarana.personalConnection, !conn.isEmpty {
                 Text(conn)
-                    .font(.custom(AppFont.cormorantItalic, size: 15.5))
+                    .font(AppFont.voice(15.5))
                     .tracking(0.15)
                     .lineSpacing(11)
                     .foregroundStyle(Color.cream.opacity(0.65))
@@ -173,7 +173,7 @@ struct AvaranaThresholdView: View {
             // The gratitude offered on crossing this threshold.
             if !avarana.appreciationPhrase.isEmpty {
                 Text("“\(avarana.appreciationPhrase)”")
-                    .font(.custom(AppFont.cormorantItalic, size: 17))
+                    .font(AppFont.voice(17))
                     .tracking(0.3)
                     .lineSpacing(7)
                     .foregroundStyle(Color.gold)

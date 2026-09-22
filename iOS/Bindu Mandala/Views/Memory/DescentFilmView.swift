@@ -57,17 +57,19 @@ struct DescentFilmView: View {
             VStack {
                 Spacer()
                 progressDots
-                    .padding(.bottom, 14)
+                    .padding(.bottom, 10)
                 Button { dismiss() } label: {
                     Text("close".uppercased())
-                        .font(.system(size: 11))
+                        .font(AppFont.label(11))
                         .tracking(2.4)
                         .foregroundStyle(Color.cream.opacity(0.55))
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 16)
                         .padding(.horizontal, 22)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .padding(.bottom, 24)
+                .padding(.bottom, 20)
             }
         }
         .contentShape(Rectangle())
@@ -81,11 +83,11 @@ struct DescentFilmView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Text("the descent has not yet begun")
-                .font(.custom(AppFont.cormorantItalic, size: 18))
+                .font(AppFont.voice(18))
                 .foregroundStyle(Color.cream.opacity(0.55))
                 .multilineTextAlignment(.center)
             Text("you are at home")
-                .font(.system(size: 11))
+                .font(AppFont.label(11))
                 .tracking(2.4)
                 .foregroundStyle(Color.gold.opacity(0.50))
         }
@@ -154,20 +156,20 @@ private struct FilmMomentView: View {
             VStack(spacing: 10) {
                 if let av = moment.avarana, !av.sanskritName.isEmpty {
                     Text(av.sanskritName)
-                        .font(.custom(AppFont.cormorant, size: 30))
+                        .font(AppFont.sanskrit(30))
                         .tracking(1.4)
                         .foregroundStyle(Color.cream)
                         .multilineTextAlignment(.center)
                 } else {
                     Text("Avaraṇa \(moment.ring)")
-                        .font(.custom(AppFont.cormorant, size: 28))
+                        .font(AppFont.sanskrit(28))
                         .tracking(1.2)
                         .foregroundStyle(Color.cream.opacity(0.85))
                 }
 
                 if let sub = moment.avarana?.subtitle, !sub.isEmpty {
                     Text(sub)
-                        .font(.custom(AppFont.cormorantItalic, size: 15))
+                        .font(AppFont.voice(15))
                         .tracking(0.4)
                         .foregroundStyle(Color.cream.opacity(0.60))
                         .multilineTextAlignment(.center)
@@ -177,17 +179,17 @@ private struct FilmMomentView: View {
 
             if let date = moment.crossedAt {
                 Text("the way opened · \(formatDate(date))")
-                    .font(.system(size: 11))
+                    .font(AppFont.label(11))
                     .tracking(2.4)
                     .foregroundStyle(Color.gold.opacity(0.75))
             } else if moment.ring == 2 {
                 Text("home")
-                    .font(.system(size: 11))
+                    .font(AppFont.label(11))
                     .tracking(2.4)
                     .foregroundStyle(Color.gold.opacity(0.65))
             } else if moment.ring == 1 {
                 Text("the ground")
-                    .font(.system(size: 11))
+                    .font(AppFont.label(11))
                     .tracking(2.4)
                     .foregroundStyle(Color.gold.opacity(0.65))
             }

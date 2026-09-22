@@ -21,6 +21,23 @@ enum AppRuntime {
     /// obscures screenshots. Pass `SKIP_SUMMONS` as a launch argument.
     static let skipsSummons = ProcessInfo.processInfo.arguments.contains("SKIP_SUMMONS")
 
+    /// Debug: open a **fresh in-memory store** instead of the practitioner's own,
+    /// so a UI-test launch reads the instrument exactly as a new install does and
+    /// writes nothing that a later launch — or a later test in the same run — can
+    /// read back. Pass `EPHEMERAL_STORE` as a launch argument.
+    ///
+    /// Law 8 (*Ashrey's practice is sacred data*) is why this is written the way
+    /// it is: the argument exists only in a DEBUG build, and even there it never
+    /// opens, moves or deletes the on-disk store — it simply does not go near it.
+    /// `EphemeralStoreTests` holds both halves of that sentence.
+    static let usesEphemeralStore: Bool = {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("EPHEMERAL_STORE")
+        #else
+        return false
+        #endif
+    }()
+
     /// Debug: pin today's energy to a fixed khaḍgamālā position (1–102) so the
     /// Rite and the Mandala highlight a chosen Śakti in screenshots. Pass
     /// `ENERGY_POS=<n>` as a launch argument.

@@ -96,14 +96,14 @@ struct TheHundredTwoView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Text("The Field")
-                .font(.custom(AppFont.cormorant, size: 30))
+                .font(AppFont.sanskrit(30))
                 .fontWeight(.light)
                 .tracking(1.6)
                 .foregroundStyle(Color.cream)
             Text("NINE RINGS · ONE HUNDRED AND TWO")
-                .font(.system(size: 10.5))
+                .font(AppFont.label(11.5))
                 .tracking(2.4)
-                .foregroundStyle(Color.cream.opacity(0.45))
+                .foregroundStyle(Color.cream.opacity(0.55))
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 14)
@@ -190,7 +190,7 @@ private struct FieldRing: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 10) {
                         Text(ringName)
-                            .font(.custom(AppFont.cormorant, size: 21))
+                            .font(AppFont.sanskrit(21))
                             .tracking(0.6)
                             .foregroundStyle(open ? ringAtmo.accentBright : Color.cream)
                         if holdsToday {
@@ -202,7 +202,7 @@ private struct FieldRing: View {
                     }
                     if let sub = avarana?.subtitle, !sub.isEmpty {
                         Text(sub)
-                            .font(.custom(AppFont.cormorantItalic, size: 14.5))
+                            .font(AppFont.voice(14.5))
                             .foregroundStyle(Color.cream.opacity(0.55))
                     }
                 }
@@ -210,11 +210,11 @@ private struct FieldRing: View {
 
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("\(seats.count)")
-                        .font(.system(size: 10.5))
+                        .font(AppFont.label(11.5))
                         .tracking(1.0)
                         .foregroundStyle(ringAtmo.accentBright)
                     Text("›")
-                        .font(.system(size: 15))
+                        .font(AppFont.label(15))
                         .foregroundStyle(Color.cream.opacity(0.4))
                         .rotationEffect(.degrees(open ? 90 : 0))
                 }
@@ -239,31 +239,32 @@ private struct FieldRing: View {
             HStack(alignment: .center, spacing: 10) {
                 if let form = avarana?.enclosureForm, !form.isEmpty {
                     Text(form.uppercased())
-                        .font(.system(size: 10))
+                        .font(AppFont.label(11.5))
                         .tracking(2.4)
                         .foregroundStyle(ringAtmo.accentBright)
                 }
                 if let mental = avarana?.mentalState, !mental.isEmpty {
                     Text(mental)
-                        .font(.custom(AppFont.cormorantItalic, size: 14))
+                        .font(AppFont.voice(14))
                         .foregroundStyle(Color.cream.opacity(0.6))
                 }
                 Spacer(minLength: 8)
                 if avarana != nil {
                     Button(action: onOpenThreshold) {
                         Text("the threshold ›")
-                            .font(.custom(AppFont.cormorantItalic, size: 14))
+                            .font(AppFont.voice(14))
                             .tracking(0.4)
                             .foregroundStyle(ringAtmo.accentBright)
-                            .padding(.vertical, 10)
+                            .padding(.vertical, 14)
+                            .frame(minHeight: 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 26)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
+            .padding(.top, avarana == nil ? 8 : 4)
+            .padding(.bottom, avarana == nil ? 12 : 8)
 
             ForEach(seats) { seat in
                 seatRow(seat)
@@ -300,7 +301,7 @@ private struct FieldRing: View {
                     .opacity(felt ? 1 : 0.4)
                     .shadow(color: felt ? sAtmo.accentBright : .clear, radius: felt ? 6 : 0)
                 Text(seat.name)
-                    .font(.custom(AppFont.cormorant, size: 19))
+                    .font(AppFont.sanskrit(19))
                     .tracking(0.3)
                     .foregroundStyle(Color.cream.opacity(felt ? 1 : 0.82))
                     // Law 2: a felt seat is warmer (dot, glow, full cream), never counted.
@@ -309,7 +310,7 @@ private struct FieldRing: View {
                 Spacer(minLength: 10)
                 if isToday {
                     Text("today")
-                        .font(.custom(AppFont.cormorantItalic, size: 13.5))
+                        .font(AppFont.voice(13.5))
                         .foregroundStyle(sAtmo.accentBright)
                 }
             }

@@ -93,16 +93,36 @@ struct DustMotesView: View {
                 .shadow(color: color.opacity(0.5), radius: mote.size * 2)
                 .position(x: mote.xFrac * width + travel.x,
                           y: mote.yFrac * height + travel.y)
-                .onAppear {
-                    guard !reduceMotion else { phase = 0.5; return }
-                    // rise/fall loop one direction; drift/still/twinkle breathe.
-                    let autoreverse = (motion == .drift || motion == .still || motion == .twinkle)
-                    withAnimation(.linear(duration: mote.duration)
-                        .repeatForever(autoreverses: autoreverse)
-                        .delay(mote.delay)) {
-                        phase = 1
-                    }
-                }
+                .onAppear { follow() }
+                .onChange(of: reduceMotion) { _, _ in follow() }
+        }
+
+        /// The one place a mote's loop is started or stopped.
+        ///
+        /// Reduce motion switched on *mid-session* has to replace an animation
+        /// that is already running: a plain assignment would be picked up by the
+        /// repeat still in flight and simply animate to the new value, and the
+        /// mote would go on moving until the screen was left. Setting the still
+        /// phase inside a transaction with animations disabled removes the
+        /// repeat outright. Switched back off, the loop starts again from the
+        /// same place it always did.
+        private func follow() {
+            guard !reduceMotion else {
+                var stop = Transaction()
+                stop.disablesAnimations = true
+                withTransaction(stop) { phase = 0.5 }
+                return
+            }
+            var restart = Transaction()
+            restart.disablesAnimations = true
+            withTransaction(restart) { phase = 0 }
+            // rise/fall loop one direction; drift/still/twinkle breathe.
+            let autoreverse = (motion == .drift || motion == .still || motion == .twinkle)
+            withAnimation(.linear(duration: mote.duration)
+                .repeatForever(autoreverses: autoreverse)
+                .delay(mote.delay)) {
+                phase = 1
+            }
         }
 
         /// Local travel from the mote's anchor, by element.

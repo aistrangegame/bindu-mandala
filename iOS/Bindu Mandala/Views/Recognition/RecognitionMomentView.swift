@@ -68,10 +68,28 @@ struct RecognitionMomentView: View {
                     .animation(.easeIn(duration: 0.6), value: closing)
 
                 if closing { collapseCircle(at: focal) }
+
+                // §4.4. The whole screen is the way out, which gives a sighted
+                // walker a target the size of the glass and a VoiceOver walker
+                // nothing at all — there is no element under the finger to find.
+                // This is that element: it draws nothing, hit-tests nothing (the
+                // gesture below is still the only touch path), and carries the
+                // action so a voice can perform it. It is last in the spoken
+                // order, because the two Recognition lines are what this screen
+                // is for and the way out is not.
+                Color.clear
+                    .accessibilityElement()
+                    .accessibilityLabel(MandalaVoice.closeCeremony)
+                    .accessibilitySortPriority(-1)
+                    .accessibilityAction { if nameVisible { beginClose() } }
+                    .allowsHitTesting(false)
             }
             .ignoresSafeArea()
         }
         .background(Color(red: 5/255, green: 2/255, blue: 3/255).ignoresSafeArea())
+        // The idiomatic dismissal as well as the named one: a two-finger scrub
+        // leaves the moment, the way it leaves any other screen in iOS.
+        .accessibilityAction(.escape) { if nameVisible { beginClose() } }
         .contentShape(Rectangle())
         .onTapGesture {
             // Don't allow dismissing the ceremony before her name has arrived —
@@ -158,7 +176,7 @@ struct RecognitionMomentView: View {
                 Spacer()
 
                 Text(shakti.name)
-                    .font(.custom(AppFont.cormorant, size: 40))
+                    .font(AppFont.sanskrit(40))
                     .foregroundStyle(Color.cream)
                     .tracking(3.2)
                     .multilineTextAlignment(.center)
@@ -179,7 +197,7 @@ struct RecognitionMomentView: View {
                         .padding(.bottom, 28)
 
                     Text(phraseText)
-                        .font(.custom(AppFont.cormorantItalic, size: 24))
+                        .font(AppFont.voice(24))
                         .foregroundStyle(Color.cream)
                         .tracking(0.5)
                         .multilineTextAlignment(.center)
@@ -198,7 +216,7 @@ struct RecognitionMomentView: View {
 
                 // Act 1
                 Text("she was felt here · \(timeString(act1Time))".uppercased())
-                    .font(.system(size: 11))
+                    .font(AppFont.label(11))
                     .tracking(1.8)
                     .foregroundStyle(Color.cream.opacity(0.6))
                     .padding(.bottom, 10)
@@ -215,7 +233,7 @@ struct RecognitionMomentView: View {
                 // moment Act 2 becomes visible, not pre-computed — so it reads
                 // the real time the practitioner received the reciprocity.
                 Text("and she felt you back · \(timeStringWithSeconds(act2Time ?? act1Time.addingTimeInterval(3)))")
-                    .font(.custom(AppFont.cormorantItalic, size: 15))
+                    .font(AppFont.voice(15))
                     .foregroundStyle(atmo.accentBright)
                     .tracking(0.7)
                     .padding(.bottom, 22)
@@ -230,9 +248,9 @@ struct RecognitionMomentView: View {
                 }
 
                 Text("Tap anywhere to close".uppercased())
-                    .font(.system(size: 10))
+                    .font(AppFont.label(11))
                     .tracking(2)
-                    .foregroundStyle(Color.cream.opacity(0.40))
+                    .foregroundStyle(Color.cream.opacity(0.50))
                     .padding(.bottom, 36)
             }
         }
@@ -349,12 +367,12 @@ private struct NoteCard: View {
         VStack(alignment: .leading, spacing: 6) {
             if text.isEmpty && !focused {
                 Text("What did you notice?")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.50))
                     .tracking(0.5)
             }
             TextField("", text: $text, axis: .vertical)
-                .font(.custom(AppFont.cormorantItalic, size: 14))
+                .font(AppFont.voice(14))
                 .foregroundStyle(Color.cream.opacity(0.85))
                 .focused($focused)
                 .lineLimit(1...4)

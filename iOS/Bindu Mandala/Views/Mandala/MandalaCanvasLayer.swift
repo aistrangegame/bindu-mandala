@@ -96,7 +96,7 @@ struct MandalaCanvasLayer: View {
             guard y > -20, y < size.height + 20 else { continue }
             var text = ctx.resolve(
                 Text(label.uppercased())
-                    .font(.system(size: 9))
+                    .font(.system(size: 11.5))
                     .tracking(1.6)
                     .foregroundStyle(Color.gold.opacity(0.6)))
             text.shading = .color(Color.gold.opacity(0.6))
@@ -269,9 +269,9 @@ struct MandalaCanvasLayer: View {
                     : (seat.shakti.shortName.isEmpty ? seat.shakti.name : seat.shakti.shortName)
                 var text = ctx.resolve(
                     Text(name)
-                        .font(.custom(AppFont.cormorant, size: 10))
-                        .foregroundStyle(Color.cream.opacity(lit ? 0.85 : 0.42)))
-                text.shading = .color(Color.cream.opacity(lit ? 0.85 : 0.42))
+                        .font(.custom(AppFont.cormorant, size: 11.5))
+                        .foregroundStyle(Color.cream.opacity(lit ? 0.85 : 0.55)))
+                text.shading = .color(Color.cream.opacity(lit ? 0.85 : 0.55))
                 ctx.draw(text, at: CGPoint(x: screen.x, y: screen.y + dotR + 9), anchor: .center)
 
                 // bīja syllable at the deepest zoom — she names her seed (the 86
@@ -280,10 +280,10 @@ struct MandalaCanvasLayer: View {
                     if let syllable = seat.shakti.bijaSyllable {
                         var bt = ctx.resolve(
                             Text("bīja \(syllable)")
-                                .font(.custom(AppFont.cormorantItalic, size: 8))
+                                .font(.custom(AppFont.cormorantItalic, size: 11.5))
                                 .foregroundStyle(a.accentBright.opacity(0.85)))
                         bt.shading = .color(a.accentBright.opacity(0.85))
-                        ctx.draw(bt, at: CGPoint(x: screen.x, y: screen.y + dotR + 20), anchor: .center)
+                        ctx.draw(bt, at: CGPoint(x: screen.x, y: screen.y + dotR + 24), anchor: .center)
                     }
                 }
             }

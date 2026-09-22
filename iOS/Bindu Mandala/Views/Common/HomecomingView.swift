@@ -30,7 +30,7 @@ struct HomecomingView: View {
                     .padding(.bottom, 64)
 
                 Text("You have always felt them.")
-                    .font(.custom(AppFont.cormorantItalic, size: 22))
+                    .font(AppFont.voice(22))
                     .tracking(1.0)
                     .foregroundStyle(Color.cream)
                     .multilineTextAlignment(.center)
@@ -38,7 +38,7 @@ struct HomecomingView: View {
                     .padding(.bottom, 18)
 
                 Text("Now you will know their names.")
-                    .font(.custom(AppFont.cormorantItalic, size: 22))
+                    .font(AppFont.voice(22))
                     .tracking(1.0)
                     .foregroundStyle(Color.cream)
                     .multilineTextAlignment(.center)
@@ -47,12 +47,23 @@ struct HomecomingView: View {
                 Spacer()
 
                 Text("tap to enter".uppercased())
-                    .font(.system(size: 10))
+                    .font(AppFont.label(11))
                     .tracking(2.8)
-                    .foregroundStyle(Color.cream.opacity(0.40))
+                    .foregroundStyle(Color.cream.opacity(0.50))
                     .padding(.bottom, 40)
                     .opacity(hintVisible ? 1 : 0)
             }
+
+            // §4.4, the same reasoning as the ceremony's: a screen a walker
+            // leaves by touching anywhere has nothing under the finger for a
+            // voice to find. Draws nothing, hit-tests nothing, carries the
+            // action.
+            Color.clear
+                .accessibilityElement()
+                .accessibilityLabel(MandalaVoice.enterFromHomecoming)
+                .accessibilitySortPriority(-1)
+                .accessibilityAction { dismiss() }
+                .allowsHitTesting(false)
         }
         .contentShape(Rectangle())
         .onTapGesture { dismiss() }

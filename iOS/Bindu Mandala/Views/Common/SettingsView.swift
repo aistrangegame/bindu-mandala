@@ -10,7 +10,12 @@ struct SettingsView: View {
 
     @AppStorage("daily_summons_enabled") private var summonsEnabled = true
     @AppStorage("daily_summons_hour")    private var summonsHour: Int = DailySummons.defaultHour
-    @State private var filmPresented = false
+    /// Debug: `OPEN_FILM` opens The Way Behind directly. The card that opens it
+    /// is the fourth down a sheet that is off-screen on every width, so reaching
+    /// it by touch means scrolling to a place that depends on where a flick
+    /// landed — which is not a screen a test can measure twice. Same idiom as
+    /// `OPEN_LETTER` / `OPEN_DETAIL` / `OPEN_SILENCE`.
+    @State private var filmPresented = ProcessInfo.processInfo.arguments.contains("OPEN_FILM")
 
     var body: some View {
         NavigationStack {
@@ -35,6 +40,14 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Settings")
+                        .font(AppFont.sanskrit(19))
+                        .tracking(0.6)
+                        .foregroundStyle(Color.cream)
+                }
+            }
             .toolbarBackground(Color.ground, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
@@ -48,7 +61,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 18) {
                 Toggle(isOn: $summonsEnabled) {
                     Text("Let her arrive")
-                        .font(.custom(AppFont.cormorant, size: 18))
+                        .font(AppFont.sanskrit(18))
                         .foregroundStyle(Color.cream)
                 }
                 .tint(Color.gold)
@@ -59,7 +72,7 @@ struct SettingsView: View {
                 if summonsEnabled {
                     HStack {
                         Text("She arrives")
-                            .font(.system(size: 14))
+                            .font(AppFont.label(14))
                             .foregroundStyle(Color.cream.opacity(0.7))
                         Spacer()
                         Picker("", selection: $summonsHour) {
@@ -76,7 +89,7 @@ struct SettingsView: View {
                 }
 
                 Text("Once a day, never twice. If the rite is already done, she lets the evening pass in stillness.")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
@@ -93,7 +106,7 @@ struct SettingsView: View {
                 fieldRow(position: 14, defaultName: "Ram",
                          hint: "Holds her frequency.")
                 Text("These names appear on each Śakti's Detail screen and may be edited freely. They are personal to this practitioner.")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
@@ -103,7 +116,7 @@ struct SettingsView: View {
     private var bijaSection: some View {
         sectionShell("Bīja") {
             Text("Bīja values follow Airtable when connected. When offline, the cached syllables are used. Tap any bīja in a Śakti's Detail screen to hear her tone.")
-                .font(.custom(AppFont.cormorantItalic, size: 14))
+                .font(AppFont.voice(14))
                 .foregroundStyle(Color.cream.opacity(0.65))
                 .lineSpacing(5)
         }
@@ -117,7 +130,7 @@ struct SettingsView: View {
                     filmPresented = true
                 } label: {
                     Text("Remember the descent")
-                        .font(.custom(AppFont.cormorant, size: 18))
+                        .font(AppFont.sanskrit(18))
                         .tracking(0.6)
                         .foregroundStyle(Color.gold)
                         .frame(maxWidth: .infinity)
@@ -129,7 +142,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 Text("Each ring you have crossed, opening one by one.")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
@@ -141,7 +154,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Button(action: reEnterHomecoming) {
                     Text("Re-enter the Homecoming")
-                        .font(.custom(AppFont.cormorant, size: 18))
+                        .font(AppFont.sanskrit(18))
                         .tracking(0.6)
                         .foregroundStyle(Color.gold)
                         .frame(maxWidth: .infinity)
@@ -153,7 +166,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 Text("She will greet you again, as on the first day.")
-                    .font(.custom(AppFont.cormorantItalic, size: 13))
+                    .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)
             }
@@ -172,7 +185,7 @@ struct SettingsView: View {
                                              @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(title.uppercased())
-                .font(.system(size: 10))
+                .font(AppFont.label(11.5))
                 .tracking(2.2)
                 .foregroundStyle(Color.gold.opacity(0.85))
             content()
@@ -188,23 +201,25 @@ struct SettingsView: View {
     @ViewBuilder
     private func fieldRow(position: Int, defaultName: String, hint: String) -> some View {
         if let shakti = shaktis.first(where: { $0.position == position && ($0.ringNumber ?? 2) == 2 }) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 8) {
                     Circle()
                         .fill(shakti.cluster.color)
                         .frame(width: 6, height: 6)
                     Text(shakti.name)
-                        .font(.custom(AppFont.cormorant, size: 16))
+                        .font(AppFont.sanskrit(16))
                         .foregroundStyle(Color.cream)
                     Spacer()
                 }
+                .padding(.bottom, 6)
                 FieldNameField(
                     shakti: shakti,
                     placeholder: defaultName
                 )
                 Text(hint)
-                    .font(.custom(AppFont.cormorantItalic, size: 12))
+                    .font(AppFont.voice(12))
                     .foregroundStyle(Color.cream.opacity(0.55))
+                    .padding(.top, 4)
             }
         }
     }
@@ -252,9 +267,9 @@ private struct FieldNameField: View {
                     try? context.save()
                 }
             ),
-            prompt: Text(placeholder).foregroundStyle(Color.cream.opacity(0.45))
+            prompt: Text(placeholder).foregroundStyle(Color.cream.opacity(0.55))
         )
-        .font(.custom(AppFont.cormorant, size: 18))
+        .font(AppFont.sanskrit(18))
         .foregroundStyle(Color.cream)
         .tint(Color.gold)
         .padding(.horizontal, 12)
@@ -267,5 +282,8 @@ private struct FieldNameField: View {
                         .stroke(Color.gold.opacity(0.18), lineWidth: 0.5)
                 )
         )
+        .padding(.bottom, 2)
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 }
