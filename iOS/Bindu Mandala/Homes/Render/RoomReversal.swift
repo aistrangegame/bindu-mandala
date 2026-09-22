@@ -308,11 +308,13 @@ enum RoomMechanisms {
         case .endless:  return EndlessRoom()
         case .known:    return KnownRoom()
         // Pass three built the two Design named among the Mudrās and never
-        // finished: khaḍgamālā 27 is the membrane and 28 is the triple. Only the
-        // Bindu's own room is left, and it waits for Ring 9.
+        // finished: khaḍgamālā 27 is the membrane and 28 is the triple.
         case .membrane: return MembraneRoom()
         case .triple:   return TripleRoom()
-        case .dissolve: return nil
+        // And Ring 9 built the last of the eight. The grammar declines to speak
+        // for the Bindu (``HomeRooms/grammarRings`` stops at 8), so kp 102 has
+        // no other way to a room: this line is the whole of ring nine.
+        case .dissolve: return DissolveRoom()
         }
     }
 
