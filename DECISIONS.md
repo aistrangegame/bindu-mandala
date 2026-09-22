@@ -1924,3 +1924,63 @@ All 102 render neither black, nor blown out, nor flat, at the first adaptation a
 
 **Full suite: 624 tests, 0 failures, 0 Swift warnings.** The eleven skips are the opt-in spike
 benchmarks, unchanged.
+
+---
+
+## The press that was never delivered — keeping `dbb3b8c`
+
+**The call:** keep the retry helper in `BinduMandalaUITests`. Do not revert it, and do not
+"fix" any app source on the strength of the failure that prompted it.
+
+**What happened.** The lead ran the full suite independently before merging 3.6 and found
+`testFeelHerOpensRecognition` failing: tapping *I feel her* did not open the Recognition
+ceremony. It failed twice, including on a quiet machine after 66.8 s, so it was not a timeout
+under load. Held the merge. Three agents then took it apart.
+
+**The cause is below the app.** Caught in the act with `simctl log stream`:
+
+```
+backboardd  cancel -- digitizer did disappear:<BKDirectTouchState …
+  contacts: [pathIndex: 2; touchIdentifier: 1; touching; locked;
+             … sceneID:com.ashrey.bindu-mandala-default]>
+```
+
+The contact is still `touching` when the digitizer goes away. XCTest attaches a virtual HID
+digitizer, plays touch-down at +0.00 s and touch-up at +0.05 s, and tears the service down
+~180 ms after attaching. Under host contention the playback is descheduled between the two
+frames, the lift never reaches backboardd, and the live contact is cancelled. UIKit delivers
+`UITouchPhaseCancelled`; SwiftUI **correctly** discards a cancelled press; the `Button`'s
+action never runs. XCTest is unaware — it logs "Synthesize event" as succeeded and then polls
+the full 20 s for a consequence nobody asked for.
+
+So the app is right, the test asserts something true, and the gesture was lost in delivery.
+The contention was the lead's own doing — six render agents on eight cores earlier the same
+night. Measured flake rate before the change: 1 in 8, at host load 76–116.
+
+**Ruled out, each with evidence, not argument:** an ungated awaited network read under
+`SYNC_OFF` (the lead's own first hypothesis — disproven statically: `sync`,
+`recordRecognition`, `flushPending` and `recordMilestone` each open with the `syncIsDisabled()`
+gate, so `feltOnServer`/`milestoneOnServer` are unreachable in this test); simulator
+difference (both iPhone 17 Pro / iOS 26.5, `ReduceMotionEnabled 0` on both, and it passed on
+the lead's own simulator); machine load slowing the tap (the failing tap was *fast* — 260 ms);
+unit-test pollution of the shared app container (reproduced that exact ordering; still passed);
+and Phase 3.6 itself — its diff names none of `DailyRiteView`, `RecognitionMomentView`,
+`RootView`, `RecognitionLogStore` or the UI test, and the trigger is synchronous
+(`DailyRiteView.swift:282-285` is `Haptics.medium(); showRecognition = true`).
+
+**Why keeping it is not a weakening.** No timeout was raised — each attempt gets exactly the
+budget the single `tap()` had, 8 s and 20 s. No predicate was loosened; the assertion messages
+are byte-identical. Nothing is skipped. The re-press is gated on `element.isHittable`, which is
+false once a cover has presented, so a press is only re-sent when the button is demonstrably
+still sitting there unpressed. An app that genuinely ignores the gesture now fails three times
+over instead of once, which is *stronger* than before.
+
+**The decisive reason, beyond correctness.** The build reaches Ashrey through Xcode Cloud and
+TestFlight, and that is the only path he has agreed to. A 1-in-8 UI flake would redden Cloud
+builds at random and block delivery — the precise failure the charter exists to prevent. A
+harness flake must not stand between him and the instrument.
+
+**Known and not fixed:** a second, distinct simulator flake — the UI runner dying with SIGABRT
+while bootstrapping ("Early unexpected exit … never finished bootstrapping"), zero events
+synthesized. Nothing in the test or the app can defend against it; it needs an xcodebuild-level
+retry if it recurs in Cloud. Recorded here so it is recognised rather than re-diagnosed.
