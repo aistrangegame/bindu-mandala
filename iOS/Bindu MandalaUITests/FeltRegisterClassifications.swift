@@ -38,9 +38,57 @@ struct ClassifiedShift {
     /// A substring of the element's key (`type|label|ordinal`). A substring,
     /// because the key carries the walker's own words and those are long.
     let keyContains: String
-    /// The largest move permitted, in points, on either axis.
+    /// The largest move permitted, in points, on either axis — **measured from
+    /// the nearest of ``settles``**, not from where the element used to be.
     let maxDelta: Double
     let reason: String
+
+    /// **The rigid translations this screen's change is known to cause, in
+    /// points, and the reason this type has two numbers instead of one.**
+    ///
+    /// A control added to a stack pushes everything below it down by its own
+    /// height and leaves everything above it exactly where it was. With one
+    /// number to say that with, the only way to classify it is to raise the
+    /// bound to the height of the control — which is what Phase 3.7 first did on
+    /// the Field, taking a 2.5 pt lock to 46.5 and making the whole screen about
+    /// eighteen times coarser for the rest of the build. Charter §3 forbids
+    /// exactly that: *"never weaken one to make it pass."* Re-recording the
+    /// baseline was no better — these baselines are the geometry of `main`
+    /// **before Phase 4**, and re-recording one from this tree would dissolve
+    /// everything Phase 4's own entries are holding.
+    ///
+    /// So the door's 44 points are named as what they are — a translation the
+    /// screen is *expected* to have made — and the residual is judged at the
+    /// original resolution. `settles: [0, 44]` says: an element either did not
+    /// move, or it moved by the height of the door, and either way it may be
+    /// 2.5 points off that. An element that moves 20, or 60, or that fails to
+    /// move when its neighbours did, is a failure again — none of which the
+    /// 46.5 pt bound could see.
+    ///
+    /// `[0]` — the default — is the ordinary case: nothing rigid is expected,
+    /// and `maxDelta` is the whole allowance, exactly as before.
+    let settles: [Double]
+
+    init(screen: String, keyContains: String, maxDelta: Double,
+         settles: [Double] = [0], reason: String) {
+        self.screen = screen
+        self.keyContains = keyContains
+        self.maxDelta = maxDelta
+        self.settles = settles
+        self.reason = reason
+    }
+
+    /// How far this element is from the nearest translation it was classified as
+    /// making. This is the number `maxDelta` bounds.
+    func residual(_ moved: Double) -> Double {
+        settles.map { abs(moved - $0) }.min() ?? moved
+    }
+
+    /// The classified translations, for a failure message that says which one
+    /// the element missed.
+    var settlesDescription: String {
+        settles.map { String(format: "%.2f", $0) }.joined(separator: " or ")
+    }
 
     static let table: [ClassifiedShift] = FeltRegisterClassifications.shifts
 
@@ -176,20 +224,21 @@ enum FeltRegisterClassifications {
 
         // ── The Field ────────────────────────────────────────────────────────
         //
-        // **Phase 3.7 raised this bound from 2.5 pt to 46.5, and that is a real
-        // loss of resolution on this one screen — written down rather than
-        // waved past.** The door to the axis stands in the header, so everything
-        // under it settles by the 44 pt the door costs after the 8 the header's
-        // own padding gives back, **plus** the 2.5 this entry already carried:
-        // the two causes are in the same stack and add. Measured rather than
-        // estimated — the largest move on the running app is 45.42 pt, and the
-        // bound is the sum of the two classified causes rather than that
-        // reading rounded up. A tighter bound is not available: the shift is a
-        // single rigid translation of the whole list, and this file's vocabulary
-        // is a per-element maximum. What is still caught is any element that
-        // moves *further* than the door pushed it, and every arrival, which
-        // needs its own sentence above.
-        ClassifiedShift(screen: "field", keyContains: "|", maxDelta: 46.5, reason:
+        // **Phase 3.7's door is classified as the translation it is, and the
+        // 2.5 pt resolution stays.** The door to the axis stands in the header,
+        // so everything under it settles by the 44 pt the door costs after the
+        // 8 the header's own padding gives back — and everything *above* it,
+        // which is the header's own two lines, does not move at all. Those are
+        // the two answers in `settles`, and the 2.5 this entry already carried
+        // is what an element may be off whichever of them applies to it.
+        //
+        // This bound was briefly written as a single 46.5 — the sum of the two
+        // causes — which passed, and which would also have passed an element
+        // that drifted twenty points for no reason at all, or one that stayed
+        // put while every one of its neighbours moved. Measured rather than
+        // estimated: the largest move on the running app is 45.42 pt, which is
+        // 1.42 off the classified 44.
+        ClassifiedShift(screen: "field", keyContains: "|", maxDelta: 2.5, settles: [0, 44], reason:
             "\"NINE RINGS · ONE HUNDRED AND TWO\" was 10.5 pt at 0.45 α — under the floor on both "
             + "counts — and is now 11.5 at 0.55 (§4.1). The header is a point taller, so the rings "
             + "under it begin a point lower. The ring row's seat count grew the same point and "
@@ -197,8 +246,10 @@ enum FeltRegisterClassifications {
             + "in that row's own padding and costs the seats nothing — and on a simulator with no "
             + "āvaraṇa the row is not there to grow, which is why that padding asks first."
             + "\n\n"
-            + "Phase 3.7 adds the 44 pt the door to the axis stands in, above every ring. The "
-            + "door's own entry in `appeared` has the arithmetic."),
+            + "Phase 3.7 adds the 44 pt the door to the axis stands in, above every ring — a rigid "
+            + "translation of everything below the door and of nothing above it, which is why 44 "
+            + "is written in `settles` rather than added to the bound. The door's own entry in "
+            + "`appeared` has the arithmetic."),
 
         // ── The Bindu's descent ──────────────────────────────────────────────
         ClassifiedShift(screen: "mandala-descent", keyContains: "↑ return to the field",

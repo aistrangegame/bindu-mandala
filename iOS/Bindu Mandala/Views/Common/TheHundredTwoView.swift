@@ -49,6 +49,7 @@ struct TheHundredTwoView: View {
         .fullScreenCover(isPresented: $showClimb) {
             WorldClimbView(live: liveWorlds,
                            startingAtRing: effectiveOpen ?? todayRing,
+                           forceReduceMotion: AppRuntime.forcesReduceMotion,
                            onLeft: { showClimb = false })
         }
     }

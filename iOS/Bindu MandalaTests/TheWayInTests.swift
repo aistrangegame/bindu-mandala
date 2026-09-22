@@ -1,6 +1,7 @@
 import XCTest
 import SwiftData
 import SwiftUI
+import SceneKit
 @testable import Bindu_Mandala
 
 // MARK: - Phase 3.7 · the way in, the way out, and the two doors that carry them
@@ -137,8 +138,13 @@ final class TheWayInTests: XCTestCase {
     /// it cannot be got round: not by checking that today's two doors go through
     /// the ceremony, but by proving there is nowhere else a room can come from.
     func testTheOnlyRoomInTheShellIsTheOneBehindTheRite() throws {
+        // **No directory is excused.** This check used to skip `Views/Spike/`,
+        // and the project synchronises its whole source root into the app
+        // target — the spike ships. A room constructed there is a room in the
+        // shipping binary, reached without the rite, and the exclusion was the
+        // one door this proof could not see through.
         var sites: [String] = []
-        for f in LawSource.production where !f.path.hasPrefix("Views/Spike/") {
+        for f in LawSource.production {
             for site in Rx.all(#"\bRoomView\("#, String(f.lexed.masked)) where !site.isEmpty {
                 sites.append(f.path)
             }
@@ -252,14 +258,49 @@ final class TheWayInTests: XCTestCase {
             XCTAssertNil(Rx.first(#"\d"#, lit.text),
                          "the way out says a digit: \"\(lit.text)\"")
         }
-        let stored = Rx.groups(#"(?:^|\n)\s*(?:var|let)\s+[A-Za-z_][A-Za-z0-9_]*\s*:\s*([^\n=]+)"#,
-                               String(file.lexed.masked)).map { $0[1].trimmingCharacters(in: .whitespaces) }
-        XCTAssertGreaterThanOrEqual(stored.count, 4, "the property scan read nothing: \(stored)")
-        for type in stored {
+        // **The scan reads the whole type, attributes and all.**
+        //
+        // It used to require `var`/`let` to be the first token on the line,
+        // which silently excused every `@State`, every `@Binding` and every
+        // `private` — that is, the three properties on this type that actually
+        // hold anything, and the exact shape a count would arrive in.
+        // `@State private var visits = 0` would have passed the old scan
+        // unchanged. `SwiftProperties.stored` reads attributes and modifiers
+        // first and then the declaration, and the assertion below names the two
+        // it must have found, so a scan that goes blind fails rather than
+        // passing everything.
+        let stored = SwiftProperties.stored(in: String(file.lexed.masked))
+        XCTAssertTrue(stored.contains { $0.name == "gone" && $0.attributes.contains("@State") },
+                      "the scan no longer sees `@State private var gone` — it is reading past the "
+                      + "attributes, which is where a stored count would be written")
+        XCTAssertTrue(stored.contains { $0.name == "gone" && $0.attributes.contains("@Binding") },
+                      "the scan no longer sees `@Binding var gone`")
+        XCTAssertGreaterThanOrEqual(stored.count, 7,
+                                    "the property scan read \(stored.count) properties: \(stored)")
+
+        for property in stored {
+            let type = property.type
             XCTAssertTrue(type == "Bool" || type.contains("-> Void") || type.contains("Binding<Bool>"),
-                          "the way out carries a \(type) — it holds a flag and three closures, and "
-                          + "a value it holds is a value it can be made to show")
+                          "the way out carries `\(property.name): \(type)` — it holds flags and "
+                          + "closures, and a value it holds is a value it can be made to show")
         }
+
+        // And the type's own vocabulary — its static settings — is the two
+        // strings and the three numbers this file is allowed to choose. A
+        // *sixth* static, or a static that is not one of these, is a new value
+        // on the one surface a walker sees inside a room.
+        let settings = SwiftProperties.statics(in: String(file.lexed.masked)).map(\.name).sorted()
+        XCTAssertEqual(settings, ["alpha", "held", "seconds", "size", "stepped"],
+                       "the way out grew a type property: \(settings)")
+    }
+
+    /// The crossing is Design's own `2.2`, pinned here because the UI suite
+    /// cannot import the app and carries the number by hand.
+    /// `TheWayInUITests.crossing` is the same literal; if this changes, that one
+    /// goes red for a named reason instead of timing out for a mysterious one.
+    func testTheCrossingIsDesignsOwnTwoAndAFifthSeconds() {
+        XCTAssertEqual(RoomApproach.releaseSeconds, 2.2, accuracy: 1e-9,
+                       "the crossing changed length — `TheWayInUITests.crossing` has to change with it")
     }
 
     // MARK: - 4b · The still room is asked for the frame rather than given one
@@ -329,9 +370,17 @@ final class TheWayInTests: XCTestCase {
         // enter — a clock still held at her threshold is a stay that never began.
         XCTAssertEqual(Rx.all(#"recording\?\("#, code).count, 1,
                        "the stay is handed over from more than one place")
-        XCTAssertTrue(code.contains("guard !handedOver, !clock.isHeld else { return }"),
-                      "a stay can now be handed over twice, or handed over for a room "
-                      + "the walker never entered")
+
+        // The *rules* of the hand-over are ``TheStay``'s and are driven above —
+        // filed once, by whichever door closes first, and never for a ceremony
+        // he abandoned. What is asserted here is only that this view still asks
+        // that type rather than keeping its own flags again.
+        let handOver = try XCTUnwrap(
+            Rx.first(#"private func handOverTheStay\(\) \{[\s\S]*?\n    \}"#, code),
+            "the stay is no longer handed over from one named place")
+        XCTAssertTrue(handOver.contains("stay.handOver(elapsedNow: clock.elapsed(), entered: !clock.isHeld)"),
+                      "the hand-over keeps its own bookkeeping again, where only its source text "
+                      + "can be judged: \(SwiftLexer.collapse(handOver))")
     }
 
     /// And what that write buys: the ceremony is quicker, and it still happens.
@@ -414,14 +463,35 @@ final class TheWayInTests: XCTestCase {
         }
     }
 
-    /// Nothing on either new surface measures him.
+    /// Nothing on any surface of this layer measures him.
+    ///
+    /// **The list is derived, not typed.** It used to be five filenames, which
+    /// meant a sixth walker-facing file in this layer was simply not read — the
+    /// one shape a hard-coded roster always takes. What is read now is every
+    /// file in `Views/Rooms/` plus every screen that opens one of the two doors,
+    /// so a new room surface, or a third door cut on a third screen, is judged
+    /// the day it is written. (`LawsTests` walks the whole production tree and
+    /// would catch it too; this is the same wall built where the phase lives.)
     func testNeitherNewSurfaceMeasuresHim() throws {
-        let surfaces = ["TheWayOut.swift", "WorldClimbView.swift", "RiteOfEnteringView.swift",
-                        "ShaktiDetailView.swift", "TheHundredTwoView.swift"]
+        var surfaces = Set(LawSource.production
+            .filter { $0.path.hasPrefix("Views/Rooms/") }
+            .map(\.path))
+        for f in LawSource.production {
+            let code = String(f.lexed.masked)
+            if code.contains("RiteOfEnteringView.entering(") || code.contains("WorldClimbView(") {
+                surfaces.insert(f.path)
+            }
+        }
+        XCTAssertTrue(surfaces.contains("Views/Common/ShaktiDetailView.swift")
+                      && surfaces.contains("Views/Common/TheHundredTwoView.swift")
+                      && surfaces.contains("Views/Rooms/TheWayOut.swift"),
+                      "the derivation no longer finds the two doors and the way out: \(surfaces.sorted())")
+        XCTAssertGreaterThanOrEqual(surfaces.count, 5, "only \(surfaces.count) surfaces were found")
+
         var read = 0
         var offences: [String] = []
-        for name in surfaces {
-            let file = try XCTUnwrap(LawSource.production(name), "\(name) is missing")
+        for name in surfaces.sorted() {
+            let file = try XCTUnwrap(LawSource.production.first { $0.path == name }, "\(name) is missing")
             for call in file.calls(to: LawSource.walkerFacingCallees) {
                 for lit in call.literals {
                     read += 1
@@ -438,5 +508,429 @@ final class TheWayInTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(read, 30, "only \(read) strings were read from the new surfaces")
         XCTAssertTrue(offences.isEmpty,
                       "the way in or the way out measures the walker:\n" + offences.joined(separator: "\n"))
+    }
+
+    // MARK: - 7 · The door is on the screen, not merely written
+
+    /// **`herDoor` is drawn, not just declared.**
+    ///
+    /// Every other check in this file reads the door's *declaration*: what it
+    /// asks before it opens, where its words live, that nothing else opens a
+    /// rite. Deleting the one line that puts it in the Detail's body would leave
+    /// all of them green — the declaration is still there, the `fullScreenCover`
+    /// is still there with its one `entering(` call in it — and the instrument
+    /// would be unreachable again, which is the exact condition this phase
+    /// exists to end.
+    func testTheDoorStandsInTheBodyOfHerScreen() throws {
+        let detail = try XCTUnwrap(LawSource.production("ShaktiDetailView.swift"))
+        let code = String(detail.lexed.masked)
+
+        let mentions = Rx.all(#"\bherDoor\b"#, code)
+        XCTAssertEqual(mentions.count, 2,
+                       "`herDoor` appears \(mentions.count) times — it is declared once and drawn "
+                       + "once, and neither of those may go missing")
+
+        let body = try XCTUnwrap(Rx.first(#"var body: some View \{[\s\S]*?\n    \}"#, code),
+                                 "the Detail no longer has a `body` this check can read")
+        XCTAssertTrue(body.contains("herDoor"),
+                      "the way into her room is declared but never drawn. The room layer is "
+                      + "unreachable from the shell again, and every other check in this file "
+                      + "is still green.")
+        // …and it stands above the recognition, which is the ladder's order.
+        let door = try XCTUnwrap(body.range(of: "herDoor"))
+        let felt = try XCTUnwrap(body.range(of: "recognitionFooter"))
+        XCTAssertTrue(door.lowerBound < felt.lowerBound,
+                      "the room is drawn below the recognition — the room is the ground the "
+                      + "recognition is made on, so it stands above it")
+    }
+
+    // MARK: - 8 · A row the grammar cannot read is still a room of her own
+
+    /// **The 102 check, made able to fail for the reason it claims to guard.**
+    ///
+    /// `testEveryOneOfTheHundredAndTwoCanBeEntered` walks `HomesCorpus.rows()`,
+    /// and eighty-six of those are composed from the corpus's own tattva and
+    /// body-location vocabulary — words the grammar was built to read. Its
+    /// sharpest assertion, `rite.room.isBuilt`, therefore could not fail for
+    /// five sixths of the garland: the data was made to suit the reader.
+    ///
+    /// This drives the same production call over all 102 positions with **every
+    /// readable field emptied** — no tattva, no quality, no body location, no
+    /// bīja, which is the worst a real Airtable row can be — and asserts the
+    /// same two things. A reviewer's claim that such a row falls to the shared
+    /// gem-lit seat is refuted here rather than argued: `HomeGrammar.read`
+    /// declines on her *āvaraṇa*, never on her words, and `physics` and
+    /// `bodyAltitude` both have a floor to fall to. If that ever stops being
+    /// true, the walker is admitted onto a seat instead of a room and this goes
+    /// red on the day it changes.
+    func testAnUnreadableRowIsStillEnteredOntoARoomOfHerOwn() throws {
+        let store = try store()
+        var seated: [Int] = []
+        var refused: [Int] = []
+
+        for position in 1...KhadgamalaMap.total {
+            let bare = Shakti(position: position, name: "", shortName: "", phonetic: "",
+                              quality: "", qualityDescription: "", somatic: "",
+                              somaticPoetry: "", bija: "", bodilyLocation: "",
+                              tattva: "", recognitionPhrase: "",
+                              cluster: .inner, status: .mapped)
+            bare.khadgamalaPosition = position
+            bare.ringNumber = KhadgamalaMap.ringNumber(forKhadgamala: position)
+
+            guard let rite = RiteOfEnteringView.entering(bare, remembering: store) else {
+                refused.append(position); continue
+            }
+            XCTAssertEqual(rite.room.position, position)
+            if !rite.room.isBuilt { seated.append(position) }
+        }
+
+        XCTAssertEqual(refused, [],
+                       "a row with a position and an āvaraṇa was refused a threshold because the "
+                       + "rest of her row was empty: \(refused)")
+        XCTAssertEqual(seated, [],
+                       "an empty row is admitted onto the shared seat rather than a room of her "
+                       + "own — the door is shown, and there is nobody there: \(seated)")
+    }
+
+    // MARK: - 9 · Beat two is set in the face the string needs
+
+    /// **The centre of the threshold was drawn in the OS's sans.**
+    ///
+    /// `RiteWords.written` is `firstSpoken([devanagari, name])` — her Devanāgarī
+    /// where the base has it, her roman name where it does not — and the view
+    /// hard-coded the system face for both, because Cormorant carries no
+    /// Devanāgarī. A row with no Devanāgarī therefore had her name written in an
+    /// OS alert's typeface at the one moment the instrument writes her name,
+    /// between a Cormorant beat one and a Cormorant beat three, while her Detail
+    /// rendered the identical string in Cormorant a tap away. Ahaṅkārākarṣiṇī
+    /// (kp 31) is such a row, and she is a Ring-2 Karṣiṇī that syncs.
+    func testBeatTwoAsksWhichScriptItEndedUpIn() {
+        let devanagari = RiteWords.compose(appreciationPhrase: nil, ringAppreciation: "x",
+                                           devanagari: "अहङ्कारार्षिणी", name: "Ahaṅkārākarṣiṇī",
+                                           etymology: nil, quality: "")
+        XCTAssertTrue(devanagari.writtenIsDevanagari,
+                      "her Devanāgarī is not recognised as Devanāgarī, so it would be set in a "
+                      + "face that has no glyphs for it")
+
+        let roman = RiteWords.compose(appreciationPhrase: nil, ringAppreciation: "x",
+                                      devanagari: nil, name: "Ahaṅkārākarṣiṇī",
+                                      etymology: nil, quality: "")
+        XCTAssertEqual(roman.written, "Ahaṅkārākarṣiṇī")
+        XCTAssertFalse(roman.writtenIsDevanagari,
+                       "her roman name reads as Devanāgarī, and would be drawn in the system face")
+
+        // An empty field is the same answer as a missing one.
+        XCTAssertFalse(RiteWords.compose(appreciationPhrase: nil, ringAppreciation: "x",
+                                         devanagari: "  ", name: "Kāmākarṣiṇī",
+                                         etymology: nil, quality: "").writtenIsDevanagari)
+        // Diacritics are not Devanāgarī, and neither is a chevron or a space.
+        XCTAssertFalse(RiteWords.isDevanagari("Ahaṅkārākarṣiṇī · Vaśinī"))
+        XCTAssertTrue(RiteWords.isDevanagari("श्री"))
+    }
+
+    /// And the view asks it rather than choosing for both.
+    func testTheFaceOfBeatTwoFollowsTheStringAndNotTheField() throws {
+        let file = try XCTUnwrap(LawSource.production("RiteOfEnteringView.swift"))
+        let code = String(file.lexed.masked)
+        let beat = try XCTUnwrap(
+            Rx.first(#"private func written\(_ frame: RiteFrame\) -> some View \{[\s\S]*?\n    \}"#, code),
+            "beat two is no longer a `written(_:)` this check can read")
+        XCTAssertTrue(beat.contains("words.writtenIsDevanagari"),
+                      "beat two chooses its face without asking which script it ended up in: "
+                      + SwiftLexer.collapse(beat))
+        XCTAssertTrue(beat.contains("AppFont.sanskrit(Self.writtenSize)"),
+                      "a roman name in beat two is not set in the instrument's own face")
+        // The system face survives, because Cormorant has no Devanāgarī — the
+        // fix is a branch, not a replacement.
+        XCTAssertTrue(beat.contains(".system(size: Self.writtenSize)"),
+                      "Devanāgarī is being asked of a face that carries none")
+        // …and it is the only place in the rite that reaches for the system face.
+        XCTAssertEqual(Rx.all(#"\.system\(size:"#, code).count, 1,
+                       "the rite sets something else in the system face")
+    }
+
+    // MARK: - 10 · The way out, driven
+
+    /// **What a stay is worth, asserted by running it rather than by grepping
+    /// for a `guard` line.**
+    ///
+    /// The four rules of leaving used to be three `@State` flags and two guards
+    /// inside the view, and the only thing a test could reach was their source
+    /// text — a refactor that kept the spelling and inverted the meaning would
+    /// have passed. ``TheStay`` is the same arithmetic, liftable and drivable.
+    func testTheStayEndsWhereHeDecidedItEnded() {
+        var stay = TheStay()
+        XCTAssertNil(stay.endedAt)
+
+        stay.ends(at: 40)
+        XCTAssertEqual(stay.endedAt, 40)
+        // A press reported twice does not shorten the stay twice.
+        stay.ends(at: 70)
+        XCTAssertEqual(stay.endedAt, 40, "a second beginning moved the end of the stay")
+
+        // What is filed is where he decided it ended, not where the surface went.
+        XCTAssertEqual(stay.handOver(elapsedNow: 99, entered: true), 40)
+    }
+
+    func testAWalkerWhoLetGoOfTheCrossingDidNotLeave() {
+        var stay = TheStay()
+        XCTAssertFalse(stay.goesOn(), "a let-go with no crossing behind it moved something")
+
+        stay.ends(at: 40)
+        XCTAssertTrue(stay.goesOn(), "letting go of the crossing did not undo the ending")
+        XCTAssertNil(stay.endedAt)
+        // …so he goes on accruing, and what is filed is the whole of it.
+        XCTAssertEqual(stay.handOver(elapsedNow: 120, entered: true), 120)
+    }
+
+    func testTheStayIsFiledExactlyOnceAndNeverForARoomHeDidNotEnter() {
+        var byTheWayOut = TheStay()
+        byTheWayOut.ends(at: 30)
+        XCTAssertEqual(byTheWayOut.handOver(elapsedNow: 31, entered: true), 30)
+        XCTAssertNil(byTheWayOut.handOver(elapsedNow: 31, entered: true),
+                     "the stay was filed twice — the way out and the surface going away are two "
+                     + "doors onto one write")
+        XCTAssertTrue(byTheWayOut.handedOver)
+
+        // A ceremony he abandoned at the threshold: the clock never started, so
+        // there is no stay, and nothing is written.
+        var abandoned = TheStay()
+        XCTAssertNil(abandoned.handOver(elapsedNow: 900, entered: false),
+                     "a rite the walker walked away from recorded a stay")
+        XCTAssertFalse(abandoned.handedOver,
+                       "an abandoned rite used up the one hand-over, so a real stay later in the "
+                       + "same room would be silently dropped")
+
+        // And a clock that reports backwards writes nothing rather than a
+        // negative dwell, which would make the next ceremony longer.
+        var backwards = TheStay()
+        backwards.ends(at: -5)
+        XCTAssertEqual(backwards.handOver(elapsedNow: 0, entered: true), 0)
+    }
+
+    /// The still path files the whole of the stay.
+    ///
+    /// Under reduced motion the way out is a touch: `unwind` is never called, so
+    /// nothing ever sets an ending, and what has to be filed is everything up to
+    /// the moment he stepped out. That was asserted nowhere.
+    func testTheStillPathFilesTheWholeStay() {
+        var stay = TheStay()
+        XCTAssertNil(stay.endedAt, "the still path never begins a crossing out")
+        XCTAssertEqual(stay.handOver(elapsedNow: 314, entered: true), 314)
+    }
+
+    /// **A crossing that was taken away puts him back.**
+    ///
+    /// `onPressingChanged(false)` is the only thing that calls `holdOn()`, and a
+    /// press can be taken from under the view without one — a call banner, the
+    /// app backgrounding, the digitizer teardown `DECISIONS.md` records for the
+    /// harness. He was then left inside the room with the eye withdrawn to
+    /// nothing, both dwelling marks cancelled, the stay frozen, and no gesture
+    /// that could undo any of it. The withdrawal now watches itself.
+    func testAWithdrawalThatWasTakenAwayIsPutBack() throws {
+        let file = try XCTUnwrap(LawSource.production("RiteOfEnteringView.swift"))
+        let code = String(file.lexed.masked)
+
+        let watch = try XCTUnwrap(
+            Rx.first(#"private func watchTheWithdrawal\(over seconds: TimeInterval\) \{[\s\S]*?\n    \}"#, code),
+            "the withdrawal is no longer watched — a cancelled press leaves the walker inside "
+            + "the room with the eye withdrawn and nothing that can put it back")
+        XCTAssertTrue(watch.contains("holdOn()"),
+                      "the watch does something other than put him back: \(SwiftLexer.collapse(watch))")
+        // Armed by the crossing, and disarmed by both honest ends.
+        XCTAssertTrue(Rx.matches(#"private func unwind\(over seconds: TimeInterval\) \{[\s\S]*?watchTheWithdrawal\(over: seconds\)"#, code),
+                      "beginning the crossing out no longer arms the watch")
+        for ending in ["holdOn", "out"] {
+            let body = try XCTUnwrap(Rx.first(#"private func \#(ending)\(\) \{[\s\S]*?\n    \}"#, code),
+                                     "`\(ending)()` is gone")
+            XCTAssertTrue(body.contains("withdrawal?.cancel()"),
+                          "`\(ending)()` leaves the watch armed, so it will put a walker who really "
+                          + "did leave back into a room he is no longer in")
+        }
+        // It waits for the crossing itself plus slack, never less.
+        XCTAssertGreaterThan(RiteOfEnteringView.withdrawalSlack, 0)
+        XCTAssertLessThan(RiteOfEnteringView.withdrawalSlack, TheWayOut.seconds,
+                          "the watch waits longer than a second crossing would take")
+    }
+}
+
+// MARK: - Reading a Swift type's properties off disk
+
+/// A property scan that sees what is actually written, rather than what a
+/// simple line-start pattern happens to catch.
+///
+/// The check it serves — *"there is nowhere in the way out to say a number"* —
+/// is only worth anything if it reads the properties a number would be written
+/// as. `@State private var visits = 0` is the realistic shape of that mistake,
+/// and a pattern anchored on `var`/`let` as the first token on the line cannot
+/// see it. So attributes (`@State`, `@Binding`, `@Environment(…)`) and modifiers
+/// (`private`, `static`, `final`) are read first, and the declaration after
+/// them.
+enum SwiftProperties {
+
+    struct Property: CustomStringConvertible, Equatable {
+        let attributes: [String]
+        let modifiers: [String]
+        let keyword: String
+        let name: String
+        /// The written type, or the initialiser's text where the type is
+        /// inferred — which is what a reader has to judge either way.
+        let type: String
+        let isComputed: Bool
+
+        var isStatic: Bool { modifiers.contains("static") }
+        var description: String {
+            ((attributes + modifiers).joined(separator: " ") + " \(keyword) \(name): \(type)")
+                .trimmingCharacters(in: .whitespaces)
+        }
+    }
+
+    /// Every property declaration in `code` — which must be lexed and masked, so
+    /// a string literal cannot look like one.
+    static func all(in code: String) -> [Property] {
+        let pattern = #"(?m)^[ \t]*((?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?[ \t]+)*)"#
+            + #"((?:(?:private|fileprivate|internal|public|open|static|final|lazy|weak|unowned)"#
+            + #"(?:\(set\))?[ \t]+)*)"#
+            + #"(var|let)[ \t]+([A-Za-z_][A-Za-z0-9_]*)[ \t]*"#
+            + #"(?::[ \t]*([^\n={]+?)[ \t]*)?"#
+            + #"(?:(=[^\n]*|\{[^\n]*))?[ \t]*$"#
+        return Rx.groups(pattern, code).map { g in
+            let written = g[5].trimmingCharacters(in: .whitespaces)
+            let tail = g[6].trimmingCharacters(in: .whitespaces)
+            let initialiser = tail.hasPrefix("=")
+                ? String(tail.dropFirst()).trimmingCharacters(in: .whitespaces) : ""
+            return Property(
+                attributes: g[1].split(whereSeparator: { $0 == " " || $0 == "\t" }).map(String.init),
+                modifiers: g[2].split(whereSeparator: { $0 == " " || $0 == "\t" }).map(String.init),
+                keyword: g[3],
+                name: g[4],
+                // The written type, or — where it was inferred — the
+                // initialiser, which is what a reader has to judge instead. An
+                // un-annotated property is therefore judged on what it is set
+                // to, and `var visits = 0` reads as `0` rather than vanishing.
+                type: written.isEmpty ? initialiser : written,
+                isComputed: tail.hasPrefix("{"))
+        }
+    }
+
+    /// The stored instance properties — what an instance of the type *holds*.
+    static func stored(in code: String) -> [Property] {
+        all(in: code).filter { !$0.isComputed && !$0.isStatic }
+    }
+
+    /// The type's own settings: its vocabulary, shared by every instance and
+    /// chosen once by whoever wrote the file.
+    static func statics(in code: String) -> [Property] {
+        all(in: code).filter { $0.isStatic }
+    }
+}
+
+
+// MARK: - The redraw a still room depends on, proven as a frame
+
+/// **The thing that actually regressed, asserted where it regressed.**
+///
+/// `testEveryPlaceTheWalkerMovesAsksTheStillRoomForAFrame` reads source text: it
+/// counts `approach.set(`, greps two substrings out of `stand(at:)`, and counts
+/// `moves: moves` twice. None of that can see whether a moved walker *produces a
+/// new pose*, which is the defect — a reduce-motion walker standing at the door
+/// for the whole ceremony while every one of those greps stayed green.
+///
+/// The four existing `posesApplied` assertions cannot see it either: they build
+/// a `RoomDriver` by hand and never go through SwiftUI, so `updateUIView` — the
+/// one link in the chain — is not in any of them.
+///
+/// This puts the room in a real window, moves the walker the way the rite moves
+/// him, and reads the driver's own register. Both halves are asserted, because
+/// only the pair is the claim: time alone does not pose a still room, and a move
+/// does.
+@MainActor
+final class StillRoomRedrawTests: XCTestCase {
+
+    /// Stands in for the rite's `moves` — the same `Int`, bumped from outside.
+    final class Walker: ObservableObject {
+        @Published var moves = 0
+    }
+
+    private struct Host: View {
+        let room: HomeRoom
+        @ObservedObject var walker: Walker
+        var body: some View {
+            RoomView(room: room, forceReduceMotion: true, moves: walker.moves)
+                .statusBarHidden(true)
+        }
+    }
+
+    func testAStillRoomIsPosedOncePerMoveAndNeverByTimeAlone() throws {
+        let room = try XCTUnwrap(HomeRooms.resolve(position: 29, ring: 2,
+                                                   tattva: "Ākāśa", quality: "She who draws",
+                                                   bodilyLocation: "heart"))
+        let walker = Walker()
+        let controller = UIHostingController(rootView: Host(room: room, walker: walker))
+        controller.view.backgroundColor = .black
+
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+        let window = scene.map { UIWindow(windowScene: $0) } ?? UIWindow(frame: UIScreen.main.bounds)
+        window.windowLevel = .alert + 1
+        window.backgroundColor = .black
+        window.isOpaque = true
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        pump(0.9)
+        guard let view = sceneView(in: window), let driver = view.delegate as? RoomDriver else {
+            return XCTFail("the room did not put an SCNView on screen")
+        }
+        XCTAssertFalse(view.isPlaying, "the still path is not still")
+
+        // 1 · Time alone never poses it.
+        let settled = driver.posesApplied
+        XCTAssertGreaterThan(settled, 0, "the still room was never posed at all")
+        pump(1.2)
+        XCTAssertEqual(driver.posesApplied, settled,
+                       "a still room left alone was posed again — the render loop is not stopped")
+
+        // 2 · And every move the walker makes produces one.
+        //
+        // Asserted as *rose*, not as exactly one: SwiftUI decides for itself how
+        // many times it calls `updateUIView`, and the claim is that a move
+        // reaches the room at all — which is precisely what stopped being true.
+        var last = settled
+        for move in 1...4 {
+            walker.moves &+= 1
+            pump(0.35)
+            XCTAssertGreaterThan(driver.posesApplied, last,
+                                 """
+                                 move \(move) did not reach the room. `RoomView.moves` is what makes \
+                                 the representable differ when the walker has moved; without it he \
+                                 stands where he was for the whole ceremony while every \
+                                 source-shape check stays green.
+                                 """)
+            last = driver.posesApplied
+        }
+        // Four moves, not forty: this is still the path with no render loop on it.
+        XCTAssertLessThanOrEqual(last - settled, 12,
+                                 "a still room was posed \(last - settled) times for four moves")
+    }
+
+    private func pump(_ seconds: TimeInterval) {
+        RunLoop.current.run(until: Date().addingTimeInterval(seconds))
+    }
+
+    private func sceneView(in window: UIWindow) -> SCNView? {
+        func walk(_ view: UIView) -> SCNView? {
+            if let found = view as? SCNView { return found }
+            for child in view.subviews { if let found = walk(child) { return found } }
+            return nil
+        }
+        guard let root = window.rootViewController?.view else { return nil }
+        return walk(root)
     }
 }

@@ -2586,3 +2586,116 @@ waiting for them. It is a later build, not a missing piece of this one.
 were available and all four are the same refusal Phases 3.1 and 3.2 already made.
 The compression is *felt*: the ceremony is simply quicker, and he is never told
 that it was.
+
+---
+
+## Phase 3.7, closed — the review pass: what was wrong, what was refuted, what was left
+
+Two independent readings of `babb742` came back: a walker who installed the build and used it, and an audit of the branch against the laws. Both were treated as evidence rather than as findings. Every claim below was checked against the source before anything was changed, and the ones that did not survive checking are written down as refuted, because a confident finding that is wrong costs the next reader more than no finding at all.
+
+### The one the walker ranked first, and he was right
+
+**Her name in beat two was drawn in the OS's own sans.** `RiteWords.compose` sets `written: firstSpoken([devanagari, name])` — her Devanāgarī where the base carries it, her **roman name** where it does not — and `RiteOfEnteringView.written(_:)` hard-coded `.font(.system(size:))` for both, with a comment explaining the Devanāgarī half. The comment was true and the code was wrong: Cormorant genuinely carries no Devanāgarī, but a roman name is not Devanāgarī. Ahaṅkārākarṣiṇī (kp 31) has no Devanāgarī and is a Ring-2 Karṣiṇī that syncs, so the centre of her threshold — the one moment the instrument writes her name — looked like a system alert, between a Cormorant beat one and a Cormorant beat three, while her Detail rendered the identical string in Cormorant a tap away.
+
+Nobody could see this before 3.7, because nobody could reach the rite. That is the whole argument for ranking it first.
+
+The face now follows the string that was chosen rather than the field that was hoped for: `RiteWords.writtenIsDevanagari` asks which script `written` actually ended up in (the Devanāgarī block, Devanagari Extended, the Vedic Extensions), and the beat branches on it. The system face survives for the branch that needs it. `testBeatTwoAsksWhichScriptItEndedUpIn` and `testTheFaceOfBeatTwoFollowsTheStringAndNotTheField` hold both halves, and the second also pins that the rite reaches for the system face in exactly one place.
+
+### The axis arrived mute, and now says what the hand may do
+
+`WorldClimbView` put two lines on screen: the āvaraṇa's name, and `hold to withdraw`. A walker who arrived, waited, and saw nothing change was told only how to leave the thing he had just opened — the surface's entire instruction budget spent on the exit, with no word that the space rises. The climb is the payload of this phase's second door and it was invisible.
+
+Design's own Axis carries four words for it, *"scroll to climb · drag to turn"*. Half of that is this file's gesture, so half of it is what is said: **drag to rise**, in the rite's prompt type, at the top of the frame where nothing else stands.
+
+**It is not a measure, and it was checked against law 2 rather than assumed past it.** It says what the hand may do — the same register as `hold to withdraw` two inches below it — and it knows exactly one thing: whether he has moved *on this visit to the axis*. Nothing is written down, nothing is read back, and the next time he rises it is there again. An instruction that vanished for good the first time it was obeyed would be the instrument remembering him, which is the one thing it may never do. It is taken out of the tree rather than faded to zero, so a line that has been answered is not still there to be found by a finger or a voice.
+
+### The hold on the axis had nothing travelling through it
+
+`TheWayOut`'s own header sets the condition for asking for a hold at all: *"a hold is only legible while something is travelling through it… two and a fifth seconds of a blank press is not restraint but a stopped clock."* That is the whole argument for the still path being a **step**. The axis then applied `.theWayOut` with no `onBegan`, and its own comment conceded there was nothing there to unwind — so a walker with motion on held 2.2 seconds against a world that did not move, which is exactly the condition the file refuses one paragraph earlier.
+
+So the world itself goes: the enclosure's air, light and name recede into the ground he came in through over precisely the length of the hold, and letting go brings them back. The still path is untouched — there the way out is a touch, and this is never called.
+
+### The half-state with no way back
+
+`onPressingChanged(true)` began the withdrawal — the stay ended, both dwelling marks cancelled, the eye walked to nothing — and the **only** thing that could undo it was `onPressingChanged(false)`. A press can be taken out from under a view without one: a call banner, the app backgrounding, and the digitizer teardown this file already records for the harness. The walker was then standing inside a room with the world withdrawn, both marks cancelled and never rescheduled, and no gesture that could recover any of it.
+
+The withdrawal now watches itself. It is armed by `unwind(over:)` and disarmed by both honest ends; if neither has arrived a little after the crossing's own length (`withdrawalSlack`, 0.4 s), the only thing that can have happened is that the press was taken away, and he is put back exactly as a let-go would have put him back.
+
+### The main thread and the render thread were posing the same room
+
+`RoomDriver`'s own doc says where posing belongs: *"`SCNSceneRendererDelegate` runs on SceneKit's own thread… the only place a frame can be prepared without racing the frame being drawn."* `updateUIView` is the main thread, and it called `pose(at:)` too. Until this phase that was theoretical, because nothing moved the walker in a way SwiftUI could see and so nothing called `updateUIView` during a ceremony — which is the author's own premise for adding `moves`. `moves` is precisely a change SwiftUI can see, four or five times a crossing, and every one of them landed `scene.pose`, `scene.stand(atApproach:)` and a non-atomic `posesApplied += 1` on the main thread while the render loop was doing the same on its own.
+
+**Ruling: on the animated path the render loop is the only thing that poses.** `setReduceMotion` poses from the main thread only when nothing has ever posed — the first frame, before `isPlaying` is set, with no loop to race — and never again. The still branch keeps its pose, because there is no loop there at all and `reduceMotion` is written before it, which is the flag the delegate reads to stand down. `WorldClimbDriver` had the identical shape and took the identical fix. Neither costs a frame: on the animated path the loop poses at 60 Hz and would have posed on the next frame anyway.
+
+### The two comments this commit had made false
+
+`RoomView.swift`'s header and `posesApplied`'s own doc both said the count *"stays at one however long the view is left on screen"*. After `moves` that is no longer what the code does, and it is the same class of defect the 3.7 commit message claims to be fixing. Both now say what is true: **time alone never raises it**, and the walker does — once per move, four or five in a ceremony, against sixty a second. The four existing assertions all leave the walker alone, so all four still read exactly what they were written to read.
+
+### The composition lock: the weakening is undone rather than documented
+
+This is the one confirmed charter breach in the branch. `ClassifiedShift(screen: "field", keyContains: "|", maxDelta: 46.5)` was raised from 2.5, and `keyContains: "|"` is in every key there is — so after that commit any element on the Field could move up to 46.5 pt undetected. The author named the loss in the file and in `leftBehind`, and the arithmetic was sound, but charter §3 says *"never skip a check, and never weaken one to make it pass,"* and a documented weakening is still a weakening.
+
+**The reviewer's proposed alternative — re-record the `field` baseline from this tree and restore 2.5 — is refused, and it would have been worse.** These baselines are the geometry of `main` **before Phase 4**; re-recording one from this tree would dissolve every Phase 4 entry that baseline is holding, and turn a regression into a baseline, which is the one failure the file's own header says a composition lock cannot survive.
+
+What was missing was vocabulary, not resolution. `ClassifiedShift` now carries `settles: [Double]` beside `maxDelta`: the rigid translations the screen's change is *expected* to have made, with `maxDelta` judged as the residual from the nearest of them. The Field's entry is `maxDelta: 2.5, settles: [0, 44]` — an element either did not move (it is above the door) or it moved by the door's own height (it is below it), and either way it may be 2.5 points off. Strictly sharper than the old 2.5 in one direction and strictly sharper than 46.5 in every other: an element that moves twenty points, or sixty, or that fails to move when all its neighbours did, is a failure again — none of which 46.5 could see. `settles: [0]` is the default, so every other entry in the table is unchanged.
+
+### The first thing a new walker ever does was being swallowed
+
+Pre-existing, outside 3.7, and fixed because 3.7 is what puts a first launch in front of a human. The notification-authorization prompt fired from a bare `.task` at launch, landing on top of `HomecomingView` — the app's one ceremonial greeting — and covering both its lines outright on the smallest screen. Worse than covering them: while the alert is up, the homecoming's tap-to-enter is inert, so the first thing a new walker does is swallowed and he learns before anything else that touching this app does nothing. The task is now keyed on `showHomecoming` and declines while the greeting is up. On every launch after the first the timing is exactly what it was.
+
+### `know her ›` is now read against her own ghost
+
+Pre-existing, and now the first rung of the only ladder into the rooms layer. It clears FIDELITY §4 on its own numbers (15 pt, 0.92 α) — its problem is that it is centred over the huge translucent ghost of her own name, so its contrast is not its alpha against the ground but its alpha against whichever stroke happens to run under it. Her name is carried on a shadow for exactly this reason; so is this line now. No size, padding or alpha changed, so nothing on that screen moves.
+
+### The "level N of M" the reviewer asked for a ruling on — re-examined and upheld
+
+`ShaktiDetailView`'s embodiment ladder speaks *"level 2 of 4"* to VoiceOver. It is already pinned in `LawsTests.pinnedNonIdentityDigits` with its reasoning; the ruling is now written into that pin.
+
+**Upheld, on two facts.** The rung is not his practice: `ShaktiStatus` moves only when he presses the status pill, and no stay, recognition, silence or crossing advances it — so nothing here totals his walking, which is what law 2 forbids. And the screen already *draws* it: four circles with the reached ones lit, in everyone's plain sight. Deleting the words while leaving the circles would give a VoiceOver walker less than the screen gives everyone else, which FIDELITY's parity rule forbids in the other direction. The restrained option is not the quiet one here; it is the one that does not make the instrument say two different things to two different walkers.
+
+### Refuted
+
+**"A real Airtable row carrying a tattva or bodily location the grammar cannot read falls to `kind = .seat`, `isBuilt == false`, and the walker is admitted onto the gem-lit shared seat."** This is not true of the code. `HomeGrammar.read` declines on exactly one thing — `archetype(ring:position:)`, which is her **āvaraṇa** — and never on her words: `physics(tattva:quality:)` falls through to `.breathe` and `bodyAltitude(bodilyLocation:)` has its own floor. There is no content in a row that can cost her a room of her own.
+
+The *shape* of the finding was right even though the claim was wrong — the check genuinely could not fail for the reason it advertised, because 86 of its 102 rows are composed from the corpus's own vocabulary. That is fixed below rather than argued with.
+
+**"`RoomLightPassLayer`'s `moves` is unread and therefore decoration."** Not claimed by the reviewer, but worth recording alongside: it is unread on purpose in both layers. What it does is make the representable *differ*, which is the whole mechanism.
+
+### Left behind, deliberately
+
+**The texture seams.** Inside a Ring-2 room the acting form draws as a hard-edged rectangle with a visible vertical mirror seam, the depth bands terminate on hard horizontal edges, and on the axis the sky and ground meet on a hard horizon at about 45% of the frame. Everything about it is aniconic and abstract, nothing is broken, and no law is touched — but it reads as a UV artefact rather than an authored form. It is left. It is room-geometry and shader authoring across a whole ring plus the axis, it is not what makes this build worth installing, and 3.10 is the endless refinement pass this belongs in. Naming it here is the point: it is a decision, not an oversight.
+
+**The walker's one preference** — that the way off the axis should use a different word from the way out of a room, because `hold to withdraw` on the Field's climb is withdrawing from nowhere in particular while in her room it is withdrawing from **her**. He called it preference himself and did not call it wrong. One instruction, learned once, is the stronger argument for an instrument somebody will use every day, and it is now also literally true: since the hold on the axis unwinds the world the way the hold in a room unwinds the approach, the same words describe the same thing in both places.
+
+### The test gaps that mattered
+
+Every one of these was a check that could not fail for the reason it claimed to guard.
+
+- **"All 102" was 102 positions with 86 rows manufactured to suit the reader.** `testAnUnreadableRowIsStillEnteredOntoARoomOfHerOwn` drives the production call over all 102 positions with *every readable field emptied* — no tattva, no quality, no body location, no bīja, the worst a real row can be — and asserts a threshold and a room of her own for each. It is what refutes the seat claim above, by running rather than by arguing, and it goes red on the day that stops being true.
+- **The "nowhere to say a number" property scan skipped every `static`, `@State` and `@Binding`** — that is, the only properties on the type that hold anything, and the exact shape a count would arrive in. `SwiftProperties` reads attributes and modifiers first; the test now names the two `gone` declarations it must have found, so a scan that goes blind fails instead of passing everything, and it separately pins the type's five static settings so a sixth is a failure.
+- **Nothing asserted the door was in the body.** Deleting the one line that draws `herDoor` left every unit check green — the declaration and its `fullScreenCover` are still there — and the whole rooms layer unreachable again. `testTheDoorStandsInTheBodyOfHerScreen` reads the `body`, and also that the room stands above the recognition, which is the ladder's order.
+- **The way out was asserted by grepping for a `guard` line.** A refactor that preserved the string and inverted the logic would have passed. `TheStay` lifts the four rules out of the view — the stay ends where he decided it ended, a let-go undoes that, the filing happens once by whichever door closes first, a ceremony he abandoned files nothing — and four tests drive them, including the still path's whole-stay case and the backwards-clock case that would otherwise file a negative dwell and make the next ceremony *longer*.
+- **The redraw fix was proven as source shape, not as a frame.** `StillRoomRedrawTests` puts the room in a real window, moves the walker the way the rite moves him, and reads the driver's own register: time alone poses a still room zero more times, and every move poses it exactly once. The four existing `posesApplied` assertions build a `RoomDriver` by hand and never go through SwiftUI, so none of them could see either the regression or its return.
+- **The reduce-motion way out had never been walked.** `REDUCE_MOTION` is a DEBUG launch argument carrying the same `forceReduceMotion` the captures use, reached from the shell so the whole path can be driven: `testUnderReducedMotionOneTouchLeavesTheRoom` asserts the word is different, that both words are never on screen at once, and that **one** touch puts him back on her Detail.
+- **The runtime never-measure check looked only for digits.** "your third stay", "welcome back", "again", a streak spelled out — all pass a digit filter. The UI scan now also refuses a list of words that measure without one.
+- **`testNeitherNewSurfaceMeasuresHim` hard-coded five filenames,** so a sixth walker-facing file in this layer would simply not be read. The list is derived: every file in `Views/Rooms/`, plus every screen that opens either door.
+- **`testTheOnlyRoomInTheShellIsTheOneBehindTheRite` excused `Views/Spike/`.** The project synchronises its whole source root into the app target — the spike ships — so a `RoomView(` there would be a room in the shipping binary reached without the rite, and the exclusion was the one door that proof could not see through. Removed; it passes without it.
+- **The UI suite's `crossing = 2.2` was a hand-copied constant** pinned to nothing, so the literal and the app could drift together and surface as a mysterious timeout. `testTheCrossingIsDesignsOwnTwoAndAFifthSeconds` pins `RoomApproach.releaseSeconds` to 2.2 by name.
+
+`HomeDwellingTests`' count pin moving 2 → 5 was checked and is a re-pin rather than a weakening: the load-bearing loop is unchanged and still runs over all five sites, `HomeDwelling.begin` calls `end()` first, and `observe` re-asks idempotent guards that persist across the cycle — R11's *once per visit* holds.
+
+### And one the three-times rule found, which no single run could have
+
+The way-in UI suite was run three times back to back on an erased simulator, which is what the closing pass asks for, and it went red twice — in two different tests, on two different assertions, with nothing about the app changed between runs. Neither was the app.
+
+**`press(_:until:)` was waiting on the wrong thing.** The helper exists to absorb the cancelled-press flake `DECISIONS.md` already records: it taps, waits for the screen it expected, and taps again if that screen never came. That only works when what it waits for is something the **new** screen has and the old one does not — and the walk from Today into her Detail was waiting on her phonetic, which Today's own card draws in the same caps. So a tap the digitizer cancelled left the walker on Today with her phonetic in plain sight, the wait returned `true` for a screen that had never opened, and the next assertion — *"her Detail offers no way into her room"* — reported the instrument unreachable.
+
+The second candidate was wrong for the same reason and cost another run: **I feel her** is on the Daily Rite too, because she can be recognised from anywhere she is met and that was a deliberate ruling. The sentinel that holds is `be with her ›`, which is on her Detail and nowhere else in the shell. That makes the wait and the claim the same fact, which is the right shape here — the phase's whole assertion is that this door exists where she is, and a run that never sees it has failed whichever line says so. It is a strengthening either way: a cancelled tap is now *detected* rather than passed over, which is the failure the helper was written for.
+
+**A `fullScreenCover` is in the tree while it dismisses.** Two assertions read `XCTAssertFalse(wayOut.exists)` the instant the walker landed back on her Detail, and a cover on its way out is still there for a frame or two. They wait for it to be gone instead. The claim — the room is no longer on screen — is unchanged; only the instant it is read at.
+
+**And the deeper half of the same mistake: `exists` is not `is on screen`.** A `fullScreenCover` leaves the screen beneath it in the accessibility tree — the walker's own reading of a room found every element of her Detail present and only the way out hittable — so `beWithHer(app).exists` is **true from inside her room**, and three assertions of the shape *"he is back on her Detail"* were reading a fact that had been true the whole time. Worse, the reduce-motion exit waited on it: `press(stepped, until: door)` had nothing to wait for, so a touch the digitizer cancelled read as a walker who had left. Leaving is now asked of the one control a Homes surface has — when the way out is **gone**, he is out — and her Detail is asked `isHittable` rather than `exists`.
+
+**And a flick is not a gesture.** `XCUIApplication.swipeUp()` moved the axis on the phone and did not reach the `DragGesture` at all on the SE — the hint stayed up and the enclosure never changed, on the screen size where the walk matters most. It is a press-and-drag between two points given as fractions of the glass now, which is the gesture a thumb actually makes and is the same on every screen. One screen height is one band, so how far one drag carries him is his hand's business and the settle's: the climb is asked again until he has left the enclosure he opened on, rather than assumed to happen in one.
+
+Recorded because the lesson generalises past this branch: *a wait is only a flake absorber if the thing waited for cannot already be true.* Both original sentinels would have passed ninety-nine runs in a hundred, and this build reaches Ashrey once.

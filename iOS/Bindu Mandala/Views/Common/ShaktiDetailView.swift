@@ -102,6 +102,7 @@ struct ShaktiDetailView: View {
             // compiler's rather than the walker's.
             if let rite = RiteOfEnteringView.entering(shakti,
                                                       remembering: HomeMemoryStore(context: context),
+                                                      forceReduceMotion: AppRuntime.forcesReduceMotion,
                                                       onLeft: { showHerRoom = false }) {
                 rite
             } else {

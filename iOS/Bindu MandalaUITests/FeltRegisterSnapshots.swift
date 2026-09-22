@@ -537,10 +537,18 @@ final class FeltRegisterSnapshots: XCTestCase {
             let moved = max(abs(dx), abs(dy))
             guard moved > tolerance else { continue }
             if let allowed = ClassifiedShift.allowance(screen: screen, key: key) {
-                if moved > allowed.maxDelta + tolerance {
-                    out.append(String(format: "%@/%@: %@ moved %.2f pt, past the %.2f pt "
-                                      + "classified as \"%@\"",
-                                      device, screen, key, moved, allowed.maxDelta, allowed.reason))
+                // Judged against the *nearest classified translation*, not
+                // against zero. A control added to a stack moves everything
+                // below it by its own height and nothing above it; saying so in
+                // `settles` keeps the residual bound at the resolution it was
+                // written at, instead of widening it to the height of the
+                // control. See `ClassifiedShift.settles`.
+                let residual = allowed.residual(moved)
+                if residual > allowed.maxDelta + tolerance {
+                    out.append(String(format: "%@/%@: %@ moved %.2f pt — %.2f pt off the classified "
+                                      + "%@ pt, past the %.2f pt allowed for \"%@\"",
+                                      device, screen, key, moved, residual,
+                                      allowed.settlesDescription, allowed.maxDelta, allowed.reason))
                 }
                 continue
             }

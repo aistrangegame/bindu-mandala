@@ -111,14 +111,32 @@ struct RiteOfEnteringView: View {
     @State private var clock: RoomClock
     @State private var approach: RoomApproachSource
     @State private var crossing: Task<Void, Never>?
-    /// What the stay was worth at the instant he began to cross out. The walk
-    /// out is no more time in her room than the walk in was, so the stay is
-    /// measured where it ends rather than where the surface goes away — and a
-    /// walker who lets go of the crossing and stays on goes on accruing it.
-    @State private var stayEndedAt: TimeInterval?
-    /// The stay is handed over once, by whichever comes first — the way out, or
-    /// the surface going away under him.
-    @State private var handedOver = false
+    /// **The watch kept over a withdrawal that was begun and never finished.**
+    ///
+    /// The way out is a press, and a press reports two things: it began, and it
+    /// ended. `holdOn()` — which puts the stay back, re-lights the two marks and
+    /// closes the room on him again — runs only on the *ended*. A press can be
+    /// taken away without one: the system lifts the touch out from under the
+    /// view (a call banner, the app going to the background, and the digitizer
+    /// teardown `DECISIONS.md` records for the harness), SwiftUI discards the
+    /// cancelled press, and no callback arrives at all. The walker was then left
+    /// standing inside her room with the eye withdrawn to nothing, both marks
+    /// cancelled and never rescheduled, and the stay frozen where his finger
+    /// landed — with no gesture that could undo any of it.
+    ///
+    /// So the withdrawal watches itself. It is armed when the crossing begins
+    /// and cancelled by either honest end — he is out, or he let go — and if
+    /// neither has arrived a little after the crossing's own length, the only
+    /// thing that can have happened is that the press was taken away. He did not
+    /// leave, so he is put back exactly as a let-go would have put him back.
+    @State private var withdrawal: Task<Void, Never>?
+    /// The stay's own bookkeeping — when it ended and whether it has been filed.
+    ///
+    /// Its four rules are ``TheStay``'s, so they can be driven rather than read:
+    /// the stay ends where he decided it ended, a let-go undoes that, the filing
+    /// happens once by whichever door closes first, and a ceremony he abandoned
+    /// files nothing.
+    @State private var stay = TheStay()
     /// How many times the walker has been moved on his crossing.
     ///
     /// The still path's redraw token (``RoomView/moves``). ``RoomApproachSource``
@@ -214,6 +232,7 @@ struct RiteOfEnteringView: View {
         .onChange(of: environmentReduceMotion) { _, _ in adoptMotion() }
         .onDisappear {
             crossing?.cancel()
+            withdrawal?.cancel()
             // He has left. A mark that had not arrived does not arrive.
             dwelling?.end()
             handOverTheStay()
@@ -273,12 +292,22 @@ struct RiteOfEnteringView: View {
     ///
     /// The mask is the hand: the text is whole from the first frame and only as
     /// much of it as has been written is uncovered, with a soft leading edge
-    /// where the stroke is being made. Devanāgarī is set in the system face —
-    /// Cormorant carries no Devanāgarī, and a substituted glyph is still her
-    /// name while a missing one is not.
+    /// where the stroke is being made.
+    ///
+    /// **The face follows the string, not the field.** Devanāgarī is set in the
+    /// system face — Cormorant carries no Devanāgarī, and a substituted glyph is
+    /// still her name while a missing one is not. But `words.written` is her
+    /// Devanāgarī *or her roman name*, and this beat used to set the system face
+    /// for both: a row whose `devanagari` is empty had the centre of her own
+    /// threshold written in the OS's sans, between a Cormorant beat one and a
+    /// Cormorant beat three, while the Detail rendered the identical string in
+    /// Cormorant a tap away. ``RiteWords/writtenIsDevanagari`` asks which string
+    /// was actually chosen, so the answer cannot drift from the choice again.
     private func written(_ frame: RiteFrame) -> some View {
         Text(words.written)
-            .font(.system(size: Self.writtenSize))
+            .font(words.writtenIsDevanagari
+                  ? .system(size: Self.writtenSize)
+                  : AppFont.sanskrit(Self.writtenSize))
             .tracking(Self.writtenSize * 0.02)
             .multilineTextAlignment(.center)
             .foregroundStyle(Color.cream)
@@ -418,19 +447,46 @@ struct RiteOfEnteringView: View {
         guard !rite.isCeremonial else { return }
         let now = Date().timeIntervalSinceReferenceDate
         // The stay ends where he decides it ends, not where the surface goes.
-        if stayEndedAt == nil { stayEndedAt = clock.elapsed(now: now) }
+        stay.ends(at: clock.elapsed(now: now))
         // A mark that has not arrived does not arrive while he is on his way out.
         dwelling?.end()
         stand(at: RoomApproach(from: approach.value(at: now), to: 0,
                                since: now, motion: .steady(seconds: max(0, seconds))))
+        watchTheWithdrawal(over: seconds)
     }
+
+    /// Arms the watch described on ``withdrawal``: the crossing's own length,
+    /// which is when a finished press is due, plus ``withdrawalSlack`` for one
+    /// that is merely late.
+    private func watchTheWithdrawal(over seconds: TimeInterval) {
+        withdrawal?.cancel()
+        let slack = max(0, seconds) + Self.withdrawalSlack
+        withdrawal = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(slack * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            // He is neither out nor back: the press was taken away. Put him back.
+            holdOn()
+        }
+    }
+
+    /// How long after a crossing's own length a finished press may still arrive
+    /// before the withdrawal is judged to have been taken away.
+    ///
+    /// Generous rather than tight, and deliberately so: the cost of waiting too
+    /// long is that a walker whose crossing was taken from him looks at a
+    /// withdrawn world for another half second, and the cost of waiting too
+    /// little is that a press which really did complete under a loaded device
+    /// gets undone underneath him. The second is the worse failure, so the
+    /// slack is sized for it.
+    static let withdrawalSlack: TimeInterval = 0.6
 
     /// He let go of the crossing. The room closes on him at Design's own
     /// station rate, the stay is no longer over, and the two marks are live
     /// again — a walker who thought about leaving and did not has not left.
     private func holdOn() {
-        guard !rite.isCeremonial, stayEndedAt != nil else { return }
-        stayEndedAt = nil
+        withdrawal?.cancel()
+        withdrawal = nil
+        guard !rite.isCeremonial, stay.goesOn() else { return }
         let now = Date().timeIntervalSinceReferenceDate
         stand(at: RoomApproach.crossing(from: approach.value(at: now), to: 1,
                                         at: now, reduceMotion: reduceMotion))
@@ -440,6 +496,8 @@ struct RiteOfEnteringView: View {
     /// He is outside. The stay is handed over, then the surface takes him off.
     private func out() {
         crossing?.cancel()
+        withdrawal?.cancel()
+        withdrawal = nil
         dwelling?.end()
         handOverTheStay()
         onLeft?()
@@ -451,9 +509,9 @@ struct RiteOfEnteringView: View {
     /// held at her threshold — and a stay that has already been handed over is
     /// not handed over twice, whichever of the two doors closes first.
     private func handOverTheStay() {
-        guard !handedOver, !clock.isHeld else { return }
-        handedOver = true
-        recording?(max(0, stayEndedAt ?? clock.elapsed()))
+        guard let dwell = stay.handOver(elapsedNow: clock.elapsed(), entered: !clock.isHeld)
+        else { return }
+        recording?(dwell)
     }
 
     private func strike(_ beat: RiteBeat) {

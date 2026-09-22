@@ -93,6 +93,15 @@ struct RiteBlockView: View {
                 .font(AppFont.voice(15))
                 .tracking(0.9)
                 .foregroundStyle(atmo.accentBright.opacity(0.92))
+                // **It is read against her own ghost.** This line is centred
+                // over the huge translucent name behind it, so its contrast is
+                // not its alpha against the ground but its alpha against
+                // whatever stroke of her name happens to run under it — and it
+                // is now the first rung of the only ladder into the rooms
+                // layer. The name itself is carried on a shadow for exactly
+                // this reason; so is this. No size, padding or alpha changes,
+                // so nothing on the screen moves.
+                .shadow(color: .black.opacity(0.85), radius: 10)
                 .padding(.vertical, 12)
                 .padding(.top, 2)
                 .frame(minHeight: 44)

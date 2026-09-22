@@ -111,7 +111,11 @@ struct TheWayOut: ViewModifier {
     static var alpha: Double { RiteOfEntering.promptAlpha }
 
     /// Nothing is out yet; and once it is, a finger lifting cannot take it back.
-    @State private var gone = false
+    ///
+    /// Written with its type rather than inferring it, because the check that
+    /// reads this file off disk judges every stored property by the type it can
+    /// see, and an un-annotated one is judged by its initialiser instead.
+    @State private var gone: Bool = false
 
     func body(content: Content) -> some View {
         ZStack {
