@@ -1652,3 +1652,161 @@ legibility register, going around SwiftUI as the renderer ruling requires) are s
 reason: six passes, one ruler. `slots` is a parameter with a default of sixteen — past five of the
 six builders' part counts and exactly at the sixth's — so a ring that stands fewer parts passes its
 own number rather than carrying empty slots that read alike in every room.
+
+## 2026-09-21 · Phase 3.6, Ring 9 — the Bindu, the silence wire, and the two ledger events
+
+The last of Design's eight authored mechanisms, and the two wires the brief puts in this
+phase. `HomeGrammar` returns `nil` for ring 9 on purpose — `HomeRooms.grammarRings` stops at
+8 — so kp 102 is the one seat in the hundred and two that could not fall through to an
+archetype. Every number in `Homes/Render/DissolveRoom.swift` is Design's own `chamberDissolve`.
+
+### 1 · The room: the yantra, cut into her own stone
+
+**The figure is the instrument.** Ninety-nine of the hundred and two rooms lay out a figure of
+their own; this one lays out the **Śrī Yantra** — the nine enclosures the whole Mandala is
+built of, one inside the next, with her at the point they are all enclosures of. Design's own
+phrase for the instrument is *one building, ninety-nine reflections and the source*, and the
+figure comes out at exactly that: three squares of eight, two circles of twelve, sixteen
+petals, eight petals and nine triangles of three corners is **ninety-nine marks**, and the
+hundredth is the source. It is asserted, so a later hand cannot quietly make it ninety-eight.
+
+**Four readings of Design, and each one is a decision.**
+
+*The yantra's plane is the surface, and Design's depth is the cut.* `RoomUnits.axes(of:)` is
+right for a figure drawn standing up and carried onto a face, and wrong for a **concentric**
+one carried onto a floor — Design's `y` becomes the axis that leaves the stone and nine nested
+courts come back as nine flattened ellipses. `BodilessRoom` made the mirror-image reading for
+the mirror-image reason (*"a bodiless ring is drawn lying down"*); this is the same sentence
+for a figure drawn standing up. So the nine depths become **nine depths of cut**, the bhūpura
+scratched at the surface and the source the deepest thing in the room. It also disposes of the
+axis trap that ran `EndlessRoom`'s procession backwards: because the plane is *declared*
+rather than mapped, no axis here carries a surface-dependent sign at all, and the two
+rotations that matter — Design's `+0.0075` on the courts against its `-0.014` on the triangles
+— keep their relation on a floor, a canopy and a working face alike.
+
+*A circle is drawn with twelve marks and a square with eight.* Eight points on a circle stand
+at the same eight angles a square's eight do; drawn that way the two courts would come back as
+one court at two radii.
+
+*A court leaves by going past the picture, never by going shallow.* Design carries the whole
+yantra past the walker (`position.z = b * 7.4` on a figure 8.4 deep). There is no camera to
+pass here, so it leaves the way a figure cut into a surface can: it opens out past the picture
+the walker is actually looking at, and its **light** goes with it. It is a claim about light
+and never about depth — `RingOne` refused that once already, and the stone keeps every court
+it was ever cut with, at its own depth, for the whole stay. Measured, the figure leaves **from
+the outside in**: the bhūpura is at 0.45 of its light by the end and the nine triangles are
+still at full, which is what turning inside out looks like on a surface.
+
+*The source is a swell, and it is constructed rather than classified.* Every other mark in the
+room has its verb read off its own travel by `RoomInscription`. The source travels a fifth of
+a body over the two minutes of the second adaptation, which at any rate a classifier can see
+is a **compaction** — *"the mark of something that bore down without moving"*, which is
+`BodilessRoom`'s absence and the exact opposite of what this mark does. Design's own line is
+`bindu.position.z = -8.4 + b * 8.4`: it comes **out** of the depth of the figure to where he
+is standing, and material coming out of a surface is a swell.
+
+**The reversal.** `HomeBecoming(premise: .wall, answer: .ground, yields: 7.4/8.4, takes: 2.8)`
+— the enclosure gives way by Design's own travel, and what takes the work over is the
+**ground**, by Design's own word: *the bindu is where you are standing*. `RoomReversal` then
+refuses to bring the ground toward the walker because he is standing on it, and in this one
+room that law is the sentence rather than a loss: the source does not come at him, it turns
+out to have been underfoot. The answering mark is the room's **own** (`TripleRoom`'s reason —
+a second lit disc on top of the source is the wash `MatrkaRoom` found with a picture), and it
+carries Design's `(1 - b * 0.55)`: a point of light at the far end of a hall is something you
+look at, and the same light arrived where you are standing is something you are inside. *A
+light you are inside is not a light you see.*
+
+**Measured.** Legible on all three surfaces at both adaptations — mean luma 0.148 → 0.244 at
+the crown, 0.167 → 0.253 at the heart, 0.173 → 0.237 at the soles, none black, none blown out,
+spread 0.27 to 0.61. Every one of the hundred marks clears both floors at five moments and at
+three altitudes. The centre is the brightest place in her room at both adaptations, read as
+emission off the material rather than off the numbers.
+
+### 2 · The R11 silence wire
+
+`Services/HomeDwelling.swift` is the caller the three shipped pieces were waiting for. It owns
+one `HomeVisit`, wakes at the stay's two marks and does nothing else.
+
+**Which clock.** `HomeMemoryStore`'s header left it open and handed the caller a helper to
+rule it with; it is ruled here as the **chamber clock** — the clock `homes-chambers` counts
+adaptations on, the clock `HomeMemory.adaptation(atChamberTime:)` reads, and the clock the
+room beneath the words is drawn by. The consequence is written down rather than discovered
+later: a walker whose accumulated dwell has opened her room past the first adaptation holds
+that room's silence on arrival. That is the head start doing what it is for, and it cannot be
+gamed by entering and leaving, because the head start comes from accumulated dwell.
+
+**It wakes rather than polls.** A stay has exactly two marks and both are known the moment the
+clock begins, and on the reduce-motion path there is deliberately no render loop to hang a
+poll on. `observe` re-asks both guards when it wakes, so a wake that is early, late or
+repeated changes nothing.
+
+**It is invisible by construction.** `HomeDwelling` imports no SwiftUI, vends no published
+property and has nothing a view can bind to; the one screen that carries one reaches for it in
+exactly two places and both are lifecycle. A count that cannot be read cannot be shown by
+accident. The write is a local `RecognitionEntry` with `gesture: .silence` plus one
+`Silence Held` row in App Activity — and nothing at all to the Mandala table, which is
+asserted off the source rather than promised.
+
+### 3 · The two ledger events that survive
+
+`Full Circle`, once ever, when the 102nd first-felt lands; `First Dwelling`, once ever, the
+first time a second adaptation is reached in any room. `Deepest Ring Reached` stays dropped —
+see this file's entry of the same day.
+
+**Both are once *ever*, which no other row in the ledger is,** and a local flag cannot carry
+that: it is per-install, so a reinstall or a second device would log the milestone again,
+which is exactly what `Letter Written` did until §0.6's server-derived reconcile. So each
+carries the same two-part guard the letter now has — a local set, plus a read of the ledger's
+own view that unions into it (`reconcileLedgeredMilestones`, once per sync) — and
+`recordMilestone` reads the server again at the moment of writing. That read **fails closed**:
+an unanswered question about a once-ever row is answered by not writing it, because a missing
+milestone can be written on the next gesture and a duplicated one cannot be taken back.
+
+**How far round he has come is asked of the ledger, not of this phone.** `Full Circle` counts
+the distinct Śakti record ids linked from `Shakti Recognized` rows — R17 working as intended,
+since App Activity is the single record and a reinstall cannot reset it. The read happens only
+when a gesture was itself a **first** recognition and only while the milestone is unwritten,
+which is at most a hundred and two narrow reads in a whole practice and none afterwards. It is
+fire-and-forget and fail-quiet: a recognition is never held up, failed or retried because of a
+milestone. The count never reaches the walker; it decides a row in the archive and nothing
+else.
+
+`LawsTests`' event vocabulary now covers both new types, so an event's name still lives in one
+file and nowhere else.
+
+## 2026-09-21 · Phase 3.6 · Ring 7, the twelve Vāsinīs — what a ring with no phase is given instead
+
+**The thinnest archetype in the instrument, and the Phase 3 foundation said so.** SOUNDING has no phase divisor at all — `HomeGrammar.phaseDivisor` returns `nil` — so all twelve carry `phase` `nil` and Design phases the room's parts by *node index*. Her position reaches the builder through exactly one number, `n = 2 + (pos % 8)`, and across twelve seats that wraps: `87·95` both stand at nine, `88·96` at two, `89·97` at three, `90·98` at four. On the real cards eight of the twelve carry `vāc` or `speech` and classify to one physics, and seven of those eight sit in one body zone.
+
+**What was done about it, from her row rather than from a new number.** Four registers: her **mode decides how many marks her room has** — `2n`, where every other outer archetype stands a fixed count regardless of who is in the room; her **mode decides how wide the wall opens**, because a standing wave needs a wall long enough to carry it; her **altitude sets the phase of the wave's own breath**, read off Design's second wave term at the height she is felt at, which is the one number in Design's shader that varies with where on the body she lives; and her **physics holds the silences**.
+
+**Design's shader contradicts itself once and it is resolved rather than copied.** `sin(ang * uMode + uTime * 0.5)` **travels** — its zeros move around the cylinder at `0.5 / uMode` radians a second — so a node sprite pinned at a fixed angle is at a node only for an instant and the room has no silence anywhere, which is the opposite of what Design's own comment, its fixed sprites and the word *standing* all say. The angular term stands here; the time-varying term is the **axial** one Design already wrote.
+
+**The room.** `2n` marks around one ring, alternating: `n` silences at Design's own angles, and `n` soundings at the quarter-turns of her own wavelength where `sin` is at ±1. **Their signs alternate**, so one sounding is driven out of the stone while the next is drawn in. Nothing else in the hundred and two moves its material both ways around a single ring — a Bodiless room's eight all carry one physics at eight turns of one phase, a Cosmic room's shells are concentric, a Sourcing room has three corners. Every mark carries light, and that is not a softening: the seventh āvaraṇa is **pearl at 0.95 and sourceless**, so there is no raking key to find relief the material does not emit for itself, and a room whose silences were dark would be `n` lit points in a void.
+
+**Two findings this ring paid for.**
+
+1. **Design's `s.position.y = y + d[1]` on a node loses her tattva entirely for a dozen of the kernel's kinds** — `turn`, `recur`, `compress`, `encircle`, `point`, `draw`, `align`, `widen`, `dart`, `flow`, `merge`, `arrive` — and two of them are this ring's own on the real cards, `pāśa → encircle` and `aṅkuśa → point`. In a ring with no phase divisor that is the whole tattva gone. The node is read as what a node **is** instead: driven off the plane by Design's own `y` term plus the radial press (in Design's cylinder the radius is the way *off* the wall), and **held** by the travel it refuses along the wall, which is the mark's depth. Summing the refusal into the same number as the press cancelled it outright wherever the two came out equal — measured, `point` and `arrive` lost two of a mode of eight to it — so it is a second channel and not a third term.
+2. **The wall opens with the mode.** The chord between two neighbouring marks has to be at least one stroke wide, or each sounding writes through the silence beside it and the room has no silences. `2R · sin(π / 2n)` against `clearance` of the reach a silence opens out to; the **chord and not the arc**, because a mode of nine stands its marks twenty degrees apart where the two differ by a twentieth, which is the whole margin this room has. A mode of nine therefore stands on a wider wall than a mode of two — Ring 3's finding arriving at the one archetype where the count is the Śakti.
+
+Closest pair on the geometric fingerprint: `88 · 96` at **0.235**, against Design's tenth. Legible at both adaptations on every one of the twelve.
+
+## 2026-09-21 · Phase 3.6 · Ring 8, the three at the source — and Design's rule order, left alone
+
+**Two of the three share a physics and it is deliberate.** All three cards say *"at the source"*, and Design's rule order reads `/yoni|source|bhaga/ → spring` **nine rules before** `/icch|…|will/ → incline`. So kp 99's *Icchā at the source* and kp 101's *Jñāna at the source* both classify as `spring`; only kp 100 escapes, because *Kriyā* and *Lightning-Action* reach `/vega|…|lightning|kriyā/ → dart` earlier still. The order is Design's and pinned by a test, so **it is not touched**. It is asserted instead, against the real cards rather than against the corpus, so the day it changes this room's reasoning is re-read rather than quietly becoming untrue.
+
+**Which means a Ring 8 room may not rest on her physics.** Two structural things tell the three apart and neither is invented: **which corner is hers** — kp 99 and kp 101 are lit at opposite ends of one figure — and **her corner is also her phase**. Design phases the three lamps by *lamp index*, `displace(kind, t, i / 3, 0.8)`, with nothing of the Śakti in it, so with one physics between them the two would have moved identically and differed only in which mark was bright. Her corner's own turn of the three is what every other archetype receives as `ph`, and it is the one number her position gives this one.
+
+**The triangle stands up, and that is the reverse of the two rings before it.** Design draws it `cos(a) * R` in **x** and `sin(a) * R` in **y** at a fixed `z`; a Bodiless ring and a Sounding wall's ring are drawn lying down. The rule underneath is the same in all three and it is the figure's rather than the surface's: **a figure's own plane is the surface it is cut into.** Taking the general axis reading here would have put the whole rise into `along(design: 0, rise: y)`, which on a floor or a canopy is `along = 0` — three corners collapsed onto one line, which is the inverted-axis defect in a different costume.
+
+**Design's own recorded defect for this ring** was that the triangle stood larger than the room, so its corners left the picture and what was left went near-black. `OuterRings.Figure` scales the whole figure rather than clamping its parts, and both halves are held: **no mark is ever clamped to the edge**, at any moment of any stay, and **the brightest thing in the frame clears 0.15** at both adaptations. The second half is the one a geometric check cannot see — a sourcing room *is* dark, one corner speaks and two are silent, so a mean luminance says nothing here and a maximum does.
+
+**Three findings.** The three corners **cannot** be asserted to be cut to one depth: how hard a corner bears is her physics at that corner's own turn, so equal depths would be demanding her physics stop at the two that are dark. What is one is their *size*; the check reads the grain floor and the ratio. *Not yet reached* is the least the instrument lets a mark ask for, which is a **fifth and not nought** — `OuterRings.mark` holds size at 0.2 before the grain floor, exactly as Ring 3's absence already did. And on a floor or a canopy the whole figure is already at one mesh cell, so Design's `mine ? 6.4 : 2.4` is smaller than anything the surface can hold and **hers is not the larger corner there** — not lost, because on those surfaces Design's other number carries the whole distinction, and that number is the light.
+
+Closest pair on the geometric fingerprint: `100 · 101` at **0.589**.
+
+## 2026-09-21 · Phase 3.6 · the milestone guard, corrected on the way in
+
+The Ring 9 checkpoint's milestone wire read the ledger before writing a once-ever row and **failed closed by returning "already there"** — correct — but the caller then **marked the milestone locally on that answer**. Nothing ever clears that set: `reconcileLedgeredMilestones` only adds to it. So a single timed-out read suppressed a `Full Circle` or a `First Dwelling` on that install **permanently**, which is the opposite of what the code's own comment claimed it did.
+
+The read still fails closed, because a duplicated milestone cannot be taken back and a missing one can be written on the next gesture. **Closed now means write nothing *and remember nothing*,** which is what makes the next gesture able to ask again. The three answers — present, absent, could-not-ask — are a pure function (`AirtableService.decision(for:)`) so the guard can be exercised without a network, and a test holds all three.
