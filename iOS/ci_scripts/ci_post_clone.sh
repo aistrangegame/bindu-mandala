@@ -16,6 +16,34 @@
 
 set -e
 
+# ---------------------------------------------------------------------------
+# The Metal toolchain is NOT part of Xcode any more.
+#
+# Since Xcode 16 the Metal compiler ships as a separately-downloaded component
+# (a MobileAsset cryptex — on a developer's Mac it resolves to
+# `…/com.apple.MobileAsset.MetalToolchain-*/Metal.xctoolchain/usr/bin/metal`).
+# A fresh Xcode Cloud runner does not have it, so the first build that has to
+# compile a shader dies with
+#
+#     Command CompileMetalFile failed with a nonzero exit code
+#
+# and NO diagnostics file, because the compiler was never there to write one.
+# This bit us the moment `RoomLightPass.metal` — the SwiftUI shader pass the
+# renderer ruling chose — reached Cloud for the first time (build of d689e5f);
+# every earlier Cloud build was green only because the project had no shaders.
+#
+# Downloading is idempotent and a no-op when the component is already present.
+# It is deliberately NOT fatal: if it fails we let the build proceed so the log
+# shows the real Metal error rather than this hook's exit code.
+# ---------------------------------------------------------------------------
+echo "ci_post_clone: ensuring the Metal toolchain is present…"
+if xcodebuild -downloadComponent MetalToolchain; then
+  echo "ci_post_clone: Metal toolchain ready."
+else
+  echo "ci_post_clone: WARNING — could not download the Metal toolchain (exit $?)."
+  echo "ci_post_clone: continuing so the build surfaces the real shader error."
+fi
+
 if [ -z "$AIRTABLE_PAT" ]; then
   echo "ci_post_clone: AIRTABLE_PAT not set — building in local-first mode."
   exit 0
