@@ -39,3 +39,22 @@ One line per session: what landed, and what is next. Charter §9.
 3. Then 3.7 the corridor, 3.9 the descent, 3.8 the library fold (which must wait for Phase 4 to merge — they share `ShaktiDetailView`), Phase 5's light, and the ship.
 
 **Two standing hazards.** Host load on this machine comes mostly from a disk-image daemon, pCloud's file provider, and leftover booted simulators running iOS background services for hours — not from builds; reclaim simulators after every pass. And a build dying with "Early unexpected exit", "could not spawn" or "(ipc/mig) server died" is contention, never a defect to edit around.
+
+---
+
+# The plan to completion (2026-09-21)
+
+Written so it survives any restart. Everything below is Code's to finish; the only thing that needs Ashrey is installing the final build.
+
+**The thing that is not yet true, and matters most.** Every room, the climb and the rite are built and tested — and **nothing in the shipping app can reach any of them.** `RootView` still offers five destinations (mandala, rite, well, the102, memory) and not one of them opens a Home. Ship today and Ashrey would see the app he already has. The building becomes walkable at 3.7, which is therefore not a refinement but the step that turns all of Phase 3 into something he can stand inside.
+
+**The queue, in order, with what gates what:**
+
+1. **3.6 — the 58 outer rooms** (running). Rings 3 to 9, the Bindu as the last authored room, the R11 silence dwell wired, and the two surviving ledger events. Ends with the first whole-instrument check: all 102 resolve, none falls through to the shared seat, sister divergence across every ring.
+2. **Phase 4 — the felt register** (running, parallel, disjoint files). Its scaffolding is being proven able to fail before it is trusted to pass.
+3. **3.7 — the corridor, and the way in.** Neighbour doors within a ring, and the navigation that makes the Homes reachable at all: a Śakti's seat on the Mandala or her row in the Field opens her room. Needs 3.6 and Phase 4 merged first, because it touches the shipped shell they both own.
+4. **3.8 the library fold and 3.9 the descent**, in parallel — 3.8 folds Detail's sections behind the room (so it waits for Phase 4, which owns `ShaktiDetailView`), 3.9 brings the descent, the return memory, and the carrier live in every room.
+5. **Phase 5 — the Mandala's light.** Ideas 27, 28, 30, 31, 32, 38, built from the expansion doc since no Design package governs. Behind a flag until the checks are green, then the flag comes off. Field IDs already verified live.
+6. **The ship (§8).** Xcode Cloud with the `AIRTABLE_PAT` secret, confirm the first-launch sync and the recognition-write path in the build logs, then `ARRIVAL.md`.
+
+**Deliberately not in scope:** 3.10, the endless per-room refinement, which is where the instrument keeps deepening after it is given. And the `RULINGS-QUEUE.md` items, which Ashrey reads when the build ships — four so far, each already decided the restrained way and each reversible.
