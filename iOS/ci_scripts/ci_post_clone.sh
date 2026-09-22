@@ -17,31 +17,69 @@
 set -e
 
 # ---------------------------------------------------------------------------
-# The Metal toolchain is NOT part of Xcode any more.
+# The Metal toolchain is NOT part of Xcode any more, and on Xcode Cloud it
+# arrives DOWNLOADED BUT NOT INSTALLED.
 #
-# Since Xcode 16 the Metal compiler ships as a separately-downloaded component
-# (a MobileAsset cryptex — on a developer's Mac it resolves to
-# `…/com.apple.MobileAsset.MetalToolchain-*/Metal.xctoolchain/usr/bin/metal`).
-# A fresh Xcode Cloud runner does not have it, so the first build that has to
-# compile a shader dies with
+# Since Xcode 16 the Metal compiler ships as a separately-downloaded component.
+# The first Cloud build that ever had to compile a shader (build 56, of
+# 5cec97f) died with
 #
+#     error: cannot execute tool 'metal' due to missing Metal Toolchain;
+#            use: xcodebuild -downloadComponent MetalToolchain
 #     Command CompileMetalFile failed with a nonzero exit code
 #
-# and NO diagnostics file, because the compiler was never there to write one.
-# This bit us the moment `RoomLightPass.metal` — the SwiftUI shader pass the
-# renderer ruling chose — reached Cloud for the first time (build of d689e5f);
-# every earlier Cloud build was green only because the project had no shaders.
+# and no diagnostics file, because the compiler was never there to write one.
+# Every Cloud build since the shaders landed on 09-21 failed this way; the last
+# green ones are from 09-07, when the project had no .metal files at all.
 #
-# Downloading is idempotent and a no-op when the component is already present.
-# It is deliberately NOT fatal: if it fails we let the build proceed so the log
-# shows the real Metal error rather than this hook's exit code.
+# The trap is that `-downloadComponent` does NOT fix it there. The runner
+# already holds the asset and the command refuses with exit 70:
+#
+#     error: Metal Toolchain is already imported at
+#       /Users/local/Library/Developer/DVTDownloads/Assets/MetalToolchain/
+#       MetalToolchain-27A266a.exportedBundle
+#
+# Note *exportedBundle*: downloaded and exported, never imported, so `metal` is
+# still not on the toolchain path. `-importComponent` is what installs it. The
+# bundle carries the Xcode build version in its name, so it is globbed rather
+# than hard-coded, and both the runner's home and /Users/local are searched.
+#
+# `xcrun metal --version` is the only honest test — `-showComponent` can report
+# an asset that the build still cannot execute. Nothing here is fatal: if it
+# cannot be fixed we let the build run so the log shows the real shader error
+# rather than this hook's exit code.
 # ---------------------------------------------------------------------------
-echo "ci_post_clone: ensuring the Metal toolchain is present…"
-if xcodebuild -downloadComponent MetalToolchain; then
-  echo "ci_post_clone: Metal toolchain ready."
+metal_works() { xcrun metal --version >/dev/null 2>&1; }
+
+if metal_works; then
+  echo "ci_post_clone: Metal toolchain already usable."
 else
-  echo "ci_post_clone: WARNING — could not download the Metal toolchain (exit $?)."
-  echo "ci_post_clone: continuing so the build surfaces the real shader error."
+  echo "ci_post_clone: metal not executable — installing the toolchain…"
+  xcodebuild -downloadComponent MetalToolchain || true
+
+  if ! metal_works; then
+    BUNDLE=""
+    for root in "$HOME/Library/Developer/DVTDownloads/Assets/MetalToolchain" \
+                "/Users/local/Library/Developer/DVTDownloads/Assets/MetalToolchain"; do
+      for candidate in "$root"/*.exportedBundle; do
+        [ -e "$candidate" ] && BUNDLE="$candidate" && break 2
+      done
+    done
+
+    if [ -n "$BUNDLE" ]; then
+      echo "ci_post_clone: importing $BUNDLE"
+      xcodebuild -importComponent MetalToolchain -importPath "$BUNDLE" || true
+    else
+      echo "ci_post_clone: no exported MetalToolchain bundle found to import."
+    fi
+  fi
+
+  if metal_works; then
+    echo "ci_post_clone: Metal toolchain ready — $(xcrun metal --version 2>&1 | head -1)"
+  else
+    echo "ci_post_clone: WARNING — metal is still not executable."
+    echo "ci_post_clone: continuing so the build surfaces the real shader error."
+  fi
 fi
 
 if [ -z "$AIRTABLE_PAT" ]; then
