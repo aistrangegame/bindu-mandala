@@ -383,9 +383,18 @@ struct ShaktiDetailView: View {
                         breathPhase = 1
                     }
                 }
+            // A caption, never a control — and it has to say so. The pill buys
+            // its whole 44 pt target with `.padding(.bottom, 20)`, and the
+            // `spacing: -12` above pulls this line back up over the lower twelve
+            // points of it. A plain `Text` is hit-testable and is drawn after
+            // the pill, so without this a thumb landing in that band lands on a
+            // caption that carries no gesture and the long press never begins —
+            // on the one control in the eight that no live measurement reaches,
+            // because it appears only when a Śakti is ready to cross.
             Text("hold to cross into \(target.label.lowercased())")
                 .font(AppFont.voice(13))
                 .foregroundStyle(Color.cream.opacity(0.5))
+                .allowsHitTesting(false)
         }
     }
 

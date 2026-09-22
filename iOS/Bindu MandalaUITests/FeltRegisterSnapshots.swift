@@ -107,9 +107,40 @@ struct ElementFrame: Equatable {
                 out.append(ch)
             }
         }
-        return ElementFrame.foldClock(out)
+        return ElementFrame.foldMoon(ElementFrame.foldClock(out))
             .replacingOccurrences(of: "\n", with: " ")
             .replacingOccurrences(of: "|", with: "/")
+    }
+
+    /// The moon, folded the way the clock is folded, and for the same reason.
+    ///
+    /// `LunarPhaseService.headerLabel` says "<Phase> · <Nth> Night", and both
+    /// halves of it move on the calendar rather than on anything this suite
+    /// changed. The phase name turns over about every four days, and the digit
+    /// fold leaves the ordinal's own suffix behind — `#TH` on most nights,
+    /// `#ST`, `#ND`, `#RD` on the first three of a cycle and the twenty-first to
+    /// twenty-third. A changed key reads as `gone`, which this file's own
+    /// comparison makes deliberately unclassifiable, plus an unclassified
+    /// `new`: four failures across two screens on every device class, on the
+    /// weather, with no code change at all. That is the outcome the header of
+    /// this file exists to prevent, and the clock was folded for it while the
+    /// moon was missed.
+    ///
+    /// Scoped to a phase name that actually precedes a blanked ordinal night,
+    /// so "Full Moon" in a walker's own sentence is left alone. The frames
+    /// themselves need no help: a shorter phase name re-centres the strip, and
+    /// the comparison already takes the smallest of three anchors.
+    private static let moon = try? NSRegularExpression(
+        pattern: "(?:New Moon|Waxing Crescent|First Quarter|Waxing Gibbous|Full Moon"
+               + "|Waning Gibbous|Last Quarter|Waning Crescent) · #(?:st|nd|rd|th) Night",
+        options: [.caseInsensitive])
+
+    static func foldMoon(_ s: String) -> String {
+        guard let moon else { return s }
+        let ns = s as NSString
+        return moon.stringByReplacingMatches(in: s, options: [],
+                                             range: NSRange(location: 0, length: ns.length),
+                                             withTemplate: "~ · # NIGHT")
     }
 
     /// A blanked clock, with its meridiem folded: `#:# PM` → `#:# ~`. Scoped to

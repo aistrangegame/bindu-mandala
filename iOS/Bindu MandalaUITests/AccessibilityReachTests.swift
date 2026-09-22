@@ -237,12 +237,16 @@ final class DynamicTypeReachTests: XCTestCase {
     /// off the side of the glass, and a string that is no longer on the screen
     /// at all.
     ///
-    /// Horizontal, not vertical, and that is deliberate. A column that grew
-    /// taller than the screen is what a scroll view is for, and XCUITest reports
-    /// frames below the fold as being below the fold — a vertical bound would
-    /// fail on every scrolling screen in the app for the wrong reason. Text that
-    /// has left the screen *sideways* has nowhere to go and nothing to reach it
-    /// with, and that is the failure §4.3 is about.
+    /// Horizontal always; vertical **only on a screen that cannot scroll**, and
+    /// that distinction is the whole of it. A column that grew taller than the
+    /// screen is what a scroll view is for, and XCUITest reports frames below
+    /// the fold as being below the fold — a blanket vertical bound would fail on
+    /// every scrolling screen in the app for the wrong reason, which is why this
+    /// test measured width alone and reported green on a Rite whose moon had
+    /// been pushed up under the status bar. So the screen is asked whether it
+    /// has anywhere to scroll, and if it has not, a string outside the glass is
+    /// a string with nothing to reach it — exactly the horizontal case, turned
+    /// ninety degrees.
     func testNothingRunsOffTheSideOfTheSmallestScreen() {
         let screens: [(name: String, args: [String], settles: String)] = [
             ("the Mandala",   ["START_TAB=mandala"],            "Śrī Yantra"),
@@ -265,6 +269,7 @@ final class DynamicTypeReachTests: XCTestCase {
             Thread.sleep(forTimeInterval: 2.0)
 
             let bounds = app.frame
+            let canScroll = app.scrollViews.firstMatch.exists
             var read = 0
             for element in app.staticTexts.allElementsBoundByIndex {
                 guard element.exists else { continue }
@@ -274,6 +279,11 @@ final class DynamicTypeReachTests: XCTestCase {
                 if f.minX < -0.5 || f.maxX > bounds.width + 0.5 {
                     failures.append(String(format: "%@: “%@” spans %.1f…%.1f on a %.0f pt screen",
                                            screen.name, element.label, f.minX, f.maxX, bounds.width))
+                }
+                if !canScroll, f.minY < -0.5 || f.maxY > bounds.height + 0.5 {
+                    failures.append(String(format: "%@: “%@” sits %.1f…%.1f on a %.0f pt screen "
+                                           + "with nothing to scroll",
+                                           screen.name, element.label, f.minY, f.maxY, bounds.height))
                 }
             }
             XCTAssertGreaterThanOrEqual(read, 2,
@@ -289,6 +299,85 @@ final class DynamicTypeReachTests: XCTestCase {
         XCTAssertTrue(failures.isEmpty,
                       "At the largest accessibility size, text left the screen sideways:\n"
                       + failures.joined(separator: "\n"))
+    }
+
+    /// The failure the check above cannot see, because truncation keeps a string
+    /// inside every bound it is given: a column with nowhere to grow does not
+    /// overflow, it *compresses*, and SwiftUI answers a height proposal it
+    /// cannot meet by cutting the string to an ellipsis. At the largest
+    /// accessibility size on an SE the Rite's own question read "\u{201C}Where does
+    /// w\u{2026}" — the most meaningful sentence on the app's home screen, gone —
+    /// while every frame stayed dutifully inside the glass and this suite
+    /// reported green.
+    ///
+    /// No public API asks an element whether it was truncated, and the width a
+    /// label needs cannot be computed without knowing the token it was set in.
+    /// But one thing is always true and needs neither: **bigger type is never
+    /// shorter.** A string read at the largest size that occupies less height
+    /// than the same string at the default has not grown and re-wrapped — it has
+    /// been cut. So each screen is read twice, and its strings are matched by
+    /// the same folded key the composition lock uses, which is what makes a moon
+    /// phase and a clock the same string across two launches.
+    func testNoStringIsCutShortByAColumnThatCannotGrow() {
+        let screens: [(name: String, args: [String], settles: String)] = [
+            ("the Rite",  ["START_TAB=rite"],                    "I feel her"),
+            ("the Well",  ["START_TAB=well"],                    "Your Letters"),
+            ("the Bindu", ["START_TAB=mandala", "OPEN_SILENCE"], "THE BINDU"),
+        ]
+
+        var failures: [String] = []
+        for screen in screens {
+            let small = heights(screen.args, settles: screen.settles, largest: false)
+            let large = heights(screen.args, settles: screen.settles, largest: true)
+            guard !small.isEmpty, !large.isEmpty else {
+                failures.append("\(screen.name): never arrived at both type sizes")
+                continue
+            }
+            var grew = 0
+            for (key, was) in small.sorted(by: { $0.key < $1.key }) {
+                guard let now = large[key] else { continue }
+                // A one-line string with `minimumScaleFactor` is *allowed* to
+                // give a few points back to stay on its line — that is exactly
+                // what the source-level lock requires of it, and the Bindu's
+                // sixty-point name legitimately returns about three per cent.
+                // A cut takes whole lines: the Rite's question went from three
+                // lines to one. The bar sits between the two, far enough above
+                // a scale-to-fit that no honest one costs a failure, and far
+                // enough below one line lost from six that no cut hides.
+                if now < was * 0.92 {
+                    failures.append(String(format: "%@: \u{201C}%@\u{201D} is %.1f pt tall at the "
+                                           + "default size and %.1f pt at the largest — bigger type "
+                                           + "made it shorter, which is a cut and not a re-wrap",
+                                           screen.name, key, was, now))
+                }
+                if now > was + 0.5 { grew += 1 }
+            }
+            XCTAssertGreaterThan(grew, 0,
+                                 "\(screen.name): not one string grew between the default and the "
+                                 + "largest accessibility size — this check is reading an app that "
+                                 + "ignores the setting, and would pass on anything")
+        }
+        XCTAssertTrue(failures.isEmpty,
+                      "At the largest accessibility size, these strings were cut short:\n"
+                      + failures.joined(separator: "\n"))
+    }
+
+    /// Every string on a screen, by the composition lock's own folded key, with
+    /// the height it was drawn at.
+    private func heights(_ args: [String], settles: String, largest: Bool) -> [String: Double] {
+        let app = Reach.app(args, type: largest)
+        defer { app.terminate() }
+        guard Reach.text(app, settles, 35) else { return [:] }
+        Thread.sleep(forTimeInterval: 2.0)
+        var out: [String: Double] = [:]
+        for element in app.staticTexts.allElementsBoundByIndex {
+            guard element.exists else { continue }
+            let f = element.frame
+            guard f.width > 0, f.height > 0 else { continue }
+            let key = ElementFrame.normalize(element.label)
+            out[key] = max(out[key] ?? 0, Double(f.height))
+        }
+        return out
     }
 
     /// The type genuinely grew. Without this, every check above would pass on an

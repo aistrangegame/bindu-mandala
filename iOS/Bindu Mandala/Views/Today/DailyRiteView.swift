@@ -9,6 +9,7 @@ import SwiftData
 struct DailyRiteView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \Shakti.position) private var shaktis: [Shakti]
     @Query(sort: \NityaDevi.tithiPosition) private var nityas: [NityaDevi]
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
@@ -89,16 +90,54 @@ struct DailyRiteView: View {
                 .allowsHitTesting(false)
             DepthOverlay()
 
-            VStack(spacing: 0) {
-                celestialStrip(atmo: atmo)
-                Spacer(minLength: 0)
-                centerStack(s: s, content: content, atmo: atmo, plan: plan, comp: comp)
-                    .allowsHitTesting(!plan.veilName)   // the veil name is the door
-                Spacer(minLength: 0)
-                foot(s: s, content: content, atmo: atmo)
+            column(s: s, content: content, atmo: atmo, plan: plan, comp: comp)
+                .opacity(arrived ? 1 : 0)
+                .offset(y: arrived ? 0 : 8)
+        }
+    }
+
+    /// The Rite's own column: the strip at the top, her arrival held in the
+    /// middle by two spacers, the foot at the bottom. A still tableau, and the
+    /// only screen in the app that is deliberately not a scroll view.
+    ///
+    /// **Except at an accessibility type size.** The two `Spacer(minLength: 0)`
+    /// are already at zero on the smallest screen at the default size — the foot
+    /// sits twenty points off the bottom of an SE — so the column has nowhere to
+    /// grow. Type that grows inside a height it cannot exceed does not overflow;
+    /// SwiftUI proposes each string less room and the strings *truncate*, and at
+    /// the largest size the day's question read "“Where does w…" while the moon
+    /// was pushed up under the status bar. A question the walker cannot read is
+    /// not a rite.
+    ///
+    /// So above `.accessibility1` the column is given somewhere to go, and
+    /// nothing else changes: same blocks, same order, same spacers, same
+    /// composition. Below it — every size a walker who has not turned on
+    /// accessibility type will ever see — this is the same fixed `VStack` the
+    /// baselines were recorded against, and `ScrollView` is never built.
+    @ViewBuilder
+    private func column(s: Shakti, content: RiteContent, atmo: Atmosphere,
+                        plan: RitePlan, comp: RiteComposition) -> some View {
+        let stack = VStack(spacing: 0) {
+            celestialStrip(atmo: atmo)
+            Spacer(minLength: 0)
+            centerStack(s: s, content: content, atmo: atmo, plan: plan, comp: comp)
+                .allowsHitTesting(!plan.veilName)   // the veil name is the door
+            Spacer(minLength: 0)
+            foot(s: s, content: content, atmo: atmo)
+        }
+
+        if dynamicTypeSize.isAccessibilitySize {
+            GeometryReader { geo in
+                ScrollView {
+                    // The floor keeps the spacers doing their work whenever the
+                    // column still fits: the tableau holds until it cannot, and
+                    // only then does it scroll.
+                    stack.frame(minHeight: geo.size.height)
+                }
+                .scrollIndicators(.hidden)
             }
-            .opacity(arrived ? 1 : 0)
-            .offset(y: arrived ? 0 : 8)
+        } else {
+            stack
         }
     }
 

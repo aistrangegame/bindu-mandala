@@ -1744,3 +1744,138 @@ carry no accessibility label — audit §H5 lists them, and naming them changes 
 the composition snapshots read, so it is not folded into a type migration. The nine
 enclosures are spoken but the Mandala's header, its zoom column and the significance
 card are left at their existing accessibility, for the same reason.
+
+---
+
+## 2026-09-22 · Phase 4 review fixes — the half-point that re-composed the home screen
+
+Seven findings against the 4.1–4.5 branch. Five were real and are fixed; two are
+rejected with a reason. Everything below was proved on a running app, on all three
+device classes, before and after.
+
+**The root of it was one line of arithmetic.** `UIFontMetrics` quantises its answer
+to a third of a point, so a half-point size does not survive the round trip:
+`scaledValue(for: 11.5, compatibleWith: .large)` is **11.666…**, not 11.5. Every
+`AppFont.label(x.5)` site — nine of them, across the Rite, the Detail, Settings, the
+Field, the card, the Bindu, the threshold and the Nityā sheet — was therefore
+shipping **1.45% larger than it was drawn**, and the branch's own
+`testAtTheDefaultSizeNothingMoved` was failing on exactly that, unnoticed because
+the 4.3/4.4 commit was never run. The premise the whole phase rests on — *at the
+default content size every token returns the point size written at the call site* —
+was false the moment it was written down.
+
+**And it had already moved the app's home screen.** The Rite's kicker is one line of
+327.75 pt in a 346 pt column: a quarter of a point of slack. 1.45% of the glyph run
+is about 2.7 pt, so the kicker broke over two lines and, sitting between two
+`Spacer(minLength: 0)`, split the difference and settled the entire centre column —
+her name, her quality, her phonetic, "know her ›" — **seven points down the glass**
+on both phone classes. `FeltRegisterSnapshots` said so on `rite` and `recognition`
+the first time it was asked.
+
+`AppFont.labelPointSize` now normalises the metric against its own answer at
+`.large`: the ratio carries the growth, the designed size is what it grows from. At
+the default category the identity is exact; above it the strip grows in the
+proportion its text style grows. The test asserts the **token** rather than the
+metric, and a second test pins the reason — it asserts that the raw metric really
+does still quantise, so the normalisation cannot be deleted as a no-op without
+somebody meeting the fact that made it necessary. With it, the kicker is 327.75 pt
+on one line again and the composition lock passes on all three classes.
+
+**Nothing was added to hold the kicker on its line.** A `.lineLimit(1)` there would
+have changed the SE, where the baseline shows this string has *always* wrapped to
+two lines at 166.50 × 27.50. The defect was the 1.45%, and the 1.45% is gone.
+
+**Two screens had nowhere to grow, and did not overflow — they were cut.** The Rite
+and the Bindu are the app's two fixed tableaux: a `VStack` between two
+`Spacer(minLength: 0)` that are already at zero on an SE at the default size. Type
+that grows inside a height it cannot exceed does not run off the bottom; SwiftUI
+proposes each string less room and the strings **truncate**. At the largest
+accessibility size the Rite's own question read `“Where does w…` — the most
+meaningful sentence on the home screen — while the moon was pushed up under the
+status bar; the Bindu's closing paragraph lost a fifth of its height the same way.
+Above `.accessibility1` both columns are now wrapped in a `ScrollView` with a
+`minHeight` floor of the screen: the spacers keep doing their work for as long as
+the column fits, and only then does it scroll. Below `.accessibility1` — every size
+a walker who has not turned on accessibility type will ever see — the `ScrollView`
+is never built and the fixed column is the one the baselines were recorded against.
+Enabling Dynamic Type on a composition with nowhere to go is what broke these; the
+fix is to give it somewhere, not to stop it growing.
+
+**The Well's title needed a lower floor, not a second line.** On an SE it is already
+shrinking at the default size to keep clear of the hamburger's lane; once it scaled
+it needed about 0.69 at the largest size, hit its 0.75 floor, and read `Your
+Letters…`. The floor is 0.55. Letting it wrap instead was tried and reverted: a
+second line pushes the whole Well **thirty-eight points** down the SE at the
+*default* size, which the lock caught on `se/well` and `se/settings` — the exact
+composition change this phase is forbidden to make, arrived at while fixing an
+accessibility bug. `minimumScaleFactor` is only ever consulted when the text does
+not fit, so a lower floor costs nothing at any size that fits today.
+
+**The crossing pill's target was about 34 pt, not 44.** It buys the whole target
+with `.padding(.bottom, 20)`, and `VStack(spacing: -12)` pulls the "hold to cross
+into …" caption back up over the lower twelve points of it. A plain `Text` is
+hit-testable and is drawn after the pill, so a thumb landing in that band lands on a
+caption with no gesture and the long press never begins. The caption now says
+`.allowsHitTesting(false)`. Nothing drawn changes and the −12 compensation is
+intact. This is the one of the eight targets no live measurement reaches, because it
+appears only when a Śakti is ready to cross — which is why it was typed correctly,
+locked by `HitAreaIdiomTests` for the idiom, and wrong in fact.
+
+### The two locks that could not fail
+
+**The suite was rotting on the calendar.** `ElementFrame.normalize` folds a digit run
+and a meridiem, but `LunarPhaseService.headerLabel` lands in the key verbatim:
+`WAXING GIBBOUS · #TH NIGHT`. When the phase turns, or on nights 1–3 and 21–23 when
+the suffix folds to `#ST`/`#ND`/`#RD`, the key changes — and a changed key reads as
+`gone`, which this file deliberately makes unclassifiable, plus an unclassified
+`new`. Four failures on two screens on every device class, on the weather, with no
+code change at all: precisely the *"a test that goes red for weather gets muted"*
+outcome the file's own header exists to prevent. `foldMoon` folds the phase and the
+ordinal night the way `foldClock` folds the hour, and the identical transformation
+was applied mechanically to the six committed keys — the same *same transformation
+on the stored key and the live one, never a re-record* discipline the meridiem used.
+The frames needed no help: a shorter phase name re-centres the strip and the
+comparison already takes the smallest of three anchors.
+
+**The largest-size sweep measured only width, and that is what certified the broken
+Rite as green.** Truncation by definition keeps a frame inside its box, so a cut
+string moves no bound; and the vertical axis was skipped outright because *"a
+vertical bound would fail on every scrolling screen"*. Both halves are closed:
+
+- The vertical bound is now asserted **on a screen that has nowhere to scroll**,
+  which is the same judgement the horizontal bound makes, turned ninety degrees.
+  The screen is asked, not assumed, so the Rite and the Bindu are checked below
+  `.accessibility1` and exempt above it, where they now have somewhere to go.
+- A new check reads each screen **twice** — at the default size and at the largest —
+  and matches its strings by the composition lock's own folded key. No public API
+  asks an element whether it was truncated, and the width a label needs cannot be
+  computed without knowing the token it was set in; but one thing is always true and
+  needs neither: **bigger type is never shorter.** A string that occupies less
+  height at the largest size has not re-wrapped, it has been cut. The bar is 8%,
+  which sits above the three per cent a one-line name with `minimumScaleFactor`
+  legitimately gives back to stay on its line, and below one line lost from six.
+  It found the Bindu on its first run — a screen no finding had named.
+
+### Rejected
+
+**`AppFont.label` does not re-resolve while the app is running.** True, and it stays.
+The token builds a concrete `UIFont` at body-evaluation time, so a walker who changes
+the system text size *while Bindu Mandala is running* and returns finds the Cormorant
+strings rescaled and the system-sans strips frozen at the size the app launched with,
+until the next cold launch. There is no fix that is both correct and small: SwiftUI
+invalidates only views that **read** `\.dynamicTypeSize`, and a `ViewModifier` cannot
+read it on a child's behalf, so either all fifty call sites change idiom (and the
+source scanner that polices them changes with them), or the system face is reached by
+its private PostScript name so `Font.custom(_:size:relativeTo:)` can scale it from the
+environment. The first is a fifty-site rewrite plus a scanner rewrite for a walker who
+changes text size mid-session; the second is a private-name dependency under every
+small-caps strip in the app. Neither is what makes this build worth installing, and
+both are larger than everything above put together. Written down here rather than
+fixed, with the route named: `@ScaledMetric` per site, or the `labelPointSize(_:_:
+compatibleWith:)` seam that now exists, taking the category from the environment.
+
+**A live per-string truncation assertion, in the form the finding asked for.**
+XCUITest returns the untruncated label, but the *width that label needs* cannot be
+computed without knowing which token drew it, and the test process has no way to ask.
+The two-reads height comparison above is the same guarantee reached by something that
+is actually true.

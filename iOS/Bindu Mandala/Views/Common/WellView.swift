@@ -140,8 +140,19 @@ struct WellView: View {
                 .font(AppFont.sanskrit(30))
                 .tracking(1.6)
                 .foregroundStyle(Color.gold)
+                // The floor, not the line count, is what ran out. On an SE this
+                // title is *already* shrinking at the default size to keep
+                // clear of the hamburger's lane on both sides; once it started
+                // scaling with the walker's setting it needed about 0.69 at the
+                // largest accessibility size, hit 0.75, and read "Your
+                // Letters…". A lower floor is free — `minimumScaleFactor` is
+                // only ever consulted when the text does not fit, so every size
+                // that fits today renders at exactly the scale it does today,
+                // and the SE composition is untouched. Letting it wrap instead
+                // is what is not free: a second line on the SE pushes the whole
+                // Well down thirty-eight points at the *default* size.
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .minimumScaleFactor(0.55)
                 .padding(.horizontal, 52)
             Text("Speak to her directly. She is listening.".uppercased())
                 .font(AppFont.label(11))

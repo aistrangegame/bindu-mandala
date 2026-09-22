@@ -168,9 +168,12 @@ final class DynamicTypeTests: XCTestCase {
                       "`sanskrit` no longer scales")
         XCTAssertTrue(Rx.matches(#"func voice[\s\S]{0,240}?relativeTo:"#, fonts.text),
                       "`voice` no longer scales")
-        XCTAssertTrue(Rx.matches(#"func label[\s\S]{0,320}?UIFontMetrics"#, fonts.text),
+        XCTAssertTrue(Rx.matches(#"func labelPointSize[\s\S]{0,600}?UIFontMetrics"#, fonts.text),
                       "`label` no longer scales — `Font.system(size:)` has no `relativeTo:` of its "
                       + "own, so this token is the one that has to go through `UIFontMetrics`")
+        XCTAssertTrue(Rx.matches(#"func label\([\s\S]{0,200}?labelPointSize"#, fonts.text),
+                      "`label` no longer goes through `labelPointSize`, which is where the metric's "
+                      + "third-of-a-point quantisation is normalised away")
     }
 
     /// The mapping from a size to the style it grows against is the one
@@ -195,13 +198,36 @@ final class DynamicTypeTests: XCTestCase {
     /// asked for — which is the whole reason the composition snapshots recorded
     /// before this phase still pass. If this ever stops being true, every
     /// baseline in `iOS/SnapshotBaselines/` is measuring a different app.
+    ///
+    /// This asserts the **token**, not the metric underneath it. `UIFontMetrics`
+    /// on its own quantises to a third of a point and does *not* hold this
+    /// identity at half-point sizes (it answers 11.666… for 11.5); the guard
+    /// below that fact is what makes the identity true of the thing that ships.
     func testAtTheDefaultSizeNothingMoved() {
+        let atDefault = UITraitCollection(preferredContentSizeCategory: .large)
         for size in [11.0, 11.5, 12.0, 13.5, 14.5, 15.0, 17.0, 19.0, 23.0, 30.0, 44.0, 60.0] {
-            let scaled = UIFontMetrics(forTextStyle: AppFont.uiTextStyle(AppFont.style(forSize: size)))
-                .scaledValue(for: size,
-                             compatibleWith: UITraitCollection(preferredContentSizeCategory: .large))
-            XCTAssertEqual(scaled, size, accuracy: 0.01,
+            XCTAssertEqual(AppFont.labelPointSize(size, compatibleWith: atDefault), size,
+                           accuracy: 0.01,
                            "\(size) pt is not \(size) pt at the default content size")
+        }
+    }
+
+    /// The half-point sizes are the ones the raw metric loses, and the ones the
+    /// Rite's kicker had a quarter of a point of slack for. Named separately so
+    /// the reason the normalisation exists cannot be deleted by accident.
+    func testTheHalfPointStripsSurviveTheMetric() {
+        let atDefault = UITraitCollection(preferredContentSizeCategory: .large)
+        for size in [11.5, 12.5, 13.5] {
+            let raw = UIFontMetrics(forTextStyle: AppFont.uiTextStyle(AppFont.style(forSize: size)))
+                .scaledValue(for: size, compatibleWith: atDefault)
+            XCTAssertNotEqual(raw, size, accuracy: 0.01,
+                              "`UIFontMetrics` no longer quantises \(size) pt — if that is really "
+                              + "true the normalisation in `labelPointSize` is now a no-op and can "
+                              + "go, but check it on every OS the app ships to first")
+            XCTAssertEqual(AppFont.labelPointSize(size, compatibleWith: atDefault), size,
+                           accuracy: 0.01,
+                           "a \(size) pt strip ships at \(raw) pt — 1.45% wider than it was drawn, "
+                           + "which is what re-composed the Rite")
         }
     }
 
@@ -210,11 +236,8 @@ final class DynamicTypeTests: XCTestCase {
     /// mapping a size to a style at all.
     func testAtTheLargestSizeEverythingGrowsAndTheSmallGrowMost() {
         func factor(_ size: CGFloat) -> CGFloat {
-            UIFontMetrics(forTextStyle: AppFont.uiTextStyle(AppFont.style(forSize: size)))
-                .scaledValue(for: size,
-                             compatibleWith: UITraitCollection(
-                                preferredContentSizeCategory: .accessibilityExtraExtraExtraLarge))
-                / size
+            AppFont.labelPointSize(size, compatibleWith: UITraitCollection(
+                preferredContentSizeCategory: .accessibilityExtraExtraExtraLarge)) / size
         }
         XCTAssertGreaterThan(factor(11.5), 1.5, "an 11.5 pt strip barely grew")
         XCTAssertGreaterThan(factor(17), 1.5, "body copy barely grew")

@@ -87,6 +87,35 @@ enum AppFont {
         .custom(cormorantItalic, size: size, relativeTo: style ?? self.style(forSize: size))
     }
 
+    /// The point size the small-caps strips are actually drawn at, in a given
+    /// content size category — the live one when `traits` is nil.
+    ///
+    /// **Why this is not just `scaledValue(for:)`.** `UIFontMetrics` quantises
+    /// its answer to a third of a point, so a half-point size does not survive
+    /// the round trip: asked for 11.5 at the *default* category it returns
+    /// 11.666…, and a strip written at 11.5 would ship 1.45% larger than it was
+    /// drawn. On the Rite that was enough to push a one-line kicker with a
+    /// quarter-point of slack onto two lines and move the whole centre column
+    /// seven points down the glass.
+    ///
+    /// So the metric is normalised against its own answer at `.large`: the
+    /// ratio is what carries the growth, and the designed size is what it grows
+    /// from. At the default category this is exactly the number written at the
+    /// call site — which is the premise every composition baseline in
+    /// `iOS/SnapshotBaselines/` rests on — and above it the strip grows in the
+    /// same proportion the system's own text style grows.
+    static func labelPointSize(_ size: CGFloat,
+                               _ style: Font.TextStyle? = nil,
+                               compatibleWith traits: UITraitCollection? = nil) -> CGFloat {
+        let metrics = UIFontMetrics(forTextStyle: uiTextStyle(style ?? self.style(forSize: size)))
+        let atDefault = metrics.scaledValue(
+            for: size, compatibleWith: UITraitCollection(preferredContentSizeCategory: .large))
+        guard atDefault > 0 else { return size }
+        let live = traits.map { metrics.scaledValue(for: size, compatibleWith: $0) }
+            ?? metrics.scaledValue(for: size)
+        return live * size / atDefault
+    }
+
     /// The small-caps system strips — section titles, ghost hints, the tracked
     /// labels above a block.
     ///
@@ -97,8 +126,7 @@ enum AppFont {
     /// `-UIPreferredContentSizeCategoryName` overrides — so the tests that prove
     /// this at the largest accessibility size are measuring the thing that ships.
     static func label(_ size: CGFloat = 12, _ style: Font.TextStyle? = nil) -> Font {
-        let metrics = UIFontMetrics(forTextStyle: uiTextStyle(style ?? self.style(forSize: size)))
-        return Font(metrics.scaledFont(for: .systemFont(ofSize: size, weight: .regular)))
+        Font(UIFont.systemFont(ofSize: labelPointSize(size, style), weight: .regular))
     }
 
 

@@ -10,6 +10,7 @@ struct LalitaSourceView: View {
     var onEnter: () -> Void      // enter her presence → her full detail
     var onReturn: () -> Void     // ↑ return to the field
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var appeared = false
     @State private var sounded = false
@@ -70,7 +71,27 @@ struct LalitaSourceView: View {
         .allowsHitTesting(false)
     }
 
+    /// The Bindu's own column. Like the Rite's it is a still tableau and not a
+    /// scroll view — and like the Rite's it has nowhere to grow, so above
+    /// `.accessibility1` it is given somewhere. Nothing else changes: the same
+    /// blocks in the same order with the same staged emergence. Below it, the
+    /// `ScrollView` is never built and this is the fixed column the baselines
+    /// were recorded against.
+    @ViewBuilder
     private var words: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            GeometryReader { geo in
+                ScrollView {
+                    wordsColumn.frame(minHeight: geo.size.height)
+                }
+                .scrollIndicators(.hidden)
+            }
+        } else {
+            wordsColumn
+        }
+    }
+
+    private var wordsColumn: some View {
         VStack(spacing: 0) {
             Spacer()
             emerge(delay: 0.15) {
