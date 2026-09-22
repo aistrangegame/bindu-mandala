@@ -108,10 +108,21 @@ struct MandalaCamera: Equatable, Animatable {
         return 2
     }
 
+    /// How far the viewport reaches, in world units — the radius of the world
+    /// the glass is currently showing.
+    ///
+    /// Lifted out of ``enteredRing(in:)`` unchanged, because Phase 5's veil
+    /// reads the same quantity to decide how near the walker stands to an
+    /// enclosure. Nearness and crossing must never disagree about where she is,
+    /// and the surest way to guarantee that is for both to ask one function.
+    func viewportRadius(in size: CGSize) -> CGFloat {
+        (min(size.width, size.height) * 0.5) / scale
+    }
+
     /// The deepest enclosure the viewport has fallen inside — drives inward-only
     /// ring chimes and the threshold flash. 0 means still outside ring 1.
     func enteredRing(in size: CGSize) -> Int {
-        let reachLocal = (min(size.width, size.height) * 0.5) / scale
+        let reachLocal = viewportRadius(in: size)
         var entered = 0
         for r in 1...8 where MandalaWorld.ringRadius(r) > reachLocal { entered = r }
         return entered

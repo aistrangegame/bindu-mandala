@@ -224,7 +224,7 @@ struct SpikeMandalaHarness: View {
             focusKp: st.focusKp,
             familyKp: st.familyKp,
             focusAccentBright: focusBright,
-            countByKp: script.field.countByKp,
+            felt: script.field.felt,
             flash: st.flash,
             constellation: st.constellation,
             constellationStart: st.constellationStart,

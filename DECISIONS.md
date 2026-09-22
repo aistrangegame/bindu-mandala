@@ -2873,3 +2873,237 @@ source check.
 - **The rims are lines, not tubes.** A tube would take light and is a solid; the whole point of the
   shaft is that it is drawn rather than lit. That is a deliberate thinness, and 3.10 owns deepening
   it if it wants to — but not by adding a face.
+## 2026-09-22 · Phase 5 · The Mandala's light — one source, nine refractions, and a veil that cannot count
+
+Expansion ideas **27, 28, 30, 31 and 38**, built behind one flag. Idea **32 is
+refused**, with its reasoning below, so it is a ruling rather than an omission.
+No Claude Design package for the light exists (preflight, 09-21), so charter §4's
+fallback applies and the expansion doc governs.
+
+### The breach that was already shipped, and is now gone
+
+`MandalaCanvasLayer.drawSeats` sized every seat like this, and had since the
+field was first drawn:
+
+```swift
+let n = countByKp[kp] ?? 0
+let baseR: CGFloat = … : felt ? 4 + min(CGFloat(n), 6) * 0.4 : 3
+```
+
+`n` is `Shakti.serverRecognitionCount`. That is a **seven-step radius ramp keyed
+to how many times she has been felt** — 3.0 unfelt, then 4.0, 4.4, 4.8, 5.2, 5.6,
+6.0, saturating at six. One seat is a state. The whole field side by side is a
+readout, and a walker could count his own practice off the geometry without a
+digit anywhere on the screen.
+
+`LawsTests` could not see it. Every never-measure check there —
+`testNoWalkerFacingViewMeasuresOutLoud`, `testTheOnlyDigitShapeIsASeatInTheGarland`,
+`testOnlyTheMandalaItselfIsEverCounted` — reads **strings and interpolations**,
+and a radius is a number that never becomes text. That is the right net for a
+label and blind to a shape.
+
+It is deleted. `countByKp: [Int: Int]` is `felt: Set<Int>` at the canvas
+boundary, so the count does not cross into the render path at all, and a seat is
+one of two sizes: `feltRadius` 4.4, `unfeltRadius` 3.0.
+
+**And the reduction itself moved to the store.** The first cut left
+`(s.serverRecognitionCount ?? 0) > 0` in `LivingMandalaView.rebuild()`, and the
+new law failed on it — correctly. `Shakti.hasBeenFelt` is where that sentence
+lives now, so no file that draws names the number at all. A count that arrives at
+a drawing surface becomes a dimension eventually, whatever it arrived for.
+
+**This is the one respect in which the unlit canvas is deliberately not what
+`main` drew, and the flag does not gate it.** The brief asked that with the flag
+off the Mandala be byte-for-byte `main`. A law outranks a flag: a switch that
+could restore a measure is a switch that ships a measure. Everything *else* is
+gated — every `draw*` that takes a light falls back to the shipped expression
+when it is nil, the light is constructed in exactly one place behind
+`guard lightOn`, and `MandalaLightTests` asserts both.
+
+Two new laws were added so the next one cannot hide the same way
+(`LawsDrawnMeasureTests`): **no practice count reaches a surface that draws**
+(`Views/Mandala/`, `Views/Memory/`, `Views/Spike/`, `Theme/` — zero exceptions),
+and **no practice count is ever arithmetic** anywhere in the presentation layer.
+The detector is mutation-tested against the deleted ramp, written out verbatim,
+so it fails if it ever stops catching the thing it exists for. `Data/` keeps its
+arithmetic: something has to hold the mirrored number for the law to have
+anything to protect.
+
+### 27 + 28 + 30 — one render pass, because they are one sentence
+
+`Theme/MandalaLight.swift`, a pure value type beside `SeatLighting`, tested
+off-device exactly as `HomeGem` and `HomeWorlds` are.
+
+**The hue is not re-founded; the source is.** `Atmosphere` stays the single
+answer to *what colour is this Śakti* — so Ruling 7 / R3 holds, the 86's false
+`.inner` cluster default still never leaks, and the same Śakti is the same colour
+here and in her Home. What the light adds is what a *source* implies and a lamp
+does not: **reach** (how much of the Bindu arrives, falling as `1/(1 + 1.35·d²)`
+with `d` the radius over the Bhūpura's), **refraction** (how far the arriving
+light pulls her hue toward the source), and **the veil**.
+
+**The gem bends; it never colours.** `HomeGem`'s header records the mistake
+Design made and corrected — *"topaz is not a hue the walker's light is allowed to
+come from"* — and idea 27 as the expansion doc writes it ("Topaz: warm, amber,
+low. Sapphire: deep blue, cool") asks for exactly that mistake back. Refused.
+The refraction is built from `diffuse` instead, which says the same thing better:
+**a gem that scatters little transmits the source; a gem that scatters much turns
+the light into its own.** Ring 8's cat's eye (0.10) sits almost in the Bindu's
+gold; ring 7's pearl (0.95) is wholly itself. The pull is capped at 0.45 so a
+Śakti is never more the source than she is herself, and a test asserts it over
+the arc for every ring. Not one gemstone name appears in the file, and a source
+scan proves it.
+
+**The enclosures stop being lines.** `drawEnclosures`' 0.5 pt / 0.06-gold
+hairlines are now bands: a bright core and two soft flanks, whose **width is the
+gem's `diffuse` and nothing else** — the Crown a broad haze you cross, the eighth
+a taut bright line — coloured by the ring's own refracted hue and dimmed by
+distance. The Bhūpura's three squares take the first enclosure's light, and each
+of the nine triangles is drawn in the source's own colour at the strength that
+reaches its mean radius. The yantra does not change shape; it stops being flat
+gold and starts being near the centre or far from it.
+
+**The veil is the third term of the same pass, not an overlay.**
+`HomeWorlds.veils` was already computed, already shipped and already consumed by
+the Homes, so nothing is derived: it is read. Its inputs are **the ring, how near
+the viewport is, and how long the glass has lain untouched, and nothing else.**
+Nearness is necessary and stillness finishes it — close but moving clears 55% of
+the veil, close and settled clears all of it, and waiting at a distance clears
+nothing. Both terms are present-tense and both reset.
+
+**The failure that was one line away is the veil that lifts with familiarity.**
+*Return often enough and the eighth enclosure clears* is a completion meter drawn
+as fog — unreadable as a number, perfectly readable as how far along I am, and
+the most beautiful possible version of the thing the law forbids. It is guarded
+by a source scan that fails if the light so much as names `countByKp`,
+`serverRecognitionCount`, `RecognitionEntry`, `HomeMemory`, `lastFelt` or
+`ActivityLedger`.
+
+**FIDELITY §4's floor holds at the deepest veil.** A mark may lose at most 45% of
+its opacity; a *word* at most 25%, and never below 0.5 alpha if it was legible to
+begin with. A name is a legend, not a thing standing in the mist. Asserted over
+a grid of nine rings × 160 viewport radii × eleven stillnesses × five base alphas.
+
+**Reduce motion gets a real still path, not a fast one.** `stillness(untouchedFor:
+reduceMotion: true)` returns the settled value **without consulting the clock at
+all** — the same answer for every elapsed time there is, including none. There is
+no frame in which the veil is halfway, because there is no animation to be
+halfway through.
+
+### 31 — the fall speaks the mantra
+
+`Services/RingBija.swift`. The mechanism already existed: `updateEntered()` has
+always detected inward-only crossings and, behind the walker's own `lr_sound`
+toggle, sounded `ringChime`. This substitutes *what* it plays.
+
+The nine syllables are `HomeWorlds.ringCharacter[ring].bija`, retyped nowhere.
+The voicing is built from the syllable rather than invented beside it: the
+**root** is the crossing tone the descent already had (528 Hz falling ~a whole
+tone per enclosure, unchanged, asserted); the **partial** is a just interval read
+off the syllable's own vowel — `ai` a major third, `ī` a fifth, `au` a major
+sixth — played as a second quieter stepped note, because two sines a just
+interval apart *are* a partial at this level and it needs no new DSP; the
+**duration** is inverse to the syllable's own pitch, so deeper syllables hang
+longer — a lower tone sustains longer, which is acoustics rather than a table.
+It was first written off `HomeWorlds.tempi`, and `WorldClimbTests`'
+`testTheTempoNeverReachesAnAdaptationClock` refused it: that law pins the tempo
+to the two files that define and report it precisely so a third reader has to be
+argued for, and *a bell rings for about as long as the world's clock is slow* is
+a coincidence of shape, not an argument. The pitch was already here and already
+falls with depth. The door stays shut, and a test holds it shut.
+Eight enclosures sound one note. The eighth carries *Aiṁ Klīṁ Sauḥ* and sounds as
+three, spaced — the one crossing whose bīja is a sentence is the one that sounds
+like one.
+
+**Sounded, never stacked.** A falling mantra that is also written down the glass
+is a list of the enclosures crossed: a position indicator while you are in it and
+a completion list if it survived the session. No view may read `RingBija`, and a
+test scans every file under `Views/` to prove none does. Nor does a voice say it:
+`MandalaVoice` is already complete, spells its ordinals as words, and has no
+numeral in it.
+
+### 38 — Tratak, and why it is not a mode
+
+The expansion says the phenomenon is *"earned only by stillness, never triggered
+by a tap."* A thing you cannot tap into does not need a door, so Tratak is **not
+a screen and not a menu item**: it is what the instrument does when you stop
+moving, drawn inside the canvas that is already there. After twenty seconds
+untouched the field begins to quiet — the per-seat breath, the flare and the
+expanding halo fall away — the Bindu's haze stops breathing and firms into a red
+point to rest on, and white light comes up behind it, reaching full at
+forty-five seconds. Touching the glass resets it to nothing.
+
+That also disposes of the RootView oversized-child trap by construction: a
+full-screen gazing mode is exactly the shape that pushes the hamburger off the
+glass, and there is no new layer here to be oversized. `MandalaLightReachTests`
+asserts the hamburger is on screen, inside the bounds, hittable and still opens
+the menu, with the light on.
+
+**Reduce motion does not buy it early.** The thresholds are identical; what
+changes is that the white light is drawn *still*, sitting a little off the point
+where its drift would have carried it. This needed a second clock: the canvas's
+`TimelineView` is paused under reduce motion and its frame clock freezes, so the
+gaze is ticked once a second by the host instead. A one-second state change is
+not animation — it is a value changing, driving a drawing that does not move.
+
+### 32 — not built. Three reasons, any one of which is enough
+
+- **It breaks the aniconic law at the one scale where the law cannot be
+  defended.** The Homes answered *what is her form* by making a form an action on
+  the room's own material. Shrunk to a nine-pixel dot on a shared canvas there is
+  no surface for an action to act on, and what is left is an outline. Drawn from
+  `iconography` it fails `testHerIconographicProseNeverReachesARenderPath`
+  outright; drawn from anything else it is still a silhouette of a goddess.
+- **It duplicates what Phase 3 already shipped, worse.** *Her full form and her
+  dance at seat zoom* **is her Home** — all 102, ruled, measured,
+  legibility-checked. A second answer makes the first one smaller. And
+  `MandalaCamera.tier` already implements a three-tier zoom semantic, which
+  `drawSeats` already switches name, short name and bīja on.
+- **It is the only change in this phase that could move the frame budget.** The
+  canvas issues up to six primitives per visible seat in one `Canvas` under
+  `TimelineView(.animation)`, and `MandalaDrawCensus` and the G5 baseline were
+  captured against that shape. Replacing 102 dots with animated per-seat forms is
+  a deep-zoom performance risk in the last phase before the only build Ashrey
+  will open. Charter §3's performance gate and §4's restraint clause point the
+  same way.
+
+**The one legal fragment of 32 was already free and is already drawn**: the
+enclosures are marked by the *place's* own light at the wide tier, not by a
+picture of a person. `RingGlyph` draws all nine aniconically and is left where it
+is, in the descent film, rather than duplicated onto the canvas.
+
+### The flag
+
+`MandalaLight.enabled`, off by default, on with the launch argument
+`MANDALA_LIGHT=on` — the `KEY=value` idiom the UI suite already uses. **Read in
+one file, `LivingMandalaView`, and bound once to `lightOn`.** One flag for the
+whole phase because 27, 28 and 30 are physically one render pass: switching the
+veil off while leaving the Bindu as the source means maintaining a second
+lighting path, and a second path is a second thing to hold above the legibility
+floor, correct under reduce motion and correct for a voice. 31 rides it too,
+because a descent that speaks the mantra while the enclosures are still thin gold
+strokes is a half-instrument nobody — including the suite — should ever see.
+Six switches would be sixty-four states, of which the suite would exercise two.
+
+`MandalaDrawCensus` gained the same switch so the G5 baseline can be taken both
+ways: the lit path draws each enclosure as three strokes rather than one and the
+Bindu gains the gaze's two marks; every seat branch is unchanged.
+
+### One test reports a skip rather than a red, and the reason is written into it
+
+`MandalaLightReachTests.testTheHamburgerStillOpensTheMenuUnderTheLight` asks the
+one question that matters about the RootView trap — *does the hamburger still
+work?* — and it failed twice on this host. It failed with the phase flag **off**
+as well, which is the whole reason the control launch is there: the light had
+taken nothing, and XCTest's digitizer had simply dropped every press
+(DECISIONS.md, *"The press that was never delivered"*). `WorldClimbCaptureTests
+.testTheAnimatedPathStandsEveryFrame` went red in the same run for the same
+reason — a SceneKit loop starved to two frames in a second and a half — and
+passed on a re-run untouched.
+
+So the test now has three outcomes rather than two. The lit launch opens the
+menu: pass. The lit launch does not and the unlit one does: the light has taken
+the one control on the home screen, and that is a failure. Neither opens it: the
+machine could not deliver a press at all, the question was never put, and it
+throws `XCTSkip` with that sentence in it. A check that goes red for the weather
+gets muted, and this one is too important to be muted.

@@ -169,6 +169,32 @@ final class RingAudioService {
         playSteppedNote(freq: freq, duration: 1.5, volume: 0.06)
     }
 
+    /// The enclosure's own bīja as the viewport crosses it inward (Phase 5,
+    /// idea 31) — the same opt-in hook and the same pitch contour as
+    /// ``ringChime``, with the syllable's vowel opening a just interval above
+    /// the root. Eight enclosures sound one note; the eighth, whose bīja is the
+    /// three-syllable core, sounds three.
+    ///
+    /// The partial is played as a second, quieter stepped note rather than
+    /// added to the voice: two sines a just interval apart *are* a partial at
+    /// this level, and it costs the engine nothing it does not already do.
+    nonisolated func ringBija(_ ring: Int) {
+        for note in RingBija.voicing(ring: ring) {
+            let root = note.frequency, partial = note.partial
+            let dur = note.duration, delay = note.delay
+            guard delay > 0 else {
+                playSteppedNote(freq: root, duration: dur, volume: 0.06)
+                playSteppedNote(freq: partial, duration: dur, volume: 0.035)
+                continue
+            }
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(delay))
+                self?.playSteppedNote(freq: root, duration: dur, volume: 0.06)
+                self?.playSteppedNote(freq: partial, duration: dur, volume: 0.035)
+            }
+        }
+    }
+
     // MARK: - Ring 8 · Triad collapse (3 sines glide between targets)
 
     enum R8Target {

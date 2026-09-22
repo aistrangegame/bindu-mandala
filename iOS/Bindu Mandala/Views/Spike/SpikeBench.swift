@@ -84,7 +84,7 @@ enum SpikeBench {
                 census.add(MandalaDrawCensus.tally(.init(
                     camera: st.camera, size: size, seats: censusSeats,
                     todayKp: field.todayKp, focusKp: st.focusKp, familyKp: st.familyKp,
-                    countByKp: field.countByKp,
+                    felt: field.felt,
                     flashRing: st.flash?.ring, flashBornAt: st.flash?.bornAt,
                     constellation: st.constellation, constellationStart: st.constellationStart,
                     reduceMotion: reduceMotion, t: t)))

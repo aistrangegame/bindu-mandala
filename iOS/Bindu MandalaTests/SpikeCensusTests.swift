@@ -50,9 +50,8 @@ final class SpikeCensusTests: XCTestCase {
             }
         }
         // The documented felt distribution — one seat in four.
-        let felt = field.countByKp.values.filter { $0 > 0 }.count
-        XCTAssertEqual(felt, 26, "the bench's felt distribution is kp % 4 == 1")
-        XCTAssertGreaterThan(field.countByKp[field.todayKp] ?? 0, 0, "today's seat is felt in this fixture")
+        XCTAssertEqual(field.felt.count, 26, "the bench's felt distribution is kp % 4 == 1")
+        XCTAssertTrue(field.felt.contains(field.todayKp), "today's seat is felt in this fixture")
     }
 
     /// The census now branches on a plain-value snapshot rather than on the
@@ -159,7 +158,7 @@ final class SpikeCensusTests: XCTestCase {
 
         let t = MandalaDrawCensus.tally(MandalaDrawCensus.Input(
             camera: cam, size: size, seats: field.censusSeats, todayKp: field.todayKp,
-            focusKp: kp, familyKp: family, countByKp: field.countByKp,
+            focusKp: kp, familyKp: family, felt: field.felt,
             flashRing: nil, flashBornAt: nil,
             constellation: 1, constellationStart: nil,
             reduceMotion: true, t: 1_000_000))
@@ -185,7 +184,7 @@ final class SpikeCensusTests: XCTestCase {
         func threads(at t: TimeInterval) -> Int {
             MandalaDrawCensus.tally(MandalaDrawCensus.Input(
                 camera: cam, size: size, seats: field.censusSeats, todayKp: field.todayKp,
-                focusKp: kp, familyKp: family, countByKp: field.countByKp,
+                focusKp: kp, familyKp: family, felt: field.felt,
                 flashRing: nil, flashBornAt: nil,
                 constellation: 1, constellationStart: start,
                 reduceMotion: false, t: t)).constellation
@@ -225,7 +224,7 @@ final class SpikeCensusTests: XCTestCase {
                     census.add(MandalaDrawCensus.tally(MandalaDrawCensus.Input(
                         camera: st.camera, size: size, seats: field.censusSeats,
                         todayKp: field.todayKp, focusKp: st.focusKp, familyKp: st.familyKp,
-                        countByKp: field.countByKp,
+                        felt: field.felt,
                         flashRing: st.flash?.ring, flashBornAt: st.flash?.bornAt,
                         constellation: st.constellation, constellationStart: st.constellationStart,
                         reduceMotion: false, t: t)))
@@ -279,7 +278,7 @@ final class SpikeCensusTests: XCTestCase {
                        t: TimeInterval = 1_000_000) -> MandalaDrawCensus.Input {
         MandalaDrawCensus.Input(
             camera: camera, size: size, seats: field.censusSeats, todayKp: field.todayKp,
-            focusKp: nil, familyKp: [], countByKp: field.countByKp,
+            focusKp: nil, familyKp: [], felt: field.felt,
             flashRing: nil, flashBornAt: nil,
             constellation: 0, constellationStart: nil,
             reduceMotion: reduceMotion, t: t)
