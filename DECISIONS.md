@@ -3089,17 +3089,46 @@ Six switches would be sixty-four states, of which the suite would exercise two.
 ways: the lit path draws each enclosure as three strokes rather than one and the
 Bindu gains the gaze's two marks; every seat branch is unchanged.
 
+### The test that pressed the wrong button, and what the suite did about it
+
+`MandalaLightReachTests` finds the hamburger the way `FeltRegisterSnapshots`
+does — by where it lives, because the shell exposes no label for it (audit §H5):
+the 44 × 44 control against the trailing edge, in the top 140 pt. **That band
+also contains the Mandala's own zoom column.** Its first control, the sound
+toggle, sits about 129 pt down on a Pro and about 90 pt on an SE, so a
+first-match query returns whichever the accessibility tree happens to list
+first. This file tapped the *sound toggle* five times, which is an odd number,
+which left `lr_sound` **on** in the simulator's defaults — and `UserDefaults`
+survives `EPHEMERAL_STORE`, and survives the launch, and survives the run.
+
+Two runs later `FeltRegisterSnapshots.testEveryTouchedScreenHoldsItsComposition`
+reported the composition moved on `phone/mandala`, `phone/mandala-descent` and
+`phone/detail` — `gone: button|♪̸`, `new: button|♪` — with no code change between
+the green run and the red one. That is exactly the failure that file exists to
+catch, arriving through a door nobody expected, and it was right both times.
+
+The locator is fixed to something true at every screen size rather than true at
+one threshold: the **highest** unlabelled control in the corner. The five marks
+in the zoom column all carry a label and are excluded by name as well. And the
+diagnosis that went with the earlier red — *the host dropped the press* — was
+wrong in its mechanism, though the host really was at load 90 at the time; the
+presses were being delivered, to the wrong button. Written down because a wrong
+diagnosis that reaches the same verdict is the kind that gets repeated.
+
 ### One test reports a skip rather than a red, and the reason is written into it
 
 `MandalaLightReachTests.testTheHamburgerStillOpensTheMenuUnderTheLight` asks the
 one question that matters about the RootView trap — *does the hamburger still
-work?* — and it failed twice on this host. It failed with the phase flag **off**
-as well, which is the whole reason the control launch is there: the light had
-taken nothing, and XCTest's digitizer had simply dropped every press
-(DECISIONS.md, *"The press that was never delivered"*). `WorldClimbCaptureTests
-.testTheAnimatedPathStandsEveryFrame` went red in the same run for the same
-reason — a SceneKit loop starved to two frames in a second and a half — and
-passed on a re-run untouched.
+work?* — and it went red twice before its locator was fixed. It went red with
+the phase flag **off** as well, which is the whole reason the control launch is
+there: whatever was wrong, the light had taken nothing. (It was the locator, as
+the section above records.) The control stays, because the *other* way this test
+can go red is genuinely the machine: this harness cancels presses under load
+(DECISIONS.md, *"The press that was never delivered"*), and on the run in
+question the host stood at load 90 with three simulators booted — the same load
+that took `WorldClimbCaptureTests.testTheAnimatedPathStandsEveryFrame` down to
+two SceneKit frames in a second and a half, red inside the full run and green on
+a re-run with nothing changed.
 
 So the test now has three outcomes rather than two. The lit launch opens the
 menu: pass. The lit launch does not and the unlit one does: the light has taken

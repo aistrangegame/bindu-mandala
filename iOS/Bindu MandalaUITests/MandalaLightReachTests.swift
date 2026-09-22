@@ -40,12 +40,30 @@ final class MandalaLightReachTests: XCTestCase {
     /// The hamburger, found where it lives rather than by a name this phase
     /// would have had to invent: the shell exposes no label for it (audit §H5),
     /// so it is the 44×44 control in the top-trailing corner.
+    ///
+    /// **The topmost one, and never a labelled one — and both halves were paid
+    /// for.** The Mandala's own zoom column also lives against the trailing
+    /// edge, and its first control — the sound toggle — sits about 129 pt down
+    /// on a Pro and about 90 pt down on an SE, inside the 140 pt band a
+    /// first-match query accepts. This test tapped *that* five times, left
+    /// `lr_sound` on in the simulator's defaults, and `FeltRegisterSnapshots`
+    /// then reported the whole composition moved — on three screens, in a later
+    /// run, with no code change between them. The suite was right and this file
+    /// was wrong.
+    ///
+    /// So: the hamburger is the **highest** control in the corner, which is
+    /// true on every screen size rather than true at one threshold, and it
+    /// carries no label, which the five marks in the zoom column all do.
     private func hamburger(in app: XCUIApplication) -> XCUIElement? {
         let bounds = app.frame
-        return app.buttons.allElementsBoundByIndex.first {
-            $0.exists && $0.frame.maxX > bounds.width - 76
-                && $0.frame.minY < 140 && $0.frame.height >= 40 && $0.frame.width >= 40
-        }
+        let marks: Set<String> = ["♪", "♪̸", "+", "−", "⤢", "×", "‹"]
+        return app.buttons.allElementsBoundByIndex
+            .filter {
+                $0.exists && $0.frame.maxX > bounds.width - 76
+                    && $0.frame.minY < 140 && $0.frame.height >= 40 && $0.frame.width >= 40
+                    && !marks.contains($0.label)
+            }
+            .min { $0.frame.minY < $1.frame.minY }
     }
 
     /// Press until the menu is up, in the shape DECISIONS.md ruled for this
