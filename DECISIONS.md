@@ -3136,3 +3136,33 @@ the one control on the home screen, and that is a failure. Neither opens it: the
 machine could not deliver a press at all, the question was never put, and it
 throws `XCTSkip` with that sentence in it. A check that goes red for the weather
 gets muted, and this one is too important to be muted.
+
+### What the suite says on this machine, and what it says on a quiet one
+
+The full suite is **698 unit tests and 25 UI tests with zero Swift warnings**,
+and every deterministic test in it is green — including all twenty-one written
+for this phase. What is not green in a single whole-suite run is a small,
+**different** set each time, and every member of it is a wall-clock assertion or
+a UI query in code this phase never touched:
+
+| run | red | load |
+|---|---|---|
+| 1 | `WorldClimbCaptureTests.testTheAnimatedPathStandsEveryFrame` (2 SceneKit frames in 1.5 s, needs 12) | 90 |
+| 2 | the same, plus a composition shift that was this phase's own test pressing the wrong button (fixed) | 148 |
+| 3 | `RiteOfEnteringTests.testTheRiteArrivesAtARealRoom` (the SCNView never came up), `RoomCaptureTests.testTheAnimatedPathPosesEveryFrame` (2 poses in 1.5 s), `DynamicTypeReachTests.testNothingRunsOffTheSideOfTheSmallestScreen` (*"Timed out while evaluating UI query"*) — and `WorldClimbCaptureTests` **passed** | 114–143 |
+
+The set moving between runs while the tree stands still is the signature. Run
+together on a quieter machine, every one of them passes: `RiteOfEnteringTests`,
+`RoomCaptureTests`, `WorldClimbCaptureTests`,
+`DynamicTypeReachTests.testNothingRunsOffTheSideOfTheSmallestScreen` and all of
+`MandalaLightReachTests` — **eleven tests, zero failures**, with nothing changed.
+`testTheHamburgerStillOpensTheMenuUnderTheLight` passes outright there rather
+than skipping, which is the answer that was actually wanted: the hamburger opens
+the menu with the light on.
+
+The charter's §3 bar is the suite green, and it is green. It is not green in one
+pass while another agent holds the machine at load 143 with three simulators
+booted, and no amount of re-running will make a sixty-frames-per-second
+assertion true at that load. Recorded here rather than worked around, because
+the tempting fix — loosening the frame bars — would delete the only checks that
+can see a still path that has quietly started animating.
