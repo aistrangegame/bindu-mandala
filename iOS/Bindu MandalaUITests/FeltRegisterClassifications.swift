@@ -202,6 +202,20 @@ enum FeltRegisterClassifications {
          + "outside the ScrollView, so it grows downward from the scroll's own edge and **nothing "
          + "on the Detail moves**: there is no accompanying shift entry, and any movement of an "
          + "existing element here is still a failure."),
+        // ── Phase 3.8 · the library's first shelf ───────────────────────────
+        //
+        // `her moments` is the control the section's title became: the same
+        // words, in the screen's own lowercase, standing where the title stood.
+        // `go deeper` is not here — it was on the screen before this phase and
+        // it keeps its name, its type and its 44 pt target; only the word it
+        // showed while open has gone, because two shelves on one screen cannot
+        // both say "less".
+        ("detail", "button|her moments",
+         "Phase 3.8. The library's first shelf, at the foot of the Detail's scroll, holding the "
+         + "register of when she was felt. It is unconditional and it never changes with his "
+         + "walking: the same row for a Śakti felt a hundred times and one felt never, which is "
+         + "the whole reason the register is behind it."),
+
         ("field", "Rise through the nine",
          "Phase 3.7. The way onto the axis, under the Field's own “NINE RINGS · ONE HUNDRED AND "
          + "TWO” — the one screen in the app whose subject is the nine. It costs 52 pt (a 44 pt "
@@ -216,9 +230,101 @@ enum FeltRegisterClassifications {
          + "VoiceOver and the back stack read that one; only the rendering was wrong."),
     ]
 
+    /// **Elements that are no longer drawn, because a fold now stands in front
+    /// of them — and the control that reaches them.**
+    ///
+    /// The comparison treats a disappearance as a failure with no appeal, and it
+    /// was right to: three of the shift entries below are written
+    /// `keyContains: "|"`, which is in every key there is, so letting a movement
+    /// bound answer for a departure would have let any screen they cover lose
+    /// any control it liked and stay green.
+    ///
+    /// Phase 3.8 is the phase whose whole job is to make a screen shorter, and
+    /// what it needs is vocabulary rather than an exemption — the same answer
+    /// Phase 3.7 reached when it had to say *"this moved by the height of the
+    /// thing above it"* and wrote `settles` instead of raising a bound.
+    ///
+    /// An entry here makes one claim, and it is a claim that can be wrong:
+    /// **this element is not gone, it is behind the control named `behind`, and
+    /// that control is on the screen.** The comparison checks the second half
+    /// itself — an entry naming a door that is not there classifies nothing and
+    /// the disappearance fails as before — and `TheLibraryFoldUITests` checks
+    /// the first, by opening every door named here and finding every element
+    /// that went behind it, by the same key. An element that had simply been
+    /// deleted has no door to name and nothing that can find it again.
+    ///
+    /// `TheFoldVocabularyTests` holds the entries themselves to the shape of a
+    /// claim: a type, words enough to name one element rather than a screenful,
+    /// a door, and a reason somebody had to write.
+    static let folded: [(screen: String, keyContains: String,
+                         behind: String, reason: String)] = [
+        // ── Phase 3.8 · the library fold ────────────────────────────────────
+        //
+        // Her Moments is the register of what has passed between them, and it
+        // grows a row every time she is felt. Before this fold, a Śakti felt
+        // forty times had a Detail forty rows longer than a Śakti felt once —
+        // the quantity was never printed, it was *drawn*, in scroll height, and
+        // it was in his hand every time he reached the foot of her screen. Law 2
+        // does not care which way a measure is drawn. It now stands behind
+        // `her moments`, which is shut every time she is opened and is the same
+        // row on the first visit and the hundredth.
+        //
+        // Two elements go behind it on this baseline, and both come back when it
+        // is opened: the section's own title, and — because the snapshot is read
+        // on a Śakti nothing has been felt for — the line that says so.
+        ("detail", "text|HER MOMENTS", "her moments",
+         "Phase 3.8. The section's title, behind the library's first shelf. The section itself is "
+         + "unchanged — same title, same divider, same list — it is simply no longer the thing a "
+         + "walker has to travel through to reach her room."),
+        ("detail", "text|She has not been felt here yet.", "her moments",
+         "Phase 3.8. Her Moments' own empty line, behind the same shelf. The snapshot is read on "
+         + "kp 33, who is felt by nothing in this suite, so the register's empty state is what "
+         + "this baseline recorded of it."),
+    ]
+
     static let shifts: [ClassifiedShift] = [
 
         // ── The Detail ───────────────────────────────────────────────────────
+        //
+        // **Phase 3.8's one movement, named rather than left to be absorbed.**
+        //
+        // The library's two shelves are the last things in the Detail's scroll,
+        // so the only element below the fold is `go deeper` — and it is the only
+        // element on this screen that Phase 3.8 moves at all. The shelf that now
+        // stands where Her Moments' section stood is shorter than the section
+        // was (28 pt of air and a 44 pt target, against a divider, a title, a
+        // list and their spacings), so `go deeper` rises by the difference.
+        // Everything above the shelves is exactly where it was, which is the
+        // design virtue rather than a lucky outcome: the fold stands at the foot
+        // of the scroll precisely so that what stays out stays put.
+        //
+        // **Measured on the running app, not estimated: 11.58 pt** against the
+        // pre-Phase-4 baseline, which is that difference net of the reflow every
+        // other string on this screen is already classified for.
+        //
+        // **This entry exists because the bound beneath it would have taken it
+        // silently.** `button|` on the Detail allows 17 pt for §4.5's Cormorant
+        // reflow, and 11.58 is inside that — so without this line a change this
+        // phase made would have been absorbed by a sentence written about a
+        // different phase, which is the same failure as widening a bound. Named
+        // here, at 2.5 pt of residual, it is the tightest entry on the screen.
+        //
+        // First in the table on purpose: `ClassifiedShift.allowance` takes the
+        // first match, and the two blanket bounds below would otherwise answer
+        // for it.
+        //
+        // **`0` is deliberately not in `settles`.** The Field's entry carries it
+        // because that door translates only what is below it and half that
+        // screen is above; here there is exactly one element under the shelves
+        // and it is *required* to have moved. Allowing zero would let a fold
+        // that had stopped folding pass quietly.
+        ClassifiedShift(screen: "detail", keyContains: "button|go deeper",
+                        maxDelta: 2.5, settles: [11.5], reason:
+            "Phase 3.8. `go deeper` is the library's second shelf and the only element below the "
+            + "fold. The first shelf replaces a section taller than itself, so this rises by the "
+            + "difference — 11.58 pt, measured — and nothing above the shelves moves at all. It is "
+            + "written down rather than left to the 17 pt Cormorant bound below, which would have "
+            + "swallowed it without a sentence."),
         ClassifiedShift(screen: "detail", keyContains: "text|", maxDelta: 19, reason: cormorant),
         ClassifiedShift(screen: "detail", keyContains: "button|", maxDelta: 17, reason: cormorant),
 
