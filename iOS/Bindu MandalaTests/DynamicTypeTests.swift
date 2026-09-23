@@ -74,14 +74,22 @@ enum ScaledType {
         "Views/Recognition/RecognitionMomentView.swift · .custom(AppFont.cormorant, size: 300 * scale)",
         "Views/Today/DailyRiteView.swift · .custom(AppFont.cormorant, size: min(content.nameSize(cap: 120, nudge: 0) * 1.7, 150))",
 
-        // ── Not this branch's file ──────────────────────────────────────────
-        // `Views/Rooms/` belongs to the open Phase 3 branch, and the charter's
-        // parallelism rule is that two branches touch disjoint files. Its rite
-        // already sets its other five strings through `AppFont`, which now scale
-        // for free; this one is the Devanāgarī drawn in three strokes, sized
-        // against the room's own geometry. It is pinned rather than reached
-        // into, so it is visible here the day that branch merges.
-        "Views/Rooms/RiteOfEnteringView.swift · .system(size: Self.writtenSize)",
+        // ── Beat two of the rite, and only half of it ───────────────────────
+        // The threshold's second beat writes `RiteWords.written`, which is her
+        // Devanāgarī where the base carries it and her **roman name** where it
+        // does not. Cormorant carries no Devanāgarī, so that branch has to be
+        // the system face at a size measured against the room's own geometry —
+        // it is the only string in the rite that is not an `AppFont` token, and
+        // it is pinned here rather than reached into.
+        //
+        // The roman branch is **not** excepted, and that is the point of the
+        // ternary: until Phase 3.7 closed, the whole beat took the system face,
+        // so a Śakti with no Devanāgarī — Ahaṅkārākarṣiṇī, kp 31, a Ring-2
+        // Karṣiṇī that syncs — had her name written in the OS's own sans between
+        // a Cormorant beat one and a Cormorant beat three. The face now follows
+        // the string that was actually chosen, so the half that *can* scale
+        // through `AppFont` does.
+        "Views/Rooms/RiteOfEnteringView.swift · words.writtenIsDevanagari ? .system(size: Self.writtenSize) : AppFont.sanskrit(Self.writtenSize)",
     ]
 
     /// The two strings that stand in a fixed box on purpose, pinned the same

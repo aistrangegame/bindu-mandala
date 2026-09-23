@@ -50,6 +50,10 @@ struct WorldClimbView: View {
     /// Forced on for tests and captures; otherwise the environment decides.
     let forceReduceMotion: Bool
 
+    /// Called once, when he has crossed off the axis — the Field takes him off
+    /// it. See ``TheWayOut``.
+    let onLeft: (() -> Void)?
+
     @Environment(\.accessibilityReduceMotion) private var environmentReduceMotion
 
     @State private var climb: WorldClimbSource
@@ -58,12 +62,24 @@ struct WorldClimbView: View {
     @State private var dragging = false
     /// Redrawn on a step, so the still path has something to change on.
     @State private var steps = 0
+    /// Whether the walker has moved on the axis yet, this time he is on it.
+    ///
+    /// The one thing the hint below is allowed to know. It is not written down,
+    /// not read back, and does not outlive the surface: the axis has no idea
+    /// whether he has ever climbed before, and an instruction that went away
+    /// because it had been *followed once, ever* would be the instrument keeping
+    /// a record of him. It goes away because he is already doing the thing.
+    @State private var risen = false
+    /// How far out of the world he has been carried by the hold, 0 … 1.
+    @State private var withdrawn: Double = 0
 
     init(live: [Int: HomeWorlds.LiveFacts] = [:],
          startingAtRing ring: Int = 1,
-         forceReduceMotion: Bool = false) {
+         forceReduceMotion: Bool = false,
+         onLeft: (() -> Void)? = nil) {
         self.live = live
         self.forceReduceMotion = forceReduceMotion
+        self.onLeft = onLeft
         _climb = State(initialValue: WorldClimbSource(
             .standing(atFraction: Double(max(1, min(HomeWorlds.rings.count, ring)) - 1))))
     }
@@ -75,10 +91,26 @@ struct WorldClimbView: View {
             WorldClimbLayer(climb: climb, reduceMotion: reduceMotion, steps: steps)
                 .allowsHitTesting(false)
             name
+            hint
+            // The world going out from under him as he withdraws from it. See
+            // ``withdrawing``.
+            Color.ground
+                .opacity(withdrawn)
+                .allowsHitTesting(false)
+                .ignoresSafeArea()
         }
         .background(Color.ground)
         .contentShape(Rectangle())
         .gesture(rising)
+        // The same way out of the axis as out of a room, drawn by the same file
+        // and held for the same length of crossing. One way out of the Homes
+        // layer, learned once — and the hold has something travelling through
+        // it here as it does in a room, which is the condition ``TheWayOut``'s
+        // own header sets for asking for a hold at all.
+        .theWayOut(reduceMotion: reduceMotion,
+                   onBegan: { seconds in withdrawing(over: seconds) },
+                   onLetGo: { stayOn() },
+                   onOut: { onLeft?() })
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(worldName(atFraction: climb.value())))
         .accessibilityAdjustableAction { direction in
@@ -108,6 +140,7 @@ struct WorldClimbView: View {
                     dragging = true
                     dragFrom = climb.value()
                 }
+                risen = true
                 let bands = -value.translation.height / Self.pointsPerBand
                 climb.set(.standing(atFraction: dragFrom + bands))
             }
@@ -145,7 +178,39 @@ struct WorldClimbView: View {
                               at: Date().timeIntervalSinceReferenceDate))
         }
         steps &+= 1
+        risen = true
     }
+
+    // MARK: - Withdrawing from the axis
+
+    /// **What travels through the hold here.**
+    ///
+    /// ``TheWayOut`` asks for a hold rather than a touch because leaving is a
+    /// crossing, and its own header sets the condition: *a hold is only legible
+    /// while something is travelling through it.* In her room the eye stands
+    /// away from her through the āvaraṇa's air for the whole of it. The axis had
+    /// no approach to unwind — it has a height, not a distance — so it stood the
+    /// same two and a fifth seconds with nothing moving at all, which is exactly
+    /// the stopped clock the still path was given a step to avoid.
+    ///
+    /// So the world itself goes: the enclosure's air, its light and its name
+    /// recede into the ground he came in through, over precisely the length of
+    /// the hold. Letting go brings it back at the same rate, because a walker
+    /// who thought about leaving and did not has not left.
+    ///
+    /// Untouched on the still path, where the way out is a touch and this is
+    /// never called.
+    private func withdrawing(over seconds: TimeInterval) {
+        withAnimation(.linear(duration: max(0, seconds))) { withdrawn = 1 }
+    }
+
+    private func stayOn() {
+        withAnimation(.linear(duration: WorldClimbView.returningSeconds)) { withdrawn = 0 }
+    }
+
+    /// How fast the world comes back when he lets go — the station rate a room
+    /// closes on him at, so the two ways out breathe alike.
+    static let returningSeconds: TimeInterval = 0.45
 
     // MARK: - The name of where he is
 
@@ -173,10 +238,69 @@ struct WorldClimbView: View {
                 .tracking(1.6)
                 .foregroundStyle(Color.cream)
                 .opacity(Self.nameFloor + (1 - Self.nameFloor) * (1 - settled))
-                .padding(.bottom, 44)
+                // Clear of ``TheWayOut``'s own line, which stands at the foot of
+                // the frame here exactly as it does in a room. The instruction
+                // is the lowest thing on any Homes surface and the world's own
+                // name stands above it, because the name belongs to the world
+                // and the instruction belongs to the walker.
+                .padding(.bottom, 124)
         }
         .allowsHitTesting(false)
     }
+
+    // MARK: - That the space can be climbed at all
+
+    /// **The axis used to arrive mute.**
+    ///
+    /// Two lines stood on it: the āvaraṇa's name, and the way out. A walker who
+    /// arrived, waited and saw nothing change was told only how to leave the
+    /// thing he had just opened — the whole instruction budget of the surface
+    /// spent on the exit, with no word that the space rises. The climb is the
+    /// payload of this phase's second door, and it was invisible.
+    ///
+    /// Design's own Axis carries four words for it: *"scroll to climb · drag to
+    /// turn"*. Half of that is this file's gesture, so half of it is what is
+    /// said — in the rite's own prompt type, in the rite's own voice, at the top
+    /// of the frame where nothing else stands.
+    ///
+    /// **It is not a measure and it cannot become one.** It says what the hand
+    /// may do, which is the same register as *"hold to withdraw"* two inches
+    /// below it, and it knows one thing: whether he has moved yet, *on this
+    /// visit to the axis*. Nothing is written down, nothing is read back, and
+    /// the next time he rises it is there again. An instruction that vanished
+    /// for good the first time it was obeyed would be the instrument
+    /// remembering him, which is the one thing it may never do.
+    @ViewBuilder
+    private var hint: some View {
+        VStack {
+            // Taken out of the tree rather than faded to nothing, so a line that
+            // has been answered is not still there to be read by a finger or by
+            // a voice.
+            if !risen {
+                Text(Self.hintWords)
+                    .font(AppFont.label(Self.hintSize))
+                    .textCase(.uppercase)
+                    .tracking(Self.hintSize * 0.3)
+                    .foregroundStyle(Color.cream)
+                    .opacity(RiteOfEntering.promptAlpha)
+                    .padding(.top, 72)
+                    .frame(minHeight: 44)
+                    .transition(.opacity)
+            }
+            Spacer()
+        }
+        // Quantized, never disabled: on the still path the line is simply gone
+        // once he has moved, with no fade to watch.
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.6), value: risen)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+    }
+
+    /// The gesture this file actually offers, in the rite's own words. The way
+    /// out says *"hold to withdraw"*; this says what the other hand may do.
+    static let hintWords = "drag to rise"
+    /// The rite's own prompt size and alpha, which clear FIDELITY §4's floor.
+    static let hintSize: CGFloat = 11
 
     private func worldName(atFraction f: Double) -> String {
         let ring = WorldClimb.nearestRing(atFraction: f)
@@ -283,9 +407,14 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
             view.setNeedsDisplay()
         } else {
             view.scene?.isPaused = false
+            // Once, and only before the loop has ever run. This is the main
+            // thread; `renderer(_:updateAtTime:)` is SceneKit's, and standing
+            // the walker from both would be two threads writing one scene while
+            // a frame is drawn out of it. See ``RoomDriver/setReduceMotion(_:on:)``,
+            // which carries the whole argument.
+            if standsApplied == 0 { stand() }
             view.isPlaying = true
             view.rendersContinuously = true
-            stand()
         }
     }
 

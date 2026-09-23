@@ -16,6 +16,8 @@ struct TheHundredTwoView: View {
     @State private var thresholdFor: Avarana?
     @State private var openRing: Int?
     @State private var userToggled = false
+    /// Phase 3.7 — the way onto the axis. See ``theClimbDoor``.
+    @State private var showClimb = false
 
     /// The open ring. Until the practitioner touches the accordion it follows
     /// today's ring — computed at render, so it's correct even if the store
@@ -38,8 +40,74 @@ struct TheHundredTwoView: View {
                        let av = avaranas.first(where: { $0.ringNumber == ring }) {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { thresholdFor = av }
                     }
+                    // Debug: `OPEN_CLIMB` rises onto the axis directly.
+                    if ProcessInfo.processInfo.arguments.contains("OPEN_CLIMB") {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showClimb = true }
+                    }
                 }
         }
+        .fullScreenCover(isPresented: $showClimb) {
+            WorldClimbView(live: liveWorlds,
+                           startingAtRing: effectiveOpen ?? todayRing,
+                           forceReduceMotion: AppRuntime.forcesReduceMotion,
+                           onLeft: { showClimb = false })
+        }
+    }
+
+    /// **The way onto the axis, and the argument for it standing here.**
+    ///
+    /// The climb is the nine āvaraṇas as one continuous space — an enclosure is
+    /// a *weather* and a *clock* rather than a place with a door — and the
+    /// question Phase 3.7 had to answer is where a walker meets it.
+    ///
+    /// Not the hamburger. The menu holds five ways of being in the instrument;
+    /// the climb is not a sixth, it is what four of them are lists and pictures
+    /// **of**, and a menu row would make it their sibling.
+    ///
+    /// Not the Āvaraṇa threshold, which was the closer call and is the more
+    /// beautiful reading — the threshold is the doorway of one enclosure and the
+    /// climb is what lies on the other side of it. It is refused on one fact:
+    /// `AvaranaThresholdView` needs an `Avarana` row, and those rows live only
+    /// in Airtable. On a fresh install, offline, or before the first sync has
+    /// answered, the whole climb would be unreachable — and the surface that is
+    /// the bulk of Phase 3.2's work may not be gated on the network.
+    ///
+    /// So it stands here, on the one screen in the app whose subject **is** the
+    /// nine. The Mandala's subject is the yantra as a figure, the Rite's is
+    /// today, the Well's is what he has written, the Memory's is his own field.
+    /// The Field's own second line says *nine rings · one hundred and two* — and
+    /// the line beneath it is those nine, walked instead of listed. It opens at
+    /// the ring he has open here, so he rises from where he was already standing
+    /// rather than from the first āvaraṇa every time.
+    private var theClimbDoor: some View {
+        Button {
+            Haptics.medium()
+            showClimb = true
+        } label: {
+            Text("rise through them ›")
+                .font(AppFont.voice(15))
+                .tracking(1.2)
+                .foregroundStyle(Color.gold.opacity(0.8))
+                // As wide as its own words and no wider. A full-width target
+                // under a short centred line is a vague one, and it would also
+                // reach into the top-trailing corner that `SnapshotScreen`'s
+                // `tapHamburger` searches by geometry — the hazard that file
+                // already names. Clearing that corner costs nothing here.
+                .padding(.horizontal, 28)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Rise through the nine enclosures")
+    }
+
+    /// The live āvaraṇa rows the climb reads its names from, keyed by ring.
+    /// Empty before the base has been reached, which is exactly what
+    /// ``HomeWorlds/world(ring:live:)`` is built to degrade through.
+    private var liveWorlds: [Int: HomeWorlds.LiveFacts] {
+        var out: [Int: HomeWorlds.LiveFacts] = [:]
+        for a in avaranas { out[a.ringNumber] = HomeWorlds.liveFacts(from: a) }
+        return out
     }
 
     private var content: some View {
@@ -104,10 +172,16 @@ struct TheHundredTwoView: View {
                 .font(AppFont.label(11.5))
                 .tracking(2.4)
                 .foregroundStyle(Color.cream.opacity(0.55))
+            theClimbDoor
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 14)
-        .padding(.bottom, 14)
+        // The door brings its own air: a 15 pt line centred in a 44 pt target
+        // stands about fourteen points clear of its own box on each side, so the
+        // header's own bottom padding gives eight of them up and the gap under
+        // the words is what it was. Eight of the fifty-two points the door costs
+        // are paid for here; the other forty-four are classified.
+        .padding(.bottom, 6)
         .overlay(Rectangle().fill(Color.gold.opacity(0.12)).frame(height: 0.5), alignment: .bottom)
     }
 

@@ -480,6 +480,34 @@ struct RiteWords: Equatable {
     /// the whole corpus at once.
     var all: [String] { [appreciation, written, gloss] + roots }
 
+    /// **Which script beat two ended up in — and therefore which face draws it.**
+    ///
+    /// `written` is `firstSpoken([devanagari, name])`: her Devanāgarī where the
+    /// base carries it, and her **roman** name where it does not. The two are
+    /// not interchangeable to a typesetter. Cormorant carries no Devanāgarī, so
+    /// that branch has to be set in the system face — but the view hard-coded
+    /// the system face for *both*, and a row with no Devanāgarī therefore wrote
+    /// her roman name in the OS's own sans, at the one moment the instrument
+    /// writes her name, between a Cormorant beat one and a Cormorant beat three.
+    /// Ahaṅkārākarṣiṇī (kp 31) is such a row and she is a Ring-2 Karṣiṇī that
+    /// syncs, so this was not an edge case.
+    ///
+    /// The face follows the string that was chosen rather than the field that
+    /// was hoped for, and this is where the choosing happened.
+    var writtenIsDevanagari: Bool { RiteWords.isDevanagari(written) }
+
+    /// True when a string carries a Devanāgarī letter — the block itself, plus
+    /// the Vedic extensions a transcription can reach for. One letter is enough:
+    /// a name written in Devanāgarī with a roman gloss beside it is still a
+    /// string Cormorant cannot set.
+    static func isDevanagari(_ text: String) -> Bool {
+        text.unicodeScalars.contains {
+            (0x0900...0x097F).contains($0.value)      // Devanagari
+                || (0xA8E0...0xA8FF).contains($0.value)  // Devanagari Extended
+                || (0x1CD0...0x1CFF).contains($0.value)  // Vedic Extensions
+        }
+    }
+
     /// Composed from plain values, so the whole corpus can be driven without a
     /// row, a context or a store.
     static func compose(appreciationPhrase: String?,

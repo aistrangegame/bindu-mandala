@@ -44,9 +44,13 @@ import QuartzCore
 // has been in it, arrived at rather than withheld.
 //
 // It is proven by measurement rather than asserted: ``RoomDriver/posesApplied``
-// counts every time the room was put at an instant, and on this path it stays
-// at one however long the view is left on screen. The spike proved the same
-// thing in milliseconds — 0.386 against 3.231 above the control floor — and
+// counts every time the room was put at an instant, and on this path **time
+// alone never raises it** — it does not move for as long as the view is left
+// alone, however long that is. What does raise it is the walker: since Phase
+// 3.7 the rite declares each of his moves through ``RoomView/moves``, so a
+// still room is posed once per touch and not once per frame. Four or five over
+// a whole ceremony, against sixty a second. The spike proved the same thing in
+// milliseconds — 0.386 against 3.231 above the control floor — and
 // `RoomCaptureTests` records both the count and the cost.
 
 /// Where a stay is on her chamber clock.
@@ -144,6 +148,24 @@ struct RoomView: View {
     let approach: RoomApproachSource?
     /// Forced on for tests and captures; otherwise the environment decides.
     let forceReduceMotion: Bool
+    /// How many times the walker has been moved — the still path's redraw
+    /// token, and the same device ``WorldClimbView`` carries as `steps`.
+    ///
+    /// **It is not decoration, and the room did not always have one.** With the
+    /// render loop stopped, the room is posed once and the light pass evaluated
+    /// once, and the only thing that can ask for another of either is SwiftUI
+    /// updating this view. ``RoomApproachSource`` is a *reference*, held so the
+    /// driver can read it on SceneKit's thread without re-rendering the tree —
+    /// so moving the walker changes nothing SwiftUI can see, and the redraw that
+    /// followed a touch was incidental rather than declared. A reduce-motion
+    /// walker was carried to his station by an update somebody else happened to
+    /// cause; two more stored properties on the rite were enough to stop that
+    /// happening, and he stood at the door for the whole ceremony.
+    ///
+    /// Bumping this makes the ask explicit: the walker moved, so the still room
+    /// needs a frame. Callers that never move him leave it at zero and pose
+    /// exactly once, which is what ``RoomDriver/posesApplied`` asserts.
+    let moves: Int
 
     @Environment(\.accessibilityReduceMotion) private var environmentReduceMotion
 
@@ -151,12 +173,14 @@ struct RoomView: View {
          clock: RoomClock = RoomClock(),
          mechanism: RoomSurfaceMechanism? = nil,
          approach: RoomApproachSource? = nil,
-         forceReduceMotion: Bool = false) {
+         forceReduceMotion: Bool = false,
+         moves: Int = 0) {
         self.room = room
         self.clock = clock
         self.mechanism = mechanism
         self.approach = approach
         self.forceReduceMotion = forceReduceMotion
+        self.moves = moves
     }
 
     private var reduceMotion: Bool { forceReduceMotion || environmentReduceMotion }
@@ -165,9 +189,9 @@ struct RoomView: View {
         GeometryReader { geo in
             ZStack {
                 RoomSceneLayer(room: room, clock: clock, mechanism: mechanism,
-                               approach: approach, reduceMotion: reduceMotion)
+                               approach: approach, reduceMotion: reduceMotion, moves: moves)
                 RoomLightPassLayer(room: room, clock: clock, approach: approach,
-                                   reduceMotion: reduceMotion, size: geo.size)
+                                   reduceMotion: reduceMotion, size: geo.size, moves: moves)
                     .allowsHitTesting(false)
             }
         }
@@ -185,6 +209,11 @@ struct RoomSceneLayer: UIViewRepresentable {
     let mechanism: RoomSurfaceMechanism?
     let approach: RoomApproachSource?
     let reduceMotion: Bool
+    /// The still path's redraw token — see ``RoomView/moves``. It is read by
+    /// nothing in this layer on purpose: what it does is make this view *differ*
+    /// when the walker has moved, so SwiftUI calls `updateUIView` and the room
+    /// is posed where he now stands.
+    let moves: Int
 
     func makeCoordinator() -> RoomDriver {
         RoomDriver(room: room, clock: clock, mechanism: mechanism,
@@ -222,8 +251,13 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
     /// How many times the room has been put at an instant.
     ///
     /// The reduce-motion proof, as a number rather than an intention: on that
-    /// path it reaches one and stays there for as long as the view is on
-    /// screen. `RoomCaptureTests` reads it.
+    /// path **nothing but the walker moves it**. It does not rise with time, for
+    /// as long as the view is on screen — which is what `RoomCaptureTests` and
+    /// the three room suites read, all of which leave the walker alone. It rises
+    /// once per move he makes, because ``RoomView/moves`` makes the representable
+    /// differ and SwiftUI then asks for a frame; a still room a walker is
+    /// crossing is posed four or five times in a ceremony, against sixty a
+    /// second on the other path.
     private(set) var posesApplied = 0
 
     init(room: HomeRoom, clock: RoomClock, mechanism: RoomSurfaceMechanism?,
@@ -246,6 +280,22 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
     }
 
     /// The still path, and the whole reason it is real.
+    ///
+    /// **Why the animated branch poses only once, and from here only before the
+    /// loop has ever run.** This runs on the main thread — it is
+    /// `updateUIView`'s — and `renderer(_:updateAtTime:)` runs on SceneKit's own.
+    /// Posing from both is two threads writing one `RoomScene` and one
+    /// `posesApplied` while a frame is being drawn out of it. Until Phase 3.7
+    /// that was theoretical, because nothing moved the walker in a way SwiftUI
+    /// could see and so nothing called `updateUIView` during a ceremony;
+    /// ``RoomView/moves`` is precisely a change SwiftUI can see, and it arrives
+    /// four or five times a crossing. So on the animated path the render loop is
+    /// the only thing that poses, and the one pose from here happens before
+    /// `isPlaying` is ever set — the first frame, with no loop to race.
+    ///
+    /// The still branch keeps its pose because there is no loop at all: `on` is
+    /// written to `reduceMotion` first, which is the flag the delegate reads to
+    /// stand down, and the pose is then the only one there is.
     func setReduceMotion(_ on: Bool, on view: SCNView) {
         reduceMotion = on
         if on {
@@ -256,9 +306,9 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
             view.setNeedsDisplay()
         } else {
             view.scene?.isPaused = false
+            if posesApplied == 0 { pose(at: clock.chamberTime()) }
             view.isPlaying = true
             view.rendersContinuously = true
-            pose(at: clock.chamberTime())
         }
     }
 
@@ -297,6 +347,8 @@ struct RoomLightPassLayer: View {
     let approach: RoomApproachSource?
     let reduceMotion: Bool
     let size: CGSize
+    /// The still path's redraw token — see ``RoomView/moves``.
+    let moves: Int
 
     var body: some View {
         Group {

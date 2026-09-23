@@ -38,9 +38,57 @@ struct ClassifiedShift {
     /// A substring of the element's key (`type|label|ordinal`). A substring,
     /// because the key carries the walker's own words and those are long.
     let keyContains: String
-    /// The largest move permitted, in points, on either axis.
+    /// The largest move permitted, in points, on either axis — **measured from
+    /// the nearest of ``settles``**, not from where the element used to be.
     let maxDelta: Double
     let reason: String
+
+    /// **The rigid translations this screen's change is known to cause, in
+    /// points, and the reason this type has two numbers instead of one.**
+    ///
+    /// A control added to a stack pushes everything below it down by its own
+    /// height and leaves everything above it exactly where it was. With one
+    /// number to say that with, the only way to classify it is to raise the
+    /// bound to the height of the control — which is what Phase 3.7 first did on
+    /// the Field, taking a 2.5 pt lock to 46.5 and making the whole screen about
+    /// eighteen times coarser for the rest of the build. Charter §3 forbids
+    /// exactly that: *"never weaken one to make it pass."* Re-recording the
+    /// baseline was no better — these baselines are the geometry of `main`
+    /// **before Phase 4**, and re-recording one from this tree would dissolve
+    /// everything Phase 4's own entries are holding.
+    ///
+    /// So the door's 44 points are named as what they are — a translation the
+    /// screen is *expected* to have made — and the residual is judged at the
+    /// original resolution. `settles: [0, 44]` says: an element either did not
+    /// move, or it moved by the height of the door, and either way it may be
+    /// 2.5 points off that. An element that moves 20, or 60, or that fails to
+    /// move when its neighbours did, is a failure again — none of which the
+    /// 46.5 pt bound could see.
+    ///
+    /// `[0]` — the default — is the ordinary case: nothing rigid is expected,
+    /// and `maxDelta` is the whole allowance, exactly as before.
+    let settles: [Double]
+
+    init(screen: String, keyContains: String, maxDelta: Double,
+         settles: [Double] = [0], reason: String) {
+        self.screen = screen
+        self.keyContains = keyContains
+        self.maxDelta = maxDelta
+        self.settles = settles
+        self.reason = reason
+    }
+
+    /// How far this element is from the nearest translation it was classified as
+    /// making. This is the number `maxDelta` bounds.
+    func residual(_ moved: Double) -> Double {
+        settles.map { abs(moved - $0) }.min() ?? moved
+    }
+
+    /// The classified translations, for a failure message that says which one
+    /// the element missed.
+    var settlesDescription: String {
+        settles.map { String(format: "%.2f", $0) }.joined(separator: " or ")
+    }
 
     static let table: [ClassifiedShift] = FeltRegisterClassifications.shifts
 
@@ -140,6 +188,28 @@ enum FeltRegisterClassifications {
          + "the action, and sorted last so the two Recognition lines are still what the screen "
          + "says first. Their words and their 2.6 / 4.1 / 5.1 second staging are untouched."),
 
+        // ── Phase 3.7 · the two doors ───────────────────────────────────────
+        //
+        // This file was written for a phase that was forbidden to re-compose a
+        // screen, and it says so in its own header. Phase 3.7 is the phase whose
+        // whole job is to add one thing to two screens: until it landed, the
+        // rite of entering, the hundred and two rooms and the nine-āvaraṇa climb
+        // were unreachable from the shipping shell — built, tested, and dead.
+        // So these are not Phase 4 moves that slipped through; they are the two
+        // doors, named, with what each one costs measured rather than estimated.
+        ("detail", "Be with her",
+         "Phase 3.7. The way into her room, in the Detail's footer above “I feel her”. It is "
+         + "outside the ScrollView, so it grows downward from the scroll's own edge and **nothing "
+         + "on the Detail moves**: there is no accompanying shift entry, and any movement of an "
+         + "existing element here is still a failure."),
+        ("field", "Rise through the nine",
+         "Phase 3.7. The way onto the axis, under the Field's own “NINE RINGS · ONE HUNDRED AND "
+         + "TWO” — the one screen in the app whose subject is the nine. It costs 52 pt (a 44 pt "
+         + "target and the header stack's 8 pt spacing); 8 of them are paid for out of the "
+         + "header's own bottom padding, 14 → 6, because a 15 pt line centred in a 44 pt target "
+         + "already stands about fourteen points clear of its own box. The other 44 are the shift "
+         + "entry below."),
+
         ("settings", "text|Settings|1",
          "A second \"Settings\" — the principal toolbar item that says the sheet's name in "
          + "Cormorant (§4.5). `.navigationTitle(\"Settings\")` stays beneath it, because "
@@ -153,13 +223,33 @@ enum FeltRegisterClassifications {
         ClassifiedShift(screen: "detail", keyContains: "button|", maxDelta: 17, reason: cormorant),
 
         // ── The Field ────────────────────────────────────────────────────────
-        ClassifiedShift(screen: "field", keyContains: "|", maxDelta: 2.5, reason:
+        //
+        // **Phase 3.7's door is classified as the translation it is, and the
+        // 2.5 pt resolution stays.** The door to the axis stands in the header,
+        // so everything under it settles by the 44 pt the door costs after the
+        // 8 the header's own padding gives back — and everything *above* it,
+        // which is the header's own two lines, does not move at all. Those are
+        // the two answers in `settles`, and the 2.5 this entry already carried
+        // is what an element may be off whichever of them applies to it.
+        //
+        // This bound was briefly written as a single 46.5 — the sum of the two
+        // causes — which passed, and which would also have passed an element
+        // that drifted twenty points for no reason at all, or one that stayed
+        // put while every one of its neighbours moved. Measured rather than
+        // estimated: the largest move on the running app is 45.42 pt, which is
+        // 1.42 off the classified 44.
+        ClassifiedShift(screen: "field", keyContains: "|", maxDelta: 2.5, settles: [0, 44], reason:
             "\"NINE RINGS · ONE HUNDRED AND TWO\" was 10.5 pt at 0.45 α — under the floor on both "
             + "counts — and is now 11.5 at 0.55 (§4.1). The header is a point taller, so the rings "
             + "under it begin a point lower. The ring row's seat count grew the same point and "
             + "carries its chevron with it. The threshold row's 8 pt of new touch area is paid for "
             + "in that row's own padding and costs the seats nothing — and on a simulator with no "
-            + "āvaraṇa the row is not there to grow, which is why that padding asks first."),
+            + "āvaraṇa the row is not there to grow, which is why that padding asks first."
+            + "\n\n"
+            + "Phase 3.7 adds the 44 pt the door to the axis stands in, above every ring — a rigid "
+            + "translation of everything below the door and of nothing above it, which is why 44 "
+            + "is written in `settles` rather than added to the bound. The door's own entry in "
+            + "`appeared` has the arithmetic."),
 
         // ── The Bindu's descent ──────────────────────────────────────────────
         ClassifiedShift(screen: "mandala-descent", keyContains: "↑ return to the field",

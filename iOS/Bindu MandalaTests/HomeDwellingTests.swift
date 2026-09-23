@@ -211,8 +211,20 @@ final class HomeDwellingTests: XCTestCase {
     /// the types rather than by care.
     ///
     /// The dwelling imports no SwiftUI and vends nothing a view could bind to;
-    /// the one screen that carries one touches it in exactly two places, and both
-    /// of them are lifecycle.
+    /// the one screen that carries one touches it only to open a stay or to
+    /// close one.
+    ///
+    /// **The count moved in Phase 3.7, and the check moved with it rather than
+    /// being widened to accommodate it.** It said *two, and both of them are
+    /// lifecycle*, which was true while a room had one lifecycle — a stay began
+    /// when the walker arrived and ended when the surface went away. A room with
+    /// a way out has five moments and every one of them is still lifecycle: the
+    /// stay opens on arrival; it ends when he begins to cross out, when he is
+    /// out, and if the surface goes away under him; and it opens again if he
+    /// lets go of the crossing and stays. The load-bearing half of this check is
+    /// the loop beneath — **`begin(clock:)` and `end()` are the only two things
+    /// the rite may ask a dwelling** — and that is unchanged and untouched. The
+    /// count is the pin that makes a *new* kind of use fail here first.
     func testTheDwellingHasNothingToShow() throws {
         let dwelling = try XCTUnwrap(LawSource.production("HomeDwelling.swift"))
         XCTAssertFalse(dwelling.text.contains("import SwiftUI"),
@@ -224,8 +236,14 @@ final class HomeDwellingTests: XCTestCase {
 
         let rite = try XCTUnwrap(LawSource.production("RiteOfEnteringView.swift"))
         let uses = rite.text.components(separatedBy: "dwelling?.").dropFirst()
-        XCTAssertEqual(uses.count, 2,
-                       "the rite reaches for the dwelling \(uses.count) times, not twice")
+        XCTAssertEqual(uses.count, 5,
+                       """
+                       the rite reaches for the dwelling \(uses.count) times, not five. The five \
+                       are the stay's own moments: it opens on arrival and again if he lets go of \
+                       the way out; it ends when he begins to cross out, when he is out, and if \
+                       the surface goes away under him. A sixth is a new kind of use — say what it \
+                       is here, and check the loop below still passes it.
+                       """)
         for use in uses {
             XCTAssertTrue(use.hasPrefix("begin(clock:") || use.hasPrefix("end()"),
                           "the rite asks the dwelling something other than to begin or to end: \(use.prefix(40))")

@@ -699,6 +699,19 @@ enum NeverMeasure {
     /// written out here rather than dissolved into a broader rule, so that
     /// whoever owns that file can overrule it on sight. Reword it, move it, or
     /// add a second, and this suite goes red.
+    ///
+    /// **Re-examined at Phase 3.7 and upheld**, because 3.7 puts a door on that
+    /// same screen and is the first thing a human will actually touch. Two
+    /// facts decided it. The rung is not his practice: `ShaktiStatus` moves only
+    /// when he presses the status pill, and no stay, recognition, silence or
+    /// crossing advances it — so there is nothing here that totals his walking,
+    /// which is what law 2 forbids. And the screen already *draws* it: four
+    /// circles with the reached ones lit, in everyone's plain sight. Deleting
+    /// the words while leaving the circles would give a VoiceOver walker less
+    /// than the screen gives everyone else, which `iOS/FIDELITY.md`'s parity
+    /// rule forbids in the other direction. The restrained option is not the
+    /// quiet one here; it is the one that does not make the instrument say two
+    /// different things to two different walkers.
     static let pinnedNonIdentityDigits: Set<String> = [
         "Views/Common/ShaktiDetailView.swift · Embodiment: ⟨shakti.status.label⟩, level ⟨level + 1⟩ of ⟨ShaktiStatus.allCases.count⟩",
     ]

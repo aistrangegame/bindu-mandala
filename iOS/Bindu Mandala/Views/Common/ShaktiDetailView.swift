@@ -18,6 +18,8 @@ struct ShaktiDetailView: View {
     @State private var breathPhase: CGFloat = 0      // soft breath when ready
     @State private var goDeeperExpanded: Bool = false
     @State private var showRecognition = false
+    /// Phase 3.7 — the way in. See ``herDoor``.
+    @State private var showHerRoom = false
 
     /// Ruling 7 / R3: cluster is a Ring-2-only taxonomy. The 86 carry `.inner`
     /// as `clusterRaw`'s default — never surface it as a color or a family label.
@@ -73,6 +75,7 @@ struct ShaktiDetailView: View {
                         .padding(.horizontal, 26)
                     }
                     .overlay(alignment: .bottom) { BottomScrollFade() }
+                    herDoor
                     recognitionFooter
                 }
             }
@@ -84,6 +87,79 @@ struct ShaktiDetailView: View {
             RecognitionMomentView(shakti: shakti,
                                   isPresented: $showRecognition,
                                   source: .mandala)
+        }
+        .fullScreenCover(isPresented: $showHerRoom) {
+            // `entering(_:remembering:)` builds the whole threshold from her own
+            // row and what her room remembers, and it is the **only** way a room
+            // is ever constructed in the shell. There is no call anywhere that
+            // reaches a `RoomView` without the rite in front of it, which is what
+            // makes "no room without the rite" a fact about the tree rather than
+            // a rule somebody has to keep.
+            //
+            // `nil` is impossible for a row the walker is looking at — she is on
+            // this screen, so she has a position and a ring — and the door below
+            // asks the same question before it draws, so this branch is the
+            // compiler's rather than the walker's.
+            if let rite = RiteOfEnteringView.entering(shakti,
+                                                      remembering: HomeMemoryStore(context: context),
+                                                      forceReduceMotion: AppRuntime.forcesReduceMotion,
+                                                      onLeft: { showHerRoom = false }) {
+                rite
+            } else {
+                Color.ground.ignoresSafeArea()
+                    .onAppear { showHerRoom = false }
+            }
+        }
+    }
+
+    /// **The way into her room, and the one place in the shell it is opened.**
+    ///
+    /// *Where it stands, and why it is here rather than anywhere else.* Three
+    /// screens find a Śakti — her seat in the Mandala, her row in the Field,
+    /// today's Rite — and all three arrive at this one. So this is the single
+    /// place a door can stand and be the *same* door for every one of the
+    /// hundred and two, reached however he came to her, without the instrument
+    /// growing a list of rooms. A room reached from a list is a room reached
+    /// like a file.
+    ///
+    /// *Why the foot of the screen rather than a place in the scroll.* The
+    /// footer is the only part of the Detail that does not scroll, and it is
+    /// where this screen's **acts** already stand. Everything above it is what
+    /// is known about her — her portrait, her somatic line, her bīja, the
+    /// moments she has been felt — and a walker who opens her and wants only her
+    /// should not have to read the archive to reach her. It also costs the
+    /// screen nothing: the footer grows downward from the scroll's own edge, so
+    /// not one element of the Detail moves to make room for it.
+    ///
+    /// *And it completes a ladder the app was already climbing.* The Mandala's
+    /// card offers **know her ›** and lands here. Here she may be dwelt with —
+    /// **be with her ›** — and then felt: **I feel her**. Reading, staying,
+    /// recognising; each a deeper act than the one above it, in the order the
+    /// screen puts them in. The room is not a sibling of the recognition. It is
+    /// the ground the recognition is made on, so it stands above it.
+    ///
+    /// It is unconditional, and it has to be: every seat with a position and a
+    /// ring has a room (``HomeRooms/resolve(_:live:)``), so if one Śakti can be
+    /// entered, all of them can.
+    @ViewBuilder
+    private var herDoor: some View {
+        if HomeRooms.resolve(shakti) != nil {
+            Button {
+                Haptics.medium()
+                showHerRoom = true
+            } label: {
+                Text("be with her ›")
+                    .font(AppFont.voice(16))
+                    .tracking(1.4)
+                    .foregroundStyle(Color.gold.opacity(0.82))
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 26)
+            .padding(.top, 10)
+            .accessibilityLabel("Be with her — enter the room of \(shakti.phonetic.isEmpty ? shakti.name : shakti.phonetic)")
         }
     }
 
