@@ -801,6 +801,7 @@ final class HomeSoundService {
         engine = nil
         state = nil
         isBuilt = false
+        restoreSession()
     }
 
     // MARK: Session
@@ -808,13 +809,38 @@ final class HomeSoundService {
     private func configureSession() -> Bool {
         let session = AVAudioSession.sharedInstance()
         do {
-            let category: AVAudioSession.Category = respectsSilentSwitch ? .ambient : .playback
-            try session.setCategory(category, mode: .default, options: [.mixWithOthers])
+            // **`.mixWithOthers` is not valid with `.ambient`.** The option is
+            // documented for `.playAndRecord`, `.playback` and `.multiRoute`
+            // only, and `.ambient` mixes by definition; passing it anyway throws
+            // `-50`, `configureSession` answers `false`, and `start()` returns
+            // without ever building the graph. That branch had never been taken
+            // — Phase 2.3 shipped the flag with no caller — so the whole carrier
+            // would have been silent on the first stay that asked for the silent
+            // switch to be honoured, with no error anywhere to say why.
+            if respectsSilentSwitch {
+                try session.setCategory(.ambient, mode: .default)
+            } else {
+                try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            }
             try session.setActive(true)
             return true
         } catch {
             return false
         }
+    }
+
+    /// Put the shared session back the way the rest of the app asks for it.
+    ///
+    /// `RingAudioService` and `BijaSoundService` each set `.playback` **once**,
+    /// behind a `configured` flag, and never again — so a session this service
+    /// left on `.ambient` would quietly silence every later bīja tap under a
+    /// silent switch, on screens that ruled the other way and never knew this
+    /// one had been here. The room's ruling is the room's, and it is given back
+    /// at the door.
+    private func restoreSession() {
+        guard respectsSilentSwitch else { return }
+        try? AVAudioSession.sharedInstance()
+            .setCategory(.playback, mode: .default, options: [.mixWithOthers])
     }
 
     /// An interruption (a call, Siri) or a route change (headphones pulled)

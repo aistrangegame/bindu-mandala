@@ -48,6 +48,17 @@ struct HomeMemoryStore {
         HomeMemory.headStart(dwell: existingMemory(for: khadgamalaPosition)?.accumulatedDwell ?? 0)
     }
 
+    /// Everything ever stood in her room. `0` for a room never stood in.
+    ///
+    /// The one raw value this façade hands out, and it is handed to exactly one
+    /// caller: ``HomeVoice``, which needs it because the withheld fifth is
+    /// withheld against the whole relationship and not against this stay. It is
+    /// felt data like the rest — there is no path from here to a screen, and
+    /// `LawsTests` would have something to say if one appeared.
+    func accumulatedDwell(for khadgamalaPosition: Int) -> TimeInterval {
+        existingMemory(for: khadgamalaPosition)?.accumulatedDwell ?? 0
+    }
+
     /// Her fifth at `elapsed` seconds on the chamber clock.
     func grantsFifth(for khadgamalaPosition: Int, ring: Int, elapsed: TimeInterval) -> Double {
         HomeMemory.grantsFifth(ring: ring,

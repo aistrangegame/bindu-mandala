@@ -637,6 +637,53 @@ final class RoomScene {
             SCNVector3(Float(RoomUnits.eyePitch(toward: placement, fromDepth: depth)), 0, 0)
     }
 
+    // MARK: - Going deeper, into her own mark
+
+    /// The descent, once it has been opened. `nil` until it is, which is the
+    /// ordinary case: a room a walker has only stood in holds no shaft.
+    private(set) var descent: DescentShaft?
+
+    /// Open the descent into her mark. Idempotent — a second ask returns the
+    /// shaft already standing rather than building a second one.
+    ///
+    /// It goes into the **building** layer and not into hers, which is not a
+    /// filing decision: the shaft is the room's own material bored into, and
+    /// ``solidsInHerLayer`` must go on answering zero with a descent open.
+    @discardableResult
+    func openTheDescent(roots: Int) -> DescentShaft {
+        if let descent { return descent }
+        let shaft = DescentShaft(room: room, roots: roots)
+        building.addChildNode(shaft.node)
+        descent = shaft
+        return shaft
+    }
+
+    /// Let the descent go. The room is exactly what it was before it opened.
+    func closeTheDescent() {
+        descent?.node.removeFromParentNode()
+        descent = nil
+    }
+
+    /// Put the walker at a travel along the descent — `0` standing in her room,
+    /// and each whole number one of Design's five stations.
+    ///
+    /// The same shape as ``stand(atApproach:)`` and for the same reason: it
+    /// moves the eye and puts the shaft at a depth, and it adds nothing. The
+    /// eye's pitch unwinds from the inclination toward her mark to straight down
+    /// the shaft over the first stretch — he has come to her level, so there is
+    /// nothing left to incline toward.
+    func stand(atDescent travel: Double, worldTime: TimeInterval) {
+        let depth = HomeDescent.depth(atTravel: travel)
+        let height = HomeDescent.height(atTravel: travel, bodyAltitude: room.bodyAltitude)
+        let placement = RoomUnits.placement(bodyAltitude: room.bodyAltitude,
+                                            chamberTime: posedAt)
+        let inclined = RoomUnits.eyePitch(toward: placement, fromDepth: RoomUnits.eyeZ)
+        let unwound = 1 - HomeGrammar.smooth(HomeDescent.clamp01(travel))
+        cameraNode.position = SCNVector3(0, Float(height), Float(depth))
+        cameraNode.eulerAngles = SCNVector3(Float(inclined * unwound), 0, 0)
+        descent?.put(at: depth, worldTime: worldTime)
+    }
+
     // MARK: - Where a room goes
 
     /// Put this room into a view. The scene is never handed out.

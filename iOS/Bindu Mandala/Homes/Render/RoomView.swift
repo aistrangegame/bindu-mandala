@@ -146,6 +146,14 @@ struct RoomView: View {
     /// Where the walker stands on his crossing toward the room. `nil` is the
     /// ordinary case — he is in it.
     let approach: RoomApproachSource?
+    /// How far the walker has gone **into her mark**, once the descent has been
+    /// opened — `0` standing in her room, and each whole number one of Design's
+    /// five stations (``HomeDescent``). `nil` is the ordinary case: the room has
+    /// no shaft in it and the eye is placed by the crossing alone.
+    let descent: RoomApproachSource?
+    /// How many roots her name is made of — the one fact the shaft needs from
+    /// her row, because the etymology's station turns one rim per root.
+    let descentRoots: Int
     /// Forced on for tests and captures; otherwise the environment decides.
     let forceReduceMotion: Bool
     /// How many times the walker has been moved — the still path's redraw
@@ -173,12 +181,16 @@ struct RoomView: View {
          clock: RoomClock = RoomClock(),
          mechanism: RoomSurfaceMechanism? = nil,
          approach: RoomApproachSource? = nil,
+         descent: RoomApproachSource? = nil,
+         descentRoots: Int = 2,
          forceReduceMotion: Bool = false,
          moves: Int = 0) {
         self.room = room
         self.clock = clock
         self.mechanism = mechanism
         self.approach = approach
+        self.descent = descent
+        self.descentRoots = descentRoots
         self.forceReduceMotion = forceReduceMotion
         self.moves = moves
     }
@@ -189,9 +201,12 @@ struct RoomView: View {
         GeometryReader { geo in
             ZStack {
                 RoomSceneLayer(room: room, clock: clock, mechanism: mechanism,
-                               approach: approach, reduceMotion: reduceMotion, moves: moves)
+                               approach: approach, descent: descent,
+                               descentRoots: descentRoots,
+                               reduceMotion: reduceMotion, moves: moves)
                 RoomLightPassLayer(room: room, clock: clock, approach: approach,
-                                   reduceMotion: reduceMotion, size: geo.size, moves: moves)
+                                   descent: descent, reduceMotion: reduceMotion,
+                                   size: geo.size, moves: moves)
                     .allowsHitTesting(false)
             }
         }
@@ -208,6 +223,8 @@ struct RoomSceneLayer: UIViewRepresentable {
     let clock: RoomClock
     let mechanism: RoomSurfaceMechanism?
     let approach: RoomApproachSource?
+    let descent: RoomApproachSource?
+    let descentRoots: Int
     let reduceMotion: Bool
     /// The still path's redraw token — see ``RoomView/moves``. It is read by
     /// nothing in this layer on purpose: what it does is make this view *differ*
@@ -217,7 +234,8 @@ struct RoomSceneLayer: UIViewRepresentable {
 
     func makeCoordinator() -> RoomDriver {
         RoomDriver(room: room, clock: clock, mechanism: mechanism,
-                   approach: approach, reduceMotion: reduceMotion)
+                   approach: approach, descent: descent,
+                   descentRoots: descentRoots, reduceMotion: reduceMotion)
     }
 
     func makeUIView(context: Context) -> SCNView {
@@ -246,6 +264,8 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
     let scene: RoomScene
     private let clock: RoomClock
     private let approach: RoomApproachSource?
+    private let descent: RoomApproachSource?
+    private let descentRoots: Int
     private var reduceMotion: Bool
 
     /// How many times the room has been put at an instant.
@@ -261,10 +281,13 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
     private(set) var posesApplied = 0
 
     init(room: HomeRoom, clock: RoomClock, mechanism: RoomSurfaceMechanism?,
-         approach: RoomApproachSource?, reduceMotion: Bool) {
+         approach: RoomApproachSource?, descent: RoomApproachSource?,
+         descentRoots: Int = 2, reduceMotion: Bool) {
         self.scene = RoomScene(room: room, mechanism: mechanism)
         self.clock = clock
         self.approach = approach
+        self.descent = descent
+        self.descentRoots = descentRoots
         self.reduceMotion = reduceMotion
         super.init()
     }
@@ -324,7 +347,24 @@ final class RoomDriver: NSObject, SCNSceneRendererDelegate {
         }
         // Where he is standing, after where the room is: the pose stands the eye
         // in the room, and the crossing is the one thing that moves it out.
-        if let approach { scene.stand(atApproach: approach.value()) }
+        //
+        // The descent moves it the other way, and it wins where both are held:
+        // a walker who has begun to go into her mark has finished crossing to
+        // it, and the two can never be asking for the eye at once.
+        //
+        // The shaft is **built on the way in and let go on the way back**: a
+        // room a walker is only standing in has no bore in it, and a shaft left
+        // standing at travel zero would put forty-six lit rims in front of a man
+        // who has not asked to go anywhere.
+        let travel = descent?.value() ?? 0
+        if travel > 0 {
+            scene.openTheDescent(roots: descentRoots)
+            scene.stand(atDescent: travel,
+                        worldTime: HomeWorlds.worldClock(clock.elapsed(), ring: scene.room.ring))
+        } else {
+            if scene.descent != nil { scene.closeTheDescent() }
+            if let approach { scene.stand(atApproach: approach.value()) }
+        }
         posesApplied += 1
     }
 
@@ -345,6 +385,17 @@ struct RoomLightPassLayer: View {
     let room: HomeRoom
     let clock: RoomClock
     let approach: RoomApproachSource?
+    /// How far he has gone into her mark — see ``RoomView/descent``.
+    ///
+    /// **The light standing in her room is light he has left behind.** This pass
+    /// paints the bloom where her mark falls *on the glass*, which is a fact
+    /// about standing in the room and looking at it; a walker who has gone into
+    /// the mark is below it, and a bloom still painted at the same point would
+    /// be the room's air following him down the shaft. It fades over the first
+    /// stretch, and from the first station on the descent is lit by its own rims
+    /// and by her āvaraṇa's fog, which is what Design means by *drawn in her
+    /// āvaraṇa's gem light*.
+    let descent: RoomApproachSource?
     let reduceMotion: Bool
     let size: CGSize
     /// The still path's redraw token — see ``RoomView/moves``.
@@ -358,13 +409,26 @@ struct RoomLightPassLayer: View {
                 // its stations, the evaluation happens once per touch, because
                 // a touch is the only thing that moves him.
                 pass(at: clock.stillInstant())
+                    .opacity(leftBehind(at: Date().timeIntervalSinceReferenceDate))
             } else {
                 TimelineView(.animation) { timeline in
-                    pass(at: clock.chamberTime(now: timeline.date.timeIntervalSinceReferenceDate))
+                    let now = timeline.date.timeIntervalSinceReferenceDate
+                    pass(at: clock.chamberTime(now: now))
+                        .opacity(leftBehind(at: now))
                 }
             }
         }
         .blendMode(.screen)
+    }
+
+    /// How much of the room's own light is still in front of him.
+    ///
+    /// Read **at the instant the frame is drawn** rather than once per body
+    /// evaluation: on the animated path the timeline is what makes the fade a
+    /// travel rather than a step at the next touch, and on the still path the
+    /// evaluation and the frame are the same moment anyway.
+    private func leftBehind(at now: TimeInterval) -> Double {
+        1 - HomeDescent.clamp01(descent?.value(at: now) ?? 0)
     }
 
     private func pass(at chamberTime: TimeInterval) -> some View {
