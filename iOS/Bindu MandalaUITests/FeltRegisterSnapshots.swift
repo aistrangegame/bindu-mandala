@@ -277,7 +277,17 @@ struct SnapshotScreen {
         SnapshotScreen(name: "rite", arguments: ["START_TAB=rite"],
                        settles: { button($0, "I feel her") }, afterSettle: 2.4),
 
-        SnapshotScreen(name: "field", arguments: ["START_TAB=102"],
+        // `ENERGY_POS=1` and it matters, because the LAST one wins. A `SYNC_OFF`
+        // launch seeds only the sixteen Ring-2 Karṣiṇīs, and the Field marks
+        // today's seat: on the ~16 days in 102 when today's Śakti falls in
+        // kp 29–44 she is in the roster and her seat is marked, and on the other
+        // 86 she is absent and none is. The baseline was recorded on one of the
+        // 86, so this lock went red on a sixteenth of all days with the app
+        // behaving perfectly. Pinning today OUTSIDE the roster makes the absence
+        // the deliberate, permanent case instead of the likely one — the
+        // baselines are untouched, because this is the composition they already
+        // hold.
+        SnapshotScreen(name: "field", arguments: ["START_TAB=102", "ENERGY_POS=1"],
                        settles: { text($0, "The Field") }),
 
         SnapshotScreen(name: "well", arguments: ["START_TAB=well"],

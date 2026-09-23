@@ -81,3 +81,80 @@ final class EphemeralStoreTests: XCTestCase {
                        "the ephemeral store is on in a process that never asked for it")
     }
 }
+
+// MARK: - The pinned energy, and the day the Field stopped depending on
+//
+// `FeltRegisterSnapshots.testEveryTouchedScreenHoldsItsComposition` went red on
+// the ~16 days in 102 when today's Śakti falls in Ring 2, and the app was right
+// every time. A `SYNC_OFF` launch seeds only the sixteen Ring-2 Karṣiṇīs; the
+// Field marks today's seat; so on those sixteen days she is in the roster and
+// marked, and on the other 86 she is absent and nothing is marked. The baseline
+// was recorded on one of the 86. Proven rather than argued: an unchanged tree was
+// run either side of the 06:00 practice-day boundary and failed byte-identically
+// after it.
+//
+// Two things fix it and both are asserted here, because a fix nothing holds is a
+// fix that comes undone. `TheHundredTwoView` was the ONE screen reaching past the
+// override to the calendar; and the LAST `ENERGY_POS` now wins, so the Field can
+// append its own without disturbing the base pin the Rite needs.
+
+final class PinnedEnergyTests: XCTestCase {
+
+    /// **The Field asks the override first.** If this reverts to calling the
+    /// calendar directly, the composition lock becomes a dice roll again.
+    func testTheFieldHonoursThePinnedEnergyPosition() throws {
+        let f = try XCTUnwrap(LawSource.production("TheHundredTwoView.swift"),
+                              "TheHundredTwoView.swift is not in the production corpus")
+        let line = try XCTUnwrap(
+            f.text.split(separator: "\n").first { $0.contains("private var todayPos") },
+            "TheHundredTwoView no longer declares todayPos — this test has lost its subject")
+
+        XCTAssertTrue(line.contains("AppRuntime.pinnedEnergyPosition"), """
+            The Field reads the calendar without consulting AppRuntime.pinnedEnergyPosition. \
+            It is the only screen that ever did, and it cost the composition lock a red on a \
+            sixteenth of all days. Found: \(line.trimmingCharacters(in: .whitespaces))
+            """)
+        XCTAssertTrue(line.contains("DailyEnergyService.todaysPosition()"), """
+            The calendar fallback is gone. The override is for tests and screenshots; a real \
+            launch passes no argument and must still get today's actual Śakti.
+            """)
+    }
+
+    /// **The last one wins**, which is what lets one screen override the suite.
+    func testTheLastPinnedEnergyArgumentWins() throws {
+        let f = try XCTUnwrap(LawSource.production("BinduMandalaApp.swift"))
+        let decl = try XCTUnwrap(
+            Rx.first("static let pinnedEnergyPosition[\\s\\S]{0,600}?\\}\\(\\)", f.text),
+            "pinnedEnergyPosition is no longer declared where this test looks for it")
+
+        XCTAssertTrue(decl.contains(".last(where:"), """
+            pinnedEnergyPosition takes the FIRST matching argument. FeltRegisterSnapshots \
+            composes `base + screen.arguments`, so the base's ENERGY_POS=29 would win and the \
+            Field's own pin would be silently ignored — the lock would go back to depending on \
+            the date, and nothing would say so.
+            """)
+        XCTAssertFalse(decl.contains(".first(where:"),
+                       "pinnedEnergyPosition reads both first and last; one of them is dead.")
+    }
+
+    /// **The Field's snapshot pins outside the bootstrap roster.** Ring 2 is
+    /// kp 29–44; today must fall outside it so no seat is ever marked, which is
+    /// the composition the committed baselines already hold.
+    func testTheFieldSnapshotPinsTodayOutsideTheSeededRing() throws {
+        let path = LawSource.uiTestRoot.appendingPathComponent("FeltRegisterSnapshots.swift")
+        let text = try String(contentsOf: path, encoding: .utf8)
+        let entry = try XCTUnwrap(
+            Rx.first("SnapshotScreen\\(name: \"field\"[\\s\\S]{0,240}?\\)", text),
+            "the `field` snapshot screen is no longer declared")
+
+        let match = try XCTUnwrap(Rx.groups("ENERGY_POS=(\\d+)", entry).first,
+                                  "the field screen no longer pins ENERGY_POS, so its "
+                                  + "composition depends on the calendar again")
+        let position = try XCTUnwrap(Int(match[1]))
+        XCTAssertFalse((29...44).contains(position), """
+            The field snapshot pins kp \(position), which is inside Ring 2 (29–44) — the only \
+            ring a SYNC_OFF launch seeds. Today's Śakti would be found in the roster and her \
+            seat marked, and the committed baselines hold the composition with nothing marked.
+            """)
+    }
+}

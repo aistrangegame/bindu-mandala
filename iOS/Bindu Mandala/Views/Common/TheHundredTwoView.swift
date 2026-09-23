@@ -193,7 +193,17 @@ struct TheHundredTwoView: View {
     }
 
     /// Today's energy — the same all-102 selection the Rite shows (Ruling 3).
-    private var todayPos: Int { DailyEnergyService.todaysPosition() }
+    ///
+    /// This was the ONE screen in the app that reached past
+    /// ``AppRuntime/pinnedEnergyPosition`` to the calendar directly, and it cost
+    /// the composition lock a red on the ~16 days in 102 when today's Śakti falls
+    /// in Ring 2 — the only ring a `SYNC_OFF` launch seeds. On the other 86 days
+    /// she is absent from the roster, `todayShakti` is nil, and no seat is marked;
+    /// on those sixteen she is found and marked, and the baseline (recorded on one
+    /// of the 86) reported a composition that had moved. The app was right both
+    /// times. Honouring the override makes the Field answer to the same pin every
+    /// other screen already obeys, so the suite no longer depends on the date.
+    private var todayPos: Int { AppRuntime.pinnedEnergyPosition ?? DailyEnergyService.todaysPosition() }
     private var todayShakti: Shakti? { shaktis.first { $0.khadgamalaPosition == todayPos } }
     private var todayRing: Int { todayShakti?.ringNumber ?? 2 }
 

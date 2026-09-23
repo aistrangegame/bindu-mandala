@@ -59,8 +59,14 @@ enum AppRuntime {
     /// Debug: pin today's energy to a fixed khaḍgamālā position (1–102) so the
     /// Rite and the Mandala highlight a chosen Śakti in screenshots. Pass
     /// `ENERGY_POS=<n>` as a launch argument.
+    /// **The LAST `ENERGY_POS` wins**, so a screen may override a suite-wide
+    /// default by appending its own. With a single argument — every real launch,
+    /// and every caller before this — the answer is identical to taking the
+    /// first. `FeltRegisterSnapshots` relies on it: its base pins kp 29 for the
+    /// Rite, and the Field appends a position outside the bootstrap roster so
+    /// its composition stops depending on which day the suite is run.
     static let pinnedEnergyPosition: Int? = {
-        guard let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("ENERGY_POS=") }),
+        guard let arg = ProcessInfo.processInfo.arguments.last(where: { $0.hasPrefix("ENERGY_POS=") }),
               let pos = Int(arg.dropFirst("ENERGY_POS=".count)) else { return nil }
         return pos
     }()
