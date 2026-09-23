@@ -16,6 +16,11 @@ struct ShaktiDetailView: View {
     @State private var bijaGen = 0                    // so a rapid re-tap's timer can't clear a later sounding
     @State private var advanceProgress: CGFloat = 0  // 0…1 during the held beat
     @State private var breathPhase: CGFloat = 0      // soft breath when ready
+    /// Phase 3.8 — the library fold. Two shelves, both shut when she is opened.
+    /// See ``herMomentsFold``. Neither is written down: a fold that remembered how
+    /// he left it would be the screen keeping a record of him, and the one thing
+    /// the instrument may never do is tell him about his own walking.
+    @State private var momentsExpanded: Bool = false
     @State private var goDeeperExpanded: Bool = false
     @State private var showRecognition = false
     /// Phase 3.7 — the way in. See ``herDoor``.
@@ -67,8 +72,9 @@ struct ShaktiDetailView: View {
                             appreciationPhraseSection
                             embodimentSection
                             if shakti.hasFieldConnection { fieldConnectionSection }
-                            herMomentsSection
-                            // Reference matter, folded.
+                            // The library — the record, then the reference.
+                            // Both shut; see `herMomentsFold`.
+                            herMomentsFold
                             goDeeperSection
                             Color.clear.frame(height: 32)
                         }
@@ -657,6 +663,110 @@ struct ShaktiDetailView: View {
         .padding(.top, 22)
     }
 
+    /// **The library — what folds, what stays out, and what the fold is for.**
+    ///
+    /// Until Phase 3.7 this screen was where a walker's road ended. Everything
+    /// the instrument held about a Śakti had to be on it, because there was
+    /// nowhere else for any of it to be. Now there is: her room is one touch
+    /// away in the footer, and the brief's own word for what that leaves behind
+    /// is a **library** — *"the existing Detail screen's reference sections —
+    /// kept, folded, for when you want the text."*
+    ///
+    /// *The line this draws.* Above the folds stands **the meeting**: her
+    /// āvaraṇa, her name, her script, her phonetic, her quality and what it
+    /// means, her portrait, where she is felt in the body, her bīja to sound,
+    /// her blessing, the crossing she may be taken across, and his own note if
+    /// he has written one. Every one of those is either *her* or an *act* — the
+    /// things a walker wants in his hands before he goes in and stays. Behind
+    /// the folds stands **the record**: when she was felt, and what tradition
+    /// has written down about her. Neither is diminished by being folded; both
+    /// stop being something he must travel through.
+    ///
+    /// *Three reasons, and the first is a law.* **A screen whose length is a
+    /// function of how much he has practised is a screen that measures him.**
+    /// Her Moments grows a row every time she is felt — so before this fold, a
+    /// Śakti felt forty times had a Detail forty rows longer than a Śakti felt
+    /// once, and the difference was in his hand every time he scrolled. No digit
+    /// was ever printed; the quantity was drawn instead, in scroll height. Law 2
+    /// does not care which. Behind a fold that is shut when she opens, her
+    /// screen is exactly the same length on the first visit and the hundredth,
+    /// and the register is one touch away, undiminished, when he wants it.
+    ///
+    /// **Second: a voice walks the whole screen.** A finger reaches the footer
+    /// by not scrolling. VoiceOver has no such shortcut — it arrives at the two
+    /// doors by passing every element in tree order, so the archive genuinely
+    /// did stand in front of her room for a walker using one, and it stood
+    /// longer the more he had practised. §4.4's parity rule is that the
+    /// instrument may not say two different things to two different walkers.
+    ///
+    /// **Third: what the Detail is now for.** It is the landing of *know her ›*
+    /// and the threshold of *be with her ›*. A screen that is both wants its
+    /// first answer to be *who she is*, not *what is on file*.
+    ///
+    /// *What is deliberately left out of the fold.* The **embodiment ladder**,
+    /// because it is an act: the one crossing this screen offers, held rather
+    /// than tapped, and a crossing put behind a door is a threshold a walker has
+    /// to go looking for. The **field connection**, because those are his own
+    /// words about her and not a record of him. And the **bīja's grammatical
+    /// gloss** and **her quality's description**, which are reference by
+    /// temperament — but they sit in the middle of the scroll, and folding them
+    /// would re-compose everything beneath them for the gain of two paragraphs.
+    /// The whole virtue of this fold is that nothing which stays out moves at
+    /// all; buying two lines at the cost of that would be a bad trade. 3.10 may
+    /// take them.
+    ///
+    /// *Why the shelves do not rename themselves.* `go deeper` used to read
+    /// *"less"* while it was open. With two folds on one screen that word would
+    /// have been on the glass twice, naming two different doors, and a voice
+    /// would have had no way to tell them apart. Each shelf carries its own name
+    /// at all times instead, and says whether it is open as its **value** —
+    /// which is also the better behaviour, because a control that renames itself
+    /// the moment it acts is a control a walker has to read twice.
+    private var herMomentsFold: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            shelf("her moments", holding: "her moments", isOpen: momentsExpanded) {
+                momentsExpanded.toggle()
+            }
+            if momentsExpanded {
+                herMomentsSection.transition(.opacity)
+            }
+        }
+    }
+
+    /// One shelf of the library: a word, a hairline running to the margin, and
+    /// what stands behind it. `go deeper`'s own row, made shared, so the two
+    /// read as one mechanism rather than as two ideas that happen to be
+    /// adjacent — its type, tracking, colour, height and 28 pt of air are
+    /// carried over exactly, because §4.2 measured that control and this phase
+    /// may not undo it.
+    private func shelf(_ title: String, holding what: String, isOpen: Bool,
+                       _ toggle: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.light()
+            withAnimation(.easeInOut(duration: 0.35)) { toggle() }
+        } label: {
+            HStack(spacing: 12) {
+                Text(title)
+                    .font(AppFont.voice(14))
+                    .tracking(1.4)
+                    .foregroundStyle(Color.gold.opacity(isOpen ? 0.95 : 0.78))
+                Rectangle()
+                    .fill(Color.gold.opacity(isOpen ? 0.34 : 0.22))
+                    .frame(height: 0.5)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        // The state is spoken rather than written into the name. A shelf that
+        // is open has its contents directly beneath it, which is what tells an
+        // eye; a voice is told here.
+        .accessibilityValue(isOpen ? "unfolded" : "folded")
+        .accessibilityHint(isOpen ? "Folds \(what) away." : "Unfolds \(what).")
+        .padding(.top, 28)
+    }
+
     private var herMomentsSection: some View {
         section("Her Moments", divider: true) {
             HerMomentsList(
@@ -774,8 +884,13 @@ struct ShaktiDetailView: View {
         }
     }
 
-    /// A single fold for the reference matter — iconography, lineage, cosmic
-    /// function, tattva, bodily seat, etymology. Closed by default; the soul leads.
+    /// The library's second shelf — the reference matter tradition wrote down:
+    /// iconography, lineage, cosmic function, tattva, bodily seat, etymology.
+    /// Shut when she is opened; the meeting leads.
+    ///
+    /// Its condition asks only about **her** — whether any of those six words
+    /// exist for her at all — and never about him. A shelf that appeared or
+    /// vanished with his walking would be the screen reporting on it.
     @ViewBuilder
     private var goDeeperSection: some View {
         let hasContent = (shakti.iconography?.isEmpty == false)
@@ -786,27 +901,10 @@ struct ShaktiDetailView: View {
             || (shakti.etymology?.isEmpty == false)
         if hasContent {
             VStack(alignment: .leading, spacing: 0) {
-                Button {
-                    Haptics.light()
-                    withAnimation(.easeInOut(duration: 0.35)) {
-                        goDeeperExpanded.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 12) {
-                        Text(goDeeperExpanded ? "less" : "go deeper")
-                            .font(AppFont.voice(14))
-                            .tracking(1.4)
-                            .foregroundStyle(Color.gold.opacity(0.78))
-                        Rectangle()
-                            .fill(Color.gold.opacity(0.22))
-                            .frame(height: 0.5)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
+                shelf("go deeper", holding: "what is known of her",
+                      isOpen: goDeeperExpanded) {
+                    goDeeperExpanded.toggle()
                 }
-                .buttonStyle(.plain)
-                .padding(.top, 28)
 
                 if goDeeperExpanded {
                     VStack(alignment: .leading, spacing: 0) {

@@ -69,12 +69,47 @@ struct ClassifiedShift {
     /// and `maxDelta` is the whole allowance, exactly as before.
     let settles: [Double]
 
+    /// **The device class this entry speaks for, when the translation is not the
+    /// same on every screen — `nil` for every entry that is.**
+    ///
+    /// Almost every classified move is device-independent: a string that got
+    /// 1.5 pt taller got 1.5 pt taller everywhere, and an entry with no device
+    /// says so by saying nothing. But a translation that is netted against a
+    /// **reflow** is not, because a reflow is line-count dependent and a line
+    /// count is a function of column width. Phase 3.8 is the first entry where
+    /// that bites: the shelf it adds is the same height on every screen, but
+    /// what it is measured against — §4.5's Cormorant paragraph — lands on a
+    /// different line count on the phone than on the other two, so the residual
+    /// comes out **36.00 pt on the SE, 35.58 on the Pro Max and 11.58 on the
+    /// phone**. The two ends of the range agree to 0.42 pt and the middle one
+    /// differs by a line.
+    ///
+    /// That shape is also the warning: the branch arrived with one number,
+    /// `11.58`, written as though it held everywhere. It had been measured on
+    /// one device. **A residual netted against a reflow must be measured on
+    /// every class the lock runs on**, and this field is what lets all three
+    /// answers be written down instead of one of them being widened to cover the
+    /// rest.
+    ///
+    /// The alternatives were `maxDelta: 26`, or `settles: [11.58, 36.0]` — the
+    /// first widens the lock on this screen by ten times and the second lets
+    /// *any* device settle at *either* value, which is three claims where there
+    /// is one fact per screen. Naming the device keeps each claim exactly as
+    /// sharp as it was measured. Charter §3: never weaken a check to make it
+    /// pass.
+    ///
+    /// `deviceKey` is what `SnapshotStore` already derives from the screen's own
+    /// points — "promax" / "phone" / "se" — so an entry names the same thing the
+    /// baseline directory is named after.
+    let device: String?
+
     init(screen: String, keyContains: String, maxDelta: Double,
-         settles: [Double] = [0], reason: String) {
+         settles: [Double] = [0], device: String? = nil, reason: String) {
         self.screen = screen
         self.keyContains = keyContains
         self.maxDelta = maxDelta
         self.settles = settles
+        self.device = device
         self.reason = reason
     }
 
@@ -92,8 +127,16 @@ struct ClassifiedShift {
 
     static let table: [ClassifiedShift] = FeltRegisterClassifications.shifts
 
-    static func allowance(screen: String, key: String) -> ClassifiedShift? {
-        table.first { $0.screen == screen && key.contains($0.keyContains) }
+    /// The first entry that answers for this element **on this device**. An
+    /// entry with no `device` answers for every one, as every entry written
+    /// before Phase 3.8 does; an entry that names one is skipped on the others,
+    /// which is what lets three sharp claims sit where one loose one would have
+    /// had to.
+    static func allowance(screen: String, key: String, device: String) -> ClassifiedShift? {
+        table.first {
+            $0.screen == screen && key.contains($0.keyContains)
+                && ($0.device == nil || $0.device == device)
+        }
     }
 }
 
@@ -202,6 +245,20 @@ enum FeltRegisterClassifications {
          + "outside the ScrollView, so it grows downward from the scroll's own edge and **nothing "
          + "on the Detail moves**: there is no accompanying shift entry, and any movement of an "
          + "existing element here is still a failure."),
+        // ── Phase 3.8 · the library's first shelf ───────────────────────────
+        //
+        // `her moments` is the control the section's title became: the same
+        // words, in the screen's own lowercase, standing where the title stood.
+        // `go deeper` is not here — it was on the screen before this phase and
+        // it keeps its name, its type and its 44 pt target; only the word it
+        // showed while open has gone, because two shelves on one screen cannot
+        // both say "less".
+        ("detail", "button|her moments",
+         "Phase 3.8. The library's first shelf, at the foot of the Detail's scroll, holding the "
+         + "register of when she was felt. It is unconditional and it never changes with his "
+         + "walking: the same row for a Śakti felt a hundred times and one felt never, which is "
+         + "the whole reason the register is behind it."),
+
         ("field", "Rise through the nine",
          "Phase 3.7. The way onto the axis, under the Field's own “NINE RINGS · ONE HUNDRED AND "
          + "TWO” — the one screen in the app whose subject is the nine. It costs 52 pt (a 44 pt "
@@ -216,9 +273,149 @@ enum FeltRegisterClassifications {
          + "VoiceOver and the back stack read that one; only the rendering was wrong."),
     ]
 
+    /// **Elements that are no longer drawn, because a fold now stands in front
+    /// of them — and the control that reaches them.**
+    ///
+    /// The comparison treats a disappearance as a failure with no appeal, and it
+    /// was right to: three of the shift entries below are written
+    /// `keyContains: "|"`, which is in every key there is, so letting a movement
+    /// bound answer for a departure would have let any screen they cover lose
+    /// any control it liked and stay green.
+    ///
+    /// Phase 3.8 is the phase whose whole job is to make a screen shorter, and
+    /// what it needs is vocabulary rather than an exemption — the same answer
+    /// Phase 3.7 reached when it had to say *"this moved by the height of the
+    /// thing above it"* and wrote `settles` instead of raising a bound.
+    ///
+    /// An entry here makes one claim, and it is a claim that can be wrong:
+    /// **this element is not gone, it is behind the control named `behind`, and
+    /// that control is on the screen.** The comparison checks the second half
+    /// itself — an entry naming a door that is not there classifies nothing and
+    /// the disappearance fails as before — and `TheLibraryFoldUITests` checks
+    /// the first, by opening every door named here and finding every element
+    /// that went behind it, by the same key. An element that had simply been
+    /// deleted has no door to name and nothing that can find it again.
+    ///
+    /// `TheFoldVocabularyTests` holds the entries themselves to the shape of a
+    /// claim: a type, words enough to name one element rather than a screenful,
+    /// a door, and a reason somebody had to write.
+    static let folded: [(screen: String, keyContains: String,
+                         behind: String, reason: String)] = [
+        // ── Phase 3.8 · the library fold ────────────────────────────────────
+        //
+        // Her Moments is the register of what has passed between them, and it
+        // grows a row every time she is felt. Before this fold, a Śakti felt
+        // forty times had a Detail forty rows longer than a Śakti felt once —
+        // the quantity was never printed, it was *drawn*, in scroll height, and
+        // it was in his hand every time he reached the foot of her screen. Law 2
+        // does not care which way a measure is drawn. It now stands behind
+        // `her moments`, which is shut every time she is opened and is the same
+        // row on the first visit and the hundredth.
+        //
+        // Two elements go behind it on this baseline, and both come back when it
+        // is opened: the section's own title, and — because the snapshot is read
+        // on a Śakti nothing has been felt for — the line that says so.
+        ("detail", "text|HER MOMENTS", "her moments",
+         "Phase 3.8. The section's title, behind the library's first shelf. The section itself is "
+         + "unchanged — same title, same divider, same list — it is simply no longer the thing a "
+         + "walker has to travel through to reach her room."),
+        ("detail", "text|She has not been felt here yet.", "her moments",
+         "Phase 3.8. Her Moments' own empty line, behind the same shelf. The snapshot is read on "
+         + "kp 33, who is felt by nothing in this suite, so the register's empty state is what "
+         + "this baseline recorded of it."),
+    ]
+
     static let shifts: [ClassifiedShift] = [
 
         // ── The Detail ───────────────────────────────────────────────────────
+        //
+        // **Phase 3.8's one movement, named rather than left to be absorbed.**
+        //
+        // The library's two shelves are the last things in the Detail's scroll,
+        // so the only element below the fold is `go deeper` — and it is the only
+        // element on this screen that Phase 3.8 moves at all. The shelf that now
+        // stands where Her Moments' section stood is shorter than the section
+        // was (28 pt of air and a 44 pt target, against a divider, a title, a
+        // list and their spacings), so `go deeper` rises by the difference.
+        // Everything above the shelves is exactly where it was, which is the
+        // design virtue rather than a lucky outcome: the fold stands at the foot
+        // of the scroll precisely so that what stays out stays put.
+        //
+        // **It is two entries, because it is two different numbers, and that is
+        // the finding rather than an inconvenience.** The shelf is the same
+        // height on every screen — 28 pt of air and a 44 pt target — and so is
+        // the section it replaces, to a quarter point: 97.00 pt on the SE
+        // (`felt into being` bottom 941.50 to `go deeper`'s own pad at 1038.50)
+        // and 96.75 on the two 6-inch classes. So 3.8's own lift is device-stable
+        // at about 25 pt.
+        //
+        // What is *not* device-stable is what that lift is measured against.
+        // These baselines are the geometry of `main` **before Phase 4**, so the
+        // residual is 3.8's lift net of §4.5's Cormorant reflow — and a reflow is
+        // line-count dependent, on a column the baselines record as 294.50 pt
+        // wide on the SE, 338.00 on the phone and 374.25 on the Pro Max. Cormorant
+        // Light is a narrower face, so her paragraph re-wraps, and **the phone is
+        // the one where it lands on a different line count** — everything below
+        // it settles a line lower there and the fold's lift is netted against it,
+        // where on the other two it is not. Measured, on the running app, one
+        // device at a time:
+        //
+        //     se        36.00 pt
+        //     promax    35.58 pt
+        //     phone     11.58 pt
+        //
+        // The two ends of the range agree to 0.42 pt and the middle one differs
+        // by a Cormorant line. That is why this is a device claim and not one
+        // number with slack around it.
+        //
+        // **The wrong answers, and why each is wrong.** `maxDelta: 26` would
+        // cover all three and make this screen ten times coarser for the rest of
+        // the build — the exact edit Phase 3.7 had to undo on the Field, and what
+        // charter §3 means by *"never weaken one to make it pass."*
+        // `settles: [11.5, 36.0]` would let *any* class settle at *either* value,
+        // which is three claims where there is one fact per screen. So
+        // `ClassifiedShift` grew a `device`, the way it grew `settles` when 3.7
+        // needed to say "this moved by the height of the thing above it": every
+        // claim stays at the 2.5 pt resolution it was measured at.
+        //
+        // **All three are pinned, and none falls through.** A fourth device class
+        // would meet the 17 pt `button|` bound below and fail loudly, which is
+        // the right answer: nobody has measured this element on it.
+        //
+        // **These entries exist at all because that bound would have taken the
+        // move silently.** It allows 17 pt for the Cormorant reflow, and the
+        // phone's 11.50 is inside it — so without a line here, a change *this*
+        // phase made would have been absorbed by a sentence written about a
+        // different one, which is the same failure as widening a bound.
+        //
+        // First in the table on purpose: `ClassifiedShift.allowance` takes the
+        // first match, and the two blanket bounds below would otherwise answer
+        // for them.
+        //
+        // **`0` is deliberately not in `settles`.** The Field's entry carries it
+        // because that door translates only what is below it and half that
+        // screen is above; here there is exactly one element under the shelves
+        // and it is *required* to have moved. Allowing zero would let a fold
+        // that had stopped folding pass quietly.
+        ClassifiedShift(screen: "detail", keyContains: "button|go deeper",
+                        maxDelta: 2.5, settles: [36.0], device: "se", reason:
+            "Phase 3.8. `go deeper` is the library's second shelf and the only element below the "
+            + "fold. The first shelf replaces a section taller than itself, so this rises by the "
+            + "difference — 36.00 pt from the pre-Phase-4 baseline on the SE, where §4.5's "
+            + "Cormorant paragraph keeps its line count and the two lifts add. Nothing above the "
+            + "shelves moves at all."),
+        ClassifiedShift(screen: "detail", keyContains: "button|go deeper",
+                        maxDelta: 2.5, settles: [35.58], device: "promax", reason:
+            "Phase 3.8, on the Pro Max: the same lift against the same reflow as the SE, in the "
+            + "widest column in the instrument, and it agrees with the narrowest to 0.42 pt — "
+            + "35.58 pt, measured. Nothing above the shelves moves at all."),
+        ClassifiedShift(screen: "detail", keyContains: "button|go deeper",
+                        maxDelta: 2.5, settles: [11.58], device: "phone", reason:
+            "Phase 3.8, on the phone, and this is the class where §4.5's Cormorant paragraph lands "
+            + "on a different line count — everything below it already settles a line lower here, "
+            + "so the fold's ~25 pt lift is netted against that and leaves 11.58 pt. Written down "
+            + "rather than left to the 17 pt Cormorant bound below, which is the one place this "
+            + "move would have been swallowed without a sentence."),
         ClassifiedShift(screen: "detail", keyContains: "text|", maxDelta: 19, reason: cormorant),
         ClassifiedShift(screen: "detail", keyContains: "button|", maxDelta: 17, reason: cormorant),
 

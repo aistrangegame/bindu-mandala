@@ -2873,3 +2873,252 @@ source check.
 - **The rims are lines, not tubes.** A tube would take light and is a solid; the whole point of the
   shaft is that it is drawn rather than lit. That is a deliberate thinness, and 3.10 owns deepening
   it if it wants to — but not by adding a face.
+
+---
+
+## 2026-09-23 · Phase 3.8 · The library fold — a measure that was drawn instead of printed
+
+Her Detail is two things since Phase 3.7 cut a door into its footer: the landing
+of *know her ›*, and the threshold of *be with her ›*. What was left over is what
+the brief calls a **library** — *"the existing Detail screen's reference sections
+— kept, folded, for when you want the text."* This phase folds it: the
+recognition register and the six reference words each go behind a named shelf,
+both shut on every arrival, built by one shared row.
+
+### The law argument, and it is not rhetorical
+
+Law 2 says no count, streak, percentage or visit number is ever *shown* to the
+walker. Her Moments grows a row every time she is felt — a dot, a timestamp,
+twenty points of padding and a hairline — so before this fold **a Śakti felt
+forty times had a Detail several hundred points longer than a Śakti felt once.**
+No digit was ever printed. The quantity was drawn, in scroll height, and it was
+in his hand every time he reached the foot of her screen. Law 2 does not care
+which way a measure is drawn.
+
+The baselines say how much, on a Śakti felt by nothing at all:
+`iOS/SnapshotBaselines/se/detail.geom` puts `text|felt into being` at a bottom of
+941.50 and `button|go deeper` at 1066.50, whose own 28 pt of air starts at
+1038.50 — so the register's section occupies **97.00 pt** on the SE and 96.75 on
+the Pro Max *when it is empty*. Every recognition adds to that and nothing ever
+takes any of it away.
+
+Behind a shelf that is shut when she opens, her screen is exactly the same length
+on the first visit and the hundredth. The register is one touch away, undiminished.
+
+**The proof is structural, not cosmetic.** With the shelf shut, `HerMomentsList`
+is never *constructed* — it lives inside the `if`, so
+`RecognitionLogStore.entries(forKhadgamala:limit:)` is never read on arrival and
+the list is not in the accessibility tree either. Had it been built and merely
+hidden, the screen would still be as long as his walking and every other check
+here would still have been green. `TheLibraryFoldTests` asks the source for
+exactly that, and `TheLibraryFoldUITests` measures it on the running app: her
+screen is read twice in one launch, she is felt in between, and nothing moves by
+more than a point.
+
+### And it is a §4.4 parity fix, which is the second reason
+
+A finger reaches the footer by not scrolling. **VoiceOver has no such shortcut** —
+it arrives at the two doors by passing every element in tree order, so the
+archive genuinely stood in front of her room for a walker using one, and it stood
+*longer the more he had practised*. That is the instrument saying two different
+things to two different walkers, which §4.4 forbids. One swipe past a named,
+hinted control replaces it.
+
+### What stays out of the fold, and why
+
+The **embodiment ladder**, because it is an act — the one crossing this screen
+offers, and a crossing put behind a door is a threshold a walker has to go
+looking for. The **field connection**, because those are his own words about her
+and not a record of him. The **bīja gloss** and **her quality's description** are
+reference by temperament, but they sit mid-scroll and folding them would
+re-compose everything beneath them for the gain of two paragraphs; 3.10 may take
+them. The whole virtue of this fold is that nothing which stays out moves.
+
+### The invariant Phase 3.7 wrote, and where it ends
+
+3.7's entry says plainly: *"there is no accompanying shift entry, and any
+movement of an existing element here is still a failure."* **Phase 3.8 ends that
+sentence, deliberately, for exactly one element.** The shelves are the last two
+things in the scroll, so the only element below the fold is `go deeper`, and the
+shelf that replaces the register's section is shorter than the section was — 28 pt
+of air and a 44 pt target, against a divider, a title, a list and their spacings.
+`go deeper` therefore rises by the difference.
+
+This is written into `FeltRegisterClassifications.shifts` as a `settles` entry
+rather than absorbed into a bound, for the reason 3.7 established when it had to
+undo exactly that edit on the Field: **a bound widened to swallow a known
+translation makes the whole screen coarser for the rest of the build.** The
+`button|` bound on the Detail allows 17 pt for §4.5's Cormorant reflow, and this
+move is inside it on two of the three classes — so without the entry, a change
+*this* phase made would have been taken silently by a sentence written about a
+different one. `0` is deliberately not in `settles`: there is exactly one element
+under the shelves and it is *required* to have moved, so allowing zero would let a
+fold that had stopped folding pass quietly.
+
+**Nothing above the shelves moves at all**, on any of the three device classes.
+That is the design virtue rather than a lucky outcome, and it is why the fold
+stands at the foot of the scroll.
+
+### `ClassifiedShift` grew a device, because the number is not one number
+
+The entry was committed as `settles: [11.5]` with no device. **It is right on one
+class and wrong on the other two**, and the branch had no way to know, because
+`ClassifiedShift` carried no device and the residual had been measured on a single
+screen. Run on all three, one device at a time:
+
+|            | residual  | committed entry |
+|------------|-----------|-----------------|
+| se         | **36.00 pt** | fails by 24.50 |
+| promax     | **35.58 pt** | fails by 24.08 |
+| phone      | **11.58 pt** | passes |
+
+3.8's own lift *is* device-stable — the shelf is 28 pt of air over a 44 pt target
+everywhere, and the section it replaces is 97.00 pt on the SE and 96.75 on the
+other two, so the lift is about 25 pt on every screen. What is not stable is what
+that lift is measured **against**: these baselines are the geometry of `main`
+before Phase 4, so the residual is 3.8's lift net of §4.5's Cormorant reflow — and
+a reflow is line-count dependent, on a column the baselines record as 294.50 pt
+wide on the SE, 338.00 on the phone and 374.25 on the Pro Max. **The phone is the
+class where the paragraph lands on a different line count**: everything below it
+already settles a line lower there, the fold's lift is netted against that, and
+what is left is 11.58 instead of about 35.8. The two ends of the range agree to
+0.42 pt; the middle one differs by a line.
+
+`maxDelta: 26` would have covered all three and made this screen ten times coarser
+— the exact edit 3.7 had to undo on the Field. `settles: [11.58, 36.0]` would have
+let *any* class settle at *either* value, which is three claims where there is one
+fact per screen. So `ClassifiedShift` grew an optional `device`, the way it grew
+`settles` when 3.7 needed to say *"this moved by the height of the thing above
+it"*: every entry written before this one says nothing and therefore answers
+everywhere, and the three that name a class stay at the 2.5 pt resolution they
+were measured at. All three are pinned and none falls through — a fourth device
+class would meet the 17 pt `button|` bound and fail loudly, which is correct,
+because nobody has measured this element on it. `deviceKey` already derives
+"promax" / "phone" / "se" from the screen's own points and names the baseline
+directory with it, so an entry names the same thing the file it is judged against
+is named after.
+
+**The general lesson, and it outlives this branch:** a residual that is netted
+against a *reflow* is not one number. It has to be measured on every class the
+lock runs on, and the type has to be able to hold every answer.
+
+Two checks hold the new vocabulary honest, and the second is the one that
+matters: a device named in an entry has to be one the lock actually runs on, and
+**a device-specific entry has to be the entry that answers** — `allowance` takes
+the first match, so one written below a blanket entry for the same element is
+dead, the lock still passes at the looser bound, and the file says otherwise.
+
+### The other calls, each small and each a behaviour change
+
+**`go deeper` stopped renaming itself to "less".** With two folds on one screen
+that word would have been on the glass twice, naming two different doors, and a
+voice reading them in order would have had no way to tell them apart. Each shelf
+carries its own name at all times and reports its state as
+`.accessibilityValue("unfolded"/"folded")` with a directional hint. It is also
+simply better: a control that renames itself the moment it acts is a control a
+walker has to read twice. The open state lifts the gold from 0.78 to 0.95 and the
+hairline from 0.22 to 0.34 — more legible open than shut, so §4.2 is not touched.
+
+**With the shelf shut, the register is not in the accessibility tree.** This is
+the reachability change, and it is the parity fix rather than a loss: it is one
+swipe away behind a named, hinted control, and the alternative is the breach
+above. `AccessibilityReachTests` holds no claim about the Detail, and the "all 102
+seats and nine enclosures" reach checks are untouched.
+
+**The Airtable read moved from arrival to unfold.** `.task(id: airtableRecordId)`
+lives inside `HerMomentsList`, which is now constructed when the shelf opens and
+destroyed when it shuts — so opening and closing repeatedly re-reads, and a
+local-then-remote content swap is now visible *while the fold is open* rather than
+on arrival. Net this is a win: a launch that never opens the shelf makes no
+network read for the register at all.
+
+**The disclosure's `withAnimation` is deliberately outside FIDELITY rule 3.** That
+rule gates *repeating* animations and `TimelineView(.animation)`; a one-shot
+0.35 s disclosure is not in its scope, and this is character-for-character what
+`go deeper` already did on `main`. Stated here because it is the one place a
+reviewer will point.
+
+**The section keeps its own `HER MOMENTS` title behind the shelf, and the echo is
+deliberate.** With the shelf open a voice reads "her moments" and then
+"HER MOMENTS". `go deeper` does not stutter because its six children carry six
+different titles. Merging them would mean the title *disappears* rather than
+folds, which the `folded` vocabulary below could not honestly describe, and would
+buy a cosmetic gain at the cost of a new exemption on the last night of the
+build. 3.10 may merge them.
+
+**The residual measure is acknowledged rather than claimed away.** Once he opens
+the shelf, the screen's length encodes the count again. That is his own choice,
+one touch in, made on a screen that said nothing until he asked — which is the
+difference between an instrument that answers and an instrument that reports.
+
+### `folded` — new vocabulary for the composition lock, and why it is not an exemption
+
+The lock treated a disappearance as a failure with no appeal, and it was right to:
+three shift entries are written `keyContains: "|"`, which is in every key there
+is, so letting a *movement* bound answer for a *departure* would have let those
+screens lose any control they liked and stay green.
+
+Phase 3.8 is the phase whose whole job is to make a screen shorter, so it needs
+vocabulary rather than an exemption — the same answer 3.7 reached when it wrote
+`settles` instead of raising a bound. An entry in
+`FeltRegisterClassifications.folded` makes one claim that can be wrong: *this
+element is not gone, it is behind the control named `behind`, and that control is
+on the screen.* The lock checks the second half itself — an entry naming a door
+that is not there classifies nothing and the disappearance fails as before — and
+`TheLibraryFoldUITests` checks the first, by opening every door named and finding
+every element that went behind it **by the same key** the lock compares on.
+`TheFoldVocabularyTests` holds the entries to the shape of a claim: a type, words
+enough to name one element rather than a screenful, a door, and a reason somebody
+had to write.
+
+### What the finishing pass found, and it was all in the tests
+
+The branch arrived as a checkpoint that had never been compiled. It compiled
+first time and the unit target was green first time; every symbol the new checks
+reach resolved, including the two the review doubted (a local shadowing the
+method that initialises it, and key paths into labelled tuple elements — both
+legal on this toolchain). **What was wrong was in the driving, and it would have
+failed on the first run.**
+
+**Both shelves stand below the fold of the glass, and `exists` is not
+`isHittable`.** The Detail's scroll is a plain `VStack` in a `ScrollView`, so
+every element is built and every one is in the tree — `detail.geom` records
+`go deeper` at y 1066.50 on a 667 pt screen for exactly that reason. All three new
+UI tests asserted `isHittable` on a shelf or tapped one without scrolling to it,
+and at the largest accessibility size the shelves are several screenfuls down.
+Each interaction now reveals the control first, with the press-and-drag through
+fractions of the glass that 3.7 found actually reaches a scrolling view on the SE,
+and stops as soon as it is reachable so a screen that needs no scrolling is not
+scrolled.
+
+**Every shelf press was a raw `tap()`** — the exact cancelled-digitizer flake
+`press(_:until:)` exists to absorb. They are all pressed with a sentinel now, and
+the sentinel is the one thing that is only true *after* a shelf opens: a shelf
+does not rename itself, so what changes is the state it speaks, and the wait is
+`label == <name> AND value == 'unfolded'`. That is 3.7's rule applied — *a wait is
+only a flake absorber if the thing waited for cannot already be true* — and it
+doubles as the proof, on the running app, that a voice really is told which state
+the shelf is in.
+
+**And the ceremony cannot be left by a synthetic tap at all — that one would have
+hung.** The test closed the moment with `exit.tap()` on the element §4.4 gave the
+tap-anywhere exit. That element is a `Color.clear` that `allowsHitTesting(false)`:
+it carries an accessibility *action* so a voice can find the way out, not a touch
+path. A finger leaves by the `onTapGesture` on the whole screen, and
+`XCUIElement.tap()` aims at the **centre** of what it is handed — which on that
+screen is the note card, whose own `onTapGesture` exists precisely to say *"don't
+dismiss the screen when tapping inside the note card."* The tap would have focused
+the note and left the ceremony standing. The shipped suite already recorded the
+answer in a comment: the close → `didSettle` → Portrait handoff is exercised by
+the app's own `RECOGNIZE_AUTOCLOSE` path, *"which needs no synthetic tap."* The
+walk uses it, and the Portrait's own line — on that screen and no other in the
+shell — is what says the shell settled. That the exit is reachable **by name**
+remains `VoiceOverCeremonyExitTests`' claim and is not restated here.
+
+**`ZZDiag.swift` is deleted.** Eighteen lines of scratch: a case named to sort
+last, which launched the app, waited forty seconds for the shelf, slept two more
+and printed every frame it could see — with not one assertion. A green test that
+tests nothing is the shape charter §3 refuses, and it cost a simulator launch on
+every run of the UI target. What it was for is real and stays: the `go deeper`
+shift is measured by the lock's own failure text, on every device class the lock
+runs on, rather than by a print statement on one.
