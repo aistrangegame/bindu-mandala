@@ -280,6 +280,19 @@ final class TheLibraryFoldTests: XCTestCase {
                       "the shelf row takes something other than two words and whether it is open — "
                       + "a value it holds is a value it can be made to show:\n\(signature)")
 
+        // …and **nothing else**, which the three `contains` above cannot say: a
+        // row that grew a fourth parameter still contains all three, and the
+        // fourth is the one that would arrive carrying a number. There is one
+        // comma per parameter and none inside `() -> Void`, so the count of them
+        // is the count of what the row can be handed.
+        let taken = signature
+            .replacingOccurrences(of: "private func shelf(", with: "")
+            .components(separatedBy: ",")
+        XCTAssertEqual(taken.count, 4,
+                       "the shelf row takes \(taken.count) things. It takes two words, whether it "
+                       + "is open, and what to do — and a fifth would be the one that arrives "
+                       + "carrying how often she has been felt:\n\(signature)")
+
         var read = 0
         var offences: [String] = []
         for call in file.calls(to: LawSource.walkerFacingCallees) {

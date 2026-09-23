@@ -552,7 +552,7 @@ final class FeltRegisterSnapshots: XCTestCase {
             let dy = ElementFrame.displacement(was.anchorsY, now.anchorsY)
             let moved = max(abs(dx), abs(dy))
             guard moved > tolerance else { continue }
-            if let allowed = ClassifiedShift.allowance(screen: screen, key: key) {
+            if let allowed = ClassifiedShift.allowance(screen: screen, key: key, device: device) {
                 // Judged against the *nearest classified translation*, not
                 // against zero. A control added to a stack moves everything
                 // below it by its own height and nothing above it; saying so in

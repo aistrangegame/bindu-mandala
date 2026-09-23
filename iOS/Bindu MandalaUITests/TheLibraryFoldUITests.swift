@@ -47,6 +47,23 @@ final class TheLibraryFoldUITests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label == %@", name)).firstMatch
     }
 
+    /// **The same shelf, but only once it has opened.**
+    ///
+    /// Phase 3.7 paid for this lesson twice and wrote it down: a press the
+    /// simulator cancels looks exactly like a press that landed unless what is
+    /// waited on exists *only* after it. A shelf that is open is the same button
+    /// with the same words — the whole point of it is that it does not rename
+    /// itself — so the thing that is only true afterwards is the state it speaks:
+    /// `accessibilityValue` is "unfolded", and it is "folded" until the toggle
+    /// really ran. This is the sentinel for every shelf press in this file, and
+    /// it doubles as the proof that a voice is genuinely told which state the
+    /// shelf is in, on the running app rather than in the source.
+    private func openedShelf(_ app: XCUIApplication, _ name: String) -> XCUIElement {
+        app.buttons
+            .matching(NSPredicate(format: "label == %@ AND value == 'unfolded'", name))
+            .firstMatch
+    }
+
     private func beWithHer(_ app: XCUIApplication) -> XCUIElement {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Be with her'")).firstMatch
     }
@@ -55,6 +72,66 @@ final class TheLibraryFoldUITests: XCTestCase {
     /// recorded from.
     private func herScreen(_ app: XCUIApplication) -> Bool {
         shelf(app, "her moments").waitForExistence(timeout: 35)
+    }
+
+    // MARK: - Reaching a shelf at all
+
+    /// **Both shelves stand below the fold of the glass, and `exists` does not
+    /// mean a finger can get to them.**
+    ///
+    /// The Detail's scroll is a plain `VStack` in a `ScrollView`, so every
+    /// element of it is built and every one is in the accessibility tree —
+    /// `detail.geom` records `go deeper` at y 1066.50 on a 667 pt screen for
+    /// exactly that reason. `exists` is therefore true for a control a walker
+    /// would have to scroll a long way to see, `isHittable` is false, and
+    /// `tap()` on it does not land. This is the same `exists`-against-`isHittable`
+    /// distinction Phase 3.7 hit from the other side, and at the largest
+    /// accessibility size the distance is several screenfuls rather than one.
+    ///
+    /// So the shelf is brought into the glass before it is pressed, by the
+    /// gesture 3.7 found actually reaches a scrolling view on the smallest
+    /// screen: a press and a drag, not `swipeUp()`. It stops as soon as the
+    /// control is reachable, so a screen that needs no scrolling is not scrolled
+    /// at all.
+    ///
+    /// **The drag starts from the scroll's own floor, measured, not from a
+    /// fraction of the glass.** Phase 3.7 put two controls in a footer *outside*
+    /// the `ScrollView`, and a drag that begins on the footer moves nothing —
+    /// which is invisible at the default type size, where a fixed fraction lands
+    /// in the scroll by luck, and fatal at the largest, where the footer's own
+    /// words have tripled and eaten the bottom half of the screen. `be with her`
+    /// is the top of that footer, so the scroll ends just above it.
+    @discardableResult
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication,
+                        attempts: Int = 30) -> Bool {
+        guard element.waitForExistence(timeout: 20) else { return false }
+        let bounds = app.frame
+        let door = beWithHer(app)
+        let floor = (door.exists ? door.frame.minY : bounds.maxY) - 12
+        let ceiling = bounds.minY + bounds.height * 0.16   // clear of the nav bar
+        guard floor - ceiling > 40 else { return element.isHittable }
+
+        var drags = 0
+        while !element.isHittable && drags < attempts {
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let from = origin.withOffset(CGVector(dx: bounds.width * 0.5, dy: floor))
+            let to   = origin.withOffset(CGVector(dx: bounds.width * 0.5, dy: ceiling))
+            from.press(forDuration: 0.08, thenDragTo: to)
+            drags += 1
+        }
+        return element.isHittable
+    }
+
+    /// Reach a shelf and open it, and do not believe it opened until it says so.
+    @discardableResult
+    private func unfold(_ name: String, in app: XCUIApplication,
+                        file: StaticString = #filePath, line: UInt = #line) -> Bool {
+        let control = shelf(app, name)
+        XCTAssertTrue(reveal(control, in: app),
+                      "“\(name)” never came within reach of a finger — it is in the tree, below "
+                      + "the glass, and no amount of scrolling brought it up",
+                      file: file, line: line)
+        return press(control, until: openedShelf(app, name), attempts: 3, eachTimeout: 10)
     }
 
     // MARK: - 1 · Her screen says nothing of his practice, and still holds all of it
@@ -84,7 +161,7 @@ final class TheLibraryFoldUITests: XCTestCase {
     /// therefore of one composition, and the only variable in them is the
     /// recognition.
     func testHerScreenReportsNothingOfHisPracticeAndStillHoldsAllOfIt() {
-        let app = launch(["START_TAB=mandala", "OPEN_DETAIL=29"])
+        let app = launch(["START_TAB=mandala", "OPEN_DETAIL=29", "RECOGNIZE_AUTOCLOSE"])
         XCTAssertTrue(herScreen(app), "her Detail never arrived")
         Thread.sleep(forTimeInterval: 2.0)
         let unfelt = composition(of: app)
@@ -128,9 +205,7 @@ final class TheLibraryFoldUITests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS[c] 'she was felt here'"))
         XCTAssertEqual(register.count, 0, "the register is on her screen with its shelf shut")
 
-        let door = shelf(app, "her moments")
-        XCTAssertTrue(door.isHittable, "the register's shelf cannot be reached")
-        door.tap()
+        XCTAssertTrue(unfold("her moments", in: app), "the register's shelf never opened")
         XCTAssertTrue(register.firstMatch.waitForExistence(timeout: 10),
                       "the shelf opened and her moments were not behind it — the register that "
                       + "went behind this door has been thrown away rather than folded")
@@ -159,18 +234,43 @@ final class TheLibraryFoldUITests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS[c] 'and she felt you back'")).firstMatch
         XCTAssertTrue(press(feel, until: line, attempts: 4, eachTimeout: 20),
                       "the ceremony never reached its second line, so she was never felt")
-        // §4.4 gave the tap-anywhere exit an element of its own, which is the
-        // one a test can aim at.
-        let exit = app.buttons
-            .matching(NSPredicate(format: "label CONTAINS[c] 'Close this moment'")).firstMatch
-        XCTAssertTrue(exit.waitForExistence(timeout: 15), "the ceremony's way out was never reachable")
-        exit.tap()
+        // **The ceremony is not left by a synthetic tap, and it cannot be.**
+        // §4.4 gave the tap-anywhere exit an element of its own so a voice can
+        // find it — `MandalaVoice.closeCeremony` — but that element is a
+        // `Color.clear` that `allowsHitTesting(false)`: it carries an
+        // accessibility action, not a touch path. A finger leaves by the
+        // `onTapGesture` on the whole screen, and `XCUIElement.tap()` aims at
+        // the *centre* of what it is given, which on this screen is the note
+        // card — whose own `onTapGesture` exists precisely to say *"don't
+        // dismiss the screen when tapping inside the note card."* Tapping the
+        // named exit would focus the note and leave the ceremony standing.
+        //
+        // So the ceremony closes itself, by the debug path the shipped suite
+        // already leans on for exactly this: `RECOGNIZE_AUTOCLOSE` runs
+        // `beginClose()` once the moment has landed. That the exit is reachable
+        // *by name* is `VoiceOverCeremonyExitTests`' claim and is not restated
+        // here. What this needs is the walk continued, and the Portrait's own
+        // line — on that screen and no other in the shell — is what says the
+        // shell settled.
+        XCTAssertTrue(app.buttons
+            .matching(NSPredicate(format: "label CONTAINS[c] 'Close this moment'"))
+            .firstMatch.waitForExistence(timeout: 15),
+                      "the ceremony's way out was never reachable")
+        let settled = app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] 'she is felt, not measured'")).firstMatch
+        XCTAssertTrue(settled.waitForExistence(timeout: 40),
+                      "the ceremony never settled onto the Portrait")
     }
 
     /// Back to her screen, by the menu and the same launch argument that opened
     /// it the first time. `RootView` keys its destinations by `.id`, so the
     /// Mandala is built afresh and opens her again exactly as it did at launch.
     private func returnToHerScreen(_ app: XCUIApplication) {
+        // The shell is still moving when the Portrait's own line arrives:
+        // `RootView` crossfades to `.memory` over 0.9 s and the destination
+        // transition runs 0.5 s on top of it. Enumerating the tree through that
+        // is what makes the corner button a moving target.
+        Thread.sleep(forTimeInterval: 2.0)
         let mandala = app.buttons.matching(NSPredicate(format: "label == 'The Mandala'")).firstMatch
         for _ in 0..<3 {
             tapHamburger(app)
@@ -183,12 +283,25 @@ final class TheLibraryFoldUITests: XCTestCase {
 
     /// The hamburger carries no label — `FeltRegisterSnapshots` records the same
     /// fact — so it is found where it lives: the top-trailing 44 × 44.
+    ///
+    /// **Found as an element, pressed as a place.** `allElementsBoundByIndex`
+    /// resolves against a snapshot of the tree, and this is called on a screen
+    /// the shell has just crossfaded into: a button that is index 1 when the
+    /// list is taken can be gone by the time `tap()` asks for it again, and
+    /// XCUITest *throws* on that rather than missing — *"no matches found for
+    /// Element at index 1"* — which ends the whole walk rather than costing it a
+    /// retry. The corner is the same corner either way, so the element is used
+    /// to find out **where** and the press goes to that point.
     private func tapHamburger(_ app: XCUIApplication) {
         let bounds = app.frame
-        app.buttons.allElementsBoundByIndex.first {
+        let corner = app.buttons.allElementsBoundByIndex.first {
             $0.exists && $0.frame.maxX > bounds.width - 76
                 && $0.frame.minY < 140 && $0.frame.height >= 40 && $0.frame.width >= 40
-        }?.tap()
+        }
+        guard let where_ = corner?.frame, where_.width > 0 else { return }
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: where_.midX, dy: where_.midY))
+            .tap()
     }
 
     // MARK: - 2 · Everything the lock lets her lose comes back through its own door
@@ -222,11 +335,9 @@ final class TheLibraryFoldUITests: XCTestCase {
         }
 
         for door in Set(entries.map(\.behind)) {
-            let control = shelf(app, door)
-            XCTAssertTrue(control.exists && control.isHittable,
+            XCTAssertTrue(unfold(door, in: app),
                           "“\(door)” is named as the door \(entries.count) element(s) went behind, "
-                          + "and it cannot be reached")
-            control.tap()
+                          + "and it never opened")
             Thread.sleep(forTimeInterval: 1.2)
         }
 
@@ -254,15 +365,30 @@ final class TheLibraryFoldUITests: XCTestCase {
         XCTAssertTrue(herScreen(app), "her Detail never arrived at the largest type size")
         Thread.sleep(forTimeInterval: 2.0)
 
+        // `go deeper` is conditional on her carrying reference matter at all, so
+        // a Śakti without it has one shelf and not two; `her moments` is
+        // unconditional and its absence is a failure. Both are opened from the
+        // top down, because opening the first pushes the second further below
+        // the glass and `reveal` has to run again for it.
+        var opened = 0
         for name in ["her moments", "go deeper"] {
             let control = shelf(app, name)
-            guard control.exists else { continue }
+            guard control.exists else {
+                XCTAssertNotEqual(name, "her moments",
+                                  "the register's shelf is unconditional and it is not on her screen")
+                continue
+            }
+            XCTAssertTrue(reveal(control, in: app),
+                          "“\(name)” never came within reach at the largest accessibility size")
             XCTAssertGreaterThanOrEqual(control.frame.height, 43.5,
                                         "“\(name)” is \(control.frame.height) pt tall at the "
                                         + "largest accessibility size")
-            control.tap()
+            XCTAssertTrue(press(control, until: openedShelf(app, name), attempts: 3, eachTimeout: 10),
+                          "“\(name)” never opened at the largest accessibility size")
+            opened += 1
             Thread.sleep(forTimeInterval: 1.2)
         }
+        XCTAssertGreaterThanOrEqual(opened, 1, "no shelf was opened, so nothing below was read")
 
         let bounds = app.frame
         var failures: [String] = []
@@ -324,6 +450,46 @@ final class TheFoldVocabularyTests: XCTestCase {
                                         + "with a vague reason is a regression somebody talked "
                                         + "their way past.")
             XCTAssertFalse(entry.screen.isEmpty)
+        }
+    }
+
+    // MARK: - The other vocabulary this phase added: a shift that names a device
+
+    /// A device is one of the three the lock actually runs on. `deviceKey`
+    /// derives "promax" / "phone" / "se" from the screen's own points and names
+    /// the baseline directory with it; an entry pinned to anything else is an
+    /// entry that can never answer for anything, and would leave the blanket
+    /// bound below it silently in charge of a move somebody thought they had
+    /// written down.
+    func testEveryDeviceAShiftNamesIsOneTheLockRunsOn() {
+        let known: Set<String> = ["se", "phone", "promax"]
+        for shift in ClassifiedShift.table {
+            guard let device = shift.device else { continue }
+            XCTAssertTrue(known.contains(device),
+                          "“\(shift.keyContains)” on \(shift.screen) is classified for a device "
+                          + "called “\(device)”, and the lock runs on \(known.sorted()). An entry "
+                          + "no run can match classifies nothing.")
+        }
+    }
+
+    /// **And it is the entry that actually answers.**
+    ///
+    /// `allowance` takes the *first* match, so a device-specific entry written
+    /// below a blanket one for the same element is dead: the blanket entry
+    /// answers on every device and the sharper number is never consulted. That
+    /// is a silent failure — the lock still passes, at the looser bound, with a
+    /// sentence in the file saying otherwise. So each one is asked to answer for
+    /// itself.
+    func testEveryDeviceSpecificEntryIsTheOneThatAnswersForItsDevice() {
+        for shift in ClassifiedShift.table {
+            guard let device = shift.device else { continue }
+            let answered = ClassifiedShift.allowance(screen: shift.screen,
+                                                     key: shift.keyContains,
+                                                     device: device)
+            XCTAssertEqual(answered?.reason, shift.reason,
+                           "“\(shift.keyContains)” on \(shift.screen)/\(device) is classified at "
+                           + "\(shift.settlesDescription) ± \(shift.maxDelta), and a broader entry "
+                           + "above it answers instead. Move it up: the first match wins.")
         }
     }
 

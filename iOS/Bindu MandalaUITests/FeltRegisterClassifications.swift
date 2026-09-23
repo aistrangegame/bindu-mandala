@@ -69,12 +69,47 @@ struct ClassifiedShift {
     /// and `maxDelta` is the whole allowance, exactly as before.
     let settles: [Double]
 
+    /// **The device class this entry speaks for, when the translation is not the
+    /// same on every screen — `nil` for every entry that is.**
+    ///
+    /// Almost every classified move is device-independent: a string that got
+    /// 1.5 pt taller got 1.5 pt taller everywhere, and an entry with no device
+    /// says so by saying nothing. But a translation that is netted against a
+    /// **reflow** is not, because a reflow is line-count dependent and a line
+    /// count is a function of column width. Phase 3.8 is the first entry where
+    /// that bites: the shelf it adds is the same height on every screen, but
+    /// what it is measured against — §4.5's Cormorant paragraph — lands on a
+    /// different line count on the phone than on the other two, so the residual
+    /// comes out **36.00 pt on the SE, 35.58 on the Pro Max and 11.58 on the
+    /// phone**. The two ends of the range agree to 0.42 pt and the middle one
+    /// differs by a line.
+    ///
+    /// That shape is also the warning: the branch arrived with one number,
+    /// `11.58`, written as though it held everywhere. It had been measured on
+    /// one device. **A residual netted against a reflow must be measured on
+    /// every class the lock runs on**, and this field is what lets all three
+    /// answers be written down instead of one of them being widened to cover the
+    /// rest.
+    ///
+    /// The alternatives were `maxDelta: 26`, or `settles: [11.58, 36.0]` — the
+    /// first widens the lock on this screen by ten times and the second lets
+    /// *any* device settle at *either* value, which is three claims where there
+    /// is one fact per screen. Naming the device keeps each claim exactly as
+    /// sharp as it was measured. Charter §3: never weaken a check to make it
+    /// pass.
+    ///
+    /// `deviceKey` is what `SnapshotStore` already derives from the screen's own
+    /// points — "promax" / "phone" / "se" — so an entry names the same thing the
+    /// baseline directory is named after.
+    let device: String?
+
     init(screen: String, keyContains: String, maxDelta: Double,
-         settles: [Double] = [0], reason: String) {
+         settles: [Double] = [0], device: String? = nil, reason: String) {
         self.screen = screen
         self.keyContains = keyContains
         self.maxDelta = maxDelta
         self.settles = settles
+        self.device = device
         self.reason = reason
     }
 
@@ -92,8 +127,16 @@ struct ClassifiedShift {
 
     static let table: [ClassifiedShift] = FeltRegisterClassifications.shifts
 
-    static func allowance(screen: String, key: String) -> ClassifiedShift? {
-        table.first { $0.screen == screen && key.contains($0.keyContains) }
+    /// The first entry that answers for this element **on this device**. An
+    /// entry with no `device` answers for every one, as every entry written
+    /// before Phase 3.8 does; an entry that names one is skipped on the others,
+    /// which is what lets three sharp claims sit where one loose one would have
+    /// had to.
+    static func allowance(screen: String, key: String, device: String) -> ClassifiedShift? {
+        table.first {
+            $0.screen == screen && key.contains($0.keyContains)
+                && ($0.device == nil || $0.device == device)
+        }
     }
 }
 
@@ -298,20 +341,56 @@ enum FeltRegisterClassifications {
         // design virtue rather than a lucky outcome: the fold stands at the foot
         // of the scroll precisely so that what stays out stays put.
         //
-        // **Measured on the running app, not estimated: 11.58 pt** against the
-        // pre-Phase-4 baseline, which is that difference net of the reflow every
-        // other string on this screen is already classified for.
+        // **It is two entries, because it is two different numbers, and that is
+        // the finding rather than an inconvenience.** The shelf is the same
+        // height on every screen — 28 pt of air and a 44 pt target — and so is
+        // the section it replaces, to a quarter point: 97.00 pt on the SE
+        // (`felt into being` bottom 941.50 to `go deeper`'s own pad at 1038.50)
+        // and 96.75 on the two 6-inch classes. So 3.8's own lift is device-stable
+        // at about 25 pt.
         //
-        // **This entry exists because the bound beneath it would have taken it
-        // silently.** `button|` on the Detail allows 17 pt for §4.5's Cormorant
-        // reflow, and 11.58 is inside that — so without this line a change this
+        // What is *not* device-stable is what that lift is measured against.
+        // These baselines are the geometry of `main` **before Phase 4**, so the
+        // residual is 3.8's lift net of §4.5's Cormorant reflow — and a reflow is
+        // line-count dependent, on a column the baselines record as 294.50 pt
+        // wide on the SE, 338.00 on the phone and 374.25 on the Pro Max. Cormorant
+        // Light is a narrower face, so her paragraph re-wraps, and **the phone is
+        // the one where it lands on a different line count** — everything below
+        // it settles a line lower there and the fold's lift is netted against it,
+        // where on the other two it is not. Measured, on the running app, one
+        // device at a time:
+        //
+        //     se        36.00 pt
+        //     promax    35.58 pt
+        //     phone     11.58 pt
+        //
+        // The two ends of the range agree to 0.42 pt and the middle one differs
+        // by a Cormorant line. That is why this is a device claim and not one
+        // number with slack around it.
+        //
+        // **The wrong answers, and why each is wrong.** `maxDelta: 26` would
+        // cover all three and make this screen ten times coarser for the rest of
+        // the build — the exact edit Phase 3.7 had to undo on the Field, and what
+        // charter §3 means by *"never weaken one to make it pass."*
+        // `settles: [11.5, 36.0]` would let *any* class settle at *either* value,
+        // which is three claims where there is one fact per screen. So
+        // `ClassifiedShift` grew a `device`, the way it grew `settles` when 3.7
+        // needed to say "this moved by the height of the thing above it": every
+        // claim stays at the 2.5 pt resolution it was measured at.
+        //
+        // **All three are pinned, and none falls through.** A fourth device class
+        // would meet the 17 pt `button|` bound below and fail loudly, which is
+        // the right answer: nobody has measured this element on it.
+        //
+        // **These entries exist at all because that bound would have taken the
+        // move silently.** It allows 17 pt for the Cormorant reflow, and the
+        // phone's 11.50 is inside it — so without a line here, a change *this*
         // phase made would have been absorbed by a sentence written about a
-        // different phase, which is the same failure as widening a bound. Named
-        // here, at 2.5 pt of residual, it is the tightest entry on the screen.
+        // different one, which is the same failure as widening a bound.
         //
         // First in the table on purpose: `ClassifiedShift.allowance` takes the
         // first match, and the two blanket bounds below would otherwise answer
-        // for it.
+        // for them.
         //
         // **`0` is deliberately not in `settles`.** The Field's entry carries it
         // because that door translates only what is below it and half that
@@ -319,12 +398,24 @@ enum FeltRegisterClassifications {
         // and it is *required* to have moved. Allowing zero would let a fold
         // that had stopped folding pass quietly.
         ClassifiedShift(screen: "detail", keyContains: "button|go deeper",
-                        maxDelta: 2.5, settles: [11.5], reason:
+                        maxDelta: 2.5, settles: [36.0], device: "se", reason:
             "Phase 3.8. `go deeper` is the library's second shelf and the only element below the "
             + "fold. The first shelf replaces a section taller than itself, so this rises by the "
-            + "difference — 11.58 pt, measured — and nothing above the shelves moves at all. It is "
-            + "written down rather than left to the 17 pt Cormorant bound below, which would have "
-            + "swallowed it without a sentence."),
+            + "difference — 36.00 pt from the pre-Phase-4 baseline on the SE, where §4.5's "
+            + "Cormorant paragraph keeps its line count and the two lifts add. Nothing above the "
+            + "shelves moves at all."),
+        ClassifiedShift(screen: "detail", keyContains: "button|go deeper",
+                        maxDelta: 2.5, settles: [35.58], device: "promax", reason:
+            "Phase 3.8, on the Pro Max: the same lift against the same reflow as the SE, in the "
+            + "widest column in the instrument, and it agrees with the narrowest to 0.42 pt — "
+            + "35.58 pt, measured. Nothing above the shelves moves at all."),
+        ClassifiedShift(screen: "detail", keyContains: "button|go deeper",
+                        maxDelta: 2.5, settles: [11.58], device: "phone", reason:
+            "Phase 3.8, on the phone, and this is the class where §4.5's Cormorant paragraph lands "
+            + "on a different line count — everything below it already settles a line lower here, "
+            + "so the fold's ~25 pt lift is netted against that and leaves 11.58 pt. Written down "
+            + "rather than left to the 17 pt Cormorant bound below, which is the one place this "
+            + "move would have been swallowed without a sentence."),
         ClassifiedShift(screen: "detail", keyContains: "text|", maxDelta: 19, reason: cormorant),
         ClassifiedShift(screen: "detail", keyContains: "button|", maxDelta: 17, reason: cormorant),
 
