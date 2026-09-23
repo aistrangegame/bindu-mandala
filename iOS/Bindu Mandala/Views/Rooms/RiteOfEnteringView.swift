@@ -77,6 +77,14 @@ struct RiteOfEnteringView: View {
     /// Her seed syllable, for the tone each beat lands on. `nil` is the bare
     /// root — silence about what is unknown, never a plausible pitch.
     let syllable: String?
+    /// Her five fields, for the five stations of the descent. Composed off her
+    /// own row exactly as ``words`` is.
+    let descentWords: DescentWords
+    /// Her ground, her carrier, her air and her withheld fifth — `nil` for a
+    /// preview or a capture. It **draws nothing and is asked nothing**: like
+    /// ``dwelling`` it has no property a view could read, which is how a room
+    /// stays whole with the sound off by construction rather than by care.
+    let voice: HomeVoice?
     /// The mechanism acting on her room, where Phase 3.3 has built one.
     let mechanism: RoomSurfaceMechanism?
     /// Called once, when he is inside.
@@ -146,6 +154,20 @@ struct RiteOfEnteringView: View {
     /// never asked for another frame. Every place this file moves him bumps
     /// this, so the ask is declared rather than incidental.
     @State private var moves = 0
+    /// Where he is in the descent, and what a touch does next — ``TheDescent``'s
+    /// four rules, drivable rather than spelled into this file.
+    @State private var descent = TheDescent()
+    /// How far he has gone into her mark, held where the room's driver can read
+    /// it on SceneKit's own thread. The same device the crossing uses, because
+    /// ``RoomApproach``'s own header says the descent *is* the same motion with
+    /// a different reason.
+    @State private var descending = RoomApproachSource(.standing(at: 0))
+    /// Whether her room has adapted far enough to be gone into. It is a wake
+    /// rather than a poll (``HomeDwelling``'s reason: the still path has no
+    /// render loop to hang one on), and on a return it is already true when he
+    /// arrives, because his own dwell opened the room past the adaptation.
+    @State private var wayDownIsOpen = false
+    @State private var adapting: Task<Void, Never>?
 
     // MARK: · Type, which is the only thing this file chooses
     //
@@ -162,6 +184,10 @@ struct RiteOfEnteringView: View {
     private static let rootSize: CGFloat = 25
     private static let glossSize: CGFloat = 16.5
     private static let promptSize: CGFloat = 11
+    /// The descent's one line. Between beat one's 23 and her quality's 16.5 —
+    /// her field is a fact about her rather than her gratitude, and it is read
+    /// standing in a shaft rather than at a threshold.
+    private static let descentSize: CGFloat = 19
     private static let promptTracking: CGFloat = promptSize * 0.3
 
     /// How far her roots stand apart at their widest. Design's `30px`.
@@ -173,6 +199,8 @@ struct RiteOfEnteringView: View {
     init(room: HomeRoom,
          words: RiteWords,
          syllable: String? = nil,
+         descentWords: DescentWords = DescentWords(lines: [], roots: []),
+         voice: HomeVoice? = nil,
          mechanism: RoomSurfaceMechanism? = nil,
          compression: Double,
          headStart: TimeInterval = 0,
@@ -184,6 +212,8 @@ struct RiteOfEnteringView: View {
         self.room = room
         self.words = words
         self.syllable = syllable
+        self.descentWords = descentWords
+        self.voice = voice
         self.mechanism = mechanism
         self.dwelling = dwelling
         self.onEntered = onEntered
@@ -209,12 +239,16 @@ struct RiteOfEnteringView: View {
                      clock: clock,
                      mechanism: mechanism,
                      approach: approach,
+                     descent: descending,
+                     descentRoots: descentWords.roots.count,
                      forceReduceMotion: reduceMotion,
                      moves: moves)
                 .allowsHitTesting(false)
 
             if rite.isCeremonial {
                 ceremony
+            } else if wayDownIsOpen {
+                goingDeeper
             }
         }
         .background(Color.ground)
@@ -233,6 +267,10 @@ struct RiteOfEnteringView: View {
         .onDisappear {
             crossing?.cancel()
             withdrawal?.cancel()
+            adapting?.cancel()
+            // The voice stops where it started. Nothing in the rooms layer can
+            // outlive the room that opened it.
+            voice?.closes()
             // He has left. A mark that had not arrived does not arrive.
             dwelling?.end()
             handOverTheStay()
@@ -365,12 +403,75 @@ struct RiteOfEnteringView: View {
         }
     }
 
+    // MARK: - Going deeper, on screen
+
+    /// The descent's whole surface: one line of hers, and one instruction.
+    ///
+    /// **No motion and no fade.** The field is rendered as motion by the shaft
+    /// (``DescentShaft``) — that is Design's own division of labour — and what
+    /// is written here is the inscription beside it, which arrives at the
+    /// station because he has arrived at the station. A word that faded in would
+    /// need a loop the reduce-motion path deliberately does not have, and would
+    /// buy nothing: he is already reading it.
+    ///
+    /// **Nothing here says how deep he is.** There is no station number, no
+    /// rail, no pip, and no place to put one: a line of hers and a prompt of two
+    /// words are the whole of it, at every one of the five.
+    @ViewBuilder
+    private var goingDeeper: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            if let station = descent.station, !descentWords[station].isEmpty {
+                Text(descentWords[station])
+                    .font(AppFont.sanskrit(Self.descentSize))
+                    .tracking(Self.descentSize * 0.04)
+                    .lineSpacing(Self.descentSize * 0.5)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.cream)
+                    .opacity(RiteOfEntering.phraseAlpha)
+                    .shadow(color: .black.opacity(0.95), radius: 15, y: 2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 34)
+            }
+            Spacer(minLength: 0)
+            descentPrompt
+                // **Above the way out, never on top of it.** ``TheWayOut``
+                // draws its own instruction at the same 64 points off the
+                // floor that the rite's prompt uses, and the rite could put
+                // one there safely only because the way out is not offered
+                // during the ceremony. This one *is* offered at the same time
+                // as the way out, so it stands a prompt's height and a gap
+                // above it — and the two read as the ladder they are: go
+                // deeper, or hold and withdraw.
+                .padding(.bottom, 64 + 44 + 14)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private var descentPrompt: some View {
+        Text((descent.prompt ?? TheDescent.mouthPrompt).words)
+            .font(AppFont.label(Self.promptSize))
+            .textCase(.uppercase)
+            .tracking(Self.promptTracking)
+            .foregroundStyle(Color.cream)
+            .opacity(RiteOfEntering.promptAlpha)
+            .frame(minHeight: 44)
+    }
+
     // MARK: - What a touch does
 
     /// The first beat's tone lands as the crossing opens — Design's
     /// `beginEnter`, which strikes before the walker has done anything.
     private func open() {
         adoptMotion()
+        // Her ground comes up under the crossing, and her carrier with the
+        // distance — Design's *"entering her: the carrier comes up"*. It is the
+        // first thing that happens, before the first tone is struck, so the
+        // strike lands on a room that is already sounding.
+        voice?.opens()
+        voice?.crossing(approach.value())
         strike(.phrase)
     }
 
@@ -390,10 +491,46 @@ struct RiteOfEnteringView: View {
     /// Where he stands now, and the room asked for a frame that says so.
     private func stand(at approach: RoomApproach) {
         self.approach.set(approach)
+        voice?.crossing(approach.to)
         moves &+= 1
     }
 
+    /// Where he is going in the shaft, and the room asked for a frame that says
+    /// so. The descent's own half of ``stand(at:)``, and it bumps the same
+    /// token, because a still room is posed once per move he makes.
+    private func descend(to travel: Double, over motion: RoomApproach.Motion) {
+        let now = Date().timeIntervalSinceReferenceDate
+        descending.set(RoomApproach(from: descending.value(at: now), to: travel,
+                                    since: now, motion: motion))
+        moves &+= 1
+    }
+
+    /// The motion of one stretch of the descent.
+    ///
+    /// Design's own station rate, and under reduced motion the walker **steps**
+    /// between stations exactly as he steps between the rite's — quantized,
+    /// never disabled, and the same reading ``RoomApproach/crossing(from:to:at:reduceMotion:)``
+    /// already took for the way in.
+    private var descentMotion: RoomApproach.Motion {
+        reduceMotion
+            ? .still
+            : .easing(tau: RoomApproach.tau(ratePerFrame: RoomApproach.ratePerFrame))
+    }
+
     private func touch() {
+        // He is inside, and her room has opened far enough to be gone into:
+        // the same touch that carried him in carries him deeper.
+        if case .inside = rite.stage {
+            // **A man on his way out is not going deeper.** The way out's own
+            // gesture lives on its prompt and the room's touch lives on the
+            // whole surface, so a press that begins on the prompt and is let go
+            // can reach both; before this phase a touch inside a room did
+            // nothing at all and the overlap could not be felt. The stay knows
+            // when he has begun to cross out, and that is the fact to ask.
+            guard wayDownIsOpen, stay.endedAt == nil else { return }
+            descend(to: descent.onward(), over: descentMotion)
+            return
+        }
         guard case .beat = rite.stage else { return }
         let now = Date().timeIntervalSinceReferenceDate
         let landed = rite.touch(at: now)
@@ -422,12 +559,40 @@ struct RiteOfEnteringView: View {
         // The room opens where her accumulated dwell has earned, and he is
         // never told that it did.
         clock.begin(opening: rite.headStart, at: now)
+        // Her clock is running, so the voice follows it from here.
+        voice?.inside(clock: clock)
+        // …and so does the way down, which opens when her room has adapted —
+        // at once in a room his own dwell has already opened that far.
+        watchForTheWayDown()
         // …and the stay begins, which is the only thing in the instrument that
         // records a silence. It is begun on **her own clock**, the one the room
         // beneath these words is being drawn by, so the dwelling and the room
         // cannot stand at two different instants (``HomeDwelling``'s header).
         dwelling?.begin(clock: clock)
         onEntered?()
+    }
+
+    /// Sleep until her room has adapted, and open the way down there.
+    ///
+    /// A wake rather than a poll, for ``HomeDwelling``'s reason: the mark is
+    /// known the instant the clock begins, and the reduce-motion path has no
+    /// render loop to notice it on. A room that opened past the adaptation on
+    /// arrival — which is what a head start earned by accumulated dwell *is* —
+    /// answers immediately and sleeps not at all.
+    private func watchForTheWayDown() {
+        adapting?.cancel()
+        if TheDescent.isOffered(atChamberTime: clock.chamberTime()) {
+            wayDownIsOpen = true
+            return
+        }
+        let wait = HomeMemory.firstAdaptation - clock.chamberTime()
+        adapting = Task { @MainActor in
+            if wait > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(min(wait, 86_400) * 1_000_000_000))
+            }
+            guard !Task.isCancelled else { return }
+            wayDownIsOpen = true
+        }
     }
 
     // MARK: - What the way out does
@@ -450,8 +615,17 @@ struct RiteOfEnteringView: View {
         stay.ends(at: clock.elapsed(now: now))
         // A mark that has not arrived does not arrive while he is on his way out.
         dwelling?.end()
-        stand(at: RoomApproach(from: approach.value(at: now), to: 0,
-                               since: now, motion: .steady(seconds: max(0, seconds))))
+        // **From inside her mark, the way out is the way down, run backwards.**
+        // He rises out of the shaft over exactly the length of the hold and is
+        // standing in her room as the surface goes — which is the same sentence
+        // the crossing out already speaks one layer up, and it means a walker
+        // five stations deep is never taken off a screen he never stood on.
+        if descent.withdraws() {
+            descend(to: 0, over: .steady(seconds: max(0, seconds)))
+        } else {
+            stand(at: RoomApproach(from: approach.value(at: now), to: 0,
+                                   since: now, motion: .steady(seconds: max(0, seconds))))
+        }
         watchTheWithdrawal(over: seconds)
     }
 
@@ -488,8 +662,15 @@ struct RiteOfEnteringView: View {
         withdrawal = nil
         guard !rite.isCeremonial, stay.goesOn() else { return }
         let now = Date().timeIntervalSinceReferenceDate
-        stand(at: RoomApproach.crossing(from: approach.value(at: now), to: 1,
-                                        at: now, reduceMotion: reduceMotion))
+        if descent.goesOn() {
+            // He is put back at the station he was standing at, not at the
+            // mouth: a man who thought about leaving and did not has not lost
+            // the descent he had made.
+            descend(to: descent.travel, over: descentMotion)
+        } else {
+            stand(at: RoomApproach.crossing(from: approach.value(at: now), to: 1,
+                                            at: now, reduceMotion: reduceMotion))
+        }
         dwelling?.begin(clock: clock)
     }
 
@@ -498,7 +679,9 @@ struct RiteOfEnteringView: View {
         crossing?.cancel()
         withdrawal?.cancel()
         withdrawal = nil
+        adapting?.cancel()
         dwelling?.end()
+        voice?.closes()
         handOverTheStay()
         onLeft?()
     }
@@ -533,6 +716,7 @@ extension RiteOfEnteringView {
     static func entering(_ shakti: Shakti,
                          remembering store: HomeMemoryStore,
                          mechanism: RoomSurfaceMechanism? = nil,
+                         sounding: Bool = true,
                          forceReduceMotion: Bool = false,
                          onEntered: (() -> Void)? = nil,
                          onLeft: (() -> Void)? = nil) -> RiteOfEnteringView? {
@@ -542,6 +726,18 @@ extension RiteOfEnteringView {
         return RiteOfEnteringView(room: room,
                                   words: RiteWords.compose(shakti: shakti, ring: room.ring),
                                   syllable: shakti.bijaSyllable,
+                                  // Her five fields, for the five stations.
+                                  descentWords: DescentWords.compose(shakti: shakti),
+                                  // Her voice, and the one thing it needs from
+                                  // what her room remembers: accumulated dwell,
+                                  // which is what the withheld fifth is withheld
+                                  // against. Read once, as the compression and
+                                  // the head start are, and never subscribed to.
+                                  voice: HomeVoice.forRoom(
+                                    ring: room.ring,
+                                    syllable: shakti.bijaSyllable,
+                                    accumulatedDwell: store.accumulatedDwell(for: position),
+                                    sounding: sounding),
                                   mechanism: mechanism,
                                   compression: store.compression(for: position),
                                   headStart: store.headStart(for: position),

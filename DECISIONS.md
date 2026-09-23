@@ -2699,3 +2699,177 @@ The second candidate was wrong for the same reason and cost another run: **I fee
 **And a flick is not a gesture.** `XCUIApplication.swipeUp()` moved the axis on the phone and did not reach the `DragGesture` at all on the SE — the hint stayed up and the enclosure never changed, on the screen size where the walk matters most. It is a press-and-drag between two points given as fractions of the glass now, which is the gesture a thumb actually makes and is the same on every screen. One screen height is one band, so how far one drag carries him is his hand's business and the settle's: the climb is asked again until he has left the enclosure he opened on, rather than assumed to happen in one.
 
 Recorded because the lesson generalises past this branch: *a wait is only a flake absorber if the thing waited for cannot already be true.* Both original sentinels would have passed ninety-nine runs in a hundred, and this build reaches Ashrey once.
+
+---
+
+## Phase 3.9 · The descent, the return memory, and the carrier live in every room
+
+**The three things, and one of them was already half true.** §3.9 asks for the descent, the
+return memory and the carrier. Read against the shipped tree first, as the charter requires:
+**the return memory was already wired** and had been since 3.7 — `store.compression(for:)`
+shortens the ceremony and `store.headStart(for:)` opens the chamber clock further along, both
+read at `RiteOfEnteringView.entering(_:remembering:)`, and `HomeMemoryStore.record` is called on
+the way out so there is finally something to compress. What was *not* wired was the part of the
+return memory with teeth: `HomeMemory.grantsFifth` and `HomeMemoryStore.grantsFifth` had no
+caller anywhere in the app, so the one thing Design withholds until a relationship exists was
+withheld from everybody, forever. That is where this phase put it, and it is written up under
+the carrier because the fifth is a sound.
+
+### 1 · The descent goes **into her mark**, and that is why it breaks no law
+
+Design's `homes-descent.js` is five free-standing lit solids strung along a shaft: a torus knot
+for her tattva, thirteen boxes for her body, sprites for her roots, an icosahedron for her
+quality, three tori for her phrase. **The binding condition refuses every one of them** — an
+attribute is an action on the room's own material, never a free-standing lit solid — and the
+charter's restraint clause says which way that conflict is settled.
+
+So the descent is not built beside her mark; it is built **into** it. Her attribute has been
+pressing, furrowing, cracking or swelling the room's own material for the whole of the stay, and
+going deeper is going into the one thing in the room that is hers. The shaft is that mark's own
+rim repeating inward — which is **Design's own sentence for it**, *"her seat repeating inward,
+so the falling is legible"* — and every station is something that happens to those rims and to
+nothing else. `testTheDescentHoldsNoSolidInAnyRoom` counts the meshes in the descent of all 102
+and gets **zero**; every rim is a line loop, so there is no face anywhere for a light to sit on.
+`testOpeningTheDescentLeavesHerLayerEmpty` holds the other end: the shaft stands in the
+**building** layer, because it is the room's material, and `solidsInHerLayer` still answers zero
+with a descent open.
+
+Design's motions are kept exactly where they can be, and the numbers literally: `STATION_Z`
+`[-16, -34, -52, -70, -88]`, forty-six rims at `-8 - 2.2i` and `5.4 · 0.985^i`, the nearness
+bands of 34 and 22, `0.05 + 0.34·near`, the roots' fourteen-second cycle at radius 3.4 and rate
+0.12. They can be kept literally because Design's rooms and this one are the same size — Design's
+mount is `(0.5 - alt)·6.4 - 0.4` and so is `HomeAttribute.mount`, which makes `RoomUnits.roomHeight`
+exactly Design's 6.4. A test pins that identity, so a body that ever changes size fails here
+rather than landing the stations silently in the wrong place. **What changed is *what* moves** —
+a rim of the room's material rather than a sprite — and nothing about how.
+
+**Design's own defect at station two is named rather than inherited.** Its comment promises "the
+body as horizontal registers, hers alight", and its arithmetic for which one is hers is
+`Math.round(6 + (0.5 - 0.5) * 6)` — a dead expression that is `6` for every Śakti in the
+instrument, so in the shipped Axis her body is never actually found. Here the thirteen registers
+are read off her own altitude, and **what marks hers is that the shaft runs true through it while
+it is thrown off its axis everywhere else**: the room's material saying where she lives by being
+undisturbed there, which is the sentence every room in the instrument already speaks.
+
+**The axis is her own altitude, and the eye comes to it.** The shaft runs level at the height her
+mark stands at and the eye descends to that height over the first stretch, so a Śakti felt at the
+soles is gone *down* into and one felt at the crown is gone *up* into — with no rule anywhere
+that says so. `RoomUnits.height(forBodyAltitude:)` is the only vertical conversion in the
+instrument and it is the one this reads. Going deeper is coming to her level, in the plainest
+sense the geometry has.
+
+**The gesture is the one the room already had.** Touch to go on, hold to go out — that is the
+whole vocabulary of the rooms layer, and the last thing the rite says at the threshold is *touch
+to enter*. Going deeper is the same touch, which is Design's own framing (*"you do not leave her
+room — you keep going"*). There is no control, no chevron and no sheet in it. A touch at the
+floor brings him back up into the room, because the khaḍgamālā is a circle and so is this. The
+way out, held from inside the shaft, **rises him out of it over exactly the length of the hold**
+and lets him go from the room's own mouth — a walker five stations deep is never taken off a
+screen he never stood on — and a let-go puts him back at the station he was standing at rather
+than at the mouth.
+
+**Two collisions the gesture created, both fixed rather than documented.** The way out draws its
+instruction 64 points off the floor, which is where the rite's prompt sits; the rite could put one
+there safely only because the way out is not offered during the ceremony, and the descent's prompt
+*is* offered at the same time. It stands a prompt's height and a gap above it, and the two read as
+the ladder they are. And the way out's gesture lives on its own prompt while the room's touch lives
+on the whole surface, so a press that begins on the prompt and is let go can reach both — which
+could not be felt before this phase, because a touch inside a room did nothing at all. A man who
+has begun to cross out is not going deeper, and `TheStay` already knows when he has.
+
+**No returning line, and no station indicator.** The handoff's §4.9 offers *"one line, once, on
+returning: you have stood here before"*; it was already refused for the rite (this file, Phase
+3.1) and the refusal stands for the descent. The descent's whole surface is one line of hers and
+one instruction of four words at each of the five stations. There is nowhere in it to put a
+number and nothing that counts.
+
+### 2 · The return memory, made audible
+
+What a room remembers already changed how it opened. This phase gives it two more answers, and
+neither of them is a sentence:
+
+- **The way down is earned.** The descent is not offered until her room has adapted
+  (`HomeMemory.firstAdaptation`) — not a gate but the plain fact that going into her mark before
+  the eye has settled is going past what there is to see. The consequence is the phase's sharpest
+  edge held on the right side: a room opens on the chamber clock at the head start his accumulated
+  dwell has earned, so **a head start past sixty-two seconds means the room is already adapted when
+  he walks in**, and a Śakti he has truly stood with lets him go deeper at once while a stranger
+  makes him wait out the settling. Nothing announces it and there is no sentence in the instrument
+  that could. Design's head-start cap (`HOLD_END - 6`) means the relationship opens the way down
+  and never buys the room's floor, which is checked rather than assumed.
+- **The withheld fifth is the relationship.** `HomeMemory.grantsFifth(ring:elapsed:dwell:)` is
+  handed to `HomeSoundService.setRoom`'s `b` on every telling: the ninth āvaraṇa grants it
+  outright, and otherwise it is whichever is further along — this stay past the hold's end, or
+  three minutes of accumulated dwell in *her* room. So a room he knows sounds fuller the moment he
+  arrives. It is the only place in the instrument where what a room remembers of him is perceptible
+  as itself, and it is perceptible as a sound rather than as a fact.
+
+`HomeMemoryStore.accumulatedDwell(for:)` is the one raw value the façade now hands out, to exactly
+one caller, read once at the top of the stay exactly as the compression and the head start are.
+
+### 3 · The carrier, live in every room — and the reason it was silent
+
+`HomeSoundService` was built whole in Phase 2.3 (1,067 lines: nine grounds voiced by their own
+ring's technique, her bīja as a just interval above her āvaraṇa's root, the air layer, the
+withheld fifth) and **nothing ever called it**. `setGround`, `setCarrier` and `setRoom` had no
+call site anywhere in the app. The one gesture that did — `strike`, at each beat of the rite,
+added in 3.1 — was **inert**, because every gesture begins `guard isBuilt` and nothing had ever
+called `start()`. The instrument has been silent in all 102 rooms since it was written, and the
+rite's three tones have never sounded.
+
+`Services/HomeVoice.swift` is the conductor: the only thing in the rooms layer that knows the
+service exists. Her ground comes up under the crossing, her carrier comes up **with the
+distance** (Design's *"entering her: the carrier comes up"* — the amount *is* the approach), the
+filter opens on `HomeGrammar.settling`, which is the room's own curve rather than a second one
+beside it, and the fifth is the relationship above. It stops where it started: there is no path
+by which a room's voice outlives the room.
+
+**It wakes on a cadence, where `HomeDwelling` does not, and the difference is principled.** A stay
+has exactly two marks on it, so the dwelling sleeps until each. The carrier has none — the filter
+opens continuously and the fifth arrives continuously — so there is something to say at every
+moment. It is still not a render loop: the engine interpolates toward whatever target it was last
+handed with time constants of 0.6 to 2 seconds, so one telling a second is already finer than the
+ear can hear arriving. **And it is the same one a second on the reduce-motion path**, where there
+is deliberately no render loop to hang anything on. The sound does not depend on the room moving.
+
+**A room is whole with the sound off**, and it is a constraint rather than a hope: nothing in
+`HomeVoice` returns a value, publishes a property or imports SwiftUI, so there is nothing a view
+could branch on. `testASilentStayDecidesExactlyWhatASoundingOneDecides` drives the same stay twice,
+with a voice and with none, and compares every decision the room made.
+
+**The silent switch, ruled.** A carrier that runs for the whole of a stay is the instrument
+choosing to sound, and a phone held on silent has already answered that — so the room asks for
+`respectsSilentSwitch`, which `.ambient` is. A struck bīja is a gesture the walker just made with
+his own finger and the switch cannot have meant it, so the **rest of the app keeps its own
+ruling**: the service's default is untouched, and `restoreSession()` puts the shared session back
+to `.playback + .mixWithOthers` on teardown. That last is not tidiness. `RingAudioService` and
+`BijaSoundService` each set their category **once**, behind a `configured` flag, and never again —
+a session left on `.ambient` would have quietly silenced every later bīja tap under a silent
+switch, on screens that ruled the other way and never knew this one had been there.
+
+**And the flag would not have worked at all.** `configureSession` passed `options: [.mixWithOthers]`
+for both branches, and that option is documented for `.playAndRecord`, `.playback` and
+`.multiRoute` only — with `.ambient` it throws `-50`, `configureSession` answers `false`, and
+`start()` returns without ever building the graph. Phase 2.3 shipped the flag with no caller, so
+the branch had never been taken: the first stay that asked for the silent switch to be honoured
+would have been silent in every room with no error anywhere to say why. Fixed and pinned by a
+source check.
+
+### What was deliberately left
+
+- **`BijaSoundService.play(forPosition:)` stays dead.** It is the older whole-tone sine anchored at
+  174 Hz with a recorded-voice preamble, and a room is the wrong place for it: her syllable
+  *already* becomes the carrier's own just interval above her āvaraṇa's root, so a second
+  synthesised tone would be two voices saying the same thing and the second one would not be hers.
+  When Ashrey's 102 bīja recordings exist (§7), the room is where they should sound and the
+  question reopens — with his voice, not with a sine.
+- **No descent glissando.** The 2026-09-07 ruling records that the phrase is the brief's alone and
+  appears nowhere in Design's package, and hands the question to this phase. Nothing was invented:
+  the descent has the ground, the carrier, the air and the fifth the room already has, and the
+  shaft is what moves. The filter opening as he descends is not a glissando and is not claimed as
+  one.
+- **No ascent as its own passage.** Expansion idea 29 is parked in the brief's own triage, and the
+  way back up is the way down run the other way, which is what leaving is everywhere else here.
+- **The rims are lines, not tubes.** A tube would take light and is a solid; the whole point of the
+  shaft is that it is drawn rather than lit. That is a deliberate thinness, and 3.10 owns deepening
+  it if it wants to — but not by adding a face.

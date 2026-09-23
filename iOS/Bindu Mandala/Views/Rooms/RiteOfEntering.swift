@@ -66,11 +66,27 @@ enum RiteBeat: Int, CaseIterable, Equatable {
 enum RitePrompt: Equatable {
     case goOn
     case enter
+    /// Phase 3.9, at the mouth of the descent. Not *"go deeper into her card"*
+    /// and not a name for what is down there: the same grammar as the other
+    /// two, naming a direction and nothing else.
+    ///
+    /// **There is no fourth prompt, and the floor of the descent has none of its
+    /// own.** A touch there carries him out of her mark and back into her room,
+    /// and every word for that — *come back*, *return*, *again* — is a word
+    /// about having been somewhere, which `testTheRiteNeverSaysHeHasBeenHereBefore`
+    /// refuses the rite outright and is right to. So the floor says ``goOn``,
+    /// like every other station: the descent is a circle and going on from its
+    /// floor is standing in her room. What tells him he has reached the floor is
+    /// the floor — the shaft has closed to its own centre and dimmed as he
+    /// arrived — which is the instrument speaking in its own register instead of
+    /// in a sentence.
+    case goDeeper
 
     var words: String {
         switch self {
-        case .goOn:  return "touch to go on"
-        case .enter: return "touch to enter"
+        case .goOn:     return "touch to go on"
+        case .enter:    return "touch to enter"
+        case .goDeeper: return "touch to go deeper"
         }
     }
 }
