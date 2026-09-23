@@ -33,7 +33,9 @@ struct SpikeField {
     /// bench run. See `MandalaDrawCensus.SeatSnapshot`.
     let censusSeats: [MandalaDrawCensus.SeatSnapshot]
     let atmos: [Int: Atmosphere]
-    let countByKp: [Int: Int]
+    /// Who has been felt. A set, not a tally: nothing in the Mandala's render
+    /// path is allowed to know how *often*, and the census models that path.
+    let felt: Set<Int>
     let todayKp: Int
 
     /// kp 29 — the first Ring-2 Karṣiṇī, the position the repo's UI tests already
@@ -55,14 +57,14 @@ struct SpikeField {
         self.seats = placed
         self.censusSeats = MandalaDrawCensus.snapshot(placed)
         var a: [Int: Atmosphere] = [:]
-        var c: [Int: Int] = [:]
+        var f: Set<Int> = []
         for s in built {
             let k = s.khadgamalaPosition ?? s.position
             a[k] = Atmosphere.derive(from: s, at: variant)
-            c[k] = (k % 4 == 1) ? (k % 6) + 1 : 0
+            if k % 4 == 1 { f.insert(k) }
         }
         self.atmos = a
-        self.countByKp = c
+        self.felt = f
         self.todayKp = todayKp
     }
 

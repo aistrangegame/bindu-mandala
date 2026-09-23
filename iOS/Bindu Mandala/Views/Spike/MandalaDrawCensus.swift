@@ -93,7 +93,21 @@ enum MandalaDrawCensus {
         var todayKp: Int
         var focusKp: Int?
         var familyKp: Set<Int>
-        var countByKp: [Int: Int]
+        var felt: Set<Int>
+        /// Phase 5's switch. The lit path draws each enclosure as a band of three
+        /// strokes rather than one hairline, and the Bindu gains the gaze's two
+        /// marks; every seat branch is unchanged.
+        ///
+        /// **It defaults to what ships, not to `false`.** It defaulted to `false`
+        /// for the whole of Phase 5, and the consequence was that the G5 census
+        /// baseline and the on-device bench both measured a canvas the app was
+        /// no longer going to draw — a baseline that has quietly stopped
+        /// describing the app is worse than no baseline, because it still goes
+        /// green. A measuring apparatus reads the same switch the app reads.
+        var lightOn: Bool = MandalaLight.enabled
+        /// 0…1 of the gaze (idea 38). At a full gaze the field holds still, so
+        /// the per-seat flare and the expanding halo stop being issued.
+        var tratak: Double = 0
         var flashRing: Int?
         var flashBornAt: TimeInterval?
         var constellation: Double
@@ -118,7 +132,9 @@ enum MandalaDrawCensus {
         }
 
         // drawEnclosures — rings 2…8, dropped once the circle shrinks under 4pt.
-        for ring in 2...8 where MandalaWorld.ringRadius(ring) * scale > 4 { c.enclosures += 1 }
+        // With the light on each enclosure is a band — a core and two flanks.
+        let perEnclosure = i.lightOn ? 3 : 1
+        for ring in 2...8 where MandalaWorld.ringRadius(ring) * scale > 4 { c.enclosures += perEnclosure }
 
         // drawTodayRing — one dashed circle, only if today's seat is on a ring with radius.
         if let seat = i.seats.first(where: { $0.kp == i.todayKp }),
@@ -167,8 +183,7 @@ enum MandalaDrawCensus {
             let isFocus = kp == i.focusKp
             let isToday = kp == i.todayKp
             let inFamily = i.familyKp.contains(kp)
-            let n = i.countByKp[kp] ?? 0
-            let felt = n > 0
+            let felt = i.felt.contains(kp)
             let dimmed = i.focusKp != nil && !isFocus && !inFamily
             let lit = felt || isToday || isFocus || inFamily
 
@@ -176,11 +191,12 @@ enum MandalaDrawCensus {
             // per-seat breath. None of that changes how many primitives it issues,
             // so the census does not recompute it — only the branches are mirrored.
 
-            if !i.reduceMotion {
+            let quiet = 1 - (i.lightOn ? min(max(i.tratak, 0), 1) : 0)
+            if !i.reduceMotion, quiet > 0.001 {
                 let fDur = 8.0 + Double(kp % 13)
                 let ph = (i.t + Double(kp) * 0.37).truncatingRemainder(dividingBy: fDur) / fDur
-                let flareO: Double = ph < 0.06 ? (ph / 0.06) * 0.55
-                    : ph < 0.22 ? (1 - (ph - 0.06) / 0.16) * 0.55 : 0
+                let flareO: Double = (ph < 0.06 ? (ph / 0.06) * 0.55
+                    : ph < 0.22 ? (1 - (ph - 0.06) / 0.16) * 0.55 : 0) * quiet
                 if flareO > 0.001 { c.seatFlares += 1 }
             }
             if lit { c.seatGlows += 1 }
@@ -203,8 +219,10 @@ enum MandalaDrawCensus {
             }
         }
 
-        // drawBinduGlow — always one.
+        // drawBinduGlow — the haze always, plus the gaze's white light behind
+        // the point and the point itself once Tratak has begun.
         c.binduGlow = 1
+        if i.lightOn, i.tratak > 0.001 { c.binduGlow += 2 }
         return c
     }
 }

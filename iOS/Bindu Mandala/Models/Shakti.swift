@@ -63,6 +63,18 @@ final class Shakti {
     /// Airtable's authoritative recognition count (flddp0tLpf8iuxyt4).
     var serverRecognitionCount: Int?
 
+    /// Whether she has ever been felt.
+    ///
+    /// The reduction lives **here**, on the model, and not on the screen that
+    /// draws her. `LawsDrawnMeasureTests` refuses a practice count anywhere
+    /// under `Views/Mandala/`, `Views/Memory/`, `Views/Spike/` or `Theme/`, and
+    /// the reason is the seven-step radius ramp Phase 5 deleted: a count that
+    /// arrives at a drawing surface becomes a dimension eventually, whatever it
+    /// arrived for. So the count is turned into a state at the store and only
+    /// the state travels. Whether she has been felt may be seen; how often may
+    /// not.
+    var hasBeenFelt: Bool { (serverRecognitionCount ?? 0) > 0 }
+
     init(
         position: Int,
         name: String,

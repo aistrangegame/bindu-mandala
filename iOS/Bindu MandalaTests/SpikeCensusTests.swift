@@ -50,9 +50,8 @@ final class SpikeCensusTests: XCTestCase {
             }
         }
         // The documented felt distribution — one seat in four.
-        let felt = field.countByKp.values.filter { $0 > 0 }.count
-        XCTAssertEqual(felt, 26, "the bench's felt distribution is kp % 4 == 1")
-        XCTAssertGreaterThan(field.countByKp[field.todayKp] ?? 0, 0, "today's seat is felt in this fixture")
+        XCTAssertEqual(field.felt.count, 26, "the bench's felt distribution is kp % 4 == 1")
+        XCTAssertTrue(field.felt.contains(field.todayKp), "today's seat is felt in this fixture")
     }
 
     /// The census now branches on a plain-value snapshot rather than on the
@@ -124,7 +123,9 @@ final class SpikeCensusTests: XCTestCase {
         XCTAssertEqual(t.seatHalos, 1, "today alone wears the halo")
         XCTAssertEqual(t.constellation, 0, "no seat is focused")
         XCTAssertEqual(t.todayRing, 1)
-        XCTAssertEqual(t.enclosures, 7, "rings 2…8 at the fitted scale")
+        XCTAssertEqual(t.enclosures, 21,
+                       "rings 2…8 at the fitted scale, three strokes each: under the light an "
+                       + "enclosure is a gem-light band and not a hairline")
         XCTAssertEqual(t.total, t.fills + t.strokes + t.texts, "the three families account for everything")
     }
 
@@ -159,7 +160,7 @@ final class SpikeCensusTests: XCTestCase {
 
         let t = MandalaDrawCensus.tally(MandalaDrawCensus.Input(
             camera: cam, size: size, seats: field.censusSeats, todayKp: field.todayKp,
-            focusKp: kp, familyKp: family, countByKp: field.countByKp,
+            focusKp: kp, familyKp: family, felt: field.felt,
             flashRing: nil, flashBornAt: nil,
             constellation: 1, constellationStart: nil,
             reduceMotion: true, t: 1_000_000))
@@ -185,7 +186,7 @@ final class SpikeCensusTests: XCTestCase {
         func threads(at t: TimeInterval) -> Int {
             MandalaDrawCensus.tally(MandalaDrawCensus.Input(
                 camera: cam, size: size, seats: field.censusSeats, todayKp: field.todayKp,
-                focusKp: kp, familyKp: family, countByKp: field.countByKp,
+                focusKp: kp, familyKp: family, felt: field.felt,
                 flashRing: nil, flashBornAt: nil,
                 constellation: 1, constellationStart: start,
                 reduceMotion: false, t: t)).constellation
@@ -225,7 +226,11 @@ final class SpikeCensusTests: XCTestCase {
                     census.add(MandalaDrawCensus.tally(MandalaDrawCensus.Input(
                         camera: st.camera, size: size, seats: field.censusSeats,
                         todayKp: field.todayKp, focusKp: st.focusKp, familyKp: st.familyKp,
-                        countByKp: field.countByKp,
+                        felt: field.felt,
+                        // Explicit, never the default: a baseline is a fact about one
+                        // configuration, and one that reads a launch argument would
+                        // measure a different app on a different invocation.
+                        lightOn: true,
                         flashRing: st.flash?.ring, flashBornAt: st.flash?.bornAt,
                         constellation: st.constellation, constellationStart: st.constellationStart,
                         reduceMotion: false, t: t)))
@@ -247,29 +252,111 @@ final class SpikeCensusTests: XCTestCase {
         }
     }
 
+    /// **The baseline describes the app that ships.**
+    ///
+    /// The bounds above are the *lit* canvas's. They were re-taken lit when the
+    /// phase flag came off, and they mean nothing if the app then ships unlit —
+    /// so the two facts are tied together here rather than left to whoever next
+    /// reads the doc comment. This is the check that would have gone red for the
+    /// whole of Phase 5, when `lightOn` defaulted to `false` and both the census
+    /// and the on-device bench measured a canvas the walker was never going to
+    /// see.
+    func testTheBaselineMeasuresTheCanvasTheAppActuallyDraws() {
+        XCTAssertTrue(MandalaLight.enabled,
+                      "the G5 census bounds in this file are the lit canvas's, and the app now "
+                      + "builds unlit — re-take the baseline or put the light back")
+    }
+
+    /// **What the light costs, per frame, in primitives.**
+    ///
+    /// Kept as a check rather than as a sentence in a commit message, because
+    /// the whole reason the baseline drifted is that the cost of the lit path
+    /// was never once measured. Three strokes per visible enclosure instead of
+    /// one, and the gaze's two marks at the Bindu; every seat branch is
+    /// untouched, which is why the wide tier moves and the deep zoom barely
+    /// does.
+    ///
+    /// The bound is deliberately loose at the top and tight in kind: what would
+    /// be a finding is the light turning out to cost a *multiple* rather than a
+    /// margin, because the census counts primitives and not pixels and a
+    /// multiple is the only thing it could see of a fill-rate problem.
+    func testTheLightsCostIsAMarginAndNotAMultiple() {
+        for scene in [SpikeScene.tier0AllSeats, .tier2Bloom, .descent] {
+            let clock = SpikeMetrics.Clock(offset: 0, epoch: 0)
+            let script = SpikeScript(scene: scene, field: field, clock: clock)
+            var unlit = SpikeMetrics.CensusAccumulator()
+            var lit = SpikeMetrics.CensusAccumulator()
+            for frame in 0..<Self.baselineFrames {
+                let sceneTime = Double(frame) / Self.baselineHz
+                let t = clock.referenceTime(forScene: sceneTime)
+                let st = script.state(atScene: sceneTime, in: size)
+                func tally(_ on: Bool) -> MandalaDrawCensus.Tally {
+                    MandalaDrawCensus.tally(MandalaDrawCensus.Input(
+                        camera: st.camera, size: size, seats: field.censusSeats,
+                        todayKp: field.todayKp, focusKp: st.focusKp, familyKp: st.familyKp,
+                        felt: field.felt, lightOn: on,
+                        flashRing: st.flash?.ring, flashBornAt: st.flash?.bornAt,
+                        constellation: st.constellation, constellationStart: st.constellationStart,
+                        reduceMotion: false, t: t))
+                }
+                unlit.add(tally(false))
+                lit.add(tally(true))
+            }
+            let ratio = lit.mean / unlit.mean
+            print(String(format:
+                "SPIKE_LIGHT_COST {\"scene\":\"%@\",\"unlitMean\":%.1f,\"litMean\":%.1f,"
+                + "\"delta\":%.1f,\"ratio\":%.3f,\"unlitWorst\":%d,\"litWorst\":%d}",
+                scene.rawValue, unlit.mean, lit.mean, lit.mean - unlit.mean, ratio,
+                unlit.worst, lit.worst))
+            XCTAssertGreaterThanOrEqual(lit.mean, unlit.mean,
+                "\(scene.rawValue): the lit canvas draws less than the unlit one — "
+                + "the light is not being built")
+            XCTAssertLessThan(ratio, 1.25,
+                "\(scene.rawValue): the light costs \(Int((ratio - 1) * 100))% more primitives "
+                + "per frame, which is a redesign and not a margin")
+        }
+    }
+
     private static let baselineHz = 60.0
     private static let baselineFrames = 1200   // 20 seconds
 
-    /// Captured 2026-09-21 against `MandalaCanvasLayer` at 58256d2, on the iPhone 17
-    /// simulator. The figures are device-independent by construction — nothing here
-    /// touches a GPU or a clock — so any simulator must reproduce them exactly; the
-    /// Pro Max confirmation run was cut short by an overloaded host and is worth
-    /// re-running once, to prove that claim rather than assume it.
+    /// **Re-taken 2026-09-23, lit**, when Phase 5's flag came off. The figures are
+    /// device-independent by construction — nothing here touches a GPU or a clock —
+    /// so any simulator must reproduce them exactly; the Pro Max confirmation run
+    /// was cut short by an overloaded host and is worth re-running once, to prove
+    /// that claim rather than assume it.
     ///
-    /// | scene | mean | worst |
-    /// |---|---|---|
-    /// | tier 0, all 102 seats | 263.1 | 270 |
-    /// | tier 2, deep-zoom bloom | 79.6 | 85 |
-    /// | the descent | 75.7 | 270 |
+    /// | scene | mean | worst | previously (unlit) |
+    /// |---|---|---|---|
+    /// | tier 0, all 102 seats | 277.1 | 284 | 263.1 / 270 |
+    /// | tier 2, deep-zoom bloom | 93.6 | 99 | 79.6 / 85 |
+    /// | the descent | 89.8 | 284 | 75.7 / 270 |
+    ///
+    /// **Why it moved, and why that is not a baseline going soft.** The unlit table
+    /// was captured 2026-09-21 against `MandalaCanvasLayer` at 58256d2, and it
+    /// described the canvas the app drew then. The app now draws the lit canvas, so
+    /// a baseline still pinned to the unlit figures would have been asserting a
+    /// path the walker never sees — which is exactly the state this file was in for
+    /// the whole of Phase 5, when `MandalaDrawCensus.Input.lightOn` defaulted to
+    /// `false` and the bench measured a canvas that had already been superseded.
+    ///
+    /// **Every bound below moved by the same +14, and by nothing else.** That is
+    /// the measured cost of the light and it is a constant: seven visible
+    /// enclosures drawn as three-stroke gem-light bands instead of one hairline is
+    /// fourteen extra strokes, in every scene, in every frame. No bound was
+    /// widened to accommodate anything — the windows are exactly as tight as they
+    /// were, translated. `testTheLightsCostIsAMarginAndNotAMultiple` measures that
+    /// same delta from both sides each run, so if the light ever starts costing a
+    /// proportion rather than a constant, it is a red and not a re-record.
     ///
     /// Ranges, not exact equalities: the per-seat flare phase reads absolute time, so
     /// one frame either side of a flare boundary moves a count by one or two and is
     /// not a regression. They are tight enough that a draw layer added to or removed
     /// from the canvas breaks them, which is what they are for.
     private static let baselineBounds: [SpikeScene: (meanLow: Double, meanHigh: Double, worstHigh: Int)] = [
-        .tier0AllSeats: (meanLow: 255, meanHigh: 272, worstHigh: 280),
-        .tier2Bloom:    (meanLow: 75,  meanHigh: 85,  worstHigh: 92),
-        .descent:       (meanLow: 71,  meanHigh: 81,  worstHigh: 280),
+        .tier0AllSeats: (meanLow: 269, meanHigh: 286, worstHigh: 294),   // was 255 / 272 / 280
+        .tier2Bloom:    (meanLow: 89,  meanHigh: 99,  worstHigh: 106),   // was  75 /  85 /  92
+        .descent:       (meanLow: 85,  meanHigh: 95,  worstHigh: 294),   // was  71 /  81 / 280
     ]
 
     // MARK: helper
@@ -279,7 +366,8 @@ final class SpikeCensusTests: XCTestCase {
                        t: TimeInterval = 1_000_000) -> MandalaDrawCensus.Input {
         MandalaDrawCensus.Input(
             camera: camera, size: size, seats: field.censusSeats, todayKp: field.todayKp,
-            focusKp: nil, familyKp: [], countByKp: field.countByKp,
+            focusKp: nil, familyKp: [], felt: field.felt,
+            lightOn: true,
             flashRing: nil, flashBornAt: nil,
             constellation: 0, constellationStart: nil,
             reduceMotion: reduceMotion, t: t)

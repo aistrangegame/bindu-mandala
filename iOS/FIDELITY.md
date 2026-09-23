@@ -106,6 +106,24 @@ Stated explicitly so they read as **decisions, not defects**:
   carrier** (Build Brief v2 Phase 2.3 / Phase 6: "the ring drone (superseded by the Homes'
   carrier)"). Not built as a drone and not to be; the carrier is its successor.
 - **WidgetKit home-screen widget** — **not built; stays parked.** Optional; no widget target exists.
+- **The Mandala's light (Phase 5)** — **built, behind `MandalaLight.enabled`.** One
+  source and nine refractions: `Theme/MandalaLight.swift` is the whole arithmetic and
+  is pure, so it is tested off-device the way `HomeGem` and `HomeWorlds` are. Three
+  rules govern anything added to it. **The gem is a behaviour, never a colour** — hue,
+  saturation and lightness stay `Atmosphere`'s, and `HomeGem`'s corrected mistake
+  (*"topaz is not a hue the walker's light is allowed to come from"*) stays corrected;
+  a source scan fails the build if a gemstone name appears in the file. **The veil's
+  only inputs are the ring, the camera's nearness and a stillness clock** — never a
+  recognition count, a ledger row or a memory, because a veil that lifts with
+  familiarity is a completion meter drawn as fog; a second source scan holds that
+  line. **§4's legibility floor holds at the deepest veil**: a mark may lose at most
+  45% of its opacity and a word at most 25%, never below 0.5 alpha, asserted over a
+  grid rather than at three points. Reduce motion is given the *settled* veil without
+  consulting a clock — a real still state, not a zero-duration animation — and Tratak
+  is earned over the same twenty seconds for everyone, on a one-second host tick
+  because the canvas's `TimelineView` is paused. Idea 32 (her form at three zoom
+  tiers) is **ruled out**, not unbuilt: see `DECISIONS.md`, 2026-09-22.
+
 - **`.silence` recognition gesture** — **reborn as the dwelling** (Brief v2 R11), **wired in
   Phase 3.6**: a dwell held past the first adaptation records a `RecognitionEntry` with
   `gesture: .silence` (local + App Activity Silence Held, Gesture Source Silence), once per

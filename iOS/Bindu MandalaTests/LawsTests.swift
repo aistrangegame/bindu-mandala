@@ -1976,3 +1976,134 @@ final class LawsTests: XCTestCase {
         let moonPhase = "Waning Crescent"
     }
 }
+
+// MARK: - Law 2 · never measure — the geometry layer
+//
+// Added in Phase 5, because the phase that re-founds the Mandala's light is the
+// phase that adds three new numeric channels to it — brightness, veil, band
+// width — and the suite above cannot see any of them.
+//
+// Every never-measure check in this file reads **strings and interpolations**:
+// `testNoWalkerFacingViewMeasuresOutLoud`, `testTheOnlyDigitShapeIsASeatInTheGarland`,
+// `testOnlyTheMandalaItselfIsEverCounted`. That is the right net for a label and
+// blind to a number that never becomes text. And one had been sitting in the
+// shipped canvas since the field was first drawn:
+//
+//     let n = countByKp[kp] ?? 0
+//     let baseR: CGFloat = … : felt ? 4 + min(CGFloat(n), 6) * 0.4 : 3
+//
+// A **seven-step radius ramp keyed to how many times she had been felt** — 3.0
+// unfelt, then 4.0, 4.4, 4.8, 5.2, 5.6, 6.0, saturating at six. One seat is a
+// state; the whole field side by side is a readout, and a walker could count his
+// own practice off the geometry with no digit anywhere on the screen. It is
+// gone, and this is the net that would have caught it.
+//
+// The law it states: **a practice count may be reduced to a state and used for
+// nothing else.** Whether she has been felt may be seen. How often may not reach
+// a radius, an opacity, a width or a coordinate — and the surest form of that,
+// on the surfaces that draw, is that the count never arrives there at all.
+
+final class LawsDrawnMeasureTests: XCTestCase {
+
+    /// Every name a practice count travels under.
+    static let countIdentifiers = ["serverRecognitionCount", "recognitionCount",
+                                   "countByKp", "feltCount", "visitCount", "dwellCount"]
+
+    /// The surfaces that draw. On these the rule is absolute: a count does not
+    /// arrive, so it cannot become a dimension by accident three refactors from
+    /// now. `felt: Set<Int>` is what crosses this boundary instead.
+    static let drawingRoots = ["Views/Mandala/", "Views/Memory/", "Views/Spike/", "Theme/"]
+
+    /// **The hard half.** No practice count reaches the Mandala, the Portrait,
+    /// the measuring apparatus or the theme.
+    func testNoPracticeCountReachesASurfaceThatDraws() {
+        let files = LawSource.production.filter { f in
+            Self.drawingRoots.contains { f.path.hasPrefix($0) }
+        }
+        XCTAssertGreaterThanOrEqual(files.count, 20,
+                                    "the drawing corpus went empty — this check proves nothing")
+        for file in files {
+            let body = String(file.lexed.masked)
+            for id in Self.countIdentifiers {
+                XCTAssertFalse(body.contains(id),
+                               "\(file.path) reaches \(id). A drawing surface is handed whether "
+                               + "she has been felt, never how often.")
+            }
+        }
+    }
+
+    /// **The general half.** Everywhere in the presentation layer a count may
+    /// still exist — the readiness model reads one, the Field reduces one to a
+    /// dot — but it may never be arithmetic. A sum, a product or a scale built
+    /// out of a practice count is a measure whatever it is finally used for.
+    ///
+    /// The boundary is presentation, not the whole app: `Data/AirtableService`
+    /// adds to the mirrored count because that is what mirroring a count *is*,
+    /// and the store has to hold the number for the never-measure law to have
+    /// anything to protect. What the law forbids is that number becoming
+    /// something a walker can see. So the scan is every file under `Views/`,
+    /// `Theme/` and `Homes/` — everything that draws or composes.
+    func testNoPracticeCountIsEverArithmetic() {
+        var examined = 0
+        let presentation = LawSource.production.filter {
+            $0.path.hasPrefix("Views/") || $0.path.hasPrefix("Theme/") || $0.path.hasPrefix("Homes/")
+        }
+        XCTAssertGreaterThanOrEqual(presentation.count, 40,
+                                    "the presentation corpus went empty — this check proves nothing")
+        for file in presentation {
+            for (i, line) in String(file.lexed.masked).components(separatedBy: "\n").enumerated() {
+                guard Self.countIdentifiers.contains(where: { line.contains($0) }) else { continue }
+                examined += 1
+                XCTAssertFalse(Self.isArithmetic(line),
+                               "\(file.path):\(i + 1) does arithmetic on a practice count — "
+                               + "a count may be reduced to a state and used for nothing else:\n    "
+                               + line.trimmingCharacters(in: .whitespaces))
+            }
+        }
+        XCTAssertGreaterThan(examined, 0,
+                             "no line in the app mentions a practice count — the scanner has stopped working")
+    }
+
+    /// The detector, proved on the line it exists for.
+    ///
+    /// Written out rather than read from `git`, because what is being asserted is
+    /// that *this shape* is caught — and the shape has to be visible to whoever
+    /// reads the test. The two lines below are the shipped canvas's, verbatim,
+    /// as they stood on `main` at 4cbc66c.
+    func testTheDetectorCatchesTheRampItWasWrittenFor() {
+        XCTAssertTrue(Self.isArithmetic(
+            "            let baseR: CGFloat = isFocus ? 7 : isToday ? 6 : inFamily ? 5.5 : felt ? 4 + min(CGFloat(countByKp[kp] ?? 0), 6) * 0.4 : 3"))
+        XCTAssertTrue(Self.isArithmetic("let r = 3 + Double(serverRecognitionCount) * 0.4"))
+        XCTAssertTrue(Self.isArithmetic("opacity = Double(recognitionCount) / 6.0"))
+        // And does not cry wolf over the lawful shapes.
+        XCTAssertFalse(Self.isArithmetic("let count = shakti.serverRecognitionCount ?? 0"))
+        XCTAssertFalse(Self.isArithmetic("if (s.serverRecognitionCount ?? 0) > 0 { f.insert(k) }"))
+        XCTAssertFalse(Self.isArithmetic("m[kp] = max(m[kp] ?? 0, s.serverRecognitionCount ?? 0)"))
+        XCTAssertFalse(Self.isArithmetic("shakti.serverRecognitionCount = row.fields.recognitionCount"))
+    }
+
+    /// True when a line does arithmetic with a practice count.
+    ///
+    /// `?? 0` is not arithmetic — it is how an optional count becomes a number
+    /// at all — and neither is a `- ` that is part of an arrow, a comment marker
+    /// or a negative literal. Everything else joining a count to a `+`, `*`, `/`
+    /// or a subtraction is a measure being built.
+    static func isArithmetic(_ rawLine: String) -> Bool {
+        var line = rawLine
+        // The one lawful way a count becomes a number.
+        line = line.replacingOccurrences(of: "?? 0", with: "")
+        line = line.replacingOccurrences(of: "??0", with: "")
+        guard countIdentifiers.contains(where: { line.contains($0) }) else { return false }
+        for op in ["+", "*", "/"] where line.contains(op) { return true }
+        // A subtraction, but not `->`, `--`, or a leading minus in `(-1`.
+        var previous: Character = " "
+        for (i, ch) in Array(line).enumerated() {
+            if ch == "-", previous != "-", i + 1 < line.count {
+                let next = Array(line)[i + 1]
+                if next != ">" && next != "-" { return true }
+            }
+            previous = ch
+        }
+        return false
+    }
+}
