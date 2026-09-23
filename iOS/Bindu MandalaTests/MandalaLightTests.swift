@@ -419,17 +419,48 @@ final class MandalaLightTests: XCTestCase {
 
     // MARK: - the flag
 
-    /// Off unless asked for, and asked for the way every other launch switch in
-    /// this app is asked for.
-    func testThePhaseFlagIsOffUnlessTheLaunchAsksForIt() {
-        XCTAssertFalse(MandalaLight.enabled,
-                       "the unit-test host did not pass MANDALA_LIGHT=on, so the light must be off")
+    /// **On, unless the launch asks for it off.**
+    ///
+    /// This was `XCTAssertFalse` for the whole of Phase 5, which was correct
+    /// while the light was being built behind a flag and is the single most
+    /// important line to have got the right way round afterwards: it is the one
+    /// check in the suite that can tell the difference between *the light ships*
+    /// and *the light was built and then left switched off*. The unit-test host
+    /// passes no `MANDALA_LIGHT` argument, so what it reads here is exactly what
+    /// a walker's launch reads.
+    func testTheLightIsOnByDefault() {
+        XCTAssertTrue(MandalaLight.enabled,
+                      "the unit-test host passes no MANDALA_LIGHT argument, so this is the "
+                      + "launch Ashrey gets — and the light must be on in it")
     }
 
-    /// **The flag genuinely gates.** With it off no light is ever built: the
-    /// canvas's one construction site sits behind the guard, and every `draw*`
-    /// that takes a light falls back to the shipped expression when it is nil.
-    func testWithTheFlagOffNoLightIsEverBuilt() {
+    /// And the switch still obeys the launch, over every case rather than over
+    /// whichever one this host happened to provide. `isOn(arguments:)` is the
+    /// whole of `enabled`, so proving it here proves the static.
+    func testTheSwitchStillObeysTheLaunchArgument() {
+        XCTAssertTrue(MandalaLight.isOn(arguments: []))
+        XCTAssertTrue(MandalaLight.isOn(arguments: ["START_TAB=mandala", "EPHEMERAL_STORE"]))
+        XCTAssertFalse(MandalaLight.isOn(arguments: ["MANDALA_LIGHT=off"]))
+        XCTAssertFalse(MandalaLight.isOn(arguments: ["START_TAB=mandala", "MANDALA_LIGHT=off"]))
+        // A near miss is not the switch: only the exact argument turns it off, so
+        // a typo in a test's launch leaves the walker's configuration running
+        // rather than silently measuring the other path.
+        XCTAssertTrue(MandalaLight.isOn(arguments: ["MANDALA_LIGHT=on"]))
+        XCTAssertTrue(MandalaLight.isOn(arguments: ["MANDALA_LIGHT"]))
+        XCTAssertTrue(MandalaLight.isOn(arguments: ["mandala_light=off"]))
+    }
+
+    /// **The flag genuinely gates, and still does now that it defaults on.**
+    /// On the `MANDALA_LIGHT=off` path no light is ever built: the canvas's one
+    /// construction site sits behind the guard, and every `draw*` that takes a
+    /// light falls back to the shipped expression when it is nil.
+    ///
+    /// This is why the flag was inverted rather than deleted. These three
+    /// assertions are the only proof that the lit and unlit paths are genuinely
+    /// separable — and separable is what lets
+    /// `MandalaLightReachTests.testTheHamburgerStillOpensTheMenuUnderTheLight`
+    /// tell a light that ate a control apart from a host that dropped a press.
+    func testOnTheLightsOffPathNoLightIsEverBuilt() {
         guard let canvas = LawSource.production("MandalaCanvasLayer.swift") else {
             return XCTFail("MandalaCanvasLayer.swift is not in the shipping corpus")
         }
@@ -443,12 +474,27 @@ final class MandalaLightTests: XCTestCase {
         XCTAssertLessThan(gate.lowerBound, build.lowerBound,
                           "the light is built before the flag is consulted")
 
-        // And the switch is read in one file in the whole app.
+        // And the switch is read in one file in the app, plus the measuring
+        // apparatus — which reads it because its job is to render and count what
+        // ships. A spike that hard-codes its own answer to "is the light on" is
+        // exactly the defect being repaired here: `lightOn` sat at `false` for
+        // the whole phase, so the G5 baseline described a canvas the walker was
+        // never going to see. The Spike folder is compiled out of Release, so
+        // these two readers cannot reach a build that reaches Neev.
         let readers = LawSource.production.filter {
             String($0.lexed.masked).contains("MandalaLight.enabled")
         }
-        XCTAssertEqual(readers.map(\.name), ["LivingMandalaView.swift"],
-                       "the phase flag should be read in exactly one file")
+        XCTAssertEqual(Set(readers.map(\.name)),
+                       ["LivingMandalaView.swift", "MandalaDrawCensus.swift",
+                        "SpikeMandalaHarness.swift"],
+                       "the phase flag should be read by the one view that gates on it and by "
+                       + "the apparatus that measures what ships — nowhere else")
+        for reader in readers where reader.name != "LivingMandalaView.swift" {
+            XCTAssertTrue(reader.path.hasPrefix("Views/Spike/"),
+                          "\(reader.path) reads the phase flag and is not the spike")
+            XCTAssertTrue(reader.text.contains("#if DEBUG"),
+                          "\(reader.path) reads the phase flag and is not compiled out of Release")
+        }
     }
 
     /// The count-free radius, on **both** sides of the flag.

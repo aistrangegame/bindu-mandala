@@ -229,7 +229,9 @@ struct SpikeMandalaHarness: View {
             constellation: st.constellation,
             constellationStart: st.constellationStart,
             tier: st.camera.tier,
-            reduceMotion: reduceMotion)
+            reduceMotion: reduceMotion,
+            // The bench renders what ships (see `MandalaDrawCensus.Input.lightOn`).
+            lightOn: MandalaLight.enabled)
     }
 }
 #endif

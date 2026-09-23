@@ -91,5 +91,36 @@ reasoning in `DECISIONS.md`. **And a live never-measure breach was found and del
 seat radius was a seven-step ramp keyed to `serverRecognitionCount`; `countByKp` is now
 `felt: Set<Int>` at the canvas boundary, on both sides of the flag, and two new laws
 (`LawsDrawnMeasureTests`) refuse a practice count on any surface that draws and any arithmetic
-on one anywhere in the presentation layer. **Next:** merge behind 3.7–3.9, then take the flag
-off and re-take the G5 baseline lit.
+on one anywhere in the presentation layer.
+
+**2026-09-23 (Phase 5, landed) · The flag is off: the Mandala ships lit.** Rebased onto `main`
+at Phase 3.9, keeping both sides of every append — `LawsTests` gains 131 lines and loses none.
+**The outstanding finding is closed: the lit path had never been measured.**
+`MandalaDrawCensus.Input.lightOn` defaulted to `false` and neither the bench nor the renderer
+harness passed it, so the G5 baseline described a canvas the app was about to stop drawing —
+and went green the whole time. Measured now: the light costs **+14 primitives a frame, flat**,
+in every scene at every zoom (seven visible enclosures as three-stroke gem-light bands instead
+of one hairline), a constant and not a proportion. Every census bound moved by exactly that +14
+and by nothing else, with the unlit table kept beside the new one and the reason written down.
+The bench was rebuilt and run lit for the half the census cannot see: **p95 pinned at 16.667 ms
+in all seven windows**, the descent never exceeding budget at all, footprint 39.2 → 41.8 MB
+across the whole residency. Charter §3's performance gate is green, lit. The flag was **inverted
+rather than deleted** — the gate machinery is the only proof the two paths are separable, and
+separability is what lets the hamburger test tell a light that ate a control from a host that
+dropped a press. The apparatus now reads the same switch the app reads, so it cannot drift
+again, and two new checks tie the baseline to the app and refuse the light ever costing a
+multiple. `MandalaLightReachTests` is turned inside out: the bare launch is now the one under
+test and the control is the one that spells the flag out, so every reach, legibility and
+VoiceOver check runs against the build Ashrey opens. `testTheLightIsOnInTheLaunchThatShips`
+proves it on the glass rather than in the source — two reduce-motion launches screenshotted and
+compared — and `testNothingUnderTheLightCanBeCountedEvenByAVoice` reads every label *and every
+value* in the tree, because an accessibility value is where a scale reaches a voice without ever
+becoming ink. That one went red first on twenty-one lawful labels and taught the distinction it
+now carries: *"thirty-third of the one hundred and two"* is **her address**, and the law forbids
+a number about **his practice**. **761 unit tests and 34 UI tests, 0 failures, 0 Swift
+warnings — the whole suite green in one pass, which this branch had never had**; the tap-driven
+suites green three consecutive times on a quiet host besides, and the two reds seen at load 118
+and 175 were the digitizer flake the charter already rules as weather.
+Two Phase 5 calls appended to `RULINGS-QUEUE.md` — idea 32 refused, and the crossing bell
+replaced by the enclosure's own bīja. **Next:** the ship (§8) — Xcode Cloud with the
+`AIRTABLE_PAT` secret, then `ARRIVAL.md`.

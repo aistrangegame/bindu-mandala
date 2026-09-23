@@ -3166,3 +3166,75 @@ booted, and no amount of re-running will make a sixty-frames-per-second
 assertion true at that load. Recorded here rather than worked around, because
 the tempting fix — loosening the frame bars — would delete the only checks that
 can see a still path that has quietly started animating.
+
+## Phase 5, landed · The flag comes off, and the baseline is re-taken against the app that ships
+
+**2026-09-23.** Phase 5 was built behind `MandalaLight.enabled`, and charter §5 says the flag comes off once §3 is green. This is that, plus the one thing the Prove stage left outstanding: **the lit path had never been measured.**
+
+### The gate: what the light actually costs
+
+`MandalaDrawCensus.Input.lightOn` defaulted to `false`, and neither `SpikeBench` nor `SpikeMandalaHarness` passed it. So for the whole of Phase 5 the deterministic G5 census and the on-device bench both rendered the **unlit** canvas: a baseline pinned to a path the app was about to stop drawing. It went green the entire time, which is the worst way for a baseline to fail.
+
+Measured now, over the scripted 20 seconds at 60 Hz, both windows, all three scenes:
+
+| scene | unlit mean | lit mean | delta | ratio |
+|---|---|---|---|---|
+| tier 0, all 102 seats | 263.1 | 277.1 | +14.0 | 1.053 |
+| tier 2, deep-zoom bloom | 79.6 | 93.6 | +14.0 | 1.176 |
+| the descent | 75.7 | 89.7 | +14.0 | 1.185 |
+
+**The cost of the light is a constant, not a proportion.** Seven visible enclosures drawn as three-stroke gem-light bands instead of one hairline is fourteen extra strokes — per frame, in every scene, at every zoom, forever. It does not scale with the hundred and two, because no seat branch changed. The ratios differ only because the scenes have different denominators, and the largest of them sits on a frame of ninety-three primitives, which is nothing.
+
+The one thing the census cannot see is fill rate, and it was checked by hand rather than assumed. The band is `1.1 + 6.0 · scatter` pt on seven large-radius strokes. The seat halo is `2.4 + 1.6 · scatter` times the dot radius, which the assessment read as a widening from a fixed 3.2× — it is not: it is **centred** on 3.2, so a scattering gem spreads further and a tight one spreads less, and across a field it is close to neutral. There are 26 of them at the heaviest frame, at ten to seventeen points of radius each.
+
+**Verdict: the light holds the G5 baseline.** Every bound in `SpikeCensusTests` moved by exactly +14 and by nothing else — no window was widened, they were translated by the measured constant — and the old unlit table is kept beside the new one with the reason it moved, because a baseline that is quietly moved has stopped being a baseline.
+
+### Three things changed so this cannot happen again
+
+1. **`MandalaDrawCensus.Input.lightOn` now defaults to `MandalaLight.enabled`**, and `SpikeMandalaHarness` passes it. The measuring apparatus reads the same switch the app reads, because its whole job is to measure what ships. A spike that hard-codes its own answer to *is the light on* is the defect, not the fix.
+2. **`testTheBaselineMeasuresTheCanvasTheAppActuallyDraws`** ties the two facts together: the bounds in that file are the lit canvas's, and they assert that the app is lit. Either they move together or it is a red.
+3. **`testTheLightsCostIsAMarginAndNotAMultiple`** measures the delta from both sides on every run and fails if the light ever starts costing a proportion rather than a constant — which is the only shape of fill-rate problem a primitive census could ever see.
+
+### The flag: inverted, not deleted
+
+`MandalaLight.enabled` is now `!arguments.contains("MANDALA_LIGHT=off")`, expressed through a pure `isOn(arguments:)` so the contract can be proved over every case rather than asserted once for whichever launch the suite happened to get.
+
+Deleting the flag was the obvious move and it was refused. The gate machinery — one construction site, behind one `guard lightOn else { return nil }`, read in one file — is the only proof that the two paths are genuinely separable, and separability is what lets `testTheHamburgerStillOpensTheMenuUnderTheLight` distinguish *the light ate the one control on the home screen* from *the digitizer dropped the press*. Deleting the switch would have deleted that distinction along with it. `RingAudioService.ringChime(_:)` keeps its last caller for the same reason.
+
+The three tests that encoded *off* were rewritten rather than removed, and the reach suite was turned inside out: **the launch with no `MANDALA_LIGHT` argument is now the one under test**, and the control is the one that has to spell the flag out. That means every check in `MandalaLightReachTests` — and `AccessibilityReachTests`, which already launched bare — is now a check on the build Ashrey opens, rather than on a configuration the suite invented for itself.
+
+### What proves it, afterwards
+
+- `MandalaLightTests.testTheLightIsOnByDefault` — the unit host passes no `MANDALA_LIGHT` argument, so what it reads is what a walker's launch reads.
+- `testTheSwitchStillObeysTheLaunchArgument` — over all seven cases, including the near misses, so a typo in a launch leaves the shipped configuration running rather than silently measuring the other path.
+- `MandalaLightReachTests.testTheLightIsOnInTheLaunchThatShips` — **on the glass, not in the source.** A switch that is on and a light that is drawn are two different claims, and only the second is what he opens. Two `REDUCE_MOTION` launches, default and `MANDALA_LIGHT=off`, screenshotted and compared over the middle of the glass. Reduce motion is what makes it a test rather than a coin toss: the still path consults no clock, so each launch draws one settled frame and draws the same one every time. Cropped away from the status bar so a clock that ticked between the launches cannot be what passes it.
+- `testNothingUnderTheLightCanBeCountedEvenByAVoice` — the whole accessibility tree of the shipped launch, every label **and every value**, on every kind of element. It refuses a digit, twenty-two measure words, and a percentage. The `value` half is the one that matters: a veil, a band width and a reach are three new numeric channels, and the way a number escapes a drawing layer is not as ink — it is as the accessibility value somebody added so the drawn thing could be spoken. A bar that reads "40%" to VoiceOver is a readout whatever it looks like on the glass.
+
+### The law fix, which was never behind the flag
+
+Worth restating where the ship can see it: `main` sized every seat by `felt ? 4 + min(CGFloat(n), 6) * 0.4 : 3`, a seven-step radius ramp keyed to `serverRecognitionCount`. One seat is a state; the hundred and two side by side is a practice readout a walker could count off the geometry with no digit anywhere on the screen. It is deleted on both sides of the flag, and `LawsDrawnMeasureTests` is the net that would have caught it. `phase-3-8` and `phase-4-felt` still carry it; whatever else happens to this branch, that deletion has to reach the build.
+
+### And the other half of the gate: the bench, run lit
+
+The census is the deterministic half. Charter §3's actual words are *no sustained frame drops in the Mandala's deep zoom, the descent, or any Home* and *no thermal climb in a 10-minute simulated session*, and those are frames, not primitives. So the G5 bench was rebuilt (`Release`, `SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG SPIKE_BENCH"`) and run lit, on a simulator reserved to this task, on a quiet host.
+
+CPU milliseconds per frame above the control floor (2.950 ms), against the three-pass unlit means recorded 2026-09-21:
+
+| scene / window | lit | unlit (2026-09-21) |
+|---|---|---|
+| tier 0, all 102 seats · A | 0.42 | 1.97 |
+| tier 0, all 102 seats · B | 1.15 | 1.83 |
+| deep-zoom bloom · A | 2.40 | 2.97 |
+| deep-zoom bloom · B | 2.27 | 2.80 |
+| the descent · A | 2.23 | 3.69 |
+| the descent · B | 2.28 | 3.76 |
+
+**Those two columns are not a like-for-like comparison and are not offered as one.** The unlit column is a three-pass mean taken in another session at host load 4–11; this is one pass at 13–36. That the lit figures come out *lower* across the board is a fact about two evenings, not evidence that the light is free — the census already established what the light costs, exactly and deterministically, and it is +14 primitives a frame. The bench is here to answer the question the census cannot.
+
+**It answers it cleanly. `p95FrameMs` is 16.667 in all seven windows** — every one, at every tier, in both clock positions — which is the frame pinned at 60 Hz with nothing sustained behind it. The descent, the scene with the most to draw, never exceeded 16.667 ms *at all*: its worst frame in both windows is the budget itself. The per-window worst frames elsewhere (123 ms at tier 0 A, 559 ms at bloom A) are single first-frame outliers at window start against means of 17.2 and 17.3 and a p95 at budget; they are pipeline warm-up, not the room.
+
+Footprint over the whole residency — one process, four scenes, seven windows, about two and a half minutes of continuous rendering — went 39.2 MB to 41.8 MB, monotonic and small. No leak and no climb of the kind a ten-minute session would compound.
+
+The bench also independently confirms the census model: it reported mean primitives of 277.5 at tier 0 and 93.6 at the bloom against the census's 277.1 and 93.6, so the model that the baseline is built on is still tracking the canvas it models.
+
+**Verdict on charter §3's performance gate: green, lit.** Which is what the flag was waiting on.

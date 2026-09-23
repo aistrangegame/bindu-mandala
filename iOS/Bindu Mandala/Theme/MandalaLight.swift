@@ -322,18 +322,37 @@ struct MandalaLight: Equatable {
 
     // MARK: - The phase flag
 
-    /// Phase 5's one switch. Default **off**; `MANDALA_LIGHT=on` as a launch
-    /// argument turns it on for the UI suite.
+    /// Phase 5's one switch. Default **on** — the light is what the Mandala is
+    /// now — and `MANDALA_LIGHT=off` as a launch argument puts the shipped
+    /// pre-Phase-5 canvas back, which is what the control launches in
+    /// `MandalaLightReachTests` need and the only remaining caller of
+    /// `RingAudioService.ringChime(_:)`.
     ///
-    /// One flag for the whole phase, read in one file (`LivingMandalaView`),
-    /// because 27, 28 and 30 are physically one render pass: you cannot switch
+    /// **Inverted rather than deleted, deliberately.** The gate machinery is
+    /// what proves the two paths are genuinely separable — one construction
+    /// site, behind one guard, read in one file — and deleting the switch would
+    /// delete that proof along with the ability to answer "is this the light or
+    /// is this the host?" when something on the home screen goes wrong.
+    ///
+    /// One flag for the whole phase, read in one file in the app
+    /// (`LivingMandalaView`) and in the measuring apparatus, which reads it
+    /// because its job is to render and count what ships — see
+    /// ``MandalaDrawCensus/Input/lightOn``. It is one flag because 27, 28 and 30
+    /// are physically one render pass: you cannot switch
     /// the veil off and leave the Bindu as the source without keeping a second
     /// lighting path, and a second path is a second thing to hold above the
     /// legibility floor, correct under reduce motion and correct for a voice.
     /// The falling mantra rides the same switch, because a descent that speaks
     /// the yantra's bīja while the enclosures are still thin gold strokes is a
     /// half-instrument nobody should see, including the suite.
-    static let enabled: Bool = ProcessInfo.processInfo.arguments.contains("MANDALA_LIGHT=on")
+    static let enabled: Bool = isOn(arguments: ProcessInfo.processInfo.arguments)
+
+    /// The switch itself, as a function of the launch, so the contract can be
+    /// proved over every case rather than asserted once for whichever launch the
+    /// suite happened to get.
+    static func isOn(arguments: [String]) -> Bool {
+        !arguments.contains("MANDALA_LIGHT=off")
+    }
 }
 
 // MARK: - The field

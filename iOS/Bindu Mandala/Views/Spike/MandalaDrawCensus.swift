@@ -97,7 +97,14 @@ enum MandalaDrawCensus {
         /// Phase 5's switch. The lit path draws each enclosure as a band of three
         /// strokes rather than one hairline, and the Bindu gains the gaze's two
         /// marks; every seat branch is unchanged.
-        var lightOn: Bool = false
+        ///
+        /// **It defaults to what ships, not to `false`.** It defaulted to `false`
+        /// for the whole of Phase 5, and the consequence was that the G5 census
+        /// baseline and the on-device bench both measured a canvas the app was
+        /// no longer going to draw — a baseline that has quietly stopped
+        /// describing the app is worse than no baseline, because it still goes
+        /// green. A measuring apparatus reads the same switch the app reads.
+        var lightOn: Bool = MandalaLight.enabled
         /// 0…1 of the gaze (idea 38). At a full gaze the field holds still, so
         /// the per-seat flare and the expanding halo stop being issued.
         var tratak: Double = 0
