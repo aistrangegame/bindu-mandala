@@ -1612,7 +1612,7 @@ final class LawsTests: XCTestCase {
 
     /// Everything that files a Śakti — the uniqueness constraints, the store
     /// APIs, the SwiftData predicates — files her by position.
-    func testEveryPerShaktiKeyIsAPosition() {
+    func testEveryPerShaktiKeyIsAPosition() throws {
         var uniques: [(file: String, property: String, type: String)] = []
         for f in LawSource.production {
             for g in Rx.groups(#"@Attribute\(\s*\.unique\s*\)\s*var\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)"#,
@@ -1628,14 +1628,17 @@ final class LawsTests: XCTestCase {
                 claimedKeys.insert(pin)
                 // The claim is that this entity is not about a Śakti at all —
                 // checked, never taken on trust.
-                if let f = LawSource.production.first(where: { $0.path == u.file }) {
-                    XCTAssertFalse(PositionIsIdentity.touchesAShakti(f),
-                                   """
-                                   \(u.file) is pinned as carrying no Śakti, and it names one. \
-                                   Anything that files a Śakti files her by position — take the \
-                                   pin out and key on `khadgamalaPosition`.
-                                   """)
-                }
+                // `XCTUnwrap`, not `if let`: a pinned file that has dropped out
+                // of the corpus would otherwise pass its own claim silently.
+                let f = try XCTUnwrap(LawSource.production.first(where: { $0.path == u.file }),
+                                      "\(u.file) is pinned as carrying no Śakti and is not in the "
+                                      + "corpus — the claim cannot be checked")
+                XCTAssertFalse(PositionIsIdentity.touchesAShakti(f),
+                               """
+                               \(u.file) is pinned as carrying no Śakti, and it names one. \
+                               Anything that files a Śakti files her by position — take the \
+                               pin out and key on `khadgamalaPosition`.
+                               """)
                 continue
             }
             XCTAssertEqual(u.type, "Int", "\(u.file): \(u.property) is unique but is not a number")
@@ -1658,10 +1661,11 @@ final class LawsTests: XCTestCase {
             if PositionIsIdentity.pinnedNonShaktiPredicates.contains(p) {
                 claimedPredicates.insert(p)
                 let file = String(p.prefix(while: { $0 != " " }))
-                if let f = LawSource.production.first(where: { $0.path == file }) {
-                    XCTAssertFalse(PositionIsIdentity.touchesAShakti(f),
-                                   "\(file) is pinned as carrying no Śakti, and it names one")
-                }
+                let f = try XCTUnwrap(LawSource.production.first(where: { $0.path == file }),
+                                      "\(file) is pinned as carrying no Śakti and is not in the "
+                                      + "corpus — the claim cannot be checked")
+                XCTAssertFalse(PositionIsIdentity.touchesAShakti(f),
+                               "\(file) is pinned as carrying no Śakti, and it names one")
                 continue
             }
             XCTAssertTrue(p.contains("khadgamalaPosition"),
@@ -2198,6 +2202,7 @@ final class LawsTheMarginTests: XCTestCase {
     private let marginFile = "Views/Common/MarginView.swift"
     private let storeFile  = "Services/MarginNoteStore.swift"
     private let settingsFile = "Views/Common/SettingsView.swift"
+    private let modelFile = "Models/MarginNote.swift"
 
     private func source(_ path: String) -> SourceFile {
         guard let f = LawSource.production.first(where: { $0.path == path }) else {
@@ -2208,7 +2213,7 @@ final class LawsTheMarginTests: XCTestCase {
 
     /// The corpus floor: an emptied scan reads as a pass.
     func testTheMarginIsReallyOnDisk() {
-        for path in [marginFile, storeFile, settingsFile] {
+        for path in [marginFile, storeFile, settingsFile, modelFile] {
             XCTAssertGreaterThan(source(path).text.count, 400, "\(path) has gone thin")
         }
     }
@@ -2223,8 +2228,12 @@ final class LawsTheMarginTests: XCTestCase {
     /// `isEmpty` is not a count and is deliberately allowed: "Nothing left here
     /// yet." is a **state**, the same shape as the shipped "She has not been
     /// felt here yet."
+    /// **The scan's reach, widened.** It read the view and the store only, and
+    /// the margin has two more files a quantity could be written into: the model
+    /// and the one Settings section that carries its doors. Neither counts
+    /// anything today, and neither could grow one unnoticed now.
     func testTheMarginCannotSayHowMany() {
-        for path in [marginFile, storeFile] {
+        for path in [marginFile, storeFile, settingsFile, modelFile] {
             let body = String(source(path).lexed.masked)
             for line in body.components(separatedBy: "\n") {
                 XCTAssertFalse(Rx.matches(#"[A-Za-z_][A-Za-z0-9_.]*(?:\.count|Count)\b"#, line),
@@ -2303,6 +2312,79 @@ final class LawsTheMarginTests: XCTestCase {
                            "\(motion) in the margin — a still path that has to switch something "
                            + "off is not the same as a screen with nothing to switch off")
         }
+    }
+
+    /// **The composer holds the note until the write has settled.** It used to
+    /// clear `MarginComposition.openNoteId` one line *before* spawning the
+    /// ledger task, which left a window in which the note was nobody's:
+    /// `ledgeredAt` is nil until the create returns, so a scene-phase `.active`
+    /// sweep landing in that window found an un-stamped note that `sweepable` no
+    /// longer excluded, and posted his words a second time.
+    ///
+    /// Checked structurally rather than only at the service, because the two
+    /// halves guard different things: `beginNoteFlight` stops the second POST,
+    /// and this stops the second *claim*, which is what keeps the intent legible
+    /// — the note belongs to the composer until the composer is done with it.
+    func testTheComposerDoesNotLetGoOfANoteItIsStillWriting() {
+        let body = String(source(marginFile).lexed.masked)
+        XCTAssertFalse(Rx.matches(#"openNoteId\s*=\s*nil\s*\n\s*ledgerIfNeeded\(\)"#, body),
+                       "the composition claim is dropped before the write is spawned — that is "
+                       + "the window the `.active` sweep posts his note twice in")
+        XCTAssertTrue(body.contains("releaseComposition"),
+                      "the claim is no longer released through one guarded path")
+        // …and the release is conditional on it still being this note: he can
+        // open a second composer while the first POST is in the air.
+        XCTAssertTrue(Rx.matches(#"MarginComposition\.openNoteId\s*==\s*id"#, body),
+                      "an unconditional clear would hand the sentence he is typing right now "
+                      + "to the next sweep")
+    }
+
+    /// **Leaving nothing saves nothing.** An emptied note that stood anyway made
+    /// everything typed permanent two seconds later, with no gesture anywhere in
+    /// the app able to take it back — and a permanent ledger row with it.
+    func testTheComposerCanStillTakeSomethingBack() {
+        let body = String(source(marginFile).lexed.masked)
+        XCTAssertTrue(body.contains("discardIfEmptied"),
+                      "the composer no longer honours an emptied field on the way out")
+        let store = String(source(storeFile).lexed.masked)
+        XCTAssertTrue(store.contains("shouldDiscard"), "the discard rule has gone")
+        XCTAssertTrue(store.contains("ledgeredAt == nil"),
+                      "a note the ledger already holds must never be discarded — the row cannot "
+                      + "be retracted, and the next restore would bring the note straight back")
+    }
+
+    /// **The path home is not behind a door that can shut.** Two properties,
+    /// held in source because neither is visible in a passing run: the restore
+    /// is not gated on the phone holding no notes, and it does not sit behind a
+    /// field fetch that a dead network aborts.
+    ///
+    /// Both together were the loss. Reinstall with no signal → the fetch throws
+    /// → the restore, which was the last call in the `do` block, never runs. He
+    /// writes one note. The local table is not empty again for the life of the
+    /// install, so the guard returned immediately on every later launch and
+    /// every note he wrote before the reinstall stayed in Airtable forever.
+    func testTheMarginsRestoreCannotBeShutOutByOneOfflineLaunch() throws {
+        let f = try XCTUnwrap(LawSource.production.first { $0.path == "Data/AirtableService.swift" },
+                              "the service is not in the corpus — this cannot be checked")
+        let body = String(f.lexed.masked)
+        XCTAssertTrue(body.contains("restoreNotesFromLedger"),
+                      "the margin's restore has gone, or gone back to a name that describes a "
+                      + "guard rather than a merge")
+        XCTAssertFalse(body.contains("restoreNotesIfLocalEmpty"),
+                       "the restore is gated on the phone being empty again — that guard closes "
+                       + "for good the first time he writes a note before a successful sync")
+        XCTAssertTrue(body.contains("notesMissingLocally"),
+                      "the restore no longer merges on the ledger identity, so it cannot safely "
+                      + "run more than once")
+        // …and it is called before the field fetch that can throw. The call sits
+        // above the `do`, which is the whole of what makes it reachable offline.
+        let callAt = body.range(of: "await restoreNotesFromLedger(context: context)")
+        let doAt = body.range(of: "reconcileShaktis")
+        let call = try XCTUnwrap(callAt, "the restore is never called from sync")
+        let start = try XCTUnwrap(doAt, "sync has changed shape — re-read this check")
+        XCTAssertLessThan(call.lowerBound, start.lowerBound,
+                          "the restore sits behind the field fetch again; a launch with no signal "
+                          + "never reaches it")
     }
 
     /// The composer inherits the letter's discipline: a note becomes real at the

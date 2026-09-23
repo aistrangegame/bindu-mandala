@@ -304,11 +304,25 @@ enum ActivityLedger {
         )
     }
 
-    /// The two ledger columns a note's idempotency check reads. Deliberately
-    /// **not** a widening of `RecognitionDedup.readFields`, which four other
-    /// call sites share: a note has no link to compare, and its body does the
-    /// work the link does everywhere else.
-    static let noteDedupFields = [Field.feltAt, Field.notes]
+    /// The ledger columns a note's idempotency check reads. Deliberately **not**
+    /// a widening of `RecognitionDedup.readFields`, which four other call sites
+    /// share: a note has no link to compare, and its body does the work the link
+    /// does everywhere else.
+    ///
+    /// **Every column ``noteRowMatches`` reads is named here, and that is the
+    /// whole point of the list.** `fields[]` is a narrowing: Airtable returns
+    /// *only* what this array names, and `Row.Fields` decodes every key with
+    /// `decodeIfPresent`, so a column left out arrives as `nil` in a row that
+    /// plainly carries it on the server. It stood for one revision without
+    /// `Activity Type` while `noteRowMatches` opened by requiring it — so the
+    /// guard read `nil != "Note Left"` on every live row, the check could never
+    /// return true, and the retry after a POST whose response was lost wrote his
+    /// note to the ledger a second time. Every unit test was green throughout,
+    /// because each of them hand-built a `Row` with the field already set.
+    /// `ActivityLedgerTests.testTheDedupAsksForEveryColumnItsMatchThenReads`
+    /// decodes the page the fetch actually receives, which is the only shape of
+    /// test that could ever have seen it.
+    static let noteDedupFields = [Field.activityType, Field.feltAt, Field.notes]
 
     /// Is this ledger row the same note? The key is `Activity Type` (already
     /// narrowed by the fetch) + `Felt At` to the second + the trimmed body.
@@ -358,6 +372,52 @@ enum ActivityLedger {
             out.append((createdAt: when, body: body))
         }
         return out.sorted { $0.createdAt < $1.createdAt }
+    }
+
+    /// The key two copies of one note share: the instant **to the second**, and
+    /// the words. It is exactly the key `noteRowMatches` compares by, said once
+    /// so the create-time guard and the restore-time merge cannot drift apart.
+    ///
+    /// Second precision is not a rounding-off — it is the only precision that
+    /// survives the round trip. `Felt At` is written by
+    /// `RecognitionDedup.writtenFeltAt`, which carries seconds and no fraction,
+    /// so a note whose `createdAt` holds sub-second detail locally comes back
+    /// from the ledger without it. Comparing the raw `Date`s would say *this is
+    /// a note the phone has never seen* about every note the phone wrote.
+    static func noteIdentity(createdAt: Date, body: String) -> String {
+        RecognitionDedup.writtenFeltAt(createdAt)
+            + "\u{1F}"
+            + body.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Which of the ledger's notes this phone does not already hold.
+    ///
+    /// **This is what replaced "restore only when the phone is empty", and the
+    /// emptiness guard is a path that closes for good.** The old rule ran the
+    /// restore only when `MarginNote` was empty, and it ran at the end of a sync
+    /// that a dead network aborts before reaching it. So: a reinstall with no
+    /// signal, one note written, and the local table is never empty again — the
+    /// guard returns on every launch for the rest of the install's life and
+    /// every note he wrote before the reinstall stays in Airtable and never
+    /// comes back to his list. Authored words, unrecoverable from anywhere else.
+    ///
+    /// Merging on identity has no such door: it is idempotent, so it may run on
+    /// every sync forever, and it is the same answer whether the phone holds
+    /// none of the ledger's notes, some of them, or all.
+    ///
+    /// Duplicates *within* the ledger collapse too — if two identical rows ever
+    /// reach the server, only one note comes back to his margin.
+    static func notesMissingLocally(restored: [RestoredNote],
+                                    local: [RestoredNote]) -> [RestoredNote] {
+        var seen = Set(local.map { noteIdentity(createdAt: $0.createdAt, body: $0.body) })
+        var out: [RestoredNote] = []
+        for r in restored {
+            let key = noteIdentity(createdAt: r.createdAt, body: r.body)
+            guard !seen.contains(key) else { continue }
+            seen.insert(key)
+            out.append(r)
+        }
+        return out
     }
 
     /// Is this recognition her first? `serverCount` is the Shakti row's

@@ -58,9 +58,12 @@ struct MarginNoteStore {
 
     /// Write the body. A note becomes real at the moment it has words in it: if
     /// this one is still transient, that is when it is inserted. A body that is
-    /// nothing but air is never saved — and a note already saved that is emptied
-    /// back to air is left exactly as it was rather than blanked, because the
-    /// row he can already see in his list is not something an edit may erase.
+    /// nothing but air is never *saved over* words that are already there —
+    /// an emptied field is not an erase instruction while he is still in the
+    /// composer, it is an intermediate state between two sentences.
+    ///
+    /// What it means when he empties the field **and leaves** is a different
+    /// question, and ``discard(_:typed:)`` answers it.
     @discardableResult
     func save(_ note: MarginNote, body: String) -> Bool {
         guard !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
@@ -69,5 +72,41 @@ struct MarginNoteStore {
         note.updatedAt = .now
         try? context.save()
         return true
+    }
+
+    /// He deleted every word and walked out. The note goes.
+    ///
+    /// **Without this, anything typed becomes permanent two seconds later and
+    /// nothing anywhere in the app can take it back.** The autosave inserts the
+    /// row after two seconds of quiet; `save` then refuses an emptied body, so
+    /// wiping the field leaves the old sentence standing; and there is no delete
+    /// this pass. So he opens the margin to say something is broken, starts on
+    /// the wrong thought or mistypes, clears it — and the wrong thought is now a
+    /// permanent row in his list *and* a permanent row in the ledger. He asked
+    /// to *"save it as a new entry"*; he never asked for immutability, and the
+    /// screen said empty while the store said otherwise. Leaving is saving here,
+    /// and leaving nothing must therefore save nothing.
+    ///
+    /// **A note that has already reached the ledger is never discarded**, and
+    /// that is the line between this and a delete feature. The ledger has only a
+    /// POST path in this house, so removing a ledgered note locally would leave
+    /// a row nothing can reconcile — and the next restore would bring the note
+    /// straight back, which is worse than not deleting it. In the composer the
+    /// case cannot arise: `ledgerIfNeeded` runs on the way out, and the sweep
+    /// excludes the note he has open. The guard is here because the rule is the
+    /// rule, not because the path is reachable.
+    @discardableResult
+    func discard(_ note: MarginNote, typed body: String) -> Bool {
+        guard Self.shouldDiscard(typed: body, ledgeredAt: note.ledgeredAt) else { return false }
+        guard note.modelContext != nil else { return false }
+        context.delete(note)
+        try? context.save()
+        return true
+    }
+
+    /// The rule itself, pure: nothing but air left in the field, and the note
+    /// has never reached the ledger.
+    static func shouldDiscard(typed: String, ledgeredAt: Date?) -> Bool {
+        typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && ledgeredAt == nil
     }
 }

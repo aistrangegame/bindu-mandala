@@ -286,6 +286,102 @@ final class TheMarginUITests: XCTestCase {
                       "a walker with reduce motion on cannot reach his own notes")
     }
 
+    // MARK: He wipes it and leaves
+
+    /// **He deleted every word and walked out, and the sentence must not still
+    /// be in his list.**
+    ///
+    /// Verified on the glass before it was fixed, which is why it is driven here
+    /// rather than asserted in a unit: type a sentence, wait past the two-second
+    /// autosave so the row genuinely exists, clear the field until it reads
+    /// empty, leave by the back control. The list showed the sentence anyway —
+    /// `save` refuses an emptied body and there is no delete this pass, so after
+    /// two seconds of quiet anything typed was permanent and nothing anywhere in
+    /// the app could take it back. He opens the margin to say something is
+    /// broken, starts on the wrong thought, wipes it, and the wrong thought is a
+    /// permanent row and a permanent ledger entry.
+    func testWipingANoteAndLeavingTakesItAway() {
+        let app = launch()
+        let leave = openSettings(app)
+        let words = "Wrong screen — I meant the Well not the Field."
+
+        let editor = app.textViews["marginComposer"]
+        XCTAssertTrue(press(leave, until: editor, eachTimeout: 12), "the composer did not open")
+        if !editor.hasFocus { editor.tap() }
+        editor.typeText(words)
+
+        // Past the two-second autosave, so the row is genuinely in the store
+        // before it is wiped — wiping a draft nothing had written down yet would
+        // pass for the wrong reason.
+        Thread.sleep(forTimeInterval: 3.5)
+
+        // Every character out, the way a finger does it.
+        let typed = (editor.value as? String) ?? ""
+        editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: typed.count + 8))
+        XCTAssertEqual(((editor.value as? String) ?? "")
+                        .trimmingCharacters(in: .whitespacesAndNewlines), "",
+                       "the field did not actually empty — this test would pass for the wrong reason")
+
+        back(app, to: "Leave a note")
+        let list = openList(app)
+        XCTAssertTrue(list.staticTexts["Nothing left here yet."].waitForExistence(timeout: 12),
+                      """
+                      He deleted every word and left, and the note is still in his list. Leaving \
+                      is saving here, so leaving nothing has to save nothing — otherwise anything \
+                      typed is permanent two seconds later, in his margin and in the ledger, with \
+                      no gesture anywhere in the app able to retract it.
+                      """)
+        let ghost = list.buttons.matching(
+            NSPredicate(format: "label CONTAINS[c] %@", "Wrong screen")).firstMatch
+        XCTAssertFalse(ghost.exists, "the wiped sentence is still a row in his margin")
+    }
+
+    // MARK: The header at the largest type
+
+    /// **The one screen in the margin that carries a title, at the size that
+    /// broke it.** On the smallest glass at AccessibilityXXXL the title wrapped
+    /// over four lines and the back control's single word broke mid-word —
+    /// *"Settin / gs"* — and the header took about two fifths of the screen
+    /// before a note was reachable.
+    ///
+    /// Measured rather than eyeballed: the back control stays one line, the
+    /// header keeps its hands off most of the glass, and a note is still
+    /// reachable under it.
+    func testTheListHeaderHoldsAtTheLargestType() {
+        let app = launch(["-UIPreferredContentSizeCategoryName",
+                          "UICTContentSizeCategoryAccessibilityXXXL"])
+        let leave = openSettings(app)
+        write("the ring two drone is louder than the rest", in: app, from: leave)
+        let list = openList(app)
+
+        let title = list.staticTexts["marginListTitle"]
+        XCTAssertTrue(title.waitForExistence(timeout: 12))
+        let out = list.buttons["Back to settings"]
+        XCTAssertTrue(out.exists && out.isHittable, "the way out is not pressable at the largest type")
+
+        let glass = app.frame
+        let device = SnapshotStore.deviceClass(width: glass.width, height: glass.height)
+        let headerFoot = max(title.frame.maxY, out.frame.maxY)
+        print("MARGIN-HEADER \(device) height=\(headerFoot) glass=\(glass.height)")
+
+        // The back control is one word and one line. Two lines is the mid-word
+        // break this exists to prevent.
+        XCTAssertLessThan(out.frame.height, 90,
+                          "the back control has wrapped — its one word is breaking mid-word")
+        XCTAssertLessThan(headerFoot, glass.height * 0.34,
+                          """
+                          the list's header takes \(headerFoot) pt of \(glass.height) at the \
+                          largest type — he asked for large type, not for a header instead of \
+                          his notes.
+                          """)
+
+        let row = list.buttons.matching(
+            NSPredicate(format: "label CONTAINS[c] %@", "louder than the rest")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10) && row.isHittable,
+                      "his note is not reachable under the header at the largest type")
+        shoot(app, "margin-list-largest")
+    }
+
     // MARK: - Driving
 
     /// Open the composer from `door`, type `words`, and come back to Settings.

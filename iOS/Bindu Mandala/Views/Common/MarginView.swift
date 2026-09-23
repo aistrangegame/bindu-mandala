@@ -215,7 +215,7 @@ struct MarginNoteComposerView: View {
         .onDisappear {
             saveTask?.cancel()
             saveIfNeeded()
-            MarginComposition.openNoteId = nil
+            discardIfEmptied()
             ledgerIfNeeded()
         }
     }
@@ -267,13 +267,51 @@ struct MarginNoteComposerView: View {
         draft.markSaved()
     }
 
+    /// He emptied the field and left, so the note goes — see
+    /// `MarginNoteStore.discard(_:typed:)` for why leaving nothing has to save
+    /// nothing. Runs before `ledgerIfNeeded`, which then finds no note and posts
+    /// nothing: a discarded note never reaches the ledger at all.
+    private func discardIfEmptied() {
+        guard let row = note else { return }
+        let id = row.noteId
+        guard MarginNoteStore(context: context).discard(row, typed: draft.text) else { return }
+        note = nil
+        releaseComposition(id)
+    }
+
     /// The ledger row, written once, when he has finished and gone. `createdAt`
     /// is the note's own instant, so a note that waits three days for a network
     /// still lands on the day he wrote it.
+    ///
+    /// **The composer holds the note until the POST has settled.** Clearing
+    /// `MarginComposition.openNoteId` before spawning this — which is what it
+    /// used to do, one line earlier — opened a window where the note was nobody's:
+    /// `ledgeredAt` is still `nil` until the create returns, and a scene-phase
+    /// `.active` sweep arriving in that window found an un-stamped note that
+    /// `sweepable` no longer excluded, and posted it a second time. The interlock
+    /// in `AirtableService.beginNoteFlight` is the belt; this is the braces, and
+    /// it is the half that keeps the *intent* legible: the note belongs to the
+    /// composer until the composer is done with it.
     private func ledgerIfNeeded() {
-        guard let row = note, !row.isBlank, row.ledgeredAt == nil else { return }
+        guard let row = note, !row.isBlank, row.ledgeredAt == nil else {
+            releaseComposition(note?.noteId)
+            return
+        }
         let ctx = context
-        Task { await AirtableService.shared.recordNote(row, context: ctx) }
+        let id = row.noteId
+        Task {
+            await AirtableService.shared.recordNote(row, context: ctx)
+            releaseComposition(id)
+        }
+    }
+
+    /// Let the sweep have this note back — but only if it is still the one the
+    /// composer claimed. He can open a second composer while the first one's
+    /// POST is still in the air, and clearing unconditionally would hand the
+    /// sentence he is typing *right now* to the next sweep.
+    private func releaseComposition(_ id: UUID?) {
+        guard let id, MarginComposition.openNoteId == id else { return }
+        MarginComposition.openNoteId = nil
     }
 
     private func leave() {
@@ -294,6 +332,7 @@ struct MarginNoteListView: View {
     @Query(sort: \MarginNote.createdAt, order: .reverse) private var notes: [MarginNote]
     @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var reading: MarginNote?
 
     var body: some View {
@@ -339,37 +378,78 @@ struct MarginNoteListView: View {
         }
     }
 
+    /// The one screen in the margin that carries a title, and so the one that
+    /// could break. At the accessibility sizes the back control and the title
+    /// each take a whole line instead of sharing one.
+    ///
+    /// **Side by side, it collapsed.** On the smallest glass at
+    /// AccessibilityXXXL the title wrapped over four lines, the back control's
+    /// one word broke mid-word — *"Settin / gs"* — and the header ate about two
+    /// fifths of the screen before a single note was reached. This is the app's
+    /// own header rather than a system navigation bar, so nothing was going to
+    /// hold it but the house. The composer's header is clean at the same setting
+    /// on the same glass, and the difference between them is precisely the
+    /// title, which is why it is the thing that moves.
+    ///
+    /// Stacked rather than scaled down: a `minimumScaleFactor` small enough to
+    /// keep this on one line at AX5 is a floor that would take ordinary type
+    /// under FIDELITY's eleven points on some other screen size, and the point
+    /// of the accessibility sizes is that he asked for large. So at those sizes
+    /// the header is simply taller, each line has the full width, and nothing
+    /// has to be shrunk to fit.
     private var header: some View {
-        HStack {
-            Button { dismiss() } label: {
-                HStack(spacing: 4) {
-                    Text("‹").font(.system(size: 22, weight: .light))
-                    Text("Settings").tracking(0.8)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 10) {
+                    backControl
+                    title.frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .foregroundStyle(Color.gold)
-                .font(AppFont.label(14))
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
+            } else {
+                HStack {
+                    backControl
+                    Spacer()
+                    title
+                    Spacer()
+                    Color.clear.frame(width: 64, height: 1)
+                        .accessibilityHidden(true)
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Back to settings")
-            Spacer()
-            Text("What you have left")
-                .font(AppFont.sanskrit(16))
-                .tracking(1.2)
-                .foregroundStyle(Color.cream.opacity(0.8))
-                // Names the destination for a driven test: a sentinel has to be
-                // true only *after* this screen has arrived, and the door that
-                // opens it carries the same words.
-                .accessibilityIdentifier("marginListTitle")
-            Spacer()
-            Color.clear.frame(width: 64, height: 1)
-                .accessibilityHidden(true)
         }
         .padding(.horizontal, 20)
         .padding(.top, 6)
         .padding(.bottom, 12)
         .overlay(Rectangle().fill(Color.gold.opacity(0.12)).frame(height: 0.5), alignment: .bottom)
+    }
+
+    private var backControl: some View {
+        Button { dismiss() } label: {
+            HStack(spacing: 4) {
+                Text("‹").font(.system(size: 22, weight: .light))
+                // One line, always. At the sizes where it used to break mid-word
+                // it now has a whole line to itself, so the scale factor is the
+                // floor the house asks of every one-line string rather than
+                // something this header leans on.
+                Text("Settings").tracking(0.8).lineLimit(1).minimumScaleFactor(0.55)
+            }
+            .foregroundStyle(Color.gold)
+            .font(AppFont.label(14))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Back to settings")
+    }
+
+    private var title: some View {
+        Text("What you have left")
+            .font(AppFont.sanskrit(16))
+            .tracking(1.2)
+            .foregroundStyle(Color.cream.opacity(0.8))
+            .lineLimit(2)
+            // Names the destination for a driven test: a sentinel has to be
+            // true only *after* this screen has arrived, and the door that
+            // opens it carries the same words.
+            .accessibilityIdentifier("marginListTitle")
     }
 
     /// One note's row. Truncated here, never in the reader. **One** accessibility

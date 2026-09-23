@@ -3559,3 +3559,189 @@ Measured on the running app, top of THE MARGIN to top of DAILY RHYTHM, one devic
 ### Left open, deliberately
 
 **Two devices.** The dedup key is server-derived, so a second device cannot duplicate a row it did not write — this does not repeat the `Letter Written` wound, where a per-install flag re-logged milestones on a second install. What *does* happen is divergence: device B restores up to its install and then the two lists drift apart. The cure would be a pull-on-every-launch that merges the ledger into the local list, which makes Airtable authoritative over his own words, reopens the dirty-on-load class of bug the WellView audit found, and needs a merge rule nobody has asked for. He has one phone. Restore-if-empty is the right scope.
+
+---
+
+## The margin, audited · Two ways his words could be lost, and the one gesture that could not take anything back
+
+**2026-09-23, after the margin's first pass.** The branch was walked on the glass
+and read for data loss before it went anywhere. Three things came back that the
+charter calls a §7 condition — *any path would lose, duplicate, or corrupt his
+practice data* — and none of them were in the migration, which is where the
+attention was. They were all in the sync layer, and two of them were invisible
+to a green suite.
+
+### 1 · The note dedup was dead on every device, and a test held it that way
+
+`ActivityLedger.noteDedupFields` named `Felt At` and `Notes`.
+`noteExistsOnServer` passes that array as `fields[]`, which is a **narrowing**:
+Airtable returns only the columns named, and `Row.Fields` decodes every key with
+`decodeIfPresent`. So `activityType` came back `nil` on every live row — while
+`noteRowMatches` opened by requiring it to equal `Note Left`. `nil` is never
+`"Note Left"`, so the match returned false for every row the server could
+possibly send, `noteExistsOnServer` could never return true, and `processActivity`
+always created.
+
+What that costs him: the POST commits on Airtable and the response is lost — a
+timeout, a dropped connection, a kill between `createActivityRow` returning and
+`ledgeredAt` being stamped. `ledgeredAt` stays nil, the next sweep re-posts, and
+**the ledger holds his note twice**. Then a reinstall, and the restore puts both
+copies into his margin, in his own words, with no delete path this pass. That
+retry is the *exact* case the three-part key was written to defend against.
+
+Every unit test was green throughout, because every one of them hand-built a
+`Row` in Swift with `Activity Type` already populated — and
+`testTheNoteDedupReadsItsOwnTwoColumns` asserted the omission as though it were
+the design. **A test that pins a bug is worse than no test**, and the shape that
+would have caught it is the one now there:
+`testTheDedupAsksForEveryColumnItsMatchThenReads` builds the JSON page from
+`noteDedupFields` itself and decodes it, so it asks the question the device asks.
+
+Fixed by adding `Field.activityType` to the read rather than by dropping the
+guard. Both were one line. The guard is kept because the formula and the match
+then say the same thing twice, and the failure mode of the alternative is silent:
+drop the guard and a future formula change that widened the type would start
+matching notes against other events with no check to notice. The doc comment now
+says why every column the match reads must be in the fetch, and
+`testNoDedupEverChecksAColumnItDidNotAskFor` states it structurally beside the
+recognition path's own (consistent) asymmetry, so the two rules are read together
+instead of drifting apart again.
+
+### 2 · The path home closed permanently the first time he wrote a note offline
+
+`restoreNotesIfLocalEmpty` guarded on `existing.isEmpty` and was called at the
+**end** of `sync`, inside the `do` block — after `try await (s, a, n)`. So:
+
+Reinstall, or `PersistenceRecovery` step 2 quietly opening a fresh store. First
+launch has no signal → the field fetch throws → the restore never runs at all. He
+writes one note. `MarginNote` is no longer empty, so the guard returns on
+**every future launch, for the life of the install** — and every note he wrote
+before the reinstall stays in Airtable and never comes back to his list. Nothing
+fails, nothing is logged, and the words are authored: unlike a recognition, whose
+Shakti row still carries Last Felt, a note is re-derivable from nothing.
+
+The emptiness guard was borrowed from the recognitions restore, and it is the
+wrong guard here for a reason worth writing down: **that restore is gated on
+emptiness because it is expensive and lossless to skip; this one is the only way
+a note ever comes home.** So the guard is gone. `notesMissingLocally` merges on
+the ledger identity instead — the instant to the second plus the trimmed words,
+which is the same key `noteRowMatches` already compares by, said once so the two
+cannot drift. The merge is idempotent, so it may run on every sync forever, and
+the call moved **ahead of everything that can throw**.
+
+Second precision is the load-bearing detail and it is asserted on its own
+(`testASecondIsThePrecisionThatSurvivesTheRoundTrip`): `Felt At` carries seconds
+and no fraction, so comparing raw `Date`s would call every note he ever wrote a
+note the phone had never seen — and re-insert all of them, on every sync. The
+fix for a loss bug would have been a duplication bug.
+
+### 3 · The composer let go of a note while its POST was still in the air
+
+`onDisappear` cleared `MarginComposition.openNoteId` one line *before* spawning
+the ledger task. `ledgeredAt` is nil until the create returns, so in that window
+the note was nobody's: a scene-phase `.active` sweep — which fires the instant he
+switches back to the app — found an un-stamped note that `sweepable` no longer
+excluded, and posted it again.
+
+Closed twice, deliberately. `AirtableService.beginNoteFlight` is a per-note
+interlock on the one `@MainActor` service, so test-and-set is atomic without a
+lock and **no two callers can have a POST in the air for the same note**; and the
+composer now releases its claim only after `recordNote` returns, and only if the
+claim is still its own (he can open a second composer while the first is
+flushing). The dedup cannot close this on its own and it is worth being explicit
+about why: it is a *read*, and two reads that race a write both see nothing. The
+interlock is what makes the dedup's job *retry after a failure* rather than *two
+simultaneous firsts*.
+
+### 4 · He deleted every word, left, and the sentence was still there
+
+Not a loss — the opposite, and it is the one thing in the pass that would have
+cost him something. Verified on the running app: type a sentence, wait past the
+two-second autosave so the row exists, clear the field until it reads empty,
+leave by the back control. The note is still in the list.
+
+`MarginNoteStore.save` refuses an emptied body, which the first pass called a
+feature — *"an emptied saved note is left standing"* — and combined with the
+deliberate no-delete-this-pass ruling the consequence is that **after two seconds
+of quiet, anything he has typed is permanent, and there is no gesture anywhere in
+the app that can take it back.** He opens the margin to say something is broken,
+starts on the wrong thought or mistypes, wipes it — and the wrong thought is now
+a permanent row in his list and a permanent row in the ledger. He asked to
+*"save it as a new entry"*. He never asked for immutability, and the screen said
+empty while the store said otherwise.
+
+So: leaving is saving here, and **leaving nothing saves nothing**.
+`MarginNoteStore.discard(_:typed:)` takes the note away when he walks out of the
+composer with the field empty. The rule is pure (`shouldDiscard`) and has one
+hard condition: **a note the ledger already holds is never discarded.** That is
+the line between this and a delete feature — the ledger has only a POST path in
+this house, so removing a ledgered note locally would orphan a row nothing can
+retract, and the next restore would bring the note straight back, which is worse
+than leaving it standing. In the composer the case cannot arise (`ledgerIfNeeded`
+runs on the way out and the sweep excludes the open note); the guard is there
+because the rule is the rule.
+
+This is still not an edit-and-delete feature, and that scope is unchanged: it is
+the same ruling as his own text-only one — wait until he has used it.
+
+### 5 · The one screen in the margin with a title was the one that broke
+
+On the smallest glass at AccessibilityXXXL the list's header ate about two fifths
+of the screen: the title wrapped over four lines and the back control's single
+word broke **mid-word**, reading *"Settin / gs"*. This is the app's own header
+rather than a system navigation bar, so nothing was going to hold it but the
+house — and the composer's header, which has no title, is clean at the same
+setting on the same glass. The title is the difference, so the title is what
+moves.
+
+**Stacked rather than scaled down.** A `minimumScaleFactor` small enough to keep
+that header on one line at AX5 is a floor that would take ordinary type under
+FIDELITY's eleven points on some other width, and the point of the accessibility
+sizes is that he asked for large. So at those sizes the header is simply taller,
+each line has the full width, and nothing has to shrink to fit. The back control
+keeps `.lineLimit(1)` with the house's own 0.55 floor beside it — which
+`DynamicTypeTests.testEverySingleLineStringCanShrink` required, and correctly:
+that law caught the first version of this fix.
+
+### What was checked and refuted, said rather than padded
+
+- **The placeholder's "different face and inset" is not a defect.** It is the
+  shipped letter editor's block, copied verbatim, and the italic-to-roman shift
+  is this house's register — `voice` is what the instrument says *to* him,
+  `sanskrit` is his own words — not an accident. The inset differs by about one
+  point once the `TextEditor`'s own container inset is counted. Diverging the
+  margin from the letter for that is worse than leaving it.
+- **A note past Airtable's long-text ceiling** was reported as an ungrounded
+  hypothesis and stays refuted for now: that ceiling is a hundred thousand
+  characters, and the failure mode if it were ever reached is fail-safe — the
+  phone keeps the note and the sweep retries. Nothing is lost; there is only a
+  ledger row that never appears. Not worth a speculative guard.
+- **The migration is genuinely clean** and this was re-read rather than taken on
+  trust. `notesArrive` is `MigrationStage.lightweight` with no closure to be
+  killed inside; `BinduSchemaV2.models` is byte-untouched; the V1→V2 letters
+  stage with its fsync'd sidecar is not on the V2→V3 path. The safest migration
+  is the one nobody wrote, and that is what is here.
+- **The scroll-length question**, which the never-measure law makes subtle, is
+  settled the way `LawsTheMarginTests` already argues it and the argument holds:
+  the Her Moments breach needed three things together — a length that was a
+  function of his *practice*, arriving on a screen opened for something else, and
+  standing *in front of* two doors. A list of notes fails all three, and the
+  first is what decides it. The length of his own writing is the same category as
+  a letter that runs to a hundred lines.
+- **Nothing counts him.** No `.count` exists in the margin's view, model, store
+  or Settings layer; the spoken surface carries no numeral on any day of any
+  year. The scan that proves it read two files and now reads four — the model and
+  Settings were in range of the law and out of range of the check. The one
+  `.count` in the margin's server code was an `os_log` line that never reached a
+  walker, and it is gone anyway rather than left as a temptation.
+- **VoiceOver reading a long note whole in the list row** is left as it is. It
+  looked like the Her Moments cost-in-swipes shape and it is not: a right-swipe
+  interrupts speech immediately, so a walker pays one gesture to move on, not the
+  length of the note. The row gets *more* than the eye, which harms nobody.
+- **LawsTests was not weakened.** It gains the two new margin checks, two more
+  files in the never-measure scan, and the structural dedup rule; the only
+  behavioural change to an existing check is `testTheNoteDedupReadsItsOwnTwoColumns`,
+  renamed and corrected because what it asserted was the defect. One nit from the
+  audit is taken: the two `touchesAShakti` claims sat inside `if let`, so a pinned
+  file dropping out of the corpus would have passed its own claim silently. They
+  are `XCTUnwrap` now.

@@ -124,6 +124,107 @@ final class MarginNoteStoreTests: XCTestCase {
         await AirtableService.shared.flushUnledgeredNotes(context: ctx)
         XCTAssertEqual(MarginNoteStore(context: ctx).awaitingLedger(limit: 20).count, 2)
     }
+
+    // MARK: he wiped it and left
+
+    /// **Leaving nothing saves nothing.** Verified on the glass before it was
+    /// fixed: type a sentence, wait past the autosave, select all, delete until
+    /// the field reads empty, leave by the back control — and the sentence was
+    /// still in the list. `save` refuses an emptied body, and there is no delete
+    /// this pass, so after two seconds of quiet anything typed was permanent and
+    /// no gesture anywhere in the app could take it back. He opens the margin to
+    /// say something is broken, starts on the wrong thought, wipes it, and the
+    /// wrong thought is a permanent row and a permanent ledger entry. He asked
+    /// to *"save it as a new entry"*; he never asked for immutability.
+    func testEmptyingANoteAndLeavingTakesItAway() throws {
+        let ctx = try freshContext()
+        let store = MarginNoteStore(context: ctx)
+        let note = store.blank()
+        XCTAssertTrue(store.save(note, body: "Wrong screen — I meant the Well not the Field."))
+        XCTAssertFalse(store.all().isEmpty)
+
+        // What the composer does on the way out when the field reads empty.
+        XCTAssertTrue(store.discard(note, typed: ""))
+        XCTAssertTrue(store.all().isEmpty,
+                      "he deleted every word and left, and the sentence is still in his list")
+    }
+
+    /// Whitespace is emptiness — the same trim the save, the post and the
+    /// restore all read by.
+    func testWipingToWhitespaceIsWiping() throws {
+        let ctx = try freshContext()
+        let store = MarginNoteStore(context: ctx)
+        let note = store.blank()
+        store.save(note, body: "a thought")
+        XCTAssertTrue(store.discard(note, typed: "\n  \n "))
+        XCTAssertTrue(store.all().isEmpty)
+    }
+
+    /// And the line between this and a delete feature: a note the ledger already
+    /// holds is never discarded. Removing it locally would orphan a row that
+    /// nothing in this house can retract — and the next restore would bring the
+    /// note straight back, which is worse than leaving it standing.
+    func testANoteTheLedgerHoldsIsNeverDiscarded() throws {
+        let ctx = try freshContext()
+        let store = MarginNoteStore(context: ctx)
+        let note = store.blank()
+        store.save(note, body: "already sent")
+        note.ledgeredAt = .now
+        XCTAssertFalse(store.discard(note, typed: ""))
+        XCTAssertEqual(store.all().map(\.body), ["already sent"])
+    }
+
+    /// Words still in the field are never a discard, whatever else is true.
+    func testANoteWithWordsInItIsNeverDiscarded() throws {
+        let ctx = try freshContext()
+        let store = MarginNoteStore(context: ctx)
+        let note = store.blank()
+        store.save(note, body: "a thought")
+        XCTAssertFalse(store.discard(note, typed: "a thought"))
+        XCTAssertFalse(store.discard(note, typed: "a second thought"))
+        XCTAssertEqual(store.all().count, 1)
+    }
+
+    /// The rule itself, over its four cases.
+    func testTheDiscardRule() {
+        XCTAssertTrue(MarginNoteStore.shouldDiscard(typed: "   ", ledgeredAt: nil))
+        XCTAssertFalse(MarginNoteStore.shouldDiscard(typed: "words", ledgeredAt: nil))
+        XCTAssertFalse(MarginNoteStore.shouldDiscard(typed: "   ", ledgeredAt: .now))
+        XCTAssertFalse(MarginNoteStore.shouldDiscard(typed: "words", ledgeredAt: .now))
+    }
+
+    // MARK: two callers, one note, one POST
+
+    /// **The narrower duplication race, closed at the service.**
+    ///
+    /// `ledgeredAt` is stamped only after a create returns, so between the POST
+    /// leaving and the response landing the note looks un-written to everybody.
+    /// The composer's `onDisappear` spawns one write; the scene-phase `.active`
+    /// sweep — which fires the instant he switches back to the app — finds the
+    /// same un-stamped note and spawns another. Both pass `ledgeredAt == nil`,
+    /// both run their dedup GET before either create commits, and his note
+    /// reaches the ledger twice. The dedup cannot close it: it is a read, and two
+    /// reads racing a write both see nothing.
+    func testOnlyOneCallerCanBeWritingANoteAtOnce() {
+        let id = UUID()
+        XCTAssertTrue(AirtableService.shared.beginNoteFlight(id),
+                      "the first caller takes the flight")
+        XCTAssertFalse(AirtableService.shared.beginNoteFlight(id),
+                       "a second caller posted the same note while the first was still in the air")
+        AirtableService.shared.endNoteFlight(id)
+        XCTAssertTrue(AirtableService.shared.beginNoteFlight(id),
+                      "and a genuine retry, after the first has landed, is not blocked forever")
+        AirtableService.shared.endNoteFlight(id)
+    }
+
+    /// Two different notes are never in each other's way.
+    func testTheInterlockIsPerNoteAndNotAGlobalLock() {
+        let a = UUID(), b = UUID()
+        XCTAssertTrue(AirtableService.shared.beginNoteFlight(a))
+        XCTAssertTrue(AirtableService.shared.beginNoteFlight(b))
+        AirtableService.shared.endNoteFlight(a)
+        AirtableService.shared.endNoteFlight(b)
+    }
 }
 
 // MARK: - The day a note carries

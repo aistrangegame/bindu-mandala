@@ -772,11 +772,73 @@ final class ActivityLedgerTests: XCTestCase {
         XCTAssertFalse(ActivityLedger.noteRowMatches(real, feltAt: instant, body: "  "))
     }
 
-    /// The dedup fetch reads two columns and is **not** a widening of
+    /// The dedup fetch reads its own columns and is **not** a widening of
     /// `RecognitionDedup.readFields`, which four other call sites share.
-    func testTheNoteDedupReadsItsOwnTwoColumns() {
-        XCTAssertEqual(ActivityLedger.noteDedupFields, ["Felt At", "Notes"])
+    func testTheNoteDedupReadsItsOwnColumns() {
+        XCTAssertEqual(ActivityLedger.noteDedupFields, ["Activity Type", "Felt At", "Notes"])
         XCTAssertNotEqual(ActivityLedger.noteDedupFields, RecognitionDedup.readFields)
+    }
+
+    /// **The check that had to exist, and the one shape of test that could ever
+    /// have caught this.**
+    ///
+    /// Every other test on this page hands `noteRowMatches` a `Row` built in
+    /// Swift with every field populated. The live path never sees such a row:
+    /// `noteExistsOnServer` passes `noteDedupFields` as `fields[]`, and Airtable
+    /// answers with *only* those columns. So this decodes the page the fetch
+    /// actually receives — the JSON, narrowed exactly as the request narrows it
+    /// — and asks the question the device asks.
+    ///
+    /// It was red before `Activity Type` joined the list: `Row.Fields` decodes
+    /// with `decodeIfPresent`, `activityType` came back `nil`, and
+    /// `noteRowMatches`' opening guard rejected every live row. The dedup could
+    /// not return true on any device. A POST that lands but whose response is
+    /// lost — a timeout, a dropped connection, a kill between the create
+    /// returning and the stamp — left `ledgeredAt` nil, the next sweep re-posted,
+    /// and the ledger held his note twice; a later restore then put both copies
+    /// in his margin, in his own words, with no delete path.
+    func testTheDedupAsksForEveryColumnItsMatchThenReads() throws {
+        // The page, narrowed by `fields[]` to exactly `noteDedupFields`.
+        var fields: [String: String] = [:]
+        for name in ActivityLedger.noteDedupFields {
+            switch name {
+            case ActivityLedger.Field.activityType: fields[name] = "Note Left"
+            case ActivityLedger.Field.feltAt:       fields[name] = "2026-09-06T14:34:41.000Z"
+            case ActivityLedger.Field.notes:        fields[name] = "the way out is hard to find"
+            default: XCTFail("the dedup asks for \(name) and this test does not know what it is")
+            }
+        }
+        let payload: [String: Any] = ["records": [["id": "recDUP", "fields": fields]]]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+        struct Page: Decodable { let records: [ActivityLedger.Row] }
+        let rows = try JSONDecoder().decode(Page.self, from: data).records
+
+        XCTAssertTrue(rows.contains {
+            ActivityLedger.noteRowMatches($0, feltAt: instant,
+                                          body: "the way out is hard to find")
+        }, """
+        The note the instrument already posted is not recognised when it is read \
+        back the way the fetch actually reads it, so the create runs again and the \
+        ledger holds his note twice. Every column `noteRowMatches` reads must be \
+        named in `noteDedupFields` — `fields[]` is a narrowing, and what is left \
+        out of it arrives nil however plainly the server holds it.
+        """)
+    }
+
+    /// And the same guarantee stated structurally, so it survives a future
+    /// column joining the match rule: the recognition dedup is consistent
+    /// (asks for neither `Activity Type` nor checks it — its formula narrows the
+    /// type already), the restore is consistent the other way (asks for it and
+    /// checks it), and the note dedup must be one or the other and never split.
+    func testNoDedupEverChecksAColumnItDidNotAskFor() {
+        XCTAssertTrue(ActivityLedger.noteDedupFields.contains(ActivityLedger.Field.activityType),
+                      "noteRowMatches opens by requiring Activity Type — the fetch must ask for it")
+        XCTAssertTrue(ActivityLedger.noteDedupFields.contains(ActivityLedger.Field.feltAt))
+        XCTAssertTrue(ActivityLedger.noteDedupFields.contains(ActivityLedger.Field.notes))
+        // The recognition path's own consistency, asserted beside it so the two
+        // rules are read together rather than drifting apart again.
+        XCTAssertFalse(RecognitionDedup.readFields.contains(ActivityLedger.Field.activityType),
+                       "rowMatches does not check Activity Type, so its fetch must not need to")
     }
 
     func testTheNoteDedupFormulaNarrowsToTheMarginAndTheWindow() {
@@ -821,5 +883,84 @@ final class ActivityLedgerTests: XCTestCase {
         var c = Calendar(identifier: .gregorian)
         c.timeZone = newYork
         XCTAssertEqual(c.component(.hour, from: back[0].createdAt), 12)
+    }
+
+    // MARK: the path home stays open
+
+    /// **The door that used to close for good.**
+    ///
+    /// The restore was guarded on the phone holding no notes at all, and it sat
+    /// at the end of a sync that a dead network aborts before reaching it. So:
+    /// reinstall with no signal, write one note, and `MarginNote` is never empty
+    /// again — the guard returned on every launch for the rest of the install's
+    /// life, and every note written before the reinstall stayed in Airtable and
+    /// never came back to his list. This stages exactly that sequence against
+    /// the rule that replaced it.
+    func testANoteWrittenBeforeTheFirstSyncDoesNotStrandEveryEarlierNote() {
+        let fromTheLedger = [
+            (createdAt: utc(2026, 8, 1, 9, 0, 0), body: "the ring two drone is too loud"),
+            (createdAt: utc(2026, 8, 3, 18, 30, 0), body: "a way to withdraw a word"),
+        ]
+        // What his phone holds after the reinstall: the one note he wrote while
+        // the restore could not run.
+        let onThePhone = [(createdAt: utc(2026, 9, 6, 14, 34, 41), body: "written on the train")]
+
+        let missing = ActivityLedger.notesMissingLocally(restored: fromTheLedger, local: onThePhone)
+        XCTAssertEqual(missing.map(\.body),
+                       ["the ring two drone is too loud", "a way to withdraw a word"],
+                       "his earlier notes did not come home — under the old emptiness guard this "
+                       + "is the launch after which they never could")
+    }
+
+    /// Idempotent, which is what lets it run on every sync forever instead of
+    /// once, behind a door, on a launch that has to go perfectly.
+    func testTheMergeBringsNothingBackTwiceHoweverOftenItRuns() {
+        let ledger = [
+            (createdAt: utc(2026, 8, 1, 9, 0, 0), body: "the ring two drone is too loud"),
+            (createdAt: utc(2026, 8, 3, 18, 30, 0), body: "a way to withdraw a word"),
+        ]
+        var phone: [ActivityLedger.RestoredNote] = []
+        for _ in 0..<5 {
+            let missing = ActivityLedger.notesMissingLocally(restored: ledger, local: phone)
+            phone.append(contentsOf: missing)
+        }
+        XCTAssertEqual(phone.map(\.body),
+                       ["the ring two drone is too loud", "a way to withdraw a word"],
+                       "the merge duplicated his margin by running more than once")
+    }
+
+    /// A note the phone wrote and posted comes back from the ledger with its
+    /// sub-second detail filed off, because `Felt At` carries seconds and no
+    /// fraction. Comparing raw `Date`s would call every note he ever wrote a
+    /// note the phone has never seen — and re-insert all of them, every sync.
+    func testASecondIsThePrecisionThatSurvivesTheRoundTrip() {
+        let written = utc(2026, 9, 6, 14, 34, 41).addingTimeInterval(0.789)
+        let asTheLedgerReturnsIt = [(createdAt: utc(2026, 9, 6, 14, 34, 41),
+                                     body: "the way out is hard to find")]
+        let onThePhone = [(createdAt: written, body: "the way out is hard to find")]
+        XCTAssertTrue(ActivityLedger.notesMissingLocally(restored: asTheLedgerReturnsIt,
+                                                         local: onThePhone).isEmpty,
+                      "the restore would insert a second copy of a note the phone already holds "
+                      + "every time it ran")
+    }
+
+    /// If two identical rows ever do reach the server, only one note comes back
+    /// to his margin.
+    func testTwoIdenticalLedgerRowsComeHomeAsOneNote() {
+        let twice = [
+            (createdAt: utc(2026, 9, 6, 14, 34, 41), body: "said once"),
+            (createdAt: utc(2026, 9, 6, 14, 34, 41), body: "said once"),
+        ]
+        XCTAssertEqual(ActivityLedger.notesMissingLocally(restored: twice, local: []).count, 1)
+    }
+
+    /// Two notes a second apart with different words are two notes, here as in
+    /// the create-time key — the merge and the dedup share one identity.
+    func testTheMergeKeepsTwoDifferentNotesWrittenInTheSameSecond() {
+        let both = [
+            (createdAt: utc(2026, 9, 6, 14, 34, 41), body: "the first thing"),
+            (createdAt: utc(2026, 9, 6, 14, 34, 41), body: "the second thing"),
+        ]
+        XCTAssertEqual(ActivityLedger.notesMissingLocally(restored: both, local: []).count, 2)
     }
 }
