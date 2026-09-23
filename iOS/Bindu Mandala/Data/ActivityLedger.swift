@@ -83,6 +83,16 @@ enum ActivityLedger {
         static let fullCircle       = "Full Circle"
         /// Once ever: a second adaptation reached, in any room.
         static let firstDwelling    = "First Dwelling"
+        /// A note the practitioner left in the margin of the instrument — an
+        /// idea, a wish, something broken. Born on first write by
+        /// `typecast: true`, as `Ring Crossed` and `Silence Held` were.
+        ///
+        /// **Not `Note Written`.** `Letter Written` already owns "written", and
+        /// a letter is to *her* while a note is to the instrument; two
+        /// near-identical types would be read as the same thing by every other
+        /// Bindu instrument that shares this ledger. "Left" is his own verb:
+        /// *"go into the settings and leave a note."*
+        static let noteLeft         = "Note Left"
     }
 
     // MARK: - The two once-ever milestones
@@ -253,6 +263,101 @@ enum ActivityLedger {
             moonPhase: LunarPhaseService.phaseName(at: at),
             durationSec: durationSec
         )
+    }
+
+    // MARK: - The margin
+
+    /// The `Activity Name` every note carries — a **constant**, the same on
+    /// every row.
+    ///
+    /// The obvious alternative was the note's first line, so the ledger's
+    /// primary column would be scannable in Airtable, and it is refused for a
+    /// reason that is not cosmetic: his words would then flow into a *composed*
+    /// ledger string, and `HomesHarnessTests` runs Design's nine MEASURING
+    /// patterns over exactly those. A note that happened to read "day 3 of this"
+    /// would fail the harness, and the only ways out would be weakening the
+    /// harness or censoring his sentence. This file's own convention already
+    /// settles it — *"`Notes` is the practitioner's text … never metadata.
+    /// Nothing here composes a Notes value."* His words live in one field, and
+    /// are never quoted into another.
+    static let noteLeftName = "A note left in the instrument"
+
+    /// A `Note Left` row. **No link**: a note is about the app, not about a
+    /// Śakti, so `Link to Mandala` is empty and `fields(for:)` omits the key.
+    /// **No `Gesture Source`**: those four options name where a gesture *toward
+    /// a Śakti* began, and a note is not one; a fifth option would dilute a
+    /// vocabulary other instruments read. The moon is carried because it is
+    /// free, pure and invisible to him, and it lets a note be found beside
+    /// whatever practice surrounded it.
+    ///
+    /// `at` is the note's own `createdAt` and never the flush time.
+    static func noteLeft(body: String, at: Date) -> PendingActivity {
+        PendingActivity(
+            type: ActivityType.noteLeft,
+            linkRecordId: "",
+            name: noteLeftName,
+            detail: "Left in the instrument · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            notes: body
+        )
+    }
+
+    /// The two ledger columns a note's idempotency check reads. Deliberately
+    /// **not** a widening of `RecognitionDedup.readFields`, which four other
+    /// call sites share: a note has no link to compare, and its body does the
+    /// work the link does everywhere else.
+    static let noteDedupFields = [Field.feltAt, Field.notes]
+
+    /// Is this ledger row the same note? The key is `Activity Type` (already
+    /// narrowed by the fetch) + `Felt At` to the second + the trimmed body.
+    ///
+    /// **The body is the disambiguator, and that is precisely why it is in the
+    /// key.** Two notes a second apart with different words are two notes, and
+    /// both are written — the key separates them. Two rows at the same second
+    /// with the same words are not two notes; they are one note posted twice (a
+    /// double-tapped save, or a retry after a POST whose response was lost), and
+    /// collapsing them is the right answer. The guard is server-derived by
+    /// construction, which is the shape the `Letter Written` wound taught the
+    /// house to prefer over a per-install flag.
+    static func noteRowMatches(_ row: Row, feltAt: Date, body: String) -> Bool {
+        guard row.fields.activityType == ActivityType.noteLeft else { return false }
+        guard let raw = row.fields.feltAt,
+              let server = RecognitionDedup.normalizedServerFeltAt(raw),
+              server == RecognitionDedup.writtenFeltAt(feltAt) else { return false }
+        let mine = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        let theirs = (row.fields.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return !mine.isEmpty && mine == theirs
+    }
+
+    /// The notes restore: every `Note Left` row this instrument wrote.
+    static var restoreNotes: String {
+        and([isMandala, isType(ActivityType.noteLeft)])
+    }
+
+    typealias RestoredNote = (createdAt: Date, body: String)
+
+    /// Ledger rows → the practitioner's notes, oldest first — the path home
+    /// after a reinstall or a store recovery, where the ledger holds every note
+    /// and the phone holds none. `createdAt` comes from `Felt At`, falling back
+    /// to noon of `Activity Date` for a row that somehow carries no instant;
+    /// a row with neither, or with no words, is skipped and **never coerced to
+    /// now** — a note dated today that he wrote in March would be a lie about
+    /// his own margin.
+    static func marginNotes(from rows: [Row],
+                            timeZone: TimeZone = .current) -> [RestoredNote] {
+        var out: [RestoredNote] = []
+        for row in rows {
+            guard row.fields.activityType == ActivityType.noteLeft else { continue }
+            let body = (row.fields.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !body.isEmpty else { continue }
+            guard let when = serverDate(row.fields.feltAt)
+                    ?? legacyTimestamp(activityDate: row.fields.activityDate, timeZone: timeZone)
+            else { continue }
+            out.append((createdAt: when, body: body))
+        }
+        return out.sorted { $0.createdAt < $1.createdAt }
     }
 
     /// Is this recognition her first? `serverCount` is the Shakti row's

@@ -24,6 +24,7 @@ struct SettingsView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
+                        marginSection
                         rhythmSection
                         fieldConnectionsSection
                         bijaSection
@@ -55,6 +56,70 @@ struct SettingsView: View {
     }
 
     // MARK: - Sections
+
+    /// **The margin, and it is first rather than last.**
+    ///
+    /// Last would have cost nothing — the geometry below it would not have
+    /// moved, and no baseline would have had to say so. It is first anyway, on
+    /// §4.4 parity: a finger reaches the foot of a scroll with one flick and
+    /// **VoiceOver has no such shortcut** — it passes every element in tree
+    /// order, which is the exact argument Phase 3.8 used to fold Her Moments.
+    /// Putting the one control he will reach for several times a week behind
+    /// four configuration sections would make the instrument say two different
+    /// things to two different walkers. It is also the only section on this
+    /// sheet that is *authored input* rather than configuration, and it does not
+    /// belong filed under them.
+    ///
+    /// Two doors and nothing else. The notes themselves never render here: a
+    /// section that grew with his writing would sink `Re-enter the Homecoming`
+    /// a little further with every note, which is Phase 3.8's breach in a new
+    /// place. This section is the same height on the first day and the
+    /// thousandth.
+    private var marginSection: some View {
+        sectionShell("The Margin") {
+            VStack(alignment: .leading, spacing: 14) {
+                NavigationLink {
+                    MarginNoteComposerView()
+                } label: {
+                    doorLabel("Leave a note")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Leave a note")
+                .accessibilityHint("Writes a note to the instrument")
+
+                NavigationLink {
+                    MarginNoteListView()
+                } label: {
+                    doorLabel("What you have left")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("What you have left")
+                .accessibilityHint("Opens the notes you have written")
+
+                Text("Anything you see — an idea, a wish, something broken. Say it here and it waits.")
+                    .font(AppFont.voice(13))
+                    .foregroundStyle(Color.cream.opacity(0.55))
+                    .lineSpacing(4)
+            }
+        }
+    }
+
+    /// The bordered-button idiom this sheet already speaks in — the same face,
+    /// tracking, padding and stroke as "Remember the descent" and "Re-enter the
+    /// Homecoming", and the same ≥ 44 pt drawn height.
+    private func doorLabel(_ words: String) -> some View {
+        Text(words)
+            .font(AppFont.sanskrit(18))
+            .tracking(0.6)
+            .foregroundStyle(Color.gold)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.gold.opacity(0.5), lineWidth: 0.6)
+            )
+            .contentShape(Rectangle())
+    }
 
     private var rhythmSection: some View {
         sectionShell("Daily Rhythm") {
