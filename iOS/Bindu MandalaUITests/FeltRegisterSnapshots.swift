@@ -521,7 +521,23 @@ final class FeltRegisterSnapshots: XCTestCase {
                 // drive a whole control through: three of the entries below are
                 // written `keyContains: "|"`, which is in every key there is, so
                 // every screen they cover could have lost any element it liked
-                // and stayed green. A disappearance is always a failure.
+                // and stayed green. A disappearance is a failure unless it is a
+                // *fold*, and a fold is a claim rather than an exemption: the
+                // entry has to name the control the element went behind, and
+                // **that control has to be on the screen this run just read**.
+                // An entry naming a door that is not there classifies nothing.
+                // What it cannot check from here — that the door really opens
+                // onto this element — `TheLibraryFoldUITests` checks by opening
+                // it. See `FeltRegisterClassifications.folded`.
+                if let fold = FeltRegisterClassifications.folded.first(where: {
+                    $0.screen == screen && key.contains($0.keyContains)
+                }) {
+                    if liveByKey.keys.contains(where: { $0.contains(fold.behind) }) { continue }
+                    out.append("\(device)/\(screen): gone — \(key) — it is classified as folded "
+                               + "behind \"\(fold.behind)\", and that control is not on the screen "
+                               + "either")
+                    continue
+                }
                 out.append("\(device)/\(screen): gone — \(key)")
                 continue
             }
@@ -536,7 +552,7 @@ final class FeltRegisterSnapshots: XCTestCase {
             let dy = ElementFrame.displacement(was.anchorsY, now.anchorsY)
             let moved = max(abs(dx), abs(dy))
             guard moved > tolerance else { continue }
-            if let allowed = ClassifiedShift.allowance(screen: screen, key: key) {
+            if let allowed = ClassifiedShift.allowance(screen: screen, key: key, device: device) {
                 // Judged against the *nearest classified translation*, not
                 // against zero. A control added to a stack moves everything
                 // below it by its own height and nothing above it; saying so in

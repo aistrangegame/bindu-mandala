@@ -45,3 +45,23 @@ Questions the laws, the rulings, the brief and Design's handoff could not answer
 **What depends on it:** nothing but the wording. The room itself is built to the same reading — five equal vaults you stand among, mirror-symmetric, springing from a ring five units around you and tipping open — and there is a test that fails if any of the ten ever becomes readable as a hand.
 
 **If you would rather it said something else:** it is one string. The constraint is only that it must not name a hand, fingers or a palm; anything that says *a closure has opened and let go* will do. If you want Design's line back exactly as it stands, that is your call to make and not mine — say so and it goes back.
+
+## 5 · Her form and her dance at seat zoom — refused, and the Mandala stays a field of marks
+
+**2026-09-22, Phase 5.** Expansion idea 32 asks that when you zoom all the way in on one seat, the Śakti's own form appears there and moves — her gesture, her dance — so the deepest zoom arrives at *her* and not at a larger dot. It was the one idea of the six this phase did not build.
+
+**Recommended answer, and what the build did:** leave it refused. Three reasons, and the first is the one that decides it. **A form drawn at that scale has nothing to act on.** The binding condition of this whole instrument is that an attribute is an *action on the room's own material* — an impression, a furrow, a crack, a swelling — and a seat at full zoom is nine or ten pixels of glass with no material in it. What can be drawn there is a lit solid in the shape of a figure, which is the one thing law 4 refuses, and softening it to "an abstract form that suggests her" produces a blob that means nothing rather than an aniconic act that means something. **Second, her Home already answers it, and answers it better**: the room you walk into is exactly where her form, her gesture and her dance are given a whole world to act on, and putting a small version on the Mandala makes the Mandala a worse index and the Home a repetition. **Third**, it is the only one of the six that could have moved the frame budget — it is a per-seat animated figure on a canvas that draws a hundred and two of them — and it would have arrived untested against the performance gate.
+
+**What depends on it:** nothing built. The other five ideas (27, 28, 30, 31, 38) do not touch it, and the Mandala's light stands without it.
+
+**If you want it anyway:** the honest version is not a figure at seat zoom. It is the *seat itself* becoming the material her action works on — the glass around her dimpling, furrowing or cracking the way her Home's floor does — so the Mandala's deepest zoom rhymes with her room instead of miniaturising it. That is a real piece of work, and it belongs in the endless refinement pass (3.10) rather than in the ship.
+
+## 6 · The crossing bell is now the enclosure's own seed syllable
+
+**2026-09-22, Phase 5, idea 31.** Until now, crossing inward through an enclosure sounded `ringChime` — one bell, the same for all nine, on the sound opt-in. It now sounds **that enclosure's own bīja** instead: the syllable the āvaraṇa carries in the table, on the same inward-only hook, behind the same opt-in, with the eighth (Aiṁ Klīṁ Sauḥ) sounded as three spaced notes. The 528 Hz descent contour underneath it is unchanged and asserted unchanged.
+
+**Recommended answer, and what the build did:** keep the bīja. The crossing is the one moment the instrument tells you which enclosure you have entered, and a bell that is the same for all nine says only *something happened*; the seed says *this one*. It is also the same law the light follows one layer up — the enclosure's own gem governs its band, so the enclosure's own syllable governs its sound. It is sounded and never written: no view may read `RingBija`, and there is a test that fails if one does.
+
+**What depends on it:** nothing structural. `ringChime` is still there, still the documented crossing bell, still reachable on the lights-off path, and putting it back is one line.
+
+**This is the one to look at first, because it is a change to something you already know.** You have heard that bell on every crossing for months; this replaces a familiar sound with nine unfamiliar ones, and that is a different kind of decision from anything else in Phase 5 — everything else here adds to a screen, and this one *replaces* a thing you had. If it lands wrong, say so and the bell comes back; if you want both, the bell under the seed is also possible.

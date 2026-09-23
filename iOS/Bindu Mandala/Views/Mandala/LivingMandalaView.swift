@@ -38,11 +38,30 @@ struct LivingMandalaView: View {
     // Precomputed (rebuilt when the field changes) — derive is not free per frame.
     @State private var seats: [MandalaWorld.Seat] = []
     @State private var atmos: [Int: Atmosphere] = [:]
-    @State private var countByKp: [Int: Int] = [:]
+    @State private var feltKp: Set<Int> = []
     /// What each seat says to a voice, composed when the field changes (§4.4).
     @State private var voices: [Int: MandalaVoice.Spoken] = [:]
 
     @State private var variant: TimeVariant = LunarPhaseService.currentTimeVariant()
+
+    // MARK: Phase 5 — the light, and the two clocks it stands on
+    //
+    // `MandalaLight.enabled` is read **here and nowhere else in the app**. One
+    // switch for the whole phase: the lit canvas, the enclosure's bīja on a
+    // crossing, and the gaze clock Tratak is earned on are one instrument, and a
+    // descent that speaks the mantra while the enclosures are still thin gold
+    // strokes is a half-instrument nobody should see.
+    private let lightOn = MandalaLight.enabled
+    /// When the glass was last touched. Every camera change resets it, so both
+    /// clocks below are present-tense and neither can accumulate.
+    @State private var lastMoveAt: TimeInterval = Date().timeIntervalSinceReferenceDate
+    /// How long it has lain untouched, ticked once a second.
+    ///
+    /// Tratak is earned over tens of seconds and must be earned identically
+    /// under reduce motion — where the canvas's own `TimelineView` is paused and
+    /// its frame clock is frozen. A one-second state tick is not animation: it
+    /// is a value changing, driving a drawing that does not move.
+    @State private var stillSeconds: Double = 0
     @State private var appliedLaunchArgs = false
 
     private var todayKp: Int { AppRuntime.pinnedEnergyPosition ?? DailyEnergyService.todaysPosition() }
@@ -62,9 +81,11 @@ struct LivingMandalaView: View {
                         dayAccent: dayAtmo.accent, todayKp: todayKp,
                         focusKp: focus.map(kp), familyKp: familyKp,
                         focusAccentBright: (focus.map { atmos[kp($0)]?.accentBright } ?? nil) ?? Color.gold,
-                        countByKp: countByKp, flash: flash, constellation: constellation,
+                        felt: feltKp, flash: flash, constellation: constellation,
                         constellationStart: constellationStart,
-                        tier: camera.tier, reduceMotion: reduceMotion)
+                        tier: camera.tier, reduceMotion: reduceMotion,
+                        lightOn: lightOn,
+                        lastMoveAt: lastMoveAt, stillSeconds: stillSeconds)
 
                     // The drawing has no accessibility tree; this is it. It
                     // draws nothing and hit-tests nothing — the gesture catcher
@@ -89,6 +110,24 @@ struct LivingMandalaView: View {
             .onAppear { configure(size: geo.size) }
             .onChange(of: geo.size) { _, s in configure(size: s) }
             .onChange(of: shaktis.count) { _, _ in rebuild() }
+            .onChange(of: camera) { _, _ in
+                lastMoveAt = Date().timeIntervalSinceReferenceDate
+                // Written only when it changes: a drag is sixty camera changes a
+                // second, and assigning an unchanged `@State` still invalidates.
+                if stillSeconds != 0 { stillSeconds = 0 }
+            }
+            .task {
+                guard lightOn else { return }
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(1))
+                    // Clamped at the gaze's own end, so once Tratak is whole the
+                    // value stops changing and the tick stops re-rendering the
+                    // field. Nothing past that point looks any different.
+                    let held = max(0, Date().timeIntervalSinceReferenceDate - lastMoveAt)
+                    let clamped = min(MandalaLight.tratakFull, held)
+                    if clamped != stillSeconds { stillSeconds = clamped }
+                }
+            }
         }
         .ignoresSafeArea(edges: .bottom)
         .fullScreenCover(item: $detailFor) { s in
@@ -386,7 +425,13 @@ struct LivingMandalaView: View {
         let e = camera.enteredRing(in: size)
         if e > enteredRing {
             flash = MandalaCanvasLayer.RingFlash(ring: e, bornAt: Date().timeIntervalSinceReferenceDate)
-            if soundOn { RingAudioService.shared.ringChime(e) }
+            // Idea 31 — the fall speaks the mantra. The same opt-in hook, the
+            // same inward-only crossing; what changes is that the enclosure now
+            // sounds its own bīja rather than a bell. Sounded, never written.
+            if soundOn {
+                if lightOn { RingAudioService.shared.ringBija(e) }
+                else { RingAudioService.shared.ringChime(e) }
+            }
             recordCrossing(ring: e)
         }
         enteredRing = e
@@ -416,16 +461,16 @@ struct LivingMandalaView: View {
     private func rebuild() {
         seats = MandalaWorld.seats(from: shaktis)
         var a: [Int: Atmosphere] = [:]
-        var c: [Int: Int] = [:]
+        var f: Set<Int> = []
         var v: [Int: MandalaVoice.Spoken] = [:]
         for s in shaktis {
             let k = s.khadgamalaPosition ?? s.position
             a[k] = Atmosphere.derive(from: s, at: variant)
-            c[k] = s.serverRecognitionCount ?? 0
+            if s.hasBeenFelt { f.insert(k) }
             v[k] = MandalaVoice.spoken(for: s)
         }
         atmos = a
-        countByKp = c
+        feltKp = f
         voices = v
     }
 

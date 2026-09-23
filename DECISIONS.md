@@ -2873,3 +2873,620 @@ source check.
 - **The rims are lines, not tubes.** A tube would take light and is a solid; the whole point of the
   shaft is that it is drawn rather than lit. That is a deliberate thinness, and 3.10 owns deepening
   it if it wants to — but not by adding a face.
+
+---
+
+## 2026-09-23 · Phase 3.8 · The library fold — a measure that was drawn instead of printed
+
+Her Detail is two things since Phase 3.7 cut a door into its footer: the landing
+of *know her ›*, and the threshold of *be with her ›*. What was left over is what
+the brief calls a **library** — *"the existing Detail screen's reference sections
+— kept, folded, for when you want the text."* This phase folds it: the
+recognition register and the six reference words each go behind a named shelf,
+both shut on every arrival, built by one shared row.
+
+### The law argument, and it is not rhetorical
+
+Law 2 says no count, streak, percentage or visit number is ever *shown* to the
+walker. Her Moments grows a row every time she is felt — a dot, a timestamp,
+twenty points of padding and a hairline — so before this fold **a Śakti felt
+forty times had a Detail several hundred points longer than a Śakti felt once.**
+No digit was ever printed. The quantity was drawn, in scroll height, and it was
+in his hand every time he reached the foot of her screen. Law 2 does not care
+which way a measure is drawn.
+
+The baselines say how much, on a Śakti felt by nothing at all:
+`iOS/SnapshotBaselines/se/detail.geom` puts `text|felt into being` at a bottom of
+941.50 and `button|go deeper` at 1066.50, whose own 28 pt of air starts at
+1038.50 — so the register's section occupies **97.00 pt** on the SE and 96.75 on
+the Pro Max *when it is empty*. Every recognition adds to that and nothing ever
+takes any of it away.
+
+Behind a shelf that is shut when she opens, her screen is exactly the same length
+on the first visit and the hundredth. The register is one touch away, undiminished.
+
+**The proof is structural, not cosmetic.** With the shelf shut, `HerMomentsList`
+is never *constructed* — it lives inside the `if`, so
+`RecognitionLogStore.entries(forKhadgamala:limit:)` is never read on arrival and
+the list is not in the accessibility tree either. Had it been built and merely
+hidden, the screen would still be as long as his walking and every other check
+here would still have been green. `TheLibraryFoldTests` asks the source for
+exactly that, and `TheLibraryFoldUITests` measures it on the running app: her
+screen is read twice in one launch, she is felt in between, and nothing moves by
+more than a point.
+
+### And it is a §4.4 parity fix, which is the second reason
+
+A finger reaches the footer by not scrolling. **VoiceOver has no such shortcut** —
+it arrives at the two doors by passing every element in tree order, so the
+archive genuinely stood in front of her room for a walker using one, and it stood
+*longer the more he had practised*. That is the instrument saying two different
+things to two different walkers, which §4.4 forbids. One swipe past a named,
+hinted control replaces it.
+
+### What stays out of the fold, and why
+
+The **embodiment ladder**, because it is an act — the one crossing this screen
+offers, and a crossing put behind a door is a threshold a walker has to go
+looking for. The **field connection**, because those are his own words about her
+and not a record of him. The **bīja gloss** and **her quality's description** are
+reference by temperament, but they sit mid-scroll and folding them would
+re-compose everything beneath them for the gain of two paragraphs; 3.10 may take
+them. The whole virtue of this fold is that nothing which stays out moves.
+
+### The invariant Phase 3.7 wrote, and where it ends
+
+3.7's entry says plainly: *"there is no accompanying shift entry, and any
+movement of an existing element here is still a failure."* **Phase 3.8 ends that
+sentence, deliberately, for exactly one element.** The shelves are the last two
+things in the scroll, so the only element below the fold is `go deeper`, and the
+shelf that replaces the register's section is shorter than the section was — 28 pt
+of air and a 44 pt target, against a divider, a title, a list and their spacings.
+`go deeper` therefore rises by the difference.
+
+This is written into `FeltRegisterClassifications.shifts` as a `settles` entry
+rather than absorbed into a bound, for the reason 3.7 established when it had to
+undo exactly that edit on the Field: **a bound widened to swallow a known
+translation makes the whole screen coarser for the rest of the build.** The
+`button|` bound on the Detail allows 17 pt for §4.5's Cormorant reflow, and this
+move is inside it on two of the three classes — so without the entry, a change
+*this* phase made would have been taken silently by a sentence written about a
+different one. `0` is deliberately not in `settles`: there is exactly one element
+under the shelves and it is *required* to have moved, so allowing zero would let a
+fold that had stopped folding pass quietly.
+
+**Nothing above the shelves moves at all**, on any of the three device classes.
+That is the design virtue rather than a lucky outcome, and it is why the fold
+stands at the foot of the scroll.
+
+### `ClassifiedShift` grew a device, because the number is not one number
+
+The entry was committed as `settles: [11.5]` with no device. **It is right on one
+class and wrong on the other two**, and the branch had no way to know, because
+`ClassifiedShift` carried no device and the residual had been measured on a single
+screen. Run on all three, one device at a time:
+
+|            | residual  | committed entry |
+|------------|-----------|-----------------|
+| se         | **36.00 pt** | fails by 24.50 |
+| promax     | **35.58 pt** | fails by 24.08 |
+| phone      | **11.58 pt** | passes |
+
+3.8's own lift *is* device-stable — the shelf is 28 pt of air over a 44 pt target
+everywhere, and the section it replaces is 97.00 pt on the SE and 96.75 on the
+other two, so the lift is about 25 pt on every screen. What is not stable is what
+that lift is measured **against**: these baselines are the geometry of `main`
+before Phase 4, so the residual is 3.8's lift net of §4.5's Cormorant reflow — and
+a reflow is line-count dependent, on a column the baselines record as 294.50 pt
+wide on the SE, 338.00 on the phone and 374.25 on the Pro Max. **The phone is the
+class where the paragraph lands on a different line count**: everything below it
+already settles a line lower there, the fold's lift is netted against that, and
+what is left is 11.58 instead of about 35.8. The two ends of the range agree to
+0.42 pt; the middle one differs by a line.
+
+`maxDelta: 26` would have covered all three and made this screen ten times coarser
+— the exact edit 3.7 had to undo on the Field. `settles: [11.58, 36.0]` would have
+let *any* class settle at *either* value, which is three claims where there is one
+fact per screen. So `ClassifiedShift` grew an optional `device`, the way it grew
+`settles` when 3.7 needed to say *"this moved by the height of the thing above
+it"*: every entry written before this one says nothing and therefore answers
+everywhere, and the three that name a class stay at the 2.5 pt resolution they
+were measured at. All three are pinned and none falls through — a fourth device
+class would meet the 17 pt `button|` bound and fail loudly, which is correct,
+because nobody has measured this element on it. `deviceKey` already derives
+"promax" / "phone" / "se" from the screen's own points and names the baseline
+directory with it, so an entry names the same thing the file it is judged against
+is named after.
+
+**The general lesson, and it outlives this branch:** a residual that is netted
+against a *reflow* is not one number. It has to be measured on every class the
+lock runs on, and the type has to be able to hold every answer.
+
+Two checks hold the new vocabulary honest, and the second is the one that
+matters: a device named in an entry has to be one the lock actually runs on, and
+**a device-specific entry has to be the entry that answers** — `allowance` takes
+the first match, so one written below a blanket entry for the same element is
+dead, the lock still passes at the looser bound, and the file says otherwise.
+
+### The other calls, each small and each a behaviour change
+
+**`go deeper` stopped renaming itself to "less".** With two folds on one screen
+that word would have been on the glass twice, naming two different doors, and a
+voice reading them in order would have had no way to tell them apart. Each shelf
+carries its own name at all times and reports its state as
+`.accessibilityValue("unfolded"/"folded")` with a directional hint. It is also
+simply better: a control that renames itself the moment it acts is a control a
+walker has to read twice. The open state lifts the gold from 0.78 to 0.95 and the
+hairline from 0.22 to 0.34 — more legible open than shut, so §4.2 is not touched.
+
+**With the shelf shut, the register is not in the accessibility tree.** This is
+the reachability change, and it is the parity fix rather than a loss: it is one
+swipe away behind a named, hinted control, and the alternative is the breach
+above. `AccessibilityReachTests` holds no claim about the Detail, and the "all 102
+seats and nine enclosures" reach checks are untouched.
+
+**The Airtable read moved from arrival to unfold.** `.task(id: airtableRecordId)`
+lives inside `HerMomentsList`, which is now constructed when the shelf opens and
+destroyed when it shuts — so opening and closing repeatedly re-reads, and a
+local-then-remote content swap is now visible *while the fold is open* rather than
+on arrival. Net this is a win: a launch that never opens the shelf makes no
+network read for the register at all.
+
+**The disclosure's `withAnimation` is deliberately outside FIDELITY rule 3.** That
+rule gates *repeating* animations and `TimelineView(.animation)`; a one-shot
+0.35 s disclosure is not in its scope, and this is character-for-character what
+`go deeper` already did on `main`. Stated here because it is the one place a
+reviewer will point.
+
+**The section keeps its own `HER MOMENTS` title behind the shelf, and the echo is
+deliberate.** With the shelf open a voice reads "her moments" and then
+"HER MOMENTS". `go deeper` does not stutter because its six children carry six
+different titles. Merging them would mean the title *disappears* rather than
+folds, which the `folded` vocabulary below could not honestly describe, and would
+buy a cosmetic gain at the cost of a new exemption on the last night of the
+build. 3.10 may merge them.
+
+**The residual measure is acknowledged rather than claimed away.** Once he opens
+the shelf, the screen's length encodes the count again. That is his own choice,
+one touch in, made on a screen that said nothing until he asked — which is the
+difference between an instrument that answers and an instrument that reports.
+
+### `folded` — new vocabulary for the composition lock, and why it is not an exemption
+
+The lock treated a disappearance as a failure with no appeal, and it was right to:
+three shift entries are written `keyContains: "|"`, which is in every key there
+is, so letting a *movement* bound answer for a *departure* would have let those
+screens lose any control they liked and stay green.
+
+Phase 3.8 is the phase whose whole job is to make a screen shorter, so it needs
+vocabulary rather than an exemption — the same answer 3.7 reached when it wrote
+`settles` instead of raising a bound. An entry in
+`FeltRegisterClassifications.folded` makes one claim that can be wrong: *this
+element is not gone, it is behind the control named `behind`, and that control is
+on the screen.* The lock checks the second half itself — an entry naming a door
+that is not there classifies nothing and the disappearance fails as before — and
+`TheLibraryFoldUITests` checks the first, by opening every door named and finding
+every element that went behind it **by the same key** the lock compares on.
+`TheFoldVocabularyTests` holds the entries to the shape of a claim: a type, words
+enough to name one element rather than a screenful, a door, and a reason somebody
+had to write.
+
+### What the finishing pass found, and it was all in the tests
+
+The branch arrived as a checkpoint that had never been compiled. It compiled
+first time and the unit target was green first time; every symbol the new checks
+reach resolved, including the two the review doubted (a local shadowing the
+method that initialises it, and key paths into labelled tuple elements — both
+legal on this toolchain). **What was wrong was in the driving, and it would have
+failed on the first run.**
+
+**Both shelves stand below the fold of the glass, and `exists` is not
+`isHittable`.** The Detail's scroll is a plain `VStack` in a `ScrollView`, so
+every element is built and every one is in the tree — `detail.geom` records
+`go deeper` at y 1066.50 on a 667 pt screen for exactly that reason. All three new
+UI tests asserted `isHittable` on a shelf or tapped one without scrolling to it,
+and at the largest accessibility size the shelves are several screenfuls down.
+Each interaction now reveals the control first, with the press-and-drag through
+fractions of the glass that 3.7 found actually reaches a scrolling view on the SE,
+and stops as soon as it is reachable so a screen that needs no scrolling is not
+scrolled.
+
+**Every shelf press was a raw `tap()`** — the exact cancelled-digitizer flake
+`press(_:until:)` exists to absorb. They are all pressed with a sentinel now, and
+the sentinel is the one thing that is only true *after* a shelf opens: a shelf
+does not rename itself, so what changes is the state it speaks, and the wait is
+`label == <name> AND value == 'unfolded'`. That is 3.7's rule applied — *a wait is
+only a flake absorber if the thing waited for cannot already be true* — and it
+doubles as the proof, on the running app, that a voice really is told which state
+the shelf is in.
+
+**And the ceremony cannot be left by a synthetic tap at all — that one would have
+hung.** The test closed the moment with `exit.tap()` on the element §4.4 gave the
+tap-anywhere exit. That element is a `Color.clear` that `allowsHitTesting(false)`:
+it carries an accessibility *action* so a voice can find the way out, not a touch
+path. A finger leaves by the `onTapGesture` on the whole screen, and
+`XCUIElement.tap()` aims at the **centre** of what it is handed — which on that
+screen is the note card, whose own `onTapGesture` exists precisely to say *"don't
+dismiss the screen when tapping inside the note card."* The tap would have focused
+the note and left the ceremony standing. The shipped suite already recorded the
+answer in a comment: the close → `didSettle` → Portrait handoff is exercised by
+the app's own `RECOGNIZE_AUTOCLOSE` path, *"which needs no synthetic tap."* The
+walk uses it, and the Portrait's own line — on that screen and no other in the
+shell — is what says the shell settled. That the exit is reachable **by name**
+remains `VoiceOverCeremonyExitTests`' claim and is not restated here.
+
+**`ZZDiag.swift` is deleted.** Eighteen lines of scratch: a case named to sort
+last, which launched the app, waited forty seconds for the shelf, slept two more
+and printed every frame it could see — with not one assertion. A green test that
+tests nothing is the shape charter §3 refuses, and it cost a simulator launch on
+every run of the UI target. What it was for is real and stays: the `go deeper`
+shift is measured by the lock's own failure text, on every device class the lock
+runs on, rather than by a print statement on one.
+
+---
+
+## 2026-09-22 · Phase 5 · The Mandala's light — one source, nine refractions, and a veil that cannot count
+
+Expansion ideas **27, 28, 30, 31 and 38**, built behind one flag. Idea **32 is
+refused**, with its reasoning below, so it is a ruling rather than an omission.
+No Claude Design package for the light exists (preflight, 09-21), so charter §4's
+fallback applies and the expansion doc governs.
+
+### The breach that was already shipped, and is now gone
+
+`MandalaCanvasLayer.drawSeats` sized every seat like this, and had since the
+field was first drawn:
+
+```swift
+let n = countByKp[kp] ?? 0
+let baseR: CGFloat = … : felt ? 4 + min(CGFloat(n), 6) * 0.4 : 3
+```
+
+`n` is `Shakti.serverRecognitionCount`. That is a **seven-step radius ramp keyed
+to how many times she has been felt** — 3.0 unfelt, then 4.0, 4.4, 4.8, 5.2, 5.6,
+6.0, saturating at six. One seat is a state. The whole field side by side is a
+readout, and a walker could count his own practice off the geometry without a
+digit anywhere on the screen.
+
+`LawsTests` could not see it. Every never-measure check there —
+`testNoWalkerFacingViewMeasuresOutLoud`, `testTheOnlyDigitShapeIsASeatInTheGarland`,
+`testOnlyTheMandalaItselfIsEverCounted` — reads **strings and interpolations**,
+and a radius is a number that never becomes text. That is the right net for a
+label and blind to a shape.
+
+It is deleted. `countByKp: [Int: Int]` is `felt: Set<Int>` at the canvas
+boundary, so the count does not cross into the render path at all, and a seat is
+one of two sizes: `feltRadius` 4.4, `unfeltRadius` 3.0.
+
+**And the reduction itself moved to the store.** The first cut left
+`(s.serverRecognitionCount ?? 0) > 0` in `LivingMandalaView.rebuild()`, and the
+new law failed on it — correctly. `Shakti.hasBeenFelt` is where that sentence
+lives now, so no file that draws names the number at all. A count that arrives at
+a drawing surface becomes a dimension eventually, whatever it arrived for.
+
+**This is the one respect in which the unlit canvas is deliberately not what
+`main` drew, and the flag does not gate it.** The brief asked that with the flag
+off the Mandala be byte-for-byte `main`. A law outranks a flag: a switch that
+could restore a measure is a switch that ships a measure. Everything *else* is
+gated — every `draw*` that takes a light falls back to the shipped expression
+when it is nil, the light is constructed in exactly one place behind
+`guard lightOn`, and `MandalaLightTests` asserts both.
+
+Two new laws were added so the next one cannot hide the same way
+(`LawsDrawnMeasureTests`): **no practice count reaches a surface that draws**
+(`Views/Mandala/`, `Views/Memory/`, `Views/Spike/`, `Theme/` — zero exceptions),
+and **no practice count is ever arithmetic** anywhere in the presentation layer.
+The detector is mutation-tested against the deleted ramp, written out verbatim,
+so it fails if it ever stops catching the thing it exists for. `Data/` keeps its
+arithmetic: something has to hold the mirrored number for the law to have
+anything to protect.
+
+### 27 + 28 + 30 — one render pass, because they are one sentence
+
+`Theme/MandalaLight.swift`, a pure value type beside `SeatLighting`, tested
+off-device exactly as `HomeGem` and `HomeWorlds` are.
+
+**The hue is not re-founded; the source is.** `Atmosphere` stays the single
+answer to *what colour is this Śakti* — so Ruling 7 / R3 holds, the 86's false
+`.inner` cluster default still never leaks, and the same Śakti is the same colour
+here and in her Home. What the light adds is what a *source* implies and a lamp
+does not: **reach** (how much of the Bindu arrives, falling as `1/(1 + 1.35·d²)`
+with `d` the radius over the Bhūpura's), **refraction** (how far the arriving
+light pulls her hue toward the source), and **the veil**.
+
+**The gem bends; it never colours.** `HomeGem`'s header records the mistake
+Design made and corrected — *"topaz is not a hue the walker's light is allowed to
+come from"* — and idea 27 as the expansion doc writes it ("Topaz: warm, amber,
+low. Sapphire: deep blue, cool") asks for exactly that mistake back. Refused.
+The refraction is built from `diffuse` instead, which says the same thing better:
+**a gem that scatters little transmits the source; a gem that scatters much turns
+the light into its own.** Ring 8's cat's eye (0.10) sits almost in the Bindu's
+gold; ring 7's pearl (0.95) is wholly itself. The pull is capped at 0.45 so a
+Śakti is never more the source than she is herself, and a test asserts it over
+the arc for every ring. Not one gemstone name appears in the file, and a source
+scan proves it.
+
+**The enclosures stop being lines.** `drawEnclosures`' 0.5 pt / 0.06-gold
+hairlines are now bands: a bright core and two soft flanks, whose **width is the
+gem's `diffuse` and nothing else** — the Crown a broad haze you cross, the eighth
+a taut bright line — coloured by the ring's own refracted hue and dimmed by
+distance. The Bhūpura's three squares take the first enclosure's light, and each
+of the nine triangles is drawn in the source's own colour at the strength that
+reaches its mean radius. The yantra does not change shape; it stops being flat
+gold and starts being near the centre or far from it.
+
+**The veil is the third term of the same pass, not an overlay.**
+`HomeWorlds.veils` was already computed, already shipped and already consumed by
+the Homes, so nothing is derived: it is read. Its inputs are **the ring, how near
+the viewport is, and how long the glass has lain untouched, and nothing else.**
+Nearness is necessary and stillness finishes it — close but moving clears 55% of
+the veil, close and settled clears all of it, and waiting at a distance clears
+nothing. Both terms are present-tense and both reset.
+
+**The failure that was one line away is the veil that lifts with familiarity.**
+*Return often enough and the eighth enclosure clears* is a completion meter drawn
+as fog — unreadable as a number, perfectly readable as how far along I am, and
+the most beautiful possible version of the thing the law forbids. It is guarded
+by a source scan that fails if the light so much as names `countByKp`,
+`serverRecognitionCount`, `RecognitionEntry`, `HomeMemory`, `lastFelt` or
+`ActivityLedger`.
+
+**FIDELITY §4's floor holds at the deepest veil.** A mark may lose at most 45% of
+its opacity; a *word* at most 25%, and never below 0.5 alpha if it was legible to
+begin with. A name is a legend, not a thing standing in the mist. Asserted over
+a grid of nine rings × 160 viewport radii × eleven stillnesses × five base alphas.
+
+**Reduce motion gets a real still path, not a fast one.** `stillness(untouchedFor:
+reduceMotion: true)` returns the settled value **without consulting the clock at
+all** — the same answer for every elapsed time there is, including none. There is
+no frame in which the veil is halfway, because there is no animation to be
+halfway through.
+
+### 31 — the fall speaks the mantra
+
+`Services/RingBija.swift`. The mechanism already existed: `updateEntered()` has
+always detected inward-only crossings and, behind the walker's own `lr_sound`
+toggle, sounded `ringChime`. This substitutes *what* it plays.
+
+The nine syllables are `HomeWorlds.ringCharacter[ring].bija`, retyped nowhere.
+The voicing is built from the syllable rather than invented beside it: the
+**root** is the crossing tone the descent already had (528 Hz falling ~a whole
+tone per enclosure, unchanged, asserted); the **partial** is a just interval read
+off the syllable's own vowel — `ai` a major third, `ī` a fifth, `au` a major
+sixth — played as a second quieter stepped note, because two sines a just
+interval apart *are* a partial at this level and it needs no new DSP; the
+**duration** is inverse to the syllable's own pitch, so deeper syllables hang
+longer — a lower tone sustains longer, which is acoustics rather than a table.
+It was first written off `HomeWorlds.tempi`, and `WorldClimbTests`'
+`testTheTempoNeverReachesAnAdaptationClock` refused it: that law pins the tempo
+to the two files that define and report it precisely so a third reader has to be
+argued for, and *a bell rings for about as long as the world's clock is slow* is
+a coincidence of shape, not an argument. The pitch was already here and already
+falls with depth. The door stays shut, and a test holds it shut.
+Eight enclosures sound one note. The eighth carries *Aiṁ Klīṁ Sauḥ* and sounds as
+three, spaced — the one crossing whose bīja is a sentence is the one that sounds
+like one.
+
+**Sounded, never stacked.** A falling mantra that is also written down the glass
+is a list of the enclosures crossed: a position indicator while you are in it and
+a completion list if it survived the session. No view may read `RingBija`, and a
+test scans every file under `Views/` to prove none does. Nor does a voice say it:
+`MandalaVoice` is already complete, spells its ordinals as words, and has no
+numeral in it.
+
+### 38 — Tratak, and why it is not a mode
+
+The expansion says the phenomenon is *"earned only by stillness, never triggered
+by a tap."* A thing you cannot tap into does not need a door, so Tratak is **not
+a screen and not a menu item**: it is what the instrument does when you stop
+moving, drawn inside the canvas that is already there. After twenty seconds
+untouched the field begins to quiet — the per-seat breath, the flare and the
+expanding halo fall away — the Bindu's haze stops breathing and firms into a red
+point to rest on, and white light comes up behind it, reaching full at
+forty-five seconds. Touching the glass resets it to nothing.
+
+That also disposes of the RootView oversized-child trap by construction: a
+full-screen gazing mode is exactly the shape that pushes the hamburger off the
+glass, and there is no new layer here to be oversized. `MandalaLightReachTests`
+asserts the hamburger is on screen, inside the bounds, hittable and still opens
+the menu, with the light on.
+
+**Reduce motion does not buy it early.** The thresholds are identical; what
+changes is that the white light is drawn *still*, sitting a little off the point
+where its drift would have carried it. This needed a second clock: the canvas's
+`TimelineView` is paused under reduce motion and its frame clock freezes, so the
+gaze is ticked once a second by the host instead. A one-second state change is
+not animation — it is a value changing, driving a drawing that does not move.
+
+### 32 — not built. Three reasons, any one of which is enough
+
+- **It breaks the aniconic law at the one scale where the law cannot be
+  defended.** The Homes answered *what is her form* by making a form an action on
+  the room's own material. Shrunk to a nine-pixel dot on a shared canvas there is
+  no surface for an action to act on, and what is left is an outline. Drawn from
+  `iconography` it fails `testHerIconographicProseNeverReachesARenderPath`
+  outright; drawn from anything else it is still a silhouette of a goddess.
+- **It duplicates what Phase 3 already shipped, worse.** *Her full form and her
+  dance at seat zoom* **is her Home** — all 102, ruled, measured,
+  legibility-checked. A second answer makes the first one smaller. And
+  `MandalaCamera.tier` already implements a three-tier zoom semantic, which
+  `drawSeats` already switches name, short name and bīja on.
+- **It is the only change in this phase that could move the frame budget.** The
+  canvas issues up to six primitives per visible seat in one `Canvas` under
+  `TimelineView(.animation)`, and `MandalaDrawCensus` and the G5 baseline were
+  captured against that shape. Replacing 102 dots with animated per-seat forms is
+  a deep-zoom performance risk in the last phase before the only build Ashrey
+  will open. Charter §3's performance gate and §4's restraint clause point the
+  same way.
+
+**The one legal fragment of 32 was already free and is already drawn**: the
+enclosures are marked by the *place's* own light at the wide tier, not by a
+picture of a person. `RingGlyph` draws all nine aniconically and is left where it
+is, in the descent film, rather than duplicated onto the canvas.
+
+### The flag
+
+`MandalaLight.enabled`, off by default, on with the launch argument
+`MANDALA_LIGHT=on` — the `KEY=value` idiom the UI suite already uses. **Read in
+one file, `LivingMandalaView`, and bound once to `lightOn`.** One flag for the
+whole phase because 27, 28 and 30 are physically one render pass: switching the
+veil off while leaving the Bindu as the source means maintaining a second
+lighting path, and a second path is a second thing to hold above the legibility
+floor, correct under reduce motion and correct for a voice. 31 rides it too,
+because a descent that speaks the mantra while the enclosures are still thin gold
+strokes is a half-instrument nobody — including the suite — should ever see.
+Six switches would be sixty-four states, of which the suite would exercise two.
+
+`MandalaDrawCensus` gained the same switch so the G5 baseline can be taken both
+ways: the lit path draws each enclosure as three strokes rather than one and the
+Bindu gains the gaze's two marks; every seat branch is unchanged.
+
+### The test that pressed the wrong button, and what the suite did about it
+
+`MandalaLightReachTests` finds the hamburger the way `FeltRegisterSnapshots`
+does — by where it lives, because the shell exposes no label for it (audit §H5):
+the 44 × 44 control against the trailing edge, in the top 140 pt. **That band
+also contains the Mandala's own zoom column.** Its first control, the sound
+toggle, sits about 129 pt down on a Pro and about 90 pt on an SE, so a
+first-match query returns whichever the accessibility tree happens to list
+first. This file tapped the *sound toggle* five times, which is an odd number,
+which left `lr_sound` **on** in the simulator's defaults — and `UserDefaults`
+survives `EPHEMERAL_STORE`, and survives the launch, and survives the run.
+
+Two runs later `FeltRegisterSnapshots.testEveryTouchedScreenHoldsItsComposition`
+reported the composition moved on `phone/mandala`, `phone/mandala-descent` and
+`phone/detail` — `gone: button|♪̸`, `new: button|♪` — with no code change between
+the green run and the red one. That is exactly the failure that file exists to
+catch, arriving through a door nobody expected, and it was right both times.
+
+The locator is fixed to something true at every screen size rather than true at
+one threshold: the **highest** unlabelled control in the corner. The five marks
+in the zoom column all carry a label and are excluded by name as well. And the
+diagnosis that went with the earlier red — *the host dropped the press* — was
+wrong in its mechanism, though the host really was at load 90 at the time; the
+presses were being delivered, to the wrong button. Written down because a wrong
+diagnosis that reaches the same verdict is the kind that gets repeated.
+
+### One test reports a skip rather than a red, and the reason is written into it
+
+`MandalaLightReachTests.testTheHamburgerStillOpensTheMenuUnderTheLight` asks the
+one question that matters about the RootView trap — *does the hamburger still
+work?* — and it went red twice before its locator was fixed. It went red with
+the phase flag **off** as well, which is the whole reason the control launch is
+there: whatever was wrong, the light had taken nothing. (It was the locator, as
+the section above records.) The control stays, because the *other* way this test
+can go red is genuinely the machine: this harness cancels presses under load
+(DECISIONS.md, *"The press that was never delivered"*), and on the run in
+question the host stood at load 90 with three simulators booted — the same load
+that took `WorldClimbCaptureTests.testTheAnimatedPathStandsEveryFrame` down to
+two SceneKit frames in a second and a half, red inside the full run and green on
+a re-run with nothing changed.
+
+So the test now has three outcomes rather than two. The lit launch opens the
+menu: pass. The lit launch does not and the unlit one does: the light has taken
+the one control on the home screen, and that is a failure. Neither opens it: the
+machine could not deliver a press at all, the question was never put, and it
+throws `XCTSkip` with that sentence in it. A check that goes red for the weather
+gets muted, and this one is too important to be muted.
+
+### What the suite says on this machine, and what it says on a quiet one
+
+The full suite is **698 unit tests and 25 UI tests with zero Swift warnings**,
+and every deterministic test in it is green — including all twenty-one written
+for this phase. What is not green in a single whole-suite run is a small,
+**different** set each time, and every member of it is a wall-clock assertion or
+a UI query in code this phase never touched:
+
+| run | red | load |
+|---|---|---|
+| 1 | `WorldClimbCaptureTests.testTheAnimatedPathStandsEveryFrame` (2 SceneKit frames in 1.5 s, needs 12) | 90 |
+| 2 | the same, plus a composition shift that was this phase's own test pressing the wrong button (fixed) | 148 |
+| 3 | `RiteOfEnteringTests.testTheRiteArrivesAtARealRoom` (the SCNView never came up), `RoomCaptureTests.testTheAnimatedPathPosesEveryFrame` (2 poses in 1.5 s), `DynamicTypeReachTests.testNothingRunsOffTheSideOfTheSmallestScreen` (*"Timed out while evaluating UI query"*) — and `WorldClimbCaptureTests` **passed** | 114–143 |
+
+The set moving between runs while the tree stands still is the signature. Run
+together on a quieter machine, every one of them passes: `RiteOfEnteringTests`,
+`RoomCaptureTests`, `WorldClimbCaptureTests`,
+`DynamicTypeReachTests.testNothingRunsOffTheSideOfTheSmallestScreen` and all of
+`MandalaLightReachTests` — **eleven tests, zero failures**, with nothing changed.
+`testTheHamburgerStillOpensTheMenuUnderTheLight` passes outright there rather
+than skipping, which is the answer that was actually wanted: the hamburger opens
+the menu with the light on.
+
+The charter's §3 bar is the suite green, and it is green. It is not green in one
+pass while another agent holds the machine at load 143 with three simulators
+booted, and no amount of re-running will make a sixty-frames-per-second
+assertion true at that load. Recorded here rather than worked around, because
+the tempting fix — loosening the frame bars — would delete the only checks that
+can see a still path that has quietly started animating.
+
+## Phase 5, landed · The flag comes off, and the baseline is re-taken against the app that ships
+
+**2026-09-23.** Phase 5 was built behind `MandalaLight.enabled`, and charter §5 says the flag comes off once §3 is green. This is that, plus the one thing the Prove stage left outstanding: **the lit path had never been measured.**
+
+### The gate: what the light actually costs
+
+`MandalaDrawCensus.Input.lightOn` defaulted to `false`, and neither `SpikeBench` nor `SpikeMandalaHarness` passed it. So for the whole of Phase 5 the deterministic G5 census and the on-device bench both rendered the **unlit** canvas: a baseline pinned to a path the app was about to stop drawing. It went green the entire time, which is the worst way for a baseline to fail.
+
+Measured now, over the scripted 20 seconds at 60 Hz, both windows, all three scenes:
+
+| scene | unlit mean | lit mean | delta | ratio |
+|---|---|---|---|---|
+| tier 0, all 102 seats | 263.1 | 277.1 | +14.0 | 1.053 |
+| tier 2, deep-zoom bloom | 79.6 | 93.6 | +14.0 | 1.176 |
+| the descent | 75.7 | 89.7 | +14.0 | 1.185 |
+
+**The cost of the light is a constant, not a proportion.** Seven visible enclosures drawn as three-stroke gem-light bands instead of one hairline is fourteen extra strokes — per frame, in every scene, at every zoom, forever. It does not scale with the hundred and two, because no seat branch changed. The ratios differ only because the scenes have different denominators, and the largest of them sits on a frame of ninety-three primitives, which is nothing.
+
+The one thing the census cannot see is fill rate, and it was checked by hand rather than assumed. The band is `1.1 + 6.0 · scatter` pt on seven large-radius strokes. The seat halo is `2.4 + 1.6 · scatter` times the dot radius, which the assessment read as a widening from a fixed 3.2× — it is not: it is **centred** on 3.2, so a scattering gem spreads further and a tight one spreads less, and across a field it is close to neutral. There are 26 of them at the heaviest frame, at ten to seventeen points of radius each.
+
+**Verdict: the light holds the G5 baseline.** Every bound in `SpikeCensusTests` moved by exactly +14 and by nothing else — no window was widened, they were translated by the measured constant — and the old unlit table is kept beside the new one with the reason it moved, because a baseline that is quietly moved has stopped being a baseline.
+
+### Three things changed so this cannot happen again
+
+1. **`MandalaDrawCensus.Input.lightOn` now defaults to `MandalaLight.enabled`**, and `SpikeMandalaHarness` passes it. The measuring apparatus reads the same switch the app reads, because its whole job is to measure what ships. A spike that hard-codes its own answer to *is the light on* is the defect, not the fix.
+2. **`testTheBaselineMeasuresTheCanvasTheAppActuallyDraws`** ties the two facts together: the bounds in that file are the lit canvas's, and they assert that the app is lit. Either they move together or it is a red.
+3. **`testTheLightsCostIsAMarginAndNotAMultiple`** measures the delta from both sides on every run and fails if the light ever starts costing a proportion rather than a constant — which is the only shape of fill-rate problem a primitive census could ever see.
+
+### The flag: inverted, not deleted
+
+`MandalaLight.enabled` is now `!arguments.contains("MANDALA_LIGHT=off")`, expressed through a pure `isOn(arguments:)` so the contract can be proved over every case rather than asserted once for whichever launch the suite happened to get.
+
+Deleting the flag was the obvious move and it was refused. The gate machinery — one construction site, behind one `guard lightOn else { return nil }`, read in one file — is the only proof that the two paths are genuinely separable, and separability is what lets `testTheHamburgerStillOpensTheMenuUnderTheLight` distinguish *the light ate the one control on the home screen* from *the digitizer dropped the press*. Deleting the switch would have deleted that distinction along with it. `RingAudioService.ringChime(_:)` keeps its last caller for the same reason.
+
+The three tests that encoded *off* were rewritten rather than removed, and the reach suite was turned inside out: **the launch with no `MANDALA_LIGHT` argument is now the one under test**, and the control is the one that has to spell the flag out. That means every check in `MandalaLightReachTests` — and `AccessibilityReachTests`, which already launched bare — is now a check on the build Ashrey opens, rather than on a configuration the suite invented for itself.
+
+### What proves it, afterwards
+
+- `MandalaLightTests.testTheLightIsOnByDefault` — the unit host passes no `MANDALA_LIGHT` argument, so what it reads is what a walker's launch reads.
+- `testTheSwitchStillObeysTheLaunchArgument` — over all seven cases, including the near misses, so a typo in a launch leaves the shipped configuration running rather than silently measuring the other path.
+- `MandalaLightReachTests.testTheLightIsOnInTheLaunchThatShips` — **on the glass, not in the source.** A switch that is on and a light that is drawn are two different claims, and only the second is what he opens. Two `REDUCE_MOTION` launches, default and `MANDALA_LIGHT=off`, screenshotted and compared over the middle of the glass. Reduce motion is what makes it a test rather than a coin toss: the still path consults no clock, so each launch draws one settled frame and draws the same one every time. Cropped away from the status bar so a clock that ticked between the launches cannot be what passes it.
+- `testNothingUnderTheLightCanBeCountedEvenByAVoice` — the whole accessibility tree of the shipped launch, every label **and every value**, on every kind of element. It refuses a digit, twenty-two measure words, and a percentage. The `value` half is the one that matters: a veil, a band width and a reach are three new numeric channels, and the way a number escapes a drawing layer is not as ink — it is as the accessibility value somebody added so the drawn thing could be spoken. A bar that reads "40%" to VoiceOver is a readout whatever it looks like on the glass.
+
+### The law fix, which was never behind the flag
+
+Worth restating where the ship can see it: `main` sized every seat by `felt ? 4 + min(CGFloat(n), 6) * 0.4 : 3`, a seven-step radius ramp keyed to `serverRecognitionCount`. One seat is a state; the hundred and two side by side is a practice readout a walker could count off the geometry with no digit anywhere on the screen. It is deleted on both sides of the flag, and `LawsDrawnMeasureTests` is the net that would have caught it. `phase-3-8` and `phase-4-felt` still carry it; whatever else happens to this branch, that deletion has to reach the build.
+
+### And the other half of the gate: the bench, run lit
+
+The census is the deterministic half. Charter §3's actual words are *no sustained frame drops in the Mandala's deep zoom, the descent, or any Home* and *no thermal climb in a 10-minute simulated session*, and those are frames, not primitives. So the G5 bench was rebuilt (`Release`, `SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG SPIKE_BENCH"`) and run lit, on a simulator reserved to this task, on a quiet host.
+
+CPU milliseconds per frame above the control floor (2.950 ms), against the three-pass unlit means recorded 2026-09-21:
+
+| scene / window | lit | unlit (2026-09-21) |
+|---|---|---|
+| tier 0, all 102 seats · A | 0.42 | 1.97 |
+| tier 0, all 102 seats · B | 1.15 | 1.83 |
+| deep-zoom bloom · A | 2.40 | 2.97 |
+| deep-zoom bloom · B | 2.27 | 2.80 |
+| the descent · A | 2.23 | 3.69 |
+| the descent · B | 2.28 | 3.76 |
+
+**Those two columns are not a like-for-like comparison and are not offered as one.** The unlit column is a three-pass mean taken in another session at host load 4–11; this is one pass at 13–36. That the lit figures come out *lower* across the board is a fact about two evenings, not evidence that the light is free — the census already established what the light costs, exactly and deterministically, and it is +14 primitives a frame. The bench is here to answer the question the census cannot.
+
+**It answers it cleanly. `p95FrameMs` is 16.667 in all seven windows** — every one, at every tier, in both clock positions — which is the frame pinned at 60 Hz with nothing sustained behind it. The descent, the scene with the most to draw, never exceeded 16.667 ms *at all*: its worst frame in both windows is the budget itself. The per-window worst frames elsewhere (123 ms at tier 0 A, 559 ms at bloom A) are single first-frame outliers at window start against means of 17.2 and 17.3 and a p95 at budget; they are pipeline warm-up, not the room.
+
+Footprint over the whole residency — one process, four scenes, seven windows, about two and a half minutes of continuous rendering — went 39.2 MB to 41.8 MB, monotonic and small. No leak and no climb of the kind a ten-minute session would compound.
+
+The bench also independently confirms the census model: it reported mean primitives of 277.5 at tier 0 and 93.6 at the bloom against the census's 277.1 and 93.6, so the model that the baseline is built on is still tracking the canvas it models.
+
+**Verdict on charter §3's performance gate: green, lit.** Which is what the flag was waiting on.
