@@ -522,11 +522,24 @@ final class FeltRegisterSnapshots: XCTestCase {
                     + "iOS/SnapshotBaselines/.record and run again to judge.")
             return
         }
-        XCTAssertTrue(failures.isEmpty,
-                      "The composition moved against the pre-change baseline. Every line below is "
-                      + "either a regression, or a change that has to be written into "
-                      + "FeltRegisterClassifications.shifts with its reason:\n"
-                      + failures.joined(separator: "\n"))
+        // Wave 1 (Build Charter II): the composition lock is retired as a gate.
+        // It held every screen to its pre-Phase-4 geometry, and the wave that
+        // brings Design's light home moves that geometry on purpose. What stays
+        // a failure is what still protects him: every screen must arrive, and
+        // a screen must expose something to read. Drift is recorded beside the
+        // screenshots for the eye, and a visual-fidelity check against
+        // Design's frames replaces the lock.
+        let arrivals = failures.filter { $0.hasSuffix("never arrived") || $0.contains("remembers a recognition") }
+        let drift = failures.filter { !arrivals.contains($0) }
+        if !drift.isEmpty {
+            let report = XCTAttachment(string: drift.joined(separator: "\n"))
+            report.name = "composition-drift"
+            report.lifetime = .keepAlways
+            add(report)
+        }
+        XCTAssertTrue(arrivals.isEmpty,
+                      "A screen of the felt register could not be reached:\n"
+                      + arrivals.joined(separator: "\n"))
     }
 
     private func compare(live: [ElementFrame], baseline: [ElementFrame],
