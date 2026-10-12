@@ -930,6 +930,8 @@ enum LedgerIsTheRecord {
         // to the same rule — named in the ledger's file, referred to everywhere
         // else as `ActivityLedger.ActivityType.chakraPracticed`.
         "Chakra Practiced",
+        // Wave 6 · light sent back, and the name kept — held to the same rule.
+        "Light Sent Back", "Name Kept",
         "Activity Type",
     ]
 
@@ -967,6 +969,8 @@ enum LedgerIsTheRecord {
 
         var table: String {
             if urlShape.contains("⟨ActivityLedger.tableId⟩") { return "App Activity" }
+            // Wave 6 · his own word, sent to the Codex.
+            if urlShape.contains("⟨CodexWrite.tableId⟩") { return "Codex" }
             if urlShape.contains("⟨Self.tableId⟩") { return "Mandala" }
             if urlShape.contains("tableId") { return "either (resolved at run time)" }
             return "unknown"
@@ -1898,29 +1902,39 @@ final class LawsTests: XCTestCase {
 
     // MARK: - R17 · App Activity is the only event writer
 
-    /// One POST in the whole tree, and it goes to the ledger.
-    func testTheOnlyPostInTheTreeGoesToTheLedger() {
+    /// Exactly two creates in the whole tree: the ledger's, and the Codex's.
+    ///
+    /// Wave 6 rewrote this from "the only POST goes to the ledger". What the
+    /// test protects is R17 — **App Activity is the single event ledger** —
+    /// and that the Mandala table is never created into. Bindu Feed's precedent
+    /// (Wave 3) and the brief add one more create that is *not an event*: his
+    /// own word, sent to the Codex when he asks ("leave my own word"), with
+    /// Source App "Bindu Mandala" and Status unset. So the law is now: one POST
+    /// to App Activity (every event), one POST to the Codex (his note), and no
+    /// other create anywhere — still nothing ever created in the Mandala table.
+    func testTheOnlyPostsInTheTreeGoToTheLedgerAndTheCodex() {
         let sites = LedgerIsTheRecord.allHTTPSites
-        XCTAssertGreaterThanOrEqual(sites.count, 4,
+        XCTAssertGreaterThanOrEqual(sites.count, 5,
                                     "only \(sites.count) HTTP requests were found — the scan is not reading them")
         XCTAssertTrue(sites.allSatisfy { !$0.urlShape.isEmpty },
                       "a request's URL could not be resolved: \(sites.filter { $0.urlShape.isEmpty }.map(\.origin))")
 
         let verbs = Set(sites.compactMap(\.method))
         XCTAssertEqual(verbs, ["POST", "PATCH"],
-                       "the instrument writes with \(verbs.sorted()) — it creates only ledger rows and updates only Śakti rows")
+                       "the instrument writes with \(verbs.sorted()) — it creates only ledger rows and Codex notes, and updates only Śakti rows")
 
         let posts = sites.filter { $0.method == "POST" }
-        XCTAssertEqual(posts.count, 1,
-                       "there is exactly one create in this app, the ledger's: found \(posts.map(\.origin))")
-        guard let post = posts.first else { return }
-        XCTAssertEqual(post.table, "App Activity",
-                       "the one POST does not go to App Activity: \(post.origin)")
-        XCTAssertFalse(post.urlShape.contains("⟨Self.tableId⟩"),
-                       "the one POST touches the Mandala table: \(post.origin)")
-        XCTAssertEqual(post.lastSegment, "⟨ActivityLedger.tableId⟩",
-                       "a create addresses a table, never a record: \(post.origin)")
-        XCTAssertTrue(post.hasBody, "the ledger create carries no body — the scan has lost it")
+        XCTAssertEqual(posts.count, 2,
+                       "there are exactly two creates in this app, the ledger's and the Codex's: found \(posts.map(\.origin))")
+        XCTAssertEqual(Set(posts.map(\.table)), ["App Activity", "Codex"],
+                       "a POST goes somewhere other than the ledger or the Codex: \(posts.map(\.origin))")
+        for post in posts {
+            XCTAssertFalse(post.urlShape.contains("⟨Self.tableId⟩"),
+                           "a POST touches the Mandala table: \(post.origin)")
+            XCTAssertTrue(post.lastSegment == "⟨ActivityLedger.tableId⟩" || post.lastSegment == "⟨CodexWrite.tableId⟩",
+                          "a create addresses a table, never a record: \(post.origin)")
+            XCTAssertTrue(post.hasBody, "a create carries no body — the scan has lost it: \(post.origin)")
+        }
     }
 
     /// The Mandala table is only ever updated, one record at a time, and never
@@ -1948,10 +1962,12 @@ final class LawsTests: XCTestCase {
 
         // The whole write topology, in one line.
         let topology = Set(sites.compactMap { s in s.method.map { "\($0) → \(s.table)" } })
-        XCTAssertEqual(topology, ["POST → App Activity", "PATCH → Mandala"],
+        // Wave 6: plus his own word to the Codex — a note, never an event.
+        XCTAssertEqual(topology, ["POST → App Activity", "POST → Codex", "PATCH → Mandala"],
                        """
-                       the write topology changed. Every event is a ledger row; the Mandala table holds \
-                       only Śaktis and Avaraṇas, and receives only state updates on rows that exist.
+                       the write topology changed. Every event is a ledger row; his Codex word is his \
+                       note; the Mandala table holds only Śaktis and Avaraṇas, and receives only state \
+                       updates on rows that exist.
                        """)
     }
 

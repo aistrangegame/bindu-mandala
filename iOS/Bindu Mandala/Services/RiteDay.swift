@@ -120,6 +120,9 @@ enum GraceChannel {
         ActivityLedger.Field.activityDate,
         ActivityLedger.Field.feltAt,
         ActivityLedger.Field.linkToMandala,
+        // Wave 6 · grace reads the sisters too (Feed, Learning — any row the
+        // ledger links to her), so it must know whose moment it is returning.
+        ActivityLedger.Field.sourceApp,
     ]
 
     struct Line: Equatable {
@@ -155,7 +158,8 @@ enum GraceChannel {
         struct Candidate { let row: ActivityLedger.Row; let at: Date; let link: String; let hers: Bool }
         var candidates: [Candidate] = []
         for row in rows where !surfaced.contains(row.id) {
-            guard let type = row.fields.activityType, verb(for: type) != nil else { continue }
+            guard let type = row.fields.activityType,
+                  verb(for: type) != nil || sisterVerb(for: type) != nil else { continue }
             guard let at = ActivityLedger.serverDate(row.fields.feltAt)
                     ?? ActivityLedger.legacyTimestamp(activityDate: row.fields.activityDate,
                                                       timeZone: calendar.timeZone) else { continue }
@@ -193,9 +197,25 @@ enum GraceChannel {
         }
     }
 
+    /// Wave 6 · a sister instrument's moment, in a verb of its own type — the
+    /// Feed's and Learning's acts, when the ledger links them to her. Never
+    /// more than the type says (the truth floor): no title, no excerpt.
+    static func sisterVerb(for type: String) -> String? {
+        switch type {
+        case "Story Met":         return "a story met you in the Feed"
+        case "Ash Replied":       return "you answered a story in your own words"
+        case "Walk Completed":    return "you walked to the centre of the Feed"
+        case "Veil Lifted":       return "you stood inside the Light"
+        case "Chapter Completed": return "you finished a door in your reading"
+        case "Topic Opened":      return "you opened a new reading"
+        default: return nil
+        }
+    }
+
     static func compose(type: String, name: String, at: Date, hers: Bool,
                         now: Date, calendar: Calendar = .current) -> String? {
-        guard let pattern = verb(for: type), let when = when(at, now: now, calendar: calendar) else { return nil }
+        guard let pattern = verb(for: type) ?? sisterVerb(for: type),
+              let when = when(at, now: now, calendar: calendar) else { return nil }
         let what = pattern.replacingOccurrences(of: "%@", with: name)
         let where_ = hers ? "It was standing in this room." : "It was standing in this enclosure."
         return "\(when), \(what). \(where_)"

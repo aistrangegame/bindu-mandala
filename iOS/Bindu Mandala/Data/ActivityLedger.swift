@@ -155,6 +155,15 @@ enum ActivityLedger {
         /// has one). Born on first write by `typecast: true`. His words, when
         /// he gives any, ride in `Notes`; nothing here composes them.
         static let chakraPracticed  = "Chakra Practiced"
+        // Wave 6 · memory and the sister apps. Born on first write by `typecast: true`.
+
+        /// Light — appreciation — sent back to a moment he felt lost (C-1126).
+        /// Linked to the Śakti whose light was sent; his few words, if any, in
+        /// `Notes`; the moment itself in `Detail`, so it survives a reinstall.
+        static let lightSentBack    = "Light Sent Back"
+        /// The name his higher self gave, kept in Bindu memory (C-1325). Linked
+        /// to the point's own row (kp 102); the name, his words, in `Notes`.
+        static let nameKept         = "Name Kept"
     }
 
     // MARK: - The two once-ever milestones
@@ -522,12 +531,20 @@ enum ActivityLedger {
     /// phone — and nothing here composes them.
     static func letterSealed(shaktiRecordId: String, name shaktiName: String,
                              forward: Bool, opensOn: String?, body: String,
-                             at: Date) -> PendingActivity {
-        let name = shaktiName.isEmpty ? "a Śakti" : shaktiName
+                             at: Date, to recipient: String? = nil,
+                             moment: Date? = nil) -> PendingActivity {
+        let her = shaktiName.isEmpty ? "a Śakti" : shaktiName
+        // Wave 6 · a letter may go to an age, a memory or a self — still held
+        // in her river, so still linked to her row.
+        let name = (recipient ?? "").isEmpty ? her : (recipient ?? her)
         let detail: String
         if forward {
             let when = (opensOn ?? "").isEmpty ? "her day" : (opensOn ?? "her day")
             detail = "Sealed forward · opens on \(when)"
+        } else if let moment {
+            // The moment, written as the ledger writes every instant, so the
+            // letter returns to it after a reinstall.
+            detail = "Sent back to a moment · \(RecognitionDedup.writtenFeltAt(moment)) · \(LunarPhaseService.phaseName(at: at))"
         } else {
             detail = "Sent back to a moment · \(LunarPhaseService.phaseName(at: at))"
         }
@@ -632,6 +649,227 @@ enum ActivityLedger {
             moonPhase: LunarPhaseService.phaseName(at: at),
             durationSec: max(0, seconds)
         )
+    }
+
+    // MARK: - Wave 6 · light sent back, and the name kept
+
+    /// Light sent back to a moment he felt lost. Linked to her row (the Śakti
+    /// whose light he sent); the moment in `Detail`, as the ledger writes every
+    /// instant; his words — if he set any beside the light — in `Notes`.
+    static func lightSentBack(shaktiRecordId: String, name shaktiName: String,
+                              moment: Date, words: String?, at: Date) -> PendingActivity {
+        let name = shaktiName.isEmpty ? "a Śakti" : shaktiName
+        return PendingActivity(
+            type: ActivityType.lightSentBack,
+            linkRecordId: shaktiRecordId,
+            name: "Light sent back — through \(name)",
+            detail: "To a moment once lost · \(RecognitionDedup.writtenFeltAt(moment)) · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.well,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            notes: words
+        )
+    }
+
+    /// The name his higher self gave, kept. Linked to the point's row; the name
+    /// itself in `Notes` and nowhere else.
+    static func nameKept(pointRecordId: String, name: String, at: Date) -> PendingActivity {
+        PendingActivity(
+            type: ActivityType.nameKept,
+            linkRecordId: pointRecordId,
+            name: "A name kept in Bindu memory",
+            detail: "Kept at the point · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            notes: name
+        )
+    }
+
+    /// Who a river letter is to, in the ledger's words. `nil` means her.
+    static func recipientWords(_ r: RiverRecipient?) -> String? {
+        guard let r else { return nil }
+        switch r.kind {
+        case .her:       return nil
+        case .memory:    return "a memory"
+        case .pastSelf:  return "his past self"
+        case .laterSelf: return "his later self"
+        case .age:
+            guard let a = r.age, a >= 0 else { return "himself, at an age" }
+            return "himself at \(spelled(a))"
+        }
+    }
+
+    /// The reverse of ``recipientWords(_:)`` — a restored letter's recipient.
+    /// `nil` for her (or for words it does not know).
+    static func recipient(fromWords words: String) -> RiverRecipient? {
+        switch words {
+        case "a memory":           return RiverRecipient(kind: .memory)
+        case "his past self":      return RiverRecipient(kind: .pastSelf)
+        case "his later self":     return RiverRecipient(kind: .laterSelf)
+        case "himself, at an age": return RiverRecipient(kind: .age)
+        default:
+            let prefix = "himself at "
+            guard words.hasPrefix(prefix) else { return nil }
+            let rest = String(words.dropFirst(prefix.count))
+            let f = NumberFormatter()
+            f.locale = Locale(identifier: "en_US")
+            f.numberStyle = .spellOut
+            guard let n = f.number(from: rest)?.intValue else { return RiverRecipient(kind: .age) }
+            return RiverRecipient(kind: .age, age: n)
+        }
+    }
+
+    /// A whole number in words ("nine", "forty-two") — an age is spoken, never
+    /// written as a figure in a composed line.
+    static func spelled(_ n: Int) -> String {
+        let f = NumberFormatter()
+        f.locale = Locale(identifier: "en_US")
+        f.numberStyle = .spellOut
+        return f.string(from: NSNumber(value: n)) ?? "an age"
+    }
+
+    // MARK: - Wave 6 · the river, restored from the ledger
+
+    /// Every row the river's restore reads: its four acts.
+    static var restoreRiver: String {
+        let types = [ActivityType.letterSealed, ActivityType.letterOpened,
+                     ActivityType.lightSentBack, ActivityType.nameKept]
+        return and([isMandala, "OR(" + types.map { isType($0) }.joined(separator: ", ") + ")"])
+    }
+
+    /// An instant written by ``RecognitionDedup/writtenFeltAt(_:)``, found
+    /// anywhere inside a composed `Detail`.
+    static func instant(in detail: String?) -> Date? {
+        guard let detail else { return nil }
+        let pattern = #"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z"#
+        guard let range = detail.range(of: pattern, options: .regularExpression) else { return nil }
+        return serverDate(String(detail[range]))
+    }
+
+    /// Ledger rows → river letters, oldest first, each one already ledgered (it
+    /// came *from* the ledger). `byRecord` maps a Shakti record id to her
+    /// position. A row with no words (a voice-only letter, whose sound lived
+    /// only on the phone) or no known link is skipped — never invented.
+    ///
+    /// A forward letter's day is found again from its opening and the instant
+    /// it was sealed (the real moon is deterministic); a back letter returns to
+    /// the moment its `Detail` names, or — written before Wave 6 — to the day it
+    /// was sent. A `Letter Opened` row on the same link, on or after the day,
+    /// opens the earliest such letter.
+    static func riverLetters(from rows: [Row], byRecord: [String: Int],
+                             now: Date = .now,
+                             timeZone: TimeZone = .current) -> [RiverLetter] {
+        var openings: [String: [Date]] = [:]
+        for row in rows where row.fields.activityType == ActivityType.letterOpened {
+            guard let link = row.fields.linkToMandala?.first,
+                  let at = serverDate(row.fields.feltAt) else { continue }
+            openings[link, default: []].append(at)
+        }
+        for k in Array(openings.keys) { openings[k]?.sort() }
+
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = timeZone
+        let sealedRows = rows
+            .filter { $0.fields.activityType == ActivityType.letterSealed }
+            .sorted { (serverDate($0.fields.feltAt) ?? .distantPast) < (serverDate($1.fields.feltAt) ?? .distantPast) }
+
+        var out: [RiverLetter] = []
+        for row in sealedRows {
+            let body = (row.fields.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !body.isEmpty,
+                  let link = row.fields.linkToMandala?.first,
+                  let kp = byRecord[link],
+                  let written = serverDate(row.fields.feltAt)
+                    ?? legacyTimestamp(activityDate: row.fields.activityDate, timeZone: timeZone)
+            else { continue }
+            let detail = row.fields.detail ?? ""
+            let forward = detail.hasPrefix("Sealed forward")
+            var letter = RiverLetter(id: UUID(), khadgamalaPosition: kp,
+                                     direction: forward ? .forward : .back,
+                                     body: body, writtenAt: written,
+                                     addressedTo: written, opening: nil, openedAt: nil,
+                                     sealLedgeredAt: now, openLedgeredAt: nil)
+            if let name = row.fields.activityName,
+               name.hasPrefix("A letter to "),
+               let dash = name.range(of: " — ", options: .backwards) {
+                let start = name.index(name.startIndex, offsetBy: "A letter to ".count)
+                if start <= dash.lowerBound {
+                    letter.recipient = recipient(fromWords: String(name[start..<dash.lowerBound]))
+                }
+            }
+            if forward {
+                let opening = RiverLetter.Opening.allCases.first { detail.contains("opens on \($0.words)") }
+                    ?? .purnima
+                letter.opening = opening
+                letter.addressedTo = RiverLetter.openingInstant(opening, khadgamalaPosition: kp,
+                                                                after: written, calendar: cal)
+                if var held = openings[link],
+                   let i = held.firstIndex(where: { $0 >= letter.addressedTo.addingTimeInterval(-1) }) {
+                    letter.openedAt = held[i]
+                    letter.openLedgeredAt = now
+                    held.remove(at: i)
+                    openings[link] = held
+                }
+            } else {
+                letter.addressedTo = min(instant(in: detail) ?? written, written)
+                letter.openedAt = written
+                letter.openLedgeredAt = now
+            }
+            out.append(letter)
+        }
+        return out
+    }
+
+    /// The key two copies of one river letter share: her position, the instant
+    /// it was set down to the second, and its words.
+    static func riverIdentity(_ letter: RiverLetter) -> String {
+        "\(letter.khadgamalaPosition)\u{1F}" + RecognitionDedup.writtenFeltAt(letter.writtenAt)
+            + "\u{1F}" + letter.body.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Which restored letters this phone does not already hold. Idempotent, so
+    /// it may run on every sync; duplicates *within* the ledger collapse too.
+    static func riverLettersMissingLocally(restored: [RiverLetter],
+                                           local: [RiverLetter]) -> [RiverLetter] {
+        var seen = Set(local.map { riverIdentity($0) })
+        var out: [RiverLetter] = []
+        for r in restored {
+            let key = riverIdentity(r)
+            guard !seen.contains(key) else { continue }
+            seen.insert(key)
+            out.append(r)
+        }
+        return out
+    }
+
+    /// Ledger rows → lights sent back (the moment, her position, his words).
+    static func lightsSentBack(from rows: [Row], byRecord: [String: Int],
+                               now: Date = .now) -> [LightSentBack] {
+        var out: [LightSentBack] = []
+        for row in rows where row.fields.activityType == ActivityType.lightSentBack {
+            guard let link = row.fields.linkToMandala?.first, let kp = byRecord[link],
+                  let at = serverDate(row.fields.feltAt),
+                  let moment = instant(in: row.fields.detail) else { continue }
+            let words = (row.fields.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            out.append(LightSentBack(id: UUID(), khadgamalaPosition: kp, moment: moment,
+                                     words: words.isEmpty ? nil : words,
+                                     sentAt: at, ledgeredAt: now))
+        }
+        return out.sorted { $0.sentAt < $1.sentAt }
+    }
+
+    /// The newest name kept, from the ledger — the name, and when.
+    static func latestNameKept(from rows: [Row]) -> (name: String, at: Date)? {
+        var best: (name: String, at: Date)? = nil
+        for row in rows where row.fields.activityType == ActivityType.nameKept {
+            guard let at = serverDate(row.fields.feltAt) else { continue }
+            let name = (row.fields.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { continue }
+            if best == nil || at > best!.at { best = (name, at) }
+        }
+        return best
     }
 
     /// The ledger columns a note's idempotency check reads. Deliberately **not**
@@ -899,6 +1137,8 @@ enum ActivityLedger {
             var durationSec: Double? = nil
             /// Wave 6 · `Link to The Map` — read only by the Map-keyed dedup.
             var linkToMap: [String]? = nil
+            /// Wave 6 · which instrument wrote the row — grace reads the sisters'.
+            var sourceApp: String? = nil
 
             enum CodingKeys: String, CodingKey {
                 case activityType  = "Activity Type"
@@ -914,6 +1154,7 @@ enum ActivityLedger {
                 case descentRing   = "Descent Ring"
                 case durationSec   = "Duration (sec)"
                 case linkToMap     = "Link to The Map"
+                case sourceApp     = "Source App"
             }
         }
     }

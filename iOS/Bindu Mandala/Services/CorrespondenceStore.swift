@@ -57,6 +57,12 @@ struct RiverLetter: Codable, Equatable, Identifiable {
     var openedAt: Date?
     var sealLedgeredAt: Date?
     var openLedgeredAt: Date?
+    /// Wave 6 · who the letter is to. `nil` (every letter before Wave 6) is her.
+    var recipient: RiverRecipient? = nil
+    /// Wave 6 · his own voice, kept beside the words: a file name inside
+    /// `Practice/voice/`. The words (`body`) are what he said, set down on the
+    /// phone; the sound is his and is never generated.
+    var voiceFile: String? = nil
 
     /// Still sealed: forward, its day not yet come.
     func isSealed(at now: Date) -> Bool {
@@ -115,11 +121,73 @@ struct RiverDraft: Codable, Equatable {
     var body: String
     var opening: RiverLetter.Opening
     var addressedTo: Date
+    var recipient: RiverRecipient? = nil
+    var voiceFile: String? = nil
+}
+
+/// Wave 6 · who a river letter is to (C-1346): her, or himself at an age, a
+/// memory, his past self, his later self. A letter to a memory names the
+/// memory in its own first line — his words, kept in one place.
+struct RiverRecipient: Codable, Equatable, Hashable {
+    enum Kind: String, Codable, CaseIterable, Identifiable {
+        case her, age, memory, pastSelf, laterSelf
+        var id: String { rawValue }
+
+        /// The composer's own words for each.
+        var words: String {
+            switch self {
+            case .her:       return "her"
+            case .age:       return "myself, at an age"
+            case .memory:    return "a memory"
+            case .pastSelf:  return "my past self"
+            case .laterSelf: return "my later self"
+            }
+        }
+
+        /// Which way a letter to this one may go.
+        func allows(_ d: RiverLetter.Direction) -> Bool {
+            switch self {
+            case .her, .age:  return true
+            case .memory, .pastSelf: return d == .back
+            case .laterSelf:  return d == .forward
+            }
+        }
+    }
+    var kind: Kind
+    var age: Int? = nil
+
+    /// The heading a page carries: "to Kāmākarṣiṇī", "to myself at nine".
+    func heading(herName: String) -> String {
+        switch kind {
+        case .her:       return "to \(herName)"
+        case .age:       return age.map { "to myself at \(ActivityLedger.spelled($0))" } ?? "to myself, at an age"
+        case .memory:    return "to a memory"
+        case .pastSelf:  return "to my past self"
+        case .laterSelf: return "to my later self"
+        }
+    }
+}
+
+/// Wave 6 · appreciation sent back (C-1126, C-1101, C-1253): light, not
+/// words, sent to a dated moment he felt lost — "to help complete the loop".
+/// It never marks the day as a bad one; the Portrait's bead for that day warms.
+struct LightSentBack: Codable, Equatable, Identifiable {
+    var id: UUID
+    /// The Śakti whose light was sent (today's, unless he chose another).
+    var khadgamalaPosition: Int
+    /// The moment it was sent to.
+    var moment: Date
+    /// A few words of his beside the light, if he set any.
+    var words: String?
+    var sentAt: Date
+    var ledgeredAt: Date?
 }
 
 struct RiverArchive: Codable, Equatable {
     var letters: [RiverLetter] = []
     var draft: RiverDraft? = nil
+    /// Wave 6 · optional so every archive written before it still decodes.
+    var lights: [LightSentBack]? = nil
 }
 
 @MainActor
@@ -148,15 +216,18 @@ final class CorrespondenceStore {
     /// Seal a letter forward. Blank words seal nothing.
     @discardableResult
     func seal(body: String, to kp: Int, opening: RiverLetter.Opening,
-              at now: Date = .now, calendar: Calendar = .current) -> RiverLetter? {
-        guard !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              at now: Date = .now, calendar: Calendar = .current,
+              recipient: RiverRecipient? = nil, voiceFile: String? = nil) -> RiverLetter? {
+        guard Self.hasSomething(body: body, voiceFile: voiceFile),
               (1...KhadgamalaMap.total).contains(kp) else { return nil }
-        let letter = RiverLetter(id: UUID(), khadgamalaPosition: kp, direction: .forward,
+        var letter = RiverLetter(id: UUID(), khadgamalaPosition: kp, direction: .forward,
                                  body: body, writtenAt: now,
                                  addressedTo: RiverLetter.openingInstant(opening, khadgamalaPosition: kp,
                                                                          after: now, calendar: calendar),
                                  opening: opening, openedAt: nil,
                                  sealLedgeredAt: nil, openLedgeredAt: nil)
+        letter.recipient = (recipient?.kind == .her) ? nil : recipient
+        letter.voiceFile = voiceFile
         archive.letters.append(letter)
         archive.draft = nil
         persist()
@@ -166,17 +237,95 @@ final class CorrespondenceStore {
     /// Send a letter back to a moment that has already come. A moment in the
     /// future is not "back", and is held at now.
     @discardableResult
-    func sendBack(body: String, to kp: Int, moment: Date, at now: Date = .now) -> RiverLetter? {
-        guard !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+    func sendBack(body: String, to kp: Int, moment: Date, at now: Date = .now,
+                  recipient: RiverRecipient? = nil, voiceFile: String? = nil) -> RiverLetter? {
+        guard Self.hasSomething(body: body, voiceFile: voiceFile),
               (1...KhadgamalaMap.total).contains(kp) else { return nil }
-        let letter = RiverLetter(id: UUID(), khadgamalaPosition: kp, direction: .back,
+        var letter = RiverLetter(id: UUID(), khadgamalaPosition: kp, direction: .back,
                                  body: body, writtenAt: now, addressedTo: min(moment, now),
                                  opening: nil, openedAt: now,
                                  sealLedgeredAt: nil, openLedgeredAt: now)
+        letter.recipient = (recipient?.kind == .her) ? nil : recipient
+        letter.voiceFile = voiceFile
         archive.letters.append(letter)
         archive.draft = nil
         persist()
         return letter
+    }
+
+    /// Words, or his voice: either is a letter. Neither is nothing.
+    static func hasSomething(body: String, voiceFile: String?) -> Bool {
+        !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || !(voiceFile ?? "").isEmpty
+    }
+
+    // MARK: Wave 6 · light sent back
+
+    var lights: [LightSentBack] { archive.lights ?? [] }
+
+    /// Send light — appreciation, not words — back to a moment he felt lost.
+    /// A moment in the future is held at now.
+    @discardableResult
+    func sendLight(to moment: Date, through kp: Int, words: String? = nil,
+                   at now: Date = .now) -> LightSentBack? {
+        guard (1...KhadgamalaMap.total).contains(kp) else { return nil }
+        let trimmed = words?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let light = LightSentBack(id: UUID(), khadgamalaPosition: kp, moment: min(moment, now),
+                                  words: (trimmed ?? "").isEmpty ? nil : trimmed,
+                                  sentAt: now, ledgeredAt: nil)
+        var all = archive.lights ?? []
+        all.append(light)
+        archive.lights = all
+        persist()
+        return light
+    }
+
+    func unledgeredLights() -> [LightSentBack] {
+        lights.filter { $0.ledgeredAt == nil }
+    }
+
+    func markLightLedgered(_ id: UUID, at now: Date = .now) {
+        guard var all = archive.lights, let i = all.firstIndex(where: { $0.id == id }) else { return }
+        all[i].ledgeredAt = now
+        archive.lights = all
+        persist()
+    }
+
+    // MARK: Wave 6 · the path home after a reinstall
+
+    /// Merge letters the ledger holds and this phone does not, on identity —
+    /// idempotent, so it may run on every sync; nothing already here is touched.
+    /// Returns how many came home (for the log only; never shown).
+    @discardableResult
+    func mergeRestored(letters restored: [RiverLetter]) -> Int {
+        let missing = ActivityLedger.riverLettersMissingLocally(restored: restored,
+                                                                local: archive.letters)
+        guard !missing.isEmpty else { return 0 }
+        archive.letters.append(contentsOf: missing)
+        archive.letters.sort { $0.writtenAt < $1.writtenAt }
+        persist()
+        return missing.count
+    }
+
+    /// The same for lights: one light per (position, moment, instant sent).
+    @discardableResult
+    func mergeRestored(lights restored: [LightSentBack]) -> Int {
+        func key(_ l: LightSentBack) -> String {
+            "\(l.khadgamalaPosition)\u{1F}" + RecognitionDedup.writtenFeltAt(l.moment)
+                + "\u{1F}" + RecognitionDedup.writtenFeltAt(l.sentAt)
+        }
+        var all = archive.lights ?? []
+        var seen = Set(all.map(key))
+        var added = 0
+        for l in restored where !seen.contains(key(l)) {
+            seen.insert(key(l))
+            all.append(l)
+            added += 1
+        }
+        guard added > 0 else { return 0 }
+        archive.lights = all.sorted { $0.sentAt < $1.sentAt }
+        persist()
+        return added
     }
 
     /// He has opened a letter whose day has come. Opening a sealed one is

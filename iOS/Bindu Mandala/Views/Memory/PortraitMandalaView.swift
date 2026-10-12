@@ -29,6 +29,8 @@ struct PortraitMandalaView: View {
     @State private var riverOpen = false
     @State private var bodyOpen = false
     @State private var pointOpen = false
+    @State private var bookOpen = false
+    @State private var monthOpen = false
     private var strokeStore: PortraitStrokeStore { PortraitStrokeStore.shared }
     private var river: CorrespondenceStore { CorrespondenceStore.shared }
 
@@ -65,6 +67,8 @@ struct PortraitMandalaView: View {
         .fullScreenCover(isPresented: $riverOpen) { CorrespondenceView() }
         .fullScreenCover(isPresented: $bodyOpen) { WhereSheSpeaksView() }
         .fullScreenCover(isPresented: $pointOpen) { ThePointView() }
+        .fullScreenCover(isPresented: $bookOpen) { ArchiveBookView() }
+        .fullScreenCover(isPresented: $monthOpen) { MonthMirrorView() }
         .sheet(isPresented: Binding(
             get: { exportedImage != nil },
             set: { if !$0 { exportedImage = nil } }
@@ -202,6 +206,11 @@ struct PortraitMandalaView: View {
                 door("the river ›") { riverOpen = true }
                 door("where she speaks ›") { bodyOpen = true }
             }
+            // Wave 6 · the Archive as a book, and the month sat with.
+            HStack(spacing: 0) {
+                door("the book ›") { bookOpen = true }
+                door("the month ›") { monthOpen = true }
+            }
         }
         .padding(.horizontal, 18)
     }
@@ -250,6 +259,9 @@ struct PortraitMandalaView: View {
         for entry in allEntries where entry.gesture == .felt { instants.append(entry.timestamp) }
         instants.append(contentsOf: strokeStore.drawingInstants)
         instants.append(contentsOf: river.letters.map(\.writtenAt))
+        // Wave 6 · a moment light was sent back to warms its own day's bead.
+        let warmed = Set(river.lights.map { Calendar.current.startOfDay(for: $0.moment) })
+        instants.append(contentsOf: river.lights.map(\.moment))
         let days = LivingMandala.practiceDays(instants, inYearOf: .now)
         var light: [Int: Color] = [:]
         for s in shaktis {
@@ -258,7 +270,7 @@ struct PortraitMandalaView: View {
         return days.map { day in
             let noon = day.addingTimeInterval(12 * 3_600)
             let kp = DailyEnergyService.todaysPosition(for: noon)
-            return YearBead(day: day, color: light[kp] ?? Color.gold)
+            return YearBead(day: day, color: warmed.contains(day) ? Color.goldWarm : (light[kp] ?? Color.gold))
         }
     }
 
@@ -285,6 +297,8 @@ struct PortraitMandalaView: View {
                 // Wave 5 · the year accreting round the rim, and his strokes
                 // mirrored by their rings — both part of the Record.
                 YearRingLayer(beads: yearBeads, diameter: diameter)
+                // Wave 6 · the layers play feeds: beads, roots, petals, seed, wheel.
+                LivingPlayLayers(traces: PlayTraceStore.shared.traces, diameter: diameter)
                 LivingStrokesLayer(strokes: strokeStore.strokes, live: liveStroke, diameter: diameter)
             }
             .opacity(fieldP)

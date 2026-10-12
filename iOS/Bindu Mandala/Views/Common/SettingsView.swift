@@ -236,11 +236,14 @@ struct SettingsView: View {
     private var fieldConnectionsSection: some View {
         sectionShell("Field Connections") {
             VStack(alignment: .leading, spacing: 18) {
-                fieldRow(position: 3, defaultName: "Gaia",
+                // Wave 6 · keyed by khaḍgamālā position 1–102 (position is
+                // identity) — Ahaṅkārākarṣiṇī 31, Nāmākarṣiṇī 40, Ātmākarṣiṇī 42 —
+                // not by the old ring-2 local index 3 / 12 / 14.
+                fieldRow(khadgamala: 31, defaultName: "Gaia",
                          hint: "She anchors here.")
-                fieldRow(position: 12, defaultName: "Ashrey",
+                fieldRow(khadgamala: 40, defaultName: "Ashrey",
                          hint: "She weaves through here.")
-                fieldRow(position: 14, defaultName: "Ram",
+                fieldRow(khadgamala: 42, defaultName: "Ram",
                          hint: "Holds her frequency.")
                 Text("These names appear on each Śakti's Detail screen and may be edited freely. They are personal to this practitioner.")
                     .font(AppFont.voice(13))
@@ -336,8 +339,13 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private func fieldRow(position: Int, defaultName: String, hint: String) -> some View {
-        if let shakti = shaktis.first(where: { $0.position == position && ($0.ringNumber ?? 2) == 2 }) {
+    private func fieldRow(khadgamala kp: Int, defaultName: String, hint: String) -> some View {
+        // Her row by position; a bootstrap row not yet synced (no position
+        // stamped) is found by its ring-2 index, the only key it carries.
+        let local = KhadgamalaMap.perRingIndex(forKhadgamala: kp)
+        if let shakti = shaktis.first(where: { $0.khadgamalaPosition == kp })
+            ?? shaktis.first(where: { $0.khadgamalaPosition == nil && $0.position == local
+                                      && ($0.ringNumber ?? 2) == 2 }) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 8) {
                     Circle()

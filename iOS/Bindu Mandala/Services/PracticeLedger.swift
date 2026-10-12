@@ -53,7 +53,26 @@ enum PracticeLedger {
             pending.append(ActivityLedger.letterSealed(shaktiRecordId: r.id, name: r.name,
                                                        forward: letter.direction == .forward,
                                                        opensOn: opensOn, body: letter.body,
-                                                       at: letter.writtenAt))
+                                                       at: letter.writtenAt,
+                                                       to: ActivityLedger.recipientWords(letter.recipient),
+                                                       moment: letter.direction == .back ? letter.addressedTo : nil))
+        }
+
+        // Wave 6 · light sent back, and the name kept in Bindu memory.
+        for light in river.unledgeredLights() {
+            guard let r = record(light.khadgamalaPosition) else { continue }
+            river.markLightLedgered(light.id)
+            pending.append(ActivityLedger.lightSentBack(shaktiRecordId: r.id, name: r.name,
+                                                        moment: light.moment, words: light.words,
+                                                        at: light.sentAt))
+        }
+        let memory = BinduMemory.shared
+        if let point = record(KhadgamalaMap.total) {
+            for kept in memory.unledgered() {
+                memory.markLedgered(kept.id)
+                pending.append(ActivityLedger.nameKept(pointRecordId: point.id, name: kept.name,
+                                                       at: kept.keptAt))
+            }
         }
 
         for letter in river.unledgeredOpenings() {

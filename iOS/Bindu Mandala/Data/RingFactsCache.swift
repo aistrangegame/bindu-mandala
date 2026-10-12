@@ -26,6 +26,25 @@ enum RingFactsCache {
         /// way out of the Gates of Release. Optional, so a cache written
         /// before Wave 2 still decodes.
         var siddhi: String? = nil
+        /// Wave 6 · the ring's opening Mahāmudrā (`fld1C14f4MsVIrA9F`) — shown
+        /// at the Gates. Words naming a hand are language, never an image.
+        var mudra: String? = nil
+        /// Wave 6 · Sṛṣṭi / Sthiti / Saṃhāra (`fldKWGAI16XjdqoI3`) — named at
+        /// the Shadow and Armin thresholds, which are its boundaries.
+        var phase: String? = nil
+        /// Wave 6 · the ring's own paragraph (`fld1HR38cQAtEicFc`) — in the Veil.
+        var notes: String? = nil
+    }
+
+    /// The phase's name with its diacritics, as the tradition writes it.
+    static func phaseWords(_ raw: String?) -> String? {
+        guard let r = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !r.isEmpty else { return nil }
+        switch r.lowercased() {
+        case "srishti", "sristi", "sṛṣṭi": return "Sṛṣṭi"
+        case "sthiti":                     return "Sthiti"
+        case "samhara", "saṃhāra":         return "Saṃhāra"
+        default:                           return r
+        }
     }
 
     static let defaultsKey = "ringFacts.v1"
