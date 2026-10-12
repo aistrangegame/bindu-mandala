@@ -2,29 +2,35 @@ import SwiftUI
 import SwiftData
 
 // MARK: - Wave 2 · the centre: Mauna, the bloom, and the endless fall
+// MARK:   Wave 6 · shown, never reached by doing (C-1307)
 //
-// Three of Design's gestures at the one point, none of which the built
-// instrument had a home for:
+// Three of Design's gestures at the one point:
 //
-//   • **Mauna** (The Eight Modes, mode 5) — *tap the centre for silence.* The
-//     `.silence` gesture's true home. The field goes dark and quiet, the names
-//     stand as faint stars round the point, and Design's three captions arrive
-//     at 7, 14 and 21 seconds; at 28 there is only silence. A silence held is
-//     its own ledger event (``MaunaSilence``) and is never "felt".
+//   • **Mauna** (The Eight Modes, mode 5) — the silence at the point. Wave 2
+//     opened it with a tap. **Wave 6: it arrives.** When he has fallen in to
+//     the innermost enclosures and left the glass untouched for one breath, the
+//     point notices him and the silence comes (``CentreArrival``). His Codex,
+//     C-1307: *"What is above creation cannot be attained by action."* A voice
+//     reaches it by the point's own accessibility action — resting there.
+//     Design's captions at 7, 14 and 21 seconds are gone (C-1355, *"the system
+//     holds the door open and never the watch"*): nothing in the silence follows
+//     a clock. The threshold says only his own line, *"Who is saying that?"*,
+//     over the colourless Maya light, which dissolves while he is still and
+//     returns if he moves (C-1305). Then **Pointy** draws — one particle at
+//     every point, line → circle → ∞ → heart (C-1306). A silence held is its
+//     own ledger event (``MaunaSilence``) and is never "felt".
 //   • **The centre bloom** (G17, Ring 9's *Spanda*) — *hold the centre and the
 //     whole Śrī Yantra blooms outward from the single point; release, and it
-//     dissolves back into it.* Drawn over the living field while held, with
-//     the point's own 136.1 swelling under it.
-//   • **The Shepard fall** (Ring 9's *Praveśa*) — inside the silence, *press
-//     and hold — fall inward*: self-similar yantras emerge from the point
-//     forever, each carrying its own bindu, to a Shepard tone that never
-//     reaches a bottom. Held past the recognition (Design's 6.5 s), the fall
-//     settles and Design's words arrive; let go then, and the point opens into
-//     Lalitā's source, which is where the fall was always going.
+//     dissolves back into it.* A gesture of play at the point, not a way in: it
+//     opens nothing.
+//   • **The Shepard fall** (Ring 9's *Praveśa*) — Wave 2 fell while he pressed
+//     and held. **Wave 6: the fall follows his stillness** (``MaunaDepth``):
+//     still, it deepens; moved, it loosens. When the recognition has come and he
+//     has rested in it, the point opens into Lalitā's source — shown, not taken.
 //
 // The point is the Bindu's seat on the glass, wherever the camera has it.
 
-/// The point's three gestures, over the living Mandala.
+/// The point's gestures, over the living Mandala.
 @MainActor
 struct TheCentre: View {
     /// Where the Bindu stands on the glass now.
@@ -36,12 +42,26 @@ struct TheCentre: View {
     let seats: [MandalaWorld.Seat]
     /// The ♪ control.
     let soundOn: Bool
-    /// The fall reached its recognition and he let go: the point opens.
+    /// Wave 6 · when the glass last moved (`LivingMandalaView.lastMoveAt`).
+    var lastMoveAt: TimeInterval = Date().timeIntervalSinceReferenceDate
+    /// Wave 6 · the deepest enclosure the camera has fallen into.
+    var enteredRing: Int = 0
+    /// Wave 6 · the glass, for "near the middle".
+    var size: CGSize = .zero
+    /// The fall reached its recognition and he rested in it: the point opens.
     let onFallThrough: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var press = BloomPress()
     @State private var maunaOpen = false
+    /// When a finger last rested on the point (the bloom) — a touch, too.
+    @State private var lastTouchAt: TimeInterval = 0
+    /// The stillness the silence last arrived in, so it does not arrive twice
+    /// in one stillness: the glass must move before the point notices again.
+    @State private var restedIn: TimeInterval = -1
+
+    /// The last instant the glass or the point was touched.
+    private var lastTouched: TimeInterval { max(lastMoveAt, lastTouchAt) }
 
     var body: some View {
         ZStack {
@@ -52,14 +72,13 @@ struct TheCentre: View {
                     .frame(width: 64, height: 64)
                     .contentShape(Circle())
                     .position(point)
-                    .onTapGesture { openMauna() }
                     .onLongPressGesture(minimumDuration: 0.6, maximumDistance: 30,
                                         perform: { },
                                         onPressingChanged: { pressing in hold(pressing) })
                     .accessibilityElement()
-                    .accessibilityLabel(Text("The point — touch for silence, hold to breathe the yantra open"))
+                    .accessibilityLabel(Text("The point — be still here, and the silence arrives"))
                     .accessibilityAddTraits(.isButton)
-                    .accessibilityAction { openMauna() }
+                    .accessibilityAction { arrive() }
             }
         }
         .fullScreenCover(isPresented: $maunaOpen) {
@@ -72,16 +91,42 @@ struct TheCentre: View {
                 }
             })
         }
+        // The point notices him: restarted whenever the glass is touched, it
+        // waits out one breath and then asks whether he is still at the centre.
+        .task(id: NoticeKey(touched: lastTouched, active: active)) { await notice() }
     }
 
-    private func openMauna() {
-        hold(false)
+    private struct NoticeKey: Equatable {
+        let touched: TimeInterval
+        let active: Bool
+    }
+
+    private func notice() async {
+        guard active, !maunaOpen else { return }
+        let since = Date().timeIntervalSinceReferenceDate - lastTouched
+        let wait = max(0.2, CentreArrival.oneBreath - since)
+        try? await Task.sleep(for: .seconds(wait))
+        guard !Task.isCancelled, active, !maunaOpen, !press.holding else { return }
+        let untouched = Date().timeIntervalSinceReferenceDate - lastTouched
+        guard CentreArrival.arrives(untouchedFor: untouched, enteredRing: enteredRing,
+                                    point: point, size: size,
+                                    restedSinceLastMove: restedIn == lastTouched) else { return }
+        arrive()
+    }
+
+    /// The silence arrives — by his stillness, or by a voice's own action.
+    private func arrive() {
+        guard !maunaOpen else { return }
+        press = press.changed(holding: false, at: Date().timeIntervalSinceReferenceDate)
+        if soundOn { RingFieldVoice.shared.bloom(0) }
+        restedIn = lastTouched
         Haptics.soft()
         maunaOpen = true
     }
 
     private func hold(_ pressing: Bool) {
         let now = Date().timeIntervalSinceReferenceDate
+        lastTouchAt = now
         press = press.changed(holding: pressing, at: now)
         if soundOn { RingFieldVoice.shared.bloom(pressing ? 1 : 0) }
     }
@@ -148,64 +193,87 @@ struct BloomPress: Equatable {
     func isVisible(at t: TimeInterval) -> Bool { holding || value(at: t) > 0.01 }
 }
 
+/// The silence's depth between frames — ``MaunaDepth`` advanced by real time,
+/// ten times a second, whatever the glass is drawing.
+final class MaunaClock {
+    private(set) var state = MaunaDepth()
+    private var last: TimeInterval?
+
+    func advance(now: TimeInterval, steadiness: Double, givenOver: Bool, recognition: Double) {
+        let dt = last.map { max(0, now - $0) } ?? 0
+        last = now
+        state.advance(dt: dt, steadiness: steadiness, givenOver: givenOver, recognition: recognition)
+    }
+}
+
 // MARK: - Mauna
 
-/// The silence at the point — and, held, the fall into it.
+/// The silence at the point — and, as he stays still, the fall into it.
 @MainActor
 struct MaunaView: View {
     let seats: [MandalaWorld.Seat]
     let soundOn: Bool
-    /// He has left the silence; `true` when he let go after the fall's
-    /// recognition, and the point should open.
+    /// He has left the silence; `true` when the point opened to him after the
+    /// fall's recognition.
     let onLeave: (_ fellThrough: Bool) -> Void
 
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @StateObject private var stillness = StillnessSensor()
     @State private var openedAt = Date()
-    @State private var holding = false
     @State private var fall = PraveshaClock()
+    @State private var deep = MaunaClock()
+    /// VoiceOver's "rest here" — stands for a still phone.
+    @State private var givenOver = false
     @State private var left = false
 
     var body: some View {
         GeometryReader { geo in
-            // Under reduced motion nothing moves, but the captions still arrive
-            // on their seconds: the clock ticks once a second instead of a frame.
-            TimelineView(.animation(minimumInterval: reduceMotion && !holding ? 1 : nil,
+            // Under reduced motion nothing moves until the fall; the glass is
+            // redrawn once a second so the threshold can still give way.
+            TimelineView(.animation(minimumInterval: reduceMotion && !deep.state.isFalling ? 1 : nil,
                                     paused: false)) { tl in
                 let now = tl.date
-                let state = fall.advance(now: now.timeIntervalSinceReferenceDate, holding: holding)
+                let d = deep.state
+                let state = fall.advance(now: now.timeIntervalSinceReferenceDate, holding: d.isFalling)
                 ZStack {
                     Color(red: 2 / 255, green: 0, blue: 1 / 255)
                     if state.held > 0.05 {
                         falling(state, size: geo.size)
                     } else {
-                        silence(since: now.timeIntervalSince(openedAt), size: geo.size)
+                        silence(since: now.timeIntervalSince(openedAt), depth: d, size: geo.size)
                     }
-                    words(state, since: now.timeIntervalSince(openedAt))
+                    words(state, depth: d)
                 }
             }
         }
         .ignoresSafeArea()
         .contentShape(Rectangle())
+        // Touching the glass is leaving; stillness is staying.
         .onTapGesture { leave(fellThrough: false) }
-        .onLongPressGesture(minimumDuration: 0.3, maximumDistance: 60,
-                            perform: { },
-                            onPressingChanged: { pressing in
-                                holding = pressing
-                                if !pressing, fall.recognition >= 0.99 { leave(fellThrough: true) }
-                            })
         .theEdgeWayOut(onOut: { leave(fellThrough: false) })
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Silence at the point"))
+        .accessibilityAction(named: Text("Rest here")) { givenOver = true }
         .accessibilityAction { leave(fellThrough: false) }
         .onAppear {
             openedAt = Date()
+            stillness.start()
             RingFieldVoice.shared.hush()
         }
         .task {
-            // The Shepard tone follows the fall's speed, ten times a second.
+            // The depth follows his stillness, and the Shepard tone the fall's
+            // speed, ten times a second.
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(0.1))
+                deep.advance(now: Date().timeIntervalSinceReferenceDate,
+                             steadiness: stillness.steadiness,
+                             givenOver: givenOver,
+                             recognition: fall.recognition)
+                if deep.state.opens {
+                    leave(fellThrough: true)
+                    return
+                }
                 guard soundOn else { continue }
                 if fall.held > 0.05 {
                     RingFieldVoice.shared.fall(intensity: Pravesha.shepard(speed: fall.speed))
@@ -215,6 +283,7 @@ struct MaunaView: View {
             }
         }
         .onDisappear {
+            stillness.stop()
             RingFieldVoice.shared.stopFalling()
             if soundOn { RingFieldVoice.shared.resume() }
         }
@@ -229,12 +298,13 @@ struct MaunaView: View {
 
     // MARK: The silence
 
-    private func silence(since t: TimeInterval, size: CGSize) -> some View {
+    private func silence(since t: TimeInterval, depth d: MaunaDepth, size: CGSize) -> some View {
         let outer = TheCentre.ringNames(seats, ring: 2)
         let inner = TheCentre.ringNames(seats, ring: 3)
         let centre = CGPoint(x: size.width / 2, y: size.height / 2)
         let scale = size.width / 390
         let arrive = reduceMotion ? 1 : min(1, t / 5)
+        let breath = reduceMotion ? 1 : Mauna.binduBreath(at: t)
         return ZStack {
             ForEach(Array(outer.enumerated()), id: \.offset) { i, name in
                 orbitName(name, index: i, of: outer.count, radius: 158 * scale,
@@ -244,7 +314,8 @@ struct MaunaView: View {
                 orbitName(name, index: i, of: inner.count, radius: 110 * scale,
                           centre: centre, alpha: 0.26 * arrive, size: 11)
             }
-            let breath = reduceMotion ? 1 : Mauna.binduBreath(at: t)
+            mayaLight(d.maya, centre: centre, scale: scale, t: t)
+            pointy(d, centre: centre, scale: scale)
             Circle()
                 .fill(RadialGradient(colors: [Color.accentRed, Color.accentRed.opacity(0.65), .clear],
                                      center: .center, startRadius: 0, endRadius: 42))
@@ -259,6 +330,54 @@ struct MaunaView: View {
                 .position(centre)
         }
         .allowsHitTesting(false)
+    }
+
+    /// The colourless Maya light round the point (C-1305): no hue of its own,
+    /// thinning while he looks, whole again if he moves.
+    private func mayaLight(_ amount: Double, centre: CGPoint, scale: CGFloat, t: TimeInterval) -> some View {
+        Canvas { ctx, _ in
+            guard amount > 0.005 else { return }
+            var c = ctx
+            c.blendMode = .plusLighter
+            let shimmer = reduceMotion ? 0 : 0.5 + 0.5 * sin(t * 0.7)
+            for i in 0..<5 {
+                let r = (54 + CGFloat(i) * 15 + CGFloat(shimmer) * 4) * scale
+                let rect = CGRect(x: centre.x - r, y: centre.y - r, width: r * 2, height: r * 2)
+                let a = amount * (0.16 - Double(i) * 0.022)
+                c.fill(Path(ellipseIn: rect),
+                       with: .radialGradient(Gradient(colors: [Color.white.opacity(0), Color.white.opacity(a),
+                                                               Color.white.opacity(0)]),
+                                             center: centre, startRadius: r * 0.6, endRadius: r))
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// Pointy (C-1306): the same particles at every point at once, drawing a
+    /// line, a circle, ∞, and a heart as he stays.
+    private func pointy(_ d: MaunaDepth, centre: CGPoint, scale: CGFloat) -> some View {
+        let light = d.pointyLight
+        let progress = reduceMotion ? d.pointy.rounded() : d.pointy
+        return Canvas { ctx, _ in
+            guard light > 0.005 else { return }
+            var c = ctx
+            c.blendMode = .plusLighter
+            let reach = 96 * scale
+            for i in 0..<Pointy.particles {
+                let u = Pointy.place(particle: i, progress: progress)
+                let p = CGPoint(x: centre.x + u.x * reach, y: centre.y + u.y * reach)
+                let glow: CGFloat = 5 * scale
+                c.fill(Path(ellipseIn: CGRect(x: p.x - glow, y: p.y - glow, width: glow * 2, height: glow * 2)),
+                       with: .radialGradient(Gradient(colors: [Color.gold.opacity(0.55 * light), .clear]),
+                                             center: p, startRadius: 0, endRadius: glow))
+                let core: CGFloat = 1.3 * scale
+                c.fill(Path(ellipseIn: CGRect(x: p.x - core, y: p.y - core, width: core * 2, height: core * 2)),
+                       with: .color(Color.cream.opacity(light)))
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private func orbitName(_ name: String, index i: Int, of n: Int, radius: CGFloat,
@@ -305,10 +424,10 @@ struct MaunaView: View {
         .allowsHitTesting(false)
     }
 
-    // MARK: The words — Design's, never generated
+    // MARK: The words — his and Design's, never generated, never on a clock
 
     @ViewBuilder
-    private func words(_ state: PraveshaClock.Snapshot, since t: TimeInterval) -> some View {
+    private func words(_ state: PraveshaClock.Snapshot, depth d: MaunaDepth) -> some View {
         VStack(spacing: 14) {
             Spacer()
             if state.held > 0.05 {
@@ -333,31 +452,42 @@ struct MaunaView: View {
                         .foregroundStyle(Color.gold)
                         .opacity(0.7)
                 }
+            } else if d.pointyLight > 0.05 {
+                Text(Pointy.loves)
+                    .font(AppFont.voice(18))
+                    .tracking(1)
+                    .foregroundStyle(Color.cream)
+                    .opacity(0.72 * d.pointyLight * MaunaDepth.band(d.pointy, 2.6, 3))
             } else {
-                if let caption = Mauna.caption(at: t), !caption.isEmpty {
-                    Text(caption)
-                        .font(AppFont.voice(18))
-                        .tracking(1)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Color.cream)
-                        .opacity(0.7)
-                        .transition(.opacity)
-                        .id(caption)
-                }
-                if t < 7 {
-                    Text(Pravesha.rest)
-                        .font(AppFont.voice(15))
-                        .foregroundStyle(Color.cream)
-                        .opacity(0.56)
-                }
+                // The threshold into silence: his own question, going as the
+                // Maya light goes.
+                Text(WhoIsSaying.line)
+                    .font(AppFont.voice(20))
+                    .tracking(1)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.cream)
+                    .opacity(0.74 * max(d.maya, 0.0))
+                Text(WhoIsSaying.beneath)
+                    .font(AppFont.voice(14))
+                    .foregroundStyle(Color.gold)
+                    .opacity(0.6 * MaunaDepth.band(1 - d.maya, 0.5, 1) * (1 - MaunaDepth.band(d.depth, MaunaDepth.pointyFrom, MaunaDepth.pointyFrom + 0.04)))
             }
+            Text(Self.hint)
+                .font(AppFont.label(11))
+                .tracking(1.6)
+                .foregroundStyle(Color.cream)
+                .opacity(0.4 * d.maya)
         }
         .padding(.horizontal, 40)
         .padding(.bottom, 120)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(false)
     }
+
+    /// What the threshold says of itself — the stillness, never a time.
+    static let hint = "be still · a touch returns you"
 }
+
 
 /// The fall's clock between frames — Design's `heldTime`, `speedRef` and
 /// `clock`, advanced by the frame's own `dt`.

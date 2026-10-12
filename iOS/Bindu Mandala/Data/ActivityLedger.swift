@@ -119,7 +119,20 @@ enum ActivityLedger {
         /// One sitting at the Portrait — his strokes mirrored by the ring.
         static let portraitDrawn    = "Portrait Drawn"
         /// A watch for her answered: "watch for her today… did she appear?"
+        /// Wave 6 (C-1195): now only "she appeared", noticed in passing when
+        /// he wishes — nothing asks.
         static let wagerResolved    = "Wager Resolved"
+
+        // Wave 6 · modes, rites and his laws. All born on first write by
+        // `typecast: true`; builders in `ActivityLedgerRites.swift`.
+
+        /// His own perspective, written beside her sealed witness page (C-1280).
+        /// His words ride in `Notes`.
+        static let witnessWritten   = "Witness Written"
+        /// The Khaḍgamālā recited — Sādhana, the 102 names in turn.
+        static let garlandRecited   = "Garland Recited"
+        /// The day offered at evening — Pūjā.
+        static let dayOffered       = "Day Offered"
     }
 
     // MARK: - The two once-ever milestones
@@ -297,16 +310,21 @@ enum ActivityLedger {
 
     // MARK: - Wave 2 · the Gates of Release, and Mauna
 
-    /// A `State Set Down` row: going inward, he held and set down this
+    /// A `State Set Down` row: going inward, he held and offered this
     /// āvaraṇa's Mental State. Linked to the Avaraṇa row; the words are the
     /// ring's own (`Mental State`), never his and never generated. No Notes.
+    ///
+    /// Wave 6 (C-1230, *"it has to be something to get, not something to give
+    /// up"*): the gate is an offering, and the row says so. The type keeps its
+    /// name — the ledger's vocabulary is a record other instruments read, and
+    /// every earlier row carries it.
     static func stateSetDown(ring: Int, state: String, at: Date) -> PendingActivity {
         let words = state.trimmingCharacters(in: .whitespacesAndNewlines)
-        let said = words.isEmpty ? "Set down at the gate" : "Set down · \(words)"
+        let said = words.isEmpty ? "Offered at the gate" : "Offered · \(words)"
         return PendingActivity(
             type: ActivityType.stateSetDown,
             linkRecordId: AirtableService.avaranaRecordId(forRing: ring) ?? "",
-            name: "\(ordinal(ring)) Āvaraṇa — set down",
+            name: "\(ordinal(ring)) Āvaraṇa — offered",
             detail: "\(said) · \(LunarPhaseService.phaseName(at: at))",
             at: at,
             gestureSource: GestureSource.mandala,
@@ -492,7 +510,8 @@ enum ActivityLedger {
         return PendingActivity(
             type: ActivityType.wagerResolved,
             linkRecordId: shaktiRecordId,
-            name: "\(name) — watched for",
+            // Wave 6 (C-1195): noticed in passing, never watched for.
+            name: appeared ? "\(name) — noticed in passing" : "\(name) — left open",
             detail: (appeared ? "She appeared" : "Watched for, and left open")
                 + " · \(LunarPhaseService.phaseName(at: at))",
             at: at,

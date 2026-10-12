@@ -50,6 +50,8 @@ struct LivingMandalaView: View {
     /// Wave 3 · the 33 — the constellation, the Road and the two thresholds
     /// (`ChakraLayerOverlay.swift`). One value; the overlay owns the rest.
     @State private var chakraLayer = ChakraLayerState()
+    /// Wave 6 · the mode door is open.
+    @State private var modesOpen = false
 
     // Gesture bases (incremental deltas so pan + pinch compose)
     @State private var lastDrag: CGSize = .zero
@@ -124,8 +126,12 @@ struct LivingMandalaView: View {
                 gestureCatcher
                 // Wave 2 · the centre (Mauna, the bloom, the fall) and the
                 // Gates of Release — see TheCentre.swift, GatesOfReleaseLayer.swift.
+                // Wave 6 · the silence arrives by his stillness at the centre
+                // (C-1307), so the centre is told when the glass last moved.
                 TheCentre(point: camera.binduScreen(), active: ready && !descent && focus == nil && !veilOpen,
-                          seats: seats, soundOn: soundOn, onFallThrough: { openDescent() })
+                          seats: seats, soundOn: soundOn,
+                          lastMoveAt: lastMoveAt, enteredRing: enteredRing, size: geo.size,
+                          onFallThrough: { openDescent() })
                 GatesOfReleaseLayer(ring: enteredRing, active: !descent && focus == nil && !veilOpen)
                 header
                 // Controls are always reachable — the sound toggle governs the ring
@@ -183,6 +189,10 @@ struct LivingMandalaView: View {
         .ignoresSafeArea(edges: .bottom)
         .fullScreenCover(item: $detailFor) { s in
             NavigationStack { ShaktiDetailView(shakti: s) }
+        }
+        // Wave 6 · the modes, through one door.
+        .fullScreenCover(isPresented: $modesOpen) {
+            ModesDoorView(onClose: { modesOpen = false })
         }
         // Wave 2 · one building, and the Mandala's voice.
         .herRoom($roomFor)
@@ -277,6 +287,9 @@ struct LivingMandalaView: View {
             controlButton("+", active: false) { zoomButton(1.4) }
             controlButton("−", active: false) { zoomButton(1 / 1.4) }
             controlButton("⤢", active: false) { fitCamera() }
+            // Wave 6 · the mode door: Darśana, Sādhana, Smṛti, Svapna, Pūjā.
+            controlButton("◌", active: modesOpen) { Haptics.soft(); modesOpen = true }
+                .accessibilityLabel(Text(TheModes.doorLabel))
         }
         .padding(.trailing, 16)
         .padding(.top, 70)

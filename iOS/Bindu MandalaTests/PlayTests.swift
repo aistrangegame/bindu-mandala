@@ -286,11 +286,21 @@ final class PlayPhysicsTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(half.cleared, c)
     }
 
-    func testTheDoorOpensToALightHoldAndDimsUnderForce() {
+    /// **C-1357 — never tell him he is doing something wrong.** Wave 4 pinned
+    /// that a hard press *dims* the Door: a reaction aimed at him, a correction.
+    /// Now force is absorbed — under a hard press the door neither opens nor
+    /// dims; nothing about it answers how he pressed.
+    func testTheDoorOpensToALightHoldAndAbsorbsForceWithoutCorrecting() {
         var d = DoorHold()
         for _ in 0..<100 { d.step(dt: 0.05, holding: true, pressure: 0.95) }
         XCTAssertEqual(d.opened, 0, "pressing hard does not force the door")
-        XCTAssertGreaterThan(d.dim, 0.5)
+        XCTAssertEqual(d.dim, 0, accuracy: 1e-12, "the door dims at him under force — a correction")
+        var half = DoorHold()
+        for _ in 0..<10 { half.step(dt: 0.05, holding: true, pressure: 0.2) }
+        let before = half
+        for _ in 0..<100 { half.step(dt: 0.05, holding: true, pressure: 1) }
+        XCTAssertEqual(half.opened, before.opened, accuracy: 1e-12, "force took something back")
+        XCTAssertEqual(half.dim, before.dim, accuracy: 1e-12, "force changed the door at all")
         for _ in 0..<20 { d.step(dt: 0.05, holding: true, pressure: 0.2) }
         let reached = d.opened
         XCTAssertGreaterThan(reached, 0)

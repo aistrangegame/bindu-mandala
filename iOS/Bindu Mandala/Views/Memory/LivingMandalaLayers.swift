@@ -4,7 +4,8 @@ import SwiftUI
 //
 // The Portrait was a field that only he could light, by being with her. Wave 5
 // lets his own hand into it: strokes drawn in a ring are mirrored by that ring,
-// the year accretes round the rim with no empty slots, and the centre carries a
+// the year accretes round the rim at its own days, the gaps kept as space
+// (Wave 6, C-1348), and the centre carries a
 // live state. Every layer here is drawn from shapes — paths, circles and light —
 // and every one of them goes into the exported Record with the rest.
 
@@ -63,9 +64,9 @@ struct YearBead: Identifiable {
     var id: Date { day }
 }
 
-/// The year, accreting: one bead for every day he practised this year, spaced
-/// evenly round the whole rim. There is no slot for a day he did not come — the
-/// ring is whole on the first day and on the last, and only grows denser.
+/// The year, accreting: one bead for every day he practised this year, at that
+/// day's own place on the rim. Wave 6 (C-1348): the days between are kept as
+/// space — never a slot, never a missing bead, never filled.
 struct YearRingLayer: View {
     let beads: [YearBead]
     let diameter: CGFloat
@@ -76,9 +77,10 @@ struct YearRingLayer: View {
             let centre = CGPoint(x: size.width / 2, y: size.height / 2)
             let r = half * 0.977
             let scale = diameter / 344
-            let total = beads.count
-            for (i, bead) in beads.enumerated() {
-                let a = LivingMandala.beadAngle(index: i, total: total)
+            // Wave 6 (C-1348): each bead at its own day of the year, so the
+            // days between stay as space — inhabited, never filled.
+            for bead in beads {
+                let a = LivingMandala.dayAngle(bead.day)
                 let p = CGPoint(x: centre.x + r * CGFloat(cos(a)), y: centre.y + r * CGFloat(sin(a)))
                 let glow = 4.5 * scale
                 ctx.fill(Path(ellipseIn: CGRect(x: p.x - glow, y: p.y - glow, width: glow * 2, height: glow * 2)),

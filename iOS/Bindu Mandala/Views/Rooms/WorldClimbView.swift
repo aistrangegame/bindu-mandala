@@ -338,7 +338,10 @@ struct WorldClimbView: View {
         let ring = WorldClimb.nearestRing(atFraction: f)
         let world = HomeWorlds.world(ring: ring, live: live[ring])
         let presides = todayKp.map { KhadgamalaMap.ringNumber(forKhadgamala: $0) == ring } ?? false
-        let near = nearKp.flatMap { kp in seats.first { $0.kp == kp } }
+        // Wave 6 · the empty summit (C-1260): at the top nobody is standing,
+        // so no name is spoken there; his line and the Totality close are.
+        let empty = ClimbSummit.emptiness(atFraction: clamped)
+        let near = empty > 0.5 ? nil : nearKp.flatMap { kp in seats.first { $0.kp == kp } }
         return VStack(spacing: 0) {
             VStack(spacing: 6) {
                 Text(world.map { ClimbWords.kicker($0) } ?? "")
@@ -361,6 +364,22 @@ struct WorldClimbView: View {
             .padding(.top, 52)
             .opacity(alpha)
             Spacer()
+            if empty > 0.01 {
+                VStack(spacing: 12) {
+                    Text(ClimbSummit.becoming)
+                        .font(AppFont.sanskrit(26))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(Color.cream)
+                        .shadow(color: .black.opacity(0.9), radius: 18)
+                        .opacity(empty)
+                    Text(ClimbSummit.alreadyDid)
+                        .font(AppFont.voice(18))
+                        .foregroundStyle(Color.gold)
+                        .opacity(ClimbSummit.closeLight(atFraction: clamped))
+                }
+                .padding(.horizontal, 48)
+                Spacer()
+            }
             VStack(spacing: 10) {
                 Text(world?.weather ?? "")
                     .font(AppFont.voice(18))

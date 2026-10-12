@@ -77,10 +77,23 @@ final class LivingMandalaTests: XCTestCase {
         XCTAssertEqual(days.count, 3, "two moments on one day are one bead; last year is not this year")
         XCTAssertEqual(days, days.sorted())
 
-        // The beads go all the way round: bead n would sit exactly on bead 0.
-        let total = days.count
-        XCTAssertEqual(LivingMandala.beadAngle(index: total, total: total),
-                       LivingMandala.beadAngle(index: 0, total: total) + 2 * .pi, accuracy: 1e-12)
+        // C-1348 — "gaps and spaces aren't meant to be filled but fully
+        // inhabited." Wave 5 spread the beads evenly so no day was a slot, which
+        // erased the gaps. Now each bead stands at its own day of the year, so
+        // the days between stay as space: 2 March and 14 July are far apart on
+        // the rim, and nothing sits between them.
+        let a = days.map { LivingMandala.dayAngle($0, calendar: cal) }
+        XCTAssertEqual(a[0], 2 * .pi * 60 / 365 - .pi / 2, accuracy: 1e-9, "2 March is not at its own day")
+        XCTAssertEqual(a[1], 2 * .pi * 194 / 365 - .pi / 2, accuracy: 1e-9, "14 July is not at its own day")
+        XCTAssertEqual(LivingMandala.dayAngle(at(1, 1, 9), calendar: cal), -.pi / 2, accuracy: 1e-12,
+                       "the year does not begin at twelve o'clock")
+        // Evenly spread, three beads would be a third of the circle apart; at
+        // their own days they are not — the gap is kept.
+        XCTAssertGreaterThan(abs((a[1] - a[0]) - 2 * .pi / 3), 0.2, "the gaps were filled")
+        for x in a {
+            XCTAssertGreaterThanOrEqual(x, -.pi / 2 - 1e-12)
+            XCTAssertLessThan(x, 3 * .pi / 2)
+        }
     }
 
     // MARK: His strokes are practice data

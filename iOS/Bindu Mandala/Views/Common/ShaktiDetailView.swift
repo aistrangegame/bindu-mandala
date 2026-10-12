@@ -73,12 +73,17 @@ struct ShaktiDetailView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             // The hero leads, then the soul.
                             heroSection
+                            // Wave 6 · one line, or the whole of her home (C-1279).
+                            OnePageAnswerSection(shakti: shakti,
+                                                 onWhole: { herRoomKp = shakti.khadgamalaPosition })
                             codexPortraitSection
                             somaticSection
                             bijaSection
                             appreciationPhraseSection
                             // Wave 5 · the doorway, the seal, the wager.
                             HerDoorwaysSection(shakti: shakti)
+                            // Wave 6 · her sealed witness page (C-1280).
+                            HerWitnessPage(shakti: shakti)
                             embodimentSection
                             if shakti.hasFieldConnection { fieldConnectionSection }
                             // The library — the record, then the reference.
@@ -421,8 +426,11 @@ struct ShaktiDetailView: View {
                     .shadow(color: i == level ? atmo.accentBright.opacity(0.8) : .clear, radius: 5)
             }
         }
-        .accessibilityElement()
-        .accessibilityLabel("Embodiment: \(shakti.status.label), level \(level + 1) of \(ShaktiStatus.allCases.count)")
+        // Wave 6 · the mark is in the architecture, not in the claiming of it
+        // (C-1338, C-1284). The spoken "level ⟨n⟩ of four" is gone: a rung
+        // read aloud is a claim. The track is drawn light, and the pill beneath
+        // it speaks her stage by name, which is all a voice needs.
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder

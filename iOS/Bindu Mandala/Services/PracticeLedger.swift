@@ -69,6 +69,9 @@ enum PracticeLedger {
                                                         appeared: wager.appeared ?? false, at: at))
         }
 
+        // Wave 6 · the witness pages, the garland, the evening offering.
+        pending.append(contentsOf: RitesPractice.shared.takeUnledgered(record: record))
+
         for item in pending {
             await AirtableService.shared.logActivity(item)
         }

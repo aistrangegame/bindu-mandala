@@ -1,5 +1,6 @@
 import XCTest
 import simd
+import CoreGraphics
 @testable import Bindu_Mandala
 
 // MARK: - Wave 2 · One building — the pure half, driven
@@ -54,12 +55,18 @@ final class OneBuildingTests: XCTestCase {
         XCTAssertEqual((1...9).map(ClimbLights.seatsInRing), [28, 16, 8, 14, 10, 10, 12, 3, 1])
     }
 
-    func testALightHeKnowsBreathesCalmerAndIsNeverDark() {
+    /// **C-1284 — specialness collapses; everything ordinary is special.** Wave
+    /// 2 pinned that a met light was larger and calmer than a stranger's. That
+    /// split the 102 by his walking. Now *she was expecting you* is true of
+    /// every seat alike: met or not, the breath is the same. Only an authored
+    /// room's light is larger, which describes the building, not him.
+    func testEveryLightBreathesTheSameWelcomeMetOrNot() {
         let met = ClimbLights.breath(isAuthored: false, met: true)
         let stranger = ClimbLights.breath(isAuthored: false, met: false)
         let authored = ClimbLights.breath(isAuthored: true, met: false)
-        XCTAssertLessThan(met.rate, stranger.rate, "she was expecting you — a met light is calmer")
-        XCTAssertGreaterThan(met.size, stranger.size)
+        XCTAssertEqual(met, stranger, "the 102 are divided into special and not by his walking")
+        XCTAssertEqual(ClimbLights.breath(isAuthored: true, met: true), authored)
+        XCTAssertEqual(stranger.rate, 0.22, accuracy: 1e-12, "every light carries Design's welcomed calm")
         XCTAssertGreaterThan(authored.size, stranger.size)
         for b in [met, stranger, authored] {
             for t in stride(from: 0.0, to: 60, by: 0.37) {
@@ -159,7 +166,7 @@ final class OneBuildingTests: XCTestCase {
         XCTAssertEqual(inward.way, .inward)
         XCTAssertEqual(inward.ring, 4, "going in, the gate is the enclosure he entered")
         XCTAssertEqual(inward.words, "Turiya begins (live)", "the live row's Mental State does not win")
-        XCTAssertEqual(inward.instruction, TheGates.setDownWords)
+        XCTAssertEqual(inward.instruction, TheGates.offerWords)
 
         let outward = try XCTUnwrap(TheGates.gate(from: 4, to: 3, mentalState: live, siddhi: siddhi))
         XCTAssertEqual(outward.way, .outward)
@@ -184,12 +191,28 @@ final class OneBuildingTests: XCTestCase {
         }
     }
 
-    func testTheWordsArePutDownAndTheSiddhiRisesToHim() {
-        let start = TheGates.putDown(0), end = TheGates.putDown(1)
+    /// **C-1230 — "it has to be something to get, not something to give up."**
+    /// Wave 2 pinned that the words *fall* at the inward gate — a thing let
+    /// drop. Now the inward gate is an offering: the words are lifted and open
+    /// into the light, the instruction says *offer*, and what is left is named
+    /// as his. Both crossings are gains.
+    func testTheInwardGateIsAnOfferingAndBothWaysAreGains() {
+        let start = TheGates.offer(0), end = TheGates.offer(1)
         XCTAssertEqual(start.opacity, 1, accuracy: 1e-9)
         XCTAssertEqual(end.opacity, 0, accuracy: 1e-9)
-        XCTAssertGreaterThan(end.dy, start.dy, "the words do not fall")
+        XCTAssertLessThan(end.dy, start.dy, "the offering falls — it should be lifted")
+        XCTAssertGreaterThan(end.scale, start.scale, "the offering closes instead of opening into the light")
         XCTAssertLessThan(TheGates.receive(1).dy, 0, "the siddhi does not rise")
+        for words in [TheGates.offerWords, TheGates.offeredWords, TheGates.receiveWords, TheGates.receivedWords] {
+            for loss in ["set it down", "give up", "let go of", "lose"] {
+                XCTAssertFalse(words.lowercased().contains(loss), "the gate speaks of losing: \(words)")
+            }
+        }
+        XCTAssertTrue(TheGates.offerWords.contains("offer"))
+        let at = Date(timeIntervalSince1970: 1_790_000_000)
+        let row = ActivityLedger.stateSetDown(ring: 4, state: "Turiya begins", at: at)
+        XCTAssertTrue(row.name.hasSuffix("offered"), row.name)
+        XCTAssertTrue(row.detail.hasPrefix("Offered"), row.detail)
         XCTAssertGreaterThan(TheGates.offeredSeconds, TheGates.holdSeconds,
                              "a gate passes before it can be held")
     }
@@ -234,22 +257,132 @@ final class OneBuildingTests: XCTestCase {
 
     // MARK: - Mauna, the bloom, the fall
 
-    func testMaunasWordsArriveDeeperAndThenThereIsOnlySilence() {
-        XCTAssertNil(Mauna.caption(at: 3))
-        XCTAssertEqual(Mauna.caption(at: 7), "All of her. Here. Always.")
-        XCTAssertEqual(Mauna.caption(at: 15), "She has not gone anywhere.")
-        XCTAssertEqual(Mauna.caption(at: 21), "You have not gone anywhere.")
-        XCTAssertEqual(Mauna.caption(at: 40), "")
-        XCTAssertEqual(Mauna.recordedAfter, 7, accuracy: 1e-9)
-        for c in Mauna.captions {
-            XCTAssertTrue(NeverMeasure.measuresOutLoud(c.words).isEmpty)
-            XCTAssertNil(Rx.first(#"\d"#, c.words), "Mauna counts the seconds out loud")
+    /// **C-1355 — "the system holds the door open and never the watch."**
+    /// Wave 2 pinned Design's captions at 7, 14 and 21 seconds; they were a
+    /// clock on his silence and are gone. What is asserted now is that the
+    /// silence follows his stillness and nothing else: time alone, with the
+    /// phone moving, takes it nowhere, and stillness alone takes it all the way.
+    func testMaunaFollowsHisStillnessAndNeverAClock() throws {
+        XCTAssertEqual(Mauna.recordedAfter, 7, accuracy: 1e-9, "the ledger's floor is unchanged")
+
+        var moving = MaunaDepth()
+        for _ in 0..<(60 * 20) { moving.advance(dt: 0.05, steadiness: 0.2, recognition: 0) }
+        XCTAssertEqual(moving.depth, 0, accuracy: 1e-12, "time passed, and the silence deepened anyway")
+        XCTAssertEqual(moving.maya, 1, accuracy: 1e-12, "the Maya light thinned without being looked at")
+        XCTAssertFalse(moving.isFalling)
+
+        var still = MaunaDepth()
+        var everFell = false
+        for _ in 0..<(60 * 20) {
+            still.advance(dt: 0.05, steadiness: 1, recognition: 0)
+            everFell = everFell || still.isFalling
         }
+        XCTAssertEqual(still.depth, 1, accuracy: 1e-9)
+        XCTAssertEqual(still.maya, 0, accuracy: 1e-9, "the Maya light did not dissolve when looked at")
+        XCTAssertTrue(everFell)
+        XCTAssertFalse(still.opens, "the point opened before the recognition had come")
+
+        // Moving gives it back — a state that returns, never "you cleared it".
+        var loosened = still
+        for _ in 0..<40 { loosened.advance(dt: 0.05, steadiness: 0, recognition: 0) }
+        XCTAssertLessThan(loosened.depth, still.depth)
+        XCTAssertGreaterThan(loosened.maya, still.maya - 1e-12)
+
         for t in stride(from: 0.0, to: 12, by: 0.5) {
             let b = Mauna.binduBreath(at: t)
             XCTAssertGreaterThanOrEqual(b, 1 - 1e-9)
             XCTAssertLessThanOrEqual(b, 1.1 + 1e-9)
         }
+        // The words in the silence are his and Design's, and none of them is a number.
+        for words in [WhoIsSaying.line, WhoIsSaying.beneath, Pointy.loves, MaunaView.hint,
+                      Pravesha.falling, Pravesha.fallingBeneath, Pravesha.recognised] {
+            XCTAssertTrue(NeverMeasure.measuresOutLoud(words).isEmpty, words)
+            XCTAssertNil(Rx.first(#"\d"#, words), "the silence speaks a digit: \(words)")
+        }
+        XCTAssertEqual(WhoIsSaying.line, "Who is saying that?", "C-1305, verbatim")
+    }
+
+    /// **C-1307 — "What is above creation cannot be attained by action."** The
+    /// silence arrives; it is not opened. Untouched for one breath, fallen in to
+    /// the innermost enclosures, with the point near the middle of the glass —
+    /// and only once in one stillness.
+    func testTheSilenceArrivesByStillnessAtTheCentreAndIsNeverOpened() {
+        let size = CGSize(width: 390, height: 844)
+        let middle = CGPoint(x: 195, y: 422)
+        let breath = CentreArrival.oneBreath
+        XCTAssertTrue(CentreArrival.arrives(untouchedFor: breath, enteredRing: 8, point: middle,
+                                            size: size, restedSinceLastMove: false))
+        XCTAssertFalse(CentreArrival.arrives(untouchedFor: breath - 0.5, enteredRing: 8, point: middle,
+                                             size: size, restedSinceLastMove: false),
+                       "it arrived before he had been still for one breath")
+        XCTAssertFalse(CentreArrival.arrives(untouchedFor: breath * 4, enteredRing: 3, point: middle,
+                                             size: size, restedSinceLastMove: false),
+                       "it arrived far out in the yantra, away from the centre")
+        XCTAssertFalse(CentreArrival.arrives(untouchedFor: breath * 4, enteredRing: 8,
+                                             point: CGPoint(x: 20, y: 60), size: size,
+                                             restedSinceLastMove: false),
+                       "it arrived with the point at the edge of the glass")
+        XCTAssertFalse(CentreArrival.arrives(untouchedFor: breath * 4, enteredRing: 8, point: middle,
+                                             size: size, restedSinceLastMove: true),
+                       "it arrived twice in one stillness")
+
+        // And the point itself carries no tap that opens it: the source of the
+        // centre has no `onTapGesture`, only the bloom's hold and a voice's
+        // accessibility action.
+        guard let centre = LawSource.production("TheCentre.swift") else {
+            return XCTFail("TheCentre.swift is gone")
+        }
+        let code = String(centre.lexed.masked)
+        let theCentre = Rx.first(#"struct TheCentre: View \{[\s\S]*?\n\}"#, code) ?? ""
+        XCTAssertFalse(theCentre.isEmpty, "the centre's own view could not be read")
+        XCTAssertFalse(theCentre.contains("onTapGesture"), "a tap opens the centre again (C-1307)")
+        XCTAssertTrue(theCentre.contains("CentreArrival.arrives("), "the centre no longer notices stillness")
+        XCTAssertTrue(theCentre.contains("accessibilityAction"), "a voice can no longer reach the silence")
+    }
+
+    /// **The fall follows his stillness and the point opens to him** — only
+    /// after the recognition has come and he has rested in it.
+    func testThePointOpensOnlyAfterHeRestsInTheRecognition() {
+        var d = MaunaDepth()
+        for _ in 0..<(60 * 20) { d.advance(dt: 0.05, steadiness: 1, recognition: 0) }
+        XCTAssertFalse(d.opens)
+        for _ in 0..<20 { d.advance(dt: 0.05, steadiness: 1, recognition: 1) }
+        XCTAssertFalse(d.opens, "it opened the instant the recognition came")
+        for _ in 0..<200 { d.advance(dt: 0.05, steadiness: 1, recognition: 1) }
+        XCTAssertTrue(d.opens)
+        // A voice's "rest here" stands for a still phone.
+        var voice = MaunaDepth()
+        for _ in 0..<(60 * 20) { voice.advance(dt: 0.05, steadiness: 0, givenOver: true, recognition: 0) }
+        XCTAssertEqual(voice.depth, 1, accuracy: 1e-9, "VoiceOver cannot reach the fall")
+    }
+
+    /// **Pointy** (C-1306): the same particles, one at every point at once —
+    /// line, circle, ∞, heart — each figure whole at its own place.
+    func testPointyDrawsALineACircleInfinityAndAHeart() {
+        XCTAssertEqual(Pointy.particles, KhadgamalaMap.total)
+        // At 0 every particle is on one line.
+        for i in 0..<Pointy.particles {
+            XCTAssertEqual(Pointy.place(particle: i, progress: 0).y, 0, accuracy: 1e-9)
+        }
+        // At 1 every particle is on the circle.
+        for i in 0..<Pointy.particles {
+            let p = Pointy.place(particle: i, progress: 1)
+            XCTAssertEqual(hypot(p.x, p.y), 1, accuracy: 1e-9)
+        }
+        XCTAssertEqual(Pointy.figure(at: 0), .line)
+        XCTAssertEqual(Pointy.figure(at: 1), .circle)
+        XCTAssertEqual(Pointy.figure(at: 2), .infinity)
+        XCTAssertEqual(Pointy.figure(at: 3), .heart)
+        XCTAssertNil(Pointy.figure(at: 1.5))
+        // Past the heart it stays the heart.
+        let past = Pointy.place(particle: 7, progress: 9)
+        let heart = Pointy.point(.heart, t: 7 / Double(Pointy.particles))
+        XCTAssertEqual(past.x, heart.x, accuracy: 1e-9)
+        XCTAssertEqual(past.y, heart.y, accuracy: 1e-9)
+        var d = MaunaDepth()
+        XCTAssertEqual(d.pointy, 0, accuracy: 1e-12)
+        for _ in 0..<(60 * 20) { d.advance(dt: 0.05, steadiness: 1, recognition: 0) }
+        XCTAssertEqual(d.pointy, 3, accuracy: 1e-9, "Pointy never reached the heart")
     }
 
     func testTheBloomDrawsTheYantraOutwardFromThePoint() {

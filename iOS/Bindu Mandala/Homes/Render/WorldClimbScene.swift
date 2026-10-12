@@ -787,10 +787,10 @@ extension WorldClimbScene {
     /// the instrument's own palette rather than a screen's.
     static let whiteLight = SIMD3<Double>(1.0, 0.96, 0.88)
 
-    /// Put the 102 on the climb — once — and mark who he has stood with and
-    /// whose day it is. Called again later, it only moves the marks: the core a
-    /// Śakti carries once he has stood with her, and the crown that passes to
-    /// the next day's Śakti.
+    /// Put the 102 on the climb — once — and mark whose day it is. Called again
+    /// later, it only moves the crown, which passes to the next day's Śakti.
+    /// Every light carries the core (Wave 6, C-1284 — she was expecting you, at
+    /// every seat alike).
     func hold(seats: [ClimbLights.Seat], met: Set<Int>, today: Int?) {
         SCNTransaction.begin()
         SCNTransaction.disableActions = true
@@ -811,18 +811,17 @@ extension WorldClimbScene {
             }
         }
         for (kp, l) in lights {
+            // Wave 6 · she was expecting you — all 102 alike (C-1284). Every
+            // light carries the core, met or not; `met` no longer divides them.
             let isMet = met.contains(kp)
             l.breath = ClimbLights.breath(isAuthored: HomeRooms.authoredMechanism(atPosition: kp) != nil,
                                           met: isMet)
-            if isMet, l.core == nil {
+            if l.core == nil {
                 let core = RoomAir.glow("core.\(kp)", colour: Self.whiteLight,
                                         size: ClimbLights.coreSize * ClimbLights.unit,
                                         alpha: ClimbLights.coreOpacity, hot: 1)
                 l.root.addChildNode(core)
                 l.core = core
-            } else if !isMet, let core = l.core {
-                core.removeFromParentNode()
-                l.core = nil
             }
             let presides = kp == today
             if presides, l.crown == nil {
@@ -857,7 +856,7 @@ extension WorldClimbScene {
     /// Which lights carry a crown — the day's Śakti, and only she.
     var crowned: [Int] { lights.filter { $0.value.crown != nil }.map { $0.key }.sorted() }
 
-    /// Which lights carry a core — the Śaktis he has stood with.
+    /// Which lights carry a core — Wave 6 (C-1284): every one of them.
     var cored: Set<Int> { Set(lights.filter { $0.value.core != nil }.map { $0.key }) }
 
     /// Where each light near this height stands this frame, for a touch to be
@@ -912,9 +911,13 @@ extension WorldClimbScene {
     /// Every light near this height, breathing — Design's `presences.forEach`.
     func standPresences(atFraction f: Double, at t: TimeInterval) {
         let swallow = gestures.flight?.progress ?? 0
-        let fade = ClimbLights.visibility(swallow: swallow)
+        let travelling = ClimbLights.visibility(swallow: swallow)
         let unit = ClimbLights.unit
+        // Wave 6 · the empty summit (C-1260): at the top the one light that
+        // stood there thins into the world's own light. Nobody is there.
+        let empty = ClimbSummit.emptiness(atFraction: f)
         for (kp, l) in lights {
+            let fade = ClimbSummit.empties(kp: kp) ? travelling * (1 - empty) : travelling
             let near = fade > 0 && ClimbLights.isNear(kp: kp, atFraction: f)
             l.root.isHidden = !near
             guard near else { continue }
@@ -933,7 +936,7 @@ extension WorldClimbScene {
                 RoomAir.set(crown, "uAlpha", 0.85 * fade)
             }
         }
-        if let follow = gestures.follow, fade > 0 {
+        if let follow = gestures.follow, travelling > 0 {
             followLight?.isHidden = false
             followLight?.position = SCNVector3(Float(follow.x), Float(follow.y), Float(follow.z))
         } else {

@@ -135,25 +135,34 @@ enum ClimbLights {
     // MARK: How each light breathes
 
     /// The light's own kind of breath.
+    ///
+    /// **Wave 6 · she was expecting you — all 102 alike** (C-1284, *"calling
+    /// something special collapses it; when you recognize that everything is
+    /// ordinary, everything becomes special"*). Design split the lights into
+    /// met and not: a met light larger, brighter, calmer, carrying a core. That
+    /// divided the 102 into special and not by his own walking. Every light now
+    /// carries what only the met ones did — Design's met breath and the core —
+    /// so the welcome is the same at every seat. Only an authored room's light
+    /// is larger, which describes the building, not him; and only today's
+    /// Śakti carries the crown.
     struct Breath: Equatable {
-        /// Design's halo size, in its units: `authored ? 1.5 : 0.95`, and a
-        /// Śakti he has stood with carries hers a quarter larger.
+        /// Design's halo size, in its units: `authored ? 1.5 : 0.95`, with the
+        /// welcome's quarter more, at every seat.
         let size: Double
-        /// Design's halo opacity: `met 0.95 · authored 0.9 · 0.5`.
+        /// Design's welcomed opacity, `0.95`, at every seat.
         let opacity: Double
-        /// Design's breath rate: `met 0.22 · authored 0.9 · 0.4`. A light he
-        /// knows is calmer — she was expecting you.
+        /// Design's welcomed rate, `0.22` — every light is calm.
         let rate: Double
-        /// Design's breath depth: `met 0.09 · 0.2`.
+        /// Design's welcomed depth, `0.09`.
         let depth: Double
     }
 
+    /// `met` is kept in the signature so callers need not change, and it is
+    /// deliberately read by nothing: the breath is the same for every Śakti.
     static func breath(isAuthored: Bool, met: Bool) -> Breath {
         let base = isAuthored ? 1.5 : 0.95
-        return Breath(size: base * (met ? 1.25 : 1),
-                      opacity: met ? 0.95 : (isAuthored ? 0.9 : 0.5),
-                      rate: met ? 0.22 : (isAuthored ? 0.9 : 0.4),
-                      depth: met ? 0.09 : 0.2)
+        _ = met
+        return Breath(size: base * 1.25, opacity: 0.95, rate: 0.22, depth: 0.09)
     }
 
     /// Design's `pulse = (1 - depth) + depth · sin(t · rate + pos)` — always
@@ -162,8 +171,8 @@ enum ClimbLights {
         (1 - b.depth) + b.depth * sin(t * b.rate + Double(kp))
     }
 
-    /// Design's core: *"she was expecting you"* — a Śakti already met carries
-    /// her own core light, `0.5` across at `0.9`.
+    /// Design's core: *"she was expecting you"* — `0.5` across at `0.9`.
+    /// Wave 6 (C-1284): every one of the 102 carries it.
     static let coreSize: Double = 0.5
     static let coreOpacity: Double = 0.9
 
@@ -393,12 +402,23 @@ enum TheGates {
         /// What the gate holds out: the Mental State going in, the Siddhi
         /// coming out.
         let words: String
-        /// The gesture's own line — Design's *"hold to lay it down"*.
-        var instruction: String { way == .inward ? TheGates.setDownWords : TheGates.receiveWords }
+        /// The gesture's own line. Design's was *"hold to lay it down"*; Wave 6
+        /// makes the inward gate an offering (C-1230).
+        var instruction: String { way == .inward ? TheGates.offerWords : TheGates.receiveWords }
+        /// What stands where the words were, once the gate is answered.
+        var answered: String { way == .inward ? TheGates.offeredWords : TheGates.receivedWords }
     }
 
-    static let setDownWords = "hold to set it down"
+    /// **Wave 6 · release as an offering, never a giving-up** (C-1230: *"It has
+    /// to be something to get, not something to give up"*; C-1232). Going in,
+    /// he offers the ring's Mental State — it rises from his hands into the
+    /// light — and what he receives is the space where it was. Coming out, he
+    /// receives the Siddhi. Both crossings are gains.
+    static let offerWords = "hold to offer it"
     static let receiveWords = "hold to receive it"
+    /// After the offering: the space it leaves is what he is given.
+    static let offeredWords = "offered — the space it leaves is yours"
+    static let receivedWords = "received"
 
     /// The Gates' own hold, `2600` ms.
     static let holdSeconds: TimeInterval = 2.6
@@ -455,10 +475,13 @@ enum TheGates {
         return t.isEmpty ? authored : t
     }
 
-    /// The put-down: Design's `translateY(0 → 34) scale(1 → 0.9) opacity(1 → 0)`.
-    static func putDown(_ p: Double) -> (dy: Double, scale: Double, opacity: Double) {
+    /// The offering. Design's put-down fell (`translateY(0 → 34) scale(1 →
+    /// 0.9)`): a thing let drop. Wave 6 lifts it instead — the words rise from
+    /// his hands and open into the light as they go, the gesture of an offering
+    /// held up (C-1230).
+    static func offer(_ p: Double) -> (dy: Double, scale: Double, opacity: Double) {
         let k = ClimbLights.clamp01(p)
-        return (34 * k, 1 - 0.1 * k, 1 - k)
+        return (-40 * k, 1 + 0.12 * k, 1 - k)
     }
 
     /// The receiving: the Siddhi rises toward him and brightens as it is held.
@@ -519,33 +542,18 @@ enum Glissando {
 
 // MARK: - Mauna, the silence at the point
 
-/// The Eight Modes' fifth: tap the centre for silence. Design's captions
-/// arrive at 7, 14 and 21 seconds, successively deeper, and at 28 there is
-/// only silence. They are Design's authored words, never generated.
+/// The Eight Modes' fifth: the silence at the point.
 ///
-/// Design's depth line ("7 seconds in") is **not** drawn: a count of how long
-/// he has been silent is a measure of him (§4.6). The ledger keeps the
-/// duration; the glass never says it.
+/// **Wave 6 · no clock on his silence** (C-1355, *"the system holds the door
+/// open and never the watch"*). Design's captions arrived at 7, 14 and 21
+/// seconds — a clock on his silence even without the digit — and they are
+/// gone. The silence now arrives by his stillness and deepens by it
+/// (``CentreArrival``, ``MaunaDepth``); nothing in it is timed on the glass.
 enum Mauna {
 
-    static let captions: [(at: TimeInterval, words: String)] = [
-        (7, "All of her. Here. Always."),
-        (14, "She has not gone anywhere."),
-        (21, "You have not gone anywhere."),
-        (28, ""),
-    ]
-
-    /// The caption showing at `t` seconds into the silence, or `nil` before
-    /// the first and `""` once only silence is left.
-    static func caption(at t: TimeInterval) -> String? {
-        var current: String?
-        for c in captions where t >= c.at { current = c.words }
-        return current
-    }
-
-    /// A silence is recorded once it has been held at least this long — the
-    /// same seven seconds Design waits before its first word. A tap in and out
-    /// is not a silence held, and writes nothing.
+    /// A silence is recorded once it has been held at least this long. A tap in
+    /// and out is not a silence held, and writes nothing. This is the ledger's
+    /// floor, never shown and never a caption.
     static let recordedAfter: TimeInterval = 7
 
     /// Design's `maunaBinduBreath`: ×1.10 on a 6 s breath.
