@@ -30,6 +30,8 @@ struct ShaktiDetailView: View {
     /// Phase 3.7 — the way in. See ``herDoor``. Wave 2: a position, handed to
     /// ``HerRoomDoor``, which is where every way into a room passes the rite.
     @State private var herRoomKp: Int?
+    /// Wave 4 — play at her address. See ``herPlay``.
+    @State private var showPlay = false
 
     /// Ruling 7 / R3: cluster is a Ring-2-only taxonomy. The 86 carry `.inner`
     /// as `clusterRaw`'s default — never surface it as a color or a family label.
@@ -87,6 +89,7 @@ struct ShaktiDetailView: View {
                     }
                     .overlay(alignment: .bottom) { BottomScrollFade() }
                     herDoor
+                    herPlay
                     recognitionFooter
                 }
             }
@@ -103,6 +106,36 @@ struct ShaktiDetailView: View {
         // one place that calls the rite of entering — and from inside it the
         // corridor walks to her neighbours, each through their own rite.
         .herRoom($herRoomKp)
+        .fullScreenCover(isPresented: $showPlay) {
+            PlayField.host(PlayAddressBook.door(forPosition: shakti.playPosition),
+                           atPosition: shakti.playPosition,
+                           onClose: { showPlay = false })
+        }
+    }
+
+    /// **Wave 4 · play at her address.** The game that lives at her seat —
+    /// the Drum at Sarva-Saṅkṣobhiṇī, the Door at Kaulinī — and, for every
+    /// other seat, the garland opened at her own bead. So it asks only her
+    /// position, and every one of the 102 can be played with. It stands
+    /// between staying with her and feeling her: the arc is recognise, dwell,
+    /// play, and a game hands back to her Recognition when it ends.
+    private var herPlay: some View {
+        let game = PlayAddressBook.door(forPosition: shakti.playPosition)
+        return Button {
+            Haptics.light()
+            showPlay = true
+        } label: {
+            Text(game == .rosary ? "her bead in the garland ›" : "\(game.verb) with her ›")
+                .font(AppFont.voice(15))
+                .tracking(1.2)
+                .foregroundStyle(Color.cream.opacity(0.62))
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 26)
+        .accessibilityLabel("\(game.title) — play at her seat")
     }
 
     /// **The way into her room, and the one place in the shell it is opened.**

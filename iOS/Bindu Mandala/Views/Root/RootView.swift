@@ -87,6 +87,8 @@ struct RootView: View {
         .sheet(isPresented: $settingsPresented) {
             SettingsView()
         }
+        // Wave 4 · Play: `PlayField.open(_:)` from anywhere in the shell.
+        .playFieldPresenter()
         .onChange(of: destination, initial: true) { _, new in
             lastDestinationRaw = new.rawValue
             lastDestinationDay = DailyEnergyService.practiceDayIndex()

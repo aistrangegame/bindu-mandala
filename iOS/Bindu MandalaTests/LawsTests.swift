@@ -906,6 +906,10 @@ enum LedgerIsTheRecord {
         "Full Circle", "First Dwelling", "Note Left",
         // Wave 2 · the Gates of Release.
         "State Set Down", "Siddhi Received",
+        // Wave 4 · Play: one game played at its address. Held to the same
+        // rule — named in the ledger's file, referred to everywhere else as
+        // `ActivityLedger.ActivityType.played`.
+        "Played",
         "Activity Type",
     ]
 

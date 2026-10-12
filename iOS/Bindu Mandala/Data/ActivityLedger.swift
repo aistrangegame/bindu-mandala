@@ -100,6 +100,13 @@ enum ActivityLedger {
         /// Wave 2 · coming out through an āvaraṇa he receives its Siddhi.
         /// Born on first write by `typecast: true`.
         static let siddhiReceived   = "Siddhi Received"
+        /// Wave 4 · Play. One game played at a Śakti's address (or a ring's, or
+        /// a threshold's), linked to her row — or to the Avaraṇa row when the
+        /// game lives at the level of a whole ring. Born on first write by
+        /// `typecast: true`. **Storage may count; the screen may not**: the row
+        /// carries how long the game was played in `Duration (sec)`, and nothing
+        /// about it is ever shown to him.
+        static let played           = "Played"
     }
 
     // MARK: - The two once-ever milestones
@@ -201,6 +208,7 @@ enum ActivityLedger {
         static let room    = "Room"      // born by typecast on first write
         static let well    = "Well"
         static let silence = "Silence"
+        static let play    = "Play"      // Wave 4 — born by typecast on first write
     }
 
     // MARK: - Builders
@@ -332,6 +340,33 @@ enum ActivityLedger {
             lunarDay: LunarPhaseService.currentDay(at: at),
             moonPhase: LunarPhaseService.phaseName(at: at),
             durationSec: durationSec
+        )
+    }
+
+    // MARK: - Play (Wave 4)
+
+    /// A `Played` row: one game, played at its address. `place` is what the
+    /// game was played *at* — her name, or "Fourth Āvaraṇa", or the Shadow
+    /// crossing — and `game` is the game's own name. `seconds` is how long it
+    /// was played: a fact the archive keeps and the walker is never shown.
+    /// No Notes: words a game sets down are released from the view; the act
+    /// stays in the record, and the act is this row.
+    static func played(game: String,
+                       place: String,
+                       linkRecordId: String,
+                       seconds: Double,
+                       at: Date) -> PendingActivity {
+        let site = place.isEmpty ? "Lalitā's field" : place
+        return PendingActivity(
+            type: ActivityType.played,
+            linkRecordId: linkRecordId,
+            name: "\(site) — played",
+            detail: "\(game) · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.play,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            durationSec: max(0, seconds)
         )
     }
 
