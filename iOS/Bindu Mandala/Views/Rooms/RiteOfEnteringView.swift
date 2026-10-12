@@ -74,6 +74,9 @@ struct RiteOfEnteringView: View {
     let room: HomeRoom
     /// Her words, off her own row.
     let words: RiteWords
+    /// What her room says once he is in it — where she is, her name, her
+    /// quality, and the room's own sentence near and deep (Wave 1).
+    let roomWords: RoomWords
     /// Her seed syllable, for the tone each beat lands on. `nil` is the bare
     /// root — silence about what is unknown, never a plausible pitch.
     let syllable: String?
@@ -200,6 +203,7 @@ struct RiteOfEnteringView: View {
          words: RiteWords,
          syllable: String? = nil,
          descentWords: DescentWords = DescentWords(lines: [], roots: []),
+         roomWords: RoomWords? = nil,
          voice: HomeVoice? = nil,
          mechanism: RoomSurfaceMechanism? = nil,
          compression: Double,
@@ -213,6 +217,7 @@ struct RiteOfEnteringView: View {
         self.words = words
         self.syllable = syllable
         self.descentWords = descentWords
+        self.roomWords = roomWords ?? RoomWords.compose(room: room, rite: words)
         self.voice = voice
         self.mechanism = mechanism
         self.dwelling = dwelling
@@ -244,6 +249,14 @@ struct RiteOfEnteringView: View {
                      forceReduceMotion: reduceMotion,
                      moves: moves)
                 .allowsHitTesting(false)
+
+            // The room's own words, arriving with the stay (Wave 1).
+            if !rite.isCeremonial {
+                RoomWordsView(words: roomWords,
+                              clock: clock,
+                              reduceMotion: reduceMotion,
+                              descending: descent.station != nil)
+            }
 
             if rite.isCeremonial {
                 ceremony
@@ -683,6 +696,8 @@ struct RiteOfEnteringView: View {
         dwelling?.end()
         voice?.closes()
         handOverTheStay()
+        // Her siddhi is still on the instrument (Wave 1).
+        HomeAfterEffect.left(ring: room.ring)
         onLeft?()
     }
 
@@ -728,6 +743,10 @@ extension RiteOfEnteringView {
                                   syllable: shakti.bijaSyllable,
                                   // Her five fields, for the five stations.
                                   descentWords: DescentWords.compose(shakti: shakti),
+                                  // What the room says, off her own row.
+                                  roomWords: RoomWords.compose(room: room,
+                                                               name: shakti.name,
+                                                               quality: shakti.quality),
                                   // Her voice, and the one thing it needs from
                                   // what her room remembers: accumulated dwell,
                                   // which is what the withheld fifth is withheld

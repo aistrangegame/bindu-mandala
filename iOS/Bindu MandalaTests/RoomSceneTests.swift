@@ -9,18 +9,15 @@ import SceneKit
 // shape right and 3.3 through 3.6 are assembly; get it wrong and ninety rooms
 // inherit the mistake.
 //
-// Four of these checks exist because of the renderer ruling rather than in
-// spite of it, and they are the ones to read first if it is ever revisited:
+// Four of these checks once held the renderer ruling's "binding condition" in
+// four registers — the type system, the arithmetic, the protocol and the live
+// graph. Wave 1 (Build Charter II §4.5) lifted that rule to its first
+// principle, **no figural depiction of a Śakti**, and they now test that:
 //
-//   * `testTheMaterialVocabularyCannotNameAnObject`
-//   * `testLightCannotExistWithoutDeformation`
-//   * `testAMechanismCanOnlyReturnActionsOnSurfaces`
-//   * `testHerLayerHoldsNoSolid`
-//
-// Together they are the ruling's own precondition — *"if Phase 3.1 cannot
-// express 'an action on the room's own material' as the only way to mount an
-// attribute, then the aniconic risk is unbounded"* — held to, in four different
-// registers: the type system, the arithmetic, the protocol, and the live graph.
+//   * `testEveryVerbMovesTheMaterialItActsOn`
+//   * `testAMarksOwnLightLivesInTheMark`
+//   * `testNoRoomInAnyWorldHoldsAFigure`
+//   * `testHerLayerHoldsLightAndNoFigure`
 @MainActor
 final class RoomSceneTests: XCTestCase {
 
@@ -225,54 +222,29 @@ final class RoomSceneTests: XCTestCase {
                        "ring 8's `Above crown` no longer shares the Crown's altitude — the recorded gap has changed")
     }
 
-    // MARK: - The binding condition · the type system
+    // MARK: - The surviving principle · no figure of her
+    //
+    // Wave 1 (Build Charter II §4.5). Until this wave four checks here held the
+    // "binding condition" — a rule Code invented on 09-21 for one test room and
+    // extended to every light in the instrument: that nothing may stand in a
+    // room's air that is not a mark in its stone. They read `RoomMaterial.swift`
+    // for imports and a private initialiser, pinned the mechanism hook's exact
+    // signature, and failed the build if any geometry stood under her layer.
+    //
+    // The charter lifted the rule to its first principle — **no figural
+    // depiction of a Śakti** — and these checks now test that and only that.
+    // What they used to refuse (glows, cores, shafts, caustics, gem lamps) is
+    // now built, so the checks that refused it are rewritten rather than left
+    // to block the work. The behaviour worth keeping — every verb moves the
+    // material, a mark's own light lives in the mark — is kept as behaviour,
+    // not as a law.
 
-    /// **The material vocabulary cannot name an object.**
+    /// **Every verb really moves the material it acts on.**
     ///
-    /// The ruling asks for the free-standing lit solid to be *unrepresentable*
-    /// rather than forbidden. Three things make it so, and all three are read
-    /// off the file itself, because a run-time value cannot show what a type
-    /// has no room for:
-    ///
-    ///   * the file imports nothing that can draw, so no noun in it denotes a
-    ///     body;
-    ///   * ``SurfaceAction``'s memberwise initialiser is private, so the five
-    ///     verbs are the only way one exists;
-    ///   * the placement vocabulary has two axes, so there is nowhere in the
-    ///     air for an object to be.
-    func testTheMaterialVocabularyCannotNameAnObject() throws {
-        let source = try renderSource("RoomMaterial.swift")
-
-        // 1 · nothing that can draw is even in scope.
-        for forbidden in ["import SceneKit", "import SwiftUI", "import UIKit", "import Metal",
-                         "import SpriteKit", "import RealityKit"] {
-            XCTAssertFalse(source.contains(forbidden),
-                           "RoomMaterial.swift imports \(forbidden) — the vocabulary can now name a body")
-        }
-        for noun in ["SCNNode", "SCNGeometry", "SCNBox", "SCNSphere", "SCNCone", "SCNCylinder",
-                     "SCNPlane", "SCNMaterial", "SCNLight", "SCNScene", "MTKMesh", "UIBezierPath"] {
-            XCTAssertFalse(source.contains(noun),
-                           "RoomMaterial.swift names \(noun) — an attribute could now be a thing")
-        }
-
-        // 2 · the only initialiser is private, and the only constructors are
-        //     the five verbs.
-        XCTAssertTrue(source.contains("private init(verb:"),
-                      "SurfaceAction's initialiser is no longer private — anything can be constructed now")
-        let constructors = Set(matches(#"static func ([a-zA-Z]+)\(at where_:"#, in: source))
-        XCTAssertEqual(constructors, Set(SurfaceVerb.allCases.map(\.rawValue)),
-                       """
-                       the ways of making a SurfaceAction have changed. Every one of them must be \
-                       something that happens to a surface. A sixth has to be argued for here, where \
-                       the ruling is.
-                       """)
-
-        // 3 · the placement vocabulary has two axes and no third.
-        XCTAssertEqual(Mirror(reflecting: SurfaceCoordinate.centre).children.count, 2,
-                       "SurfaceCoordinate grew an axis — a mark can now be somewhere other than on a surface")
-
-        // And every verb really moves material: none of them is a no-op that a
-        // glow could be hung on.
+    /// What survives of the old vocabulary check: none of the five verbs is a
+    /// no-op. (The import list, the private initialiser and the two-axis pin
+    /// were the binding condition's and are gone with it.)
+    func testEveryVerbMovesTheMaterialItActsOn() {
         for verb in SurfaceVerb.allCases {
             let action = Self.action(verb, at: .centre, reach: 0.2, depth: 0.5, glow: 1)
             XCTAssertGreaterThan(abs(action.relief(at: .centre)), 0.01,
@@ -280,102 +252,81 @@ final class RoomSceneTests: XCTestCase {
         }
     }
 
-    /// **Light cannot exist without deformation.**
+    /// **A mark's own light lives in the mark.**
     ///
-    /// The third thing a free-standing solid would need is its own light. There
-    /// is none here: an action's `glow` is multiplied by how far that action
-    /// actually moved the material, so a mark that does nothing to the surface
-    /// emits nothing, anywhere, at any strength.
-    func testLightCannotExistWithoutDeformation() {
+    /// Kept as a property of the material model: the light a mark makes in the
+    /// stone is in proportion to how far the stone moved. It no longer stands
+    /// as the whole law of light in a room — light in the air is now built
+    /// separately (``RoomAir``), as light.
+    func testAMarksOwnLightLivesInTheMark() {
         for verb in SurfaceVerb.allCases {
-            // Asking for the brightest possible mark with no depth at all.
             var material = RoomMaterial(surface: .ground, seed: 4)
             material.receive(Self.action(verb, at: .centre, reach: 0.3, depth: 0, glow: 1))
             for step in 0...10 {
                 let point = SurfaceCoordinate(u: Double(step) / 10, v: Double(step) / 10)
                 XCTAssertEqual(material.emission(at: point), 0, accuracy: 1e-12,
-                               "\(verb.rawValue) emits light without touching the material")
+                               "\(verb.rawValue) lights the stone without marking it")
             }
-
-            // …and with depth, the light exists only where the material moved.
             var marked = RoomMaterial(surface: .ground, seed: 4)
             marked.receive(Self.action(verb, at: .centre, reach: 0.05, depth: 0.4, glow: 1))
             XCTAssertGreaterThan(marked.emission(at: .centre), 0.1,
                                  "\(verb.rawValue) makes a mark that does not light")
-            let faraway = SurfaceCoordinate(u: 0.95, v: 0.95)
-            XCTAssertEqual(marked.emission(at: faraway), 0, accuracy: 1e-9,
+            XCTAssertEqual(marked.emission(at: SurfaceCoordinate(u: 0.95, v: 0.95)), 0, accuracy: 1e-9,
                            "\(verb.rawValue) lights material it never touched")
         }
-
-        // A zero-reach mark is nothing happening, and lights nothing.
-        var nothing = RoomMaterial(surface: .ground, seed: 1)
-        nothing.receive(.impression(at: .centre, reach: 0, depth: 1, glow: 1))
-        XCTAssertEqual(nothing.emission(at: .centre), 0, accuracy: 1e-12)
     }
 
-    /// **A mechanism can only return actions on surfaces, and distances for the
-    /// surfaces the room already has.**
+    /// **Nothing in any room is named, built or drawn as a figure.**
     ///
-    /// The binding condition for Phase 3.3, which builds the authored rooms. The
-    /// hook's return types are the whole of it: there is no path out of a
-    /// mechanism for a node, a mesh, a light or a shape, and the stage it is
-    /// handed carries no scene for it to reach around into.
-    ///
-    /// Phase 3.3 added the second hook — ``RoomSurfaceMechanism/stations(at:stage:)``
-    /// — because a ceiling that descends and a floor that lets go are two of the
-    /// eight rooms Design authored, and neither of them is an object added to a
-    /// room. It is held to the same standard: its return type is a distance per
-    /// surface, over an enum with four cases and no way to grow a fifth.
-    func testAMechanismCanOnlyReturnActionsOnSurfaces() throws {
-        let source = try renderSource("RoomScene.swift")
-        XCTAssertTrue(source.contains(
-            "func actions(at chamberTime: TimeInterval, stage: RoomStage) -> [RoomSurfaceKind: [SurfaceAction]]"),
-            "the mechanism hook's signature has changed — it is the binding condition for the authored eight")
-        XCTAssertTrue(source.contains(
-            "func stations(at chamberTime: TimeInterval, stage: RoomStage) -> [RoomSurfaceKind: Double]"),
-            "the station hook's signature has changed — a reversal must not be able to return a body")
-
-        // Every requirement of the protocol answers in value types, and none of
-        // them can carry a piece of SceneKit out.
-        let protocolBody = try XCTUnwrap(
-            source.range(of: "protocol RoomSurfaceMechanism {").map {
-                String(source[$0.upperBound...].prefix(while: { $0 != "}" }))
-            },
-            "the mechanism protocol has been renamed or removed")
-        for scenekit in ["SCN", "UIView", "CALayer", "MTL"] {
-            XCTAssertFalse(protocolBody.contains(scenekit),
-                           "a mechanism can now hand back \(scenekit) — the binding condition is open")
-        }
-
-        // The stage vends materials and numbers, and nothing that could hold a
-        // child.
-        let stage = RoomStage(placement: RoomUnits.placement(bodyAltitude: 0.5, chamberTime: 0),
-                              settling: 0, deep: 0, materials: [:])
-        for child in Mirror(reflecting: stage).children {
-            let type = String(describing: Swift.type(of: child.value))
-            XCTAssertFalse(type.contains("SCN"),
-                           "RoomStage carries \(type) — a mechanism can now reach the scene graph")
+    /// The surviving principle in the live graph, across one room in each of
+    /// the nine worlds: every node name in every layer is read against the
+    /// figural vocabulary `LawsTests` reads the asset catalogue against. The
+    /// room's own surface words (`ground`, `canopy`, `face`, `wall`) name its
+    /// stone — the working face is a panel of it — and are read as such.
+    func testNoRoomInAnyWorldHoldsAFigure() throws {
+        let figural = try NSRegularExpression(pattern: Self.figuralVocabulary)
+        let surfaces = Set(RoomSurfaceKind.allCases.map(\.rawValue))
+        for (position, ring, location) in Self.oneRoomPerWorld {
+            let scene = RoomScene(room: room(position: position, ring: ring, bodilyLocation: location))
+            for layer in RoomScene.Layer.allCases {
+                for name in scene.nodeNames(in: layer) where !surfaces.contains(name) {
+                    let range = NSRange(location: 0, length: (name as NSString).length)
+                    XCTAssertNil(figural.firstMatch(in: name, range: range),
+                                 "ring \(ring): a node in the \(layer) layer is named \"\(name)\" — a figure")
+                }
+            }
+            XCTAssertEqual(scene.figuresInHerLayer, 0,
+                           "ring \(ring): a solid stands in her own layer — something could be read as her figure")
         }
     }
 
-    /// **Her layer holds no solid.** The binding condition, in the live graph.
+    /// **Her layer holds her light, and no figure.**
     ///
-    /// Design's third depth layer is her mechanism, and under the ruling it
-    /// owns no mesh: what it holds is the light in the mark it made. This walks
-    /// the assembled scene of rooms at all three surfaces and counts.
-    func testHerLayerHoldsNoSolid() {
+    /// Before Wave 1 this asserted her layer held no geometry at all. Now it
+    /// holds her core and her halo — light, which is not a figure — and still
+    /// holds no solid.
+    func testHerLayerHoldsLightAndNoFigure() {
         for room in [solesRoom, crownRoom, heartRoom] {
             let scene = RoomScene(room: room)
             XCTAssertEqual(scene.solidsInHerLayer, 0,
-                           """
-                           position \(room.position): a geometry appeared under her own layer. Every \
-                           attribute in every room is an action on the room's own material — an \
-                           impression, a furrow, a crack, a swell — and never a free-standing lit solid.
-                           """)
+                           "position \(room.position): a solid appeared under her own layer")
+            XCTAssertGreaterThanOrEqual(scene.lights(in: .her), 2,
+                                        "position \(room.position): her core and halo of light are missing")
             XCTAssertGreaterThan(scene.childCount(in: .her), 0,
                                  "her layer is empty — the light in her mark is missing")
         }
     }
+
+    /// One room in each world: position, ring, and where she is felt.
+    static let oneRoomPerWorld: [(Int, Int, String)] = [
+        (4, 1, "soles"), (30, 2, "pelvis"), (46, 3, "navel"), (57, 4, "heart"),
+        (71, 5, "throat"), (77, 6, "forehead"), (93, 7, "crown"), (99, 8, "crown"),
+        (102, 9, "heart"),
+    ]
+
+    /// `LawsTests`' `Aniconic.figuralVocabulary`, restated so this suite does not
+    /// reach into another suite's enum.
+    static let figuralVocabulary = #"(?i)\b(face|faces|eye|eyes|hand|hands|bodies|figure|figures|figural|goddess|deity|portrait|torso|limb|limbs|smile|mouth|breast|feet|foot|arm|arms|lip|lips|nude|naked|idol|murti|statue|photo|photograph|avatar|person|people|woman|women|girl|man|men)\b"#
 
     /// Her attribute reaches the room as actions on its material, and as
     /// nothing else — for every one of Design's twenty-six forms.
