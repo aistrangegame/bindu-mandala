@@ -47,6 +47,9 @@ struct LivingMandalaView: View {
     /// Whether the Veil — the nine āvaraṇas as light — is raised. An optional
     /// layer: it gates nothing, and closing it leaves the field exactly as it was.
     @State private var veilOpen = false
+    /// Wave 3 · the 33 — the constellation, the Road and the two thresholds
+    /// (`ChakraLayerOverlay.swift`). One value; the overlay owns the rest.
+    @State private var chakraLayer = ChakraLayerState()
 
     // Gesture bases (incremental deltas so pan + pinch compose)
     @State private var lastDrag: CGSize = .zero
@@ -103,7 +106,9 @@ struct LivingMandalaView: View {
                         tier: camera.tier, reduceMotion: reduceMotion,
                         lightOn: lightOn,
                         lastMoveAt: lastMoveAt, stillSeconds: stillSeconds,
-                        variant: variant)
+                        variant: variant,
+                        chakras: chakraLayer.drawn,
+                        roadFocus: chakraLayer.walking ? chakraLayer.focusRoad : nil)
 
                     // The drawing has no accessibility tree; this is it. It
                     // draws nothing and hit-tests nothing — the gesture catcher
@@ -127,6 +132,14 @@ struct LivingMandalaView: View {
                 // chimes that fire during unfocused navigation, so it can't be
                 // hidden behind a focused seat.
                 controls
+                if ready {
+                    ChakraLayerOverlay(
+                        state: $chakraLayer, camera: $camera, size: geo.size, seats: seats,
+                        reduceMotion: reduceMotion, soundOn: soundOn,
+                        hidden: descent || veilOpen || focus != nil,
+                        onBeginRoad: { focus = nil; constellation = 0; constellationStart = nil; veilOpen = false },
+                        onEndRoad: { fitCamera() })
+                }
                 if let seat = focus { card(for: seat) }
                 if ready && !descent { veil(in: geo.size) }
                 if descent { lalita }
@@ -557,6 +570,7 @@ struct LivingMandalaView: View {
         let e = camera.enteredRing(in: size)
         if e > enteredRing {
             flash = MandalaCanvasLayer.RingFlash(ring: e, bornAt: Date().timeIntervalSinceReferenceDate)
+            chakraLayer.noteCrossing(from: enteredRing, to: e)   // Wave 3 · Shadow 3→4, Armin 6→7
             // Idea 31 — the fall speaks the mantra. The same opt-in hook, the
             // same inward-only crossing; what changes is that the enclosure now
             // sounds its own bīja rather than a bell. Sounded, never written.

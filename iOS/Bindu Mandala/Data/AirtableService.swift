@@ -2131,3 +2131,30 @@ enum RecognitionDedup {
         return server == writtenFeltAt(feltAt)
     }
 }
+
+// MARK: - Wave 3 · grace, read back from the ledger (read only)
+
+extension AirtableService {
+    /// The ledger rows grace may return to the Rite: those linked to a Mandala
+    /// row inside the last moon (`GraceChannel.formula`), read by name as the
+    /// ledger always is. A read and nothing else — grace writes no row, sets no
+    /// "surfaced" flag on the server, and is empty when sync is off, the token
+    /// is missing, or the network is not there (silence when nothing fits).
+    func graceRows() async -> [ActivityLedger.Row] {
+        guard !syncIsDisabled(), let token = pat else { return [] }
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: GraceChannel.formula,
+                sort: [],
+                fields: GraceChannel.fields,
+                byFieldId: false
+            )
+            return rows
+        } catch {
+            log.error("Grace read failed: \(Self.describe(error), privacy: .public)")
+            return []
+        }
+    }
+}

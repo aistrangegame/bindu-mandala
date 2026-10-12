@@ -310,7 +310,10 @@ struct DailyRiteView: View {
     // MARK: - Foot (I feel her + position)
 
     private func foot(s: Shakti, content: RiteContent, atmo: Atmosphere) -> some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
+            // Wave 3 · grace: one real moment of hers, read back once, then rest.
+            RiteGraceLine(shakti: s, still: still)
+
             Button(action: triggerRecognition) {
                 Text("I feel her")
                     .font(AppFont.sanskrit(23))
@@ -320,7 +323,8 @@ struct DailyRiteView: View {
                     .frame(minHeight: 60)
                     .background(FeelHerPill(atmosphere: atmo, ring: content.ring, still: still))
             }
-            .buttonStyle(.plain)
+            // Wave 3 · the pulse: a heartbeat under the thumb, rings four to eight.
+            .buttonStyle(RitePulseButtonStyle(active: RiteDay.pulseLives(inRing: content.ring), still: still))
             .accessibilityLabel("I feel her — record recognition of \(content.spokenName)")
 
             // Wave 2 · her seat is a door: the position is her identity, and
@@ -338,9 +342,13 @@ struct DailyRiteView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text("Her seat — enter her room"))
+
+            // Wave 3 · three doors, by the hour; one is always the floor. The
+            // room door is the same one her seat opens (one building).
+            RiteDayDoors(shakti: s, onOpenRoom: { Haptics.light(); roomKp = content.kp })
         }
         .padding(.horizontal, 26)
-        .padding(.bottom, 20)
+        .padding(.bottom, 12)
         .arrives(arrived, after: ArrivalBeat.foot.delay, still: still)
     }
 

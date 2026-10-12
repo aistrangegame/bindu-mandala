@@ -50,6 +50,11 @@ struct MandalaCanvasLayer: View {
     /// Noon is Design's living Mandala exactly, so a caller that does not know
     /// the hour (the spike bench) draws the prototype unchanged.
     var variant: TimeVariant = .noon
+    /// Wave 3 · the 33 at their addresses (`ChakraConstellationLayer.swift`).
+    /// Empty — and so nothing drawn — unless the host has turned them on.
+    var chakras: [Chakra33] = []
+    /// The chakra the Road is standing at, lit a little brighter.
+    var roadFocus: Int? = nil
 
     struct RingFlash: Equatable { let ring: Int; let bornAt: TimeInterval }
 
@@ -66,6 +71,9 @@ struct MandalaCanvasLayer: View {
                 drawYantra(ctx, t: t, light)
                 drawBinduGlow(ctx, t: t, light)
                 drawConstellation(ctx, t: t)
+                ChakraConstellationDrawing.draw(ctx, chakras: chakras, seats: seats, camera: camera,
+                                                size: size, t: t, reduceMotion: reduceMotion,
+                                                focusRoad: roadFocus)
                 drawSeats(ctx, t: t, light)
                 drawEnclosureNames(ctx, light)
                 drawTratak(ctx, t: t, light)

@@ -96,7 +96,7 @@ struct BinduMandalaApp: App {
     }
 }
 
-/// Wraps RootView and gates the Homecoming screen on first launch.
+/// Wraps RootView and lays the Homecoming over it on every launch.
 private struct AppRoot: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
@@ -108,7 +108,10 @@ private struct AppRoot: View {
         let args = ProcessInfo.processInfo.arguments
         if args.contains("FORCE_HOMECOMING") { return true }
         if args.contains("SKIP_HOMECOMING")  { return false }
-        return !HomecomingView.hasLaunched
+        // Wave 3: the Homecoming greets every launch. The first is the whole
+        // Origin; every return after it compresses to one breath (HomecomingView).
+        // The XCTest host stays quiet, as it does for sync and the summons.
+        return !AppRuntime.isUnitTesting
     }()
 
     var body: some View {
