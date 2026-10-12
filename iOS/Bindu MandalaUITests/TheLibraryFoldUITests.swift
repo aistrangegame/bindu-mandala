@@ -256,10 +256,15 @@ final class TheLibraryFoldUITests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS[c] 'Close this moment'"))
             .firstMatch.waitForExistence(timeout: 15),
                       "the ceremony's way out was never reachable")
-        let settled = app.staticTexts
-            .matching(NSPredicate(format: "label CONTAINS[c] 'she is felt, not measured'")).firstMatch
-        XCTAssertTrue(settled.waitForExistence(timeout: 40),
-                      "the ceremony never settled onto the Portrait")
+        // Wave 0 · B4: felt from her own screen, he stays where he was. Only a
+        // recognition from the Rite settles into the Portrait. So the walk is
+        // continued on her screen: the ceremony leaves, and her shelf is there.
+        let close = app.buttons
+            .matching(NSPredicate(format: "label CONTAINS[c] 'Close this moment'")).firstMatch
+        XCTAssertTrue(close.waitForNonExistence(timeout: 40),
+                      "the ceremony never closed")
+        XCTAssertTrue(shelf(app, "her moments").waitForExistence(timeout: 20),
+                      "after the ceremony he was not left on her screen")
     }
 
     /// Back to her screen, by the menu and the same launch argument that opened
@@ -271,6 +276,8 @@ final class TheLibraryFoldUITests: XCTestCase {
         // transition runs 0.5 s on top of it. Enumerating the tree through that
         // is what makes the corner button a moving target.
         Thread.sleep(forTimeInterval: 2.0)
+        // He never left her screen (Wave 0 · B4): nothing to return through.
+        if shelf(app, "her moments").exists { return }
         let mandala = app.buttons.matching(NSPredicate(format: "label == 'The Mandala'")).firstMatch
         for _ in 0..<3 {
             tapHamburger(app)
