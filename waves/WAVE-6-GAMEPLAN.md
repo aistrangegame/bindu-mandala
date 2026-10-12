@@ -162,20 +162,22 @@ Each movement is a branch. Each goes through Xcode Cloud, merges when green, and
 
 ---
 
-## 4 · What is yours to decide (we walk these one at a time)
+## 4 · Decided (12 October, walked together)
 
-1. **The centre.** Mauna and the fall arrive when you are still at the point, not by a tap. Lalitā's seat stays one touch away. *Recommended: yes, as C-1307 says.*
-2. **The Homecoming on every launch.** After the first launch it is a single 4-second breath. *Or only on the first launch of each day.*
-3. **Letters.** Both letters to her and letters to yourself (an age, a memory, past or future), in one river. *Recommended: both.*
-4. **Gratitude journal** (91 rows, quiet since Aug 2025). Should grace ever read from it, privately? Emotions, SJ and Anger stay out either way.
-5. **The life-games-to-rings mapping.** It comes from a generated February report, not your canon, and it gates progress. *Recommended: leave it out.*
-6. **Sound priority on the Climb.** The room drone, or the ring voices in front.
-7. **Leela drops.** At least 3 days apart, then a 30% chance on any given day. More often, or rarer?
-8. **Panel 9's dissolutions.** The full eight once a day before the field, then just "Now go play."
-9. **Bījas for the ten Mudrā Śaktis** (kp 19–28). Fill them only from a cited Navāvaraṇa source?
-10. **Seed verbs.** One verb per Śakti, no repeats, written by you. The field is ready; it fills when you write them.
-11. **The Shadow Translator.** You name the burden in one word, and it turns over to one of the ten Siddhi Śaktis with her own Appreciation Phrase. Keep, or reshape?
-12. **Rām japa.** It lives at ring 9 as your name, not a Śakti's, so it ends in stillness rather than Recognition.
+1. **The centre:** Mauna and the fall arrive in stillness at the point, **and a gentle tap also opens them** when you want it now. Lalitā's seat stays one touch away.
+2. **The Homecoming:** on **every launch**. The first is the whole Origin; after that it is one breath.
+3. **Letters:** **both** — to her, and to yourself at an age, a memory, a past or future self, in one river.
+4. **Gratitude journal:** **yes, gently.** Grace may rarely surface one of your own gratitude lines, room-matched, read-only, never counted. Emotions, SJ and Anger stay out.
+5. **The life-games mapping:** **left out.** Nothing gates.
+6. **Sound on the Climb:** the **ring voices in front**; the room drone waits for the room. The Om stays beneath.
+7. **Leela drops:** **as drafted** — at least 3 days apart, then a 30 % chance on a day.
+8. **Panel 9's dissolutions:** the full eight **once a day**, then just "Now go play."
+9. **Bījas for the ten Mudrā Śaktis:** filled **only from a cited Navāvaraṇa source**, with the citation noted; empty if no clean source.
+10. **Seed verbs:** **drafted by Claude, approved by you**, marked draft until accepted.
+11. **The Shadow Translator:** **kept as built** — your one word, her own phrase; nothing generated, the word never stored.
+12. **Rām japa:** **at Ātmākarṣiṇī (kp 42)**, beside the Higher Self in the Trinity; it ends in stillness.
+
+**What this changes in the drafts:** 6C gains the tap beside stillness at the centre; 6B's conductor flips the Climb's priority to the ring voices; 6E moves Rām japa from ring 9 to kp 42; 6D's grace gains a gentle Gratitude reader; 6A–6E otherwise stand, reshaped by 6.1's coherence pass.
 
 ---
 
