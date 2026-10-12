@@ -30,7 +30,10 @@ import UIKit
 // same breath, and measured that half at 0.077 → 0.079 mean luminance with the
 // light pass missing. The light pass can only add (it composites with `.screen`),
 // so a geometry half that is legible cannot become an illegible composite by
-// being darkened; it could only be blown out, and the shader clamps at 0.86.
+// being darkened; it could only be blown out. (The shader used to clamp at
+// 0.86; Wave 1 lifted that cap — the `.screen` blend already keeps every pixel
+// at or under white — and the room itself now renders in HDR with bloom, so the
+// bounds below are what hold a room back from washing out.)
 @MainActor
 final class RoomCaptureTests: XCTestCase {
 

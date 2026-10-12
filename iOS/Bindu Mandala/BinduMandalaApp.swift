@@ -87,6 +87,9 @@ struct BinduMandalaApp: App {
     var body: some Scene {
         WindowGroup {
             AppRoot()
+                // Wave 1 · the Homes: her siddhi lingers on the whole
+                // instrument after a stay (`Views/Rooms/HerSiddhiLingers.swift`).
+                .herSiddhiLingers()
                 .preferredColorScheme(.dark)
         }
         .modelContainer(container)

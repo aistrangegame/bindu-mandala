@@ -64,11 +64,16 @@ struct RoomLightRig {
     /// where it was measured against a real shadow on real bedding.
     static let keyIntensity: Double = 2_600
 
-    /// The ember at rest.
-    static let emberIntensity: Double = 3_200
+    /// The ember at rest. Wave 1 lifted it from 3,200: the light in her mark
+    /// is the room's own source past the second adaptation, and it was
+    /// lighting less of the room than the key it replaces.
+    static let emberIntensity: Double = 4_200
 
-    /// What arrives from everywhere even in the hardest-lit room.
-    static let ambientFloor: Double = 320
+    /// What arrives from everywhere even in the hardest-lit room. Wave 1
+    /// lifted it from 320 — Design's rooms measure ≈ 80–255 on 0–255 and the
+    /// restrained build's ≈ 11–65; the HDR camera now carries the difference
+    /// without clipping it.
+    static let ambientFloor: Double = 460
 
     /// How much of a key's worth of light a wholly diffuse gem turns into
     /// ambient. At the Crown this is the entire room.

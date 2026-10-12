@@ -184,7 +184,15 @@ final class WorldClimbScene {
         camera.fieldOfView = CGFloat(RoomUnits.fieldOfView)
         camera.zNear = RoomUnits.zNear
         camera.zFar = RoomUnits.zFar
-        camera.wantsHDR = false
+        // Wave 1: HDR and bloom on the climb too, at the Bhūpura's exposure
+        // less a little — the climb is open air over a vast floor, and its
+        // brightest thing is the band's own ground glowing (``glowCeiling``).
+        camera.wantsHDR = true
+        camera.wantsExposureAdaptation = false
+        camera.exposureOffset = 0.3
+        camera.bloomIntensity = 0.8
+        camera.bloomThreshold = 0.8
+        camera.bloomBlurRadius = 10
         cameraNode.camera = camera
         cameraNode.name = "eye"
 

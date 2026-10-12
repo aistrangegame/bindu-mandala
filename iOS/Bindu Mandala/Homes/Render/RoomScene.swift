@@ -30,29 +30,30 @@ import UIKit
 //     body against the frame.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// THE THIRD LAYER HAS NO GEOMETRY, AND THAT IS THE BINDING CONDITION
+// HER LAYER HOLDS LIGHT, AND NO FIGURE (Wave 1 · Build Charter II §4.5)
 // ─────────────────────────────────────────────────────────────────────────────
 //
 // Design's three layers are the building, the world, and her mechanism. Under
-// the renderer ruling the third one owns **no mesh at all**: her mechanism is
-// an action on the building's own material, so what it holds is the light in
-// the mark it made and nothing else. `testHerLayerHoldsNoSolid` walks the
-// graph and fails the build if a geometry ever appears under it.
+// the 09-21 renderer ruling the third one owned **no mesh at all** — the
+// "binding condition", which Code invented for one test room and extended to
+// every light in the instrument. Charter II lifted it to its first principle:
+// **no figural depiction of a Śakti.** Light standing in the air is not a
+// figure, so her layer now holds her light — the ember, and a core and halo of
+// light at her mark that blooms in the HDR buffer — and still holds nothing a
+// figure could be made of.
 //
-// **And the graph is not handed out, in any register.** The `SCNScene` is
-// private, and so are all four node roots. This is not tidiness: `let` on a
-// class-typed property stops the property being reassigned and does nothing
-// whatever about the node it points at, so a vended `herLayer` — even a
-// `private(set)` one — is a mounting point for the free-standing lit solid, in
-// any of the 102 rooms, reachable from any view that owns a driver. The four
-// registers ``RoomMaterial`` closes are closed in the type system, the
-// arithmetic, the protocol and the vocabulary; the scene graph is the fifth,
-// and it is closed here by there being no property to reach.
+// The distinction is kept in the graph rather than in a promise: every node
+// that *is* light — emissive, additive, drawing its own colour — is marked as
+// such (``markAsLight(_:)``), and ``solids(in:)`` counts only what is left: an
+// opaque, modelled body lit by something else, which is the only kind of thing
+// that could ever be read as a figure. `solidsInHerLayer` stays zero in every
+// room; ``lights(in:)`` says what she holds instead.
 //
-// What a caller gets instead is facts: ``layerName(_:)``, ``childCount(in:)``,
-// ``solids(in:)``, ``adaptingSurfaces``, ``eye``. A room is installed into a
-// view or captured; it never hands out a root node for something to be added
-// to. That is the same rule as ``RoomMaterial``'s, one level up.
+// **The graph is still not handed out.** The `SCNScene` is private, and so are
+// the node roots: a vended root is a mounting point for anything at all, from
+// any view that owns a driver. What a caller gets is facts:
+// ``layerName(_:)``, ``childCount(in:)``, ``solids(in:)``, ``lights(in:)``,
+// ``nodeNames(in:)``, ``adaptingSurfaces``, ``eye``.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // THE REVERSAL, AND THE GAP PHASE 3.3 CLOSED
@@ -222,7 +223,7 @@ final class RoomScene {
         case building
         /// Layer 2 — the world: the āvaraṇa's weather and the light it arrives by.
         case world
-        /// Layer 3 — her mechanism. **No geometry, ever.** See the header.
+        /// Layer 3 — her mechanism: her light, and no solid. See the header.
         case her
     }
 
@@ -258,6 +259,18 @@ final class RoomScene {
     /// displacement of the room rather than a second opinion about where its
     /// sides are.
     private var wallBases: [SCNVector3] = []
+    /// The point each wall closes toward — her seat's own centre (Wave 1).
+    private var wallCentres: [SCNVector3] = []
+    /// Whether each wall also shortens as it closes — a triangle's sides do,
+    /// so the triangle shrinks about its centroid and no two sides cross.
+    private var wallShrinks: [Bool] = []
+    /// Her seat's plan (Wave 1): square, petal, triangle or circle.
+    let seat: SeatShape
+    /// The band's light, standing in the air (Wave 1).
+    private var air: RoomAir?
+    /// Her light at her mark: a hot core and the halo around it (Wave 1).
+    private var herCore: SCNNode?
+    private var herHalo: SCNNode?
     private var emberNode: SCNNode?
     private var keyNode: SCNNode?
     private var motesMaterial: SCNMaterial?
@@ -325,10 +338,15 @@ final class RoomScene {
 
     /// How strongly a mark's own light shows when the stay has just begun, and
     /// when it has come the whole way. Design's §4.4: the attribute does not
-    /// brighten into an object — it becomes the room, so the top of this range
-    /// is a surface glowing, not a lamp.
-    static let markEmissionFloor: Double = 0.06
-    static let markEmissionCeiling: Double = 0.42
+    /// brighten into an object — it becomes the room.
+    ///
+    /// Wave 1 lifted both ends (0.06 → 0.10, 0.42 → 0.62): the restrained build
+    /// spent the stay's growth on the walls rather than the light, and the
+    /// rooms came out at a third of Design's measured brightness. The ceiling
+    /// is still a surface glowing rather than a lamp — the lamp, where there is
+    /// one, is her core, which is light and is drawn as light.
+    static let markEmissionFloor: Double = 0.10
+    static let markEmissionCeiling: Double = 0.62
 
     /// The nearest the enclosure may ever come to the room's own axis, as a
     /// fraction of where it began.
@@ -352,6 +370,7 @@ final class RoomScene {
         self.mechanism = mechanism ?? RoomMechanisms.forRoom(room)
         self.rig = RoomLightRig(gem: room.gem, world: room.world)
         self.receivingSurface = RoomUnits.surface(forBodyAltitude: room.bodyAltitude)
+        self.seat = SeatShape.forRing(room.ring)
 
         // ── the material of every surface, before anything happens to it ────
         for kind in RoomSurfaceKind.allCases {
@@ -392,15 +411,23 @@ final class RoomScene {
 
         // ── layer 2 · the world ─────────────────────────────────────────────
         buildWeather()
+        // The band's own light, standing in the air (Wave 1).
+        let air = RoomAir(room: room)
+        weather.addChildNode(air.root)
+        self.air = air
         rig.applyFog(to: scene)
         scene.background.contents = RoomLightRig.colour(room.gem.ink)
 
         // ── the camera ──────────────────────────────────────────────────────
+        //
+        // HDR and bloom, tuned per world (Wave 1). Until now `wantsHDR` was
+        // false and every light in the room was capped below white; the light
+        // bodies now run past one and the bloom spreads what is genuinely hot.
         let camera = SCNCamera()
         camera.fieldOfView = CGFloat(RoomUnits.fieldOfView)
         camera.zNear = RoomUnits.zNear
         camera.zFar = RoomUnits.zFar
-        camera.wantsHDR = false
+        RoomExposure.forRing(room.ring).apply(to: camera)
         cameraNode.camera = camera
         cameraNode.name = "eye"
         cameraNode.position = SCNVector3(0, Float(RoomUnits.eyeY), Float(RoomUnits.eyeZ))
@@ -410,6 +437,7 @@ final class RoomScene {
         let installed = rig.install(world: weather, mechanism: herLayer, at: opening)
         keyNode = installed.key
         emberNode = installed.ember
+        buildHerLight()
 
         scene.rootNode.addChildNode(building)
         scene.rootNode.addChildNode(weather)
@@ -514,14 +542,24 @@ final class RoomScene {
         let departs = Float(max(0, -wall))
         enclosureRose = max(0, -wall)
         enclosureSpread = 0
-        for (node, base) in zip(wallNodes, wallBases) {
-            // One of the two is zero: a wall stands on an axis.
-            let standOff = Double(abs(base.x) + abs(base.z))
+        for (index, node) in wallNodes.enumerated() {
+            let base = wallBases[index]
+            // Wave 1: a wall closes toward her seat's own centre, which is the
+            // room's origin in the square court and a little beyond her mark in
+            // a lotus, a triangle or the round room. The distance is measured in
+            // the plan, so a panel standing off both axes travels as far as one
+            // standing on one.
+            let centre = index < wallCentres.count ? wallCentres[index] : SCNVector3(0, 0, 0)
+            let dx = Double(base.x - centre.x), dz = Double(base.z - centre.z)
+            let standOff = (dx * dx + dz * dz).squareRoot()
             let closed = max(standOff * Self.enclosureFloor, standOff - max(0, wall))
             let scale = standOff > 0 ? closed / standOff : 1
             enclosureSpread = max(enclosureSpread, scale)
-            node.position = SCNVector3(base.x * Float(scale), base.y + departs,
-                                       base.z * Float(scale))
+            node.position = SCNVector3(centre.x + Float(dx * scale), base.y + departs,
+                                       centre.z + Float(dz * scale))
+            if index < wallShrinks.count, wallShrinks[index] {
+                node.scale = SCNVector3(Float(scale), 1, 1)
+            }
         }
 
         // Her face comes toward the walker as the attribute grows into the room.
@@ -564,6 +602,19 @@ final class RoomScene {
             + RoomUnits.emberOffset(for: pose.placement.surface) / RoomUnits.emberStandOff * standing
         emberNode?.position = SCNVector3(Float(ember.x), Float(ember.y), Float(ember.z))
         emberNode?.light?.intensity = CGFloat(pose.emberStrength)
+
+        // Her light, standing at her mark (Wave 1). The core is hottest while
+        // the mark is still a thing held apart; past the second adaptation it
+        // softens and the halo widens, because the mark is becoming the room
+        // rather than hardening into a lamp (Design §4.4).
+        let lit = HerLight.at(settling: pose.settling, deep: pose.deep)
+        for (node, size, alpha) in [(herCore, lit.coreSize, lit.coreAlpha),
+                                    (herHalo, lit.haloSize, lit.haloAlpha)] {
+            guard let node else { continue }
+            node.position = SCNVector3(Float(ember.x), Float(ember.y), Float(ember.z))
+            node.scale = RoomAir.uniform(size)
+            RoomAir.set(node, "uAlpha", alpha)
+        }
 
         if let keyNode {
             keyNode.light?.intensity = CGFloat(pose.keyStrength)
@@ -611,6 +662,8 @@ final class RoomScene {
     func breathe(at worldTime: TimeInterval) {
         breathedAt = worldTime
         motesMaterial?.setValue(NSNumber(value: Float(worldTime)), forKey: "uTime")
+        // The band's light keeps the same clock as the dust it stands in.
+        air?.update(worldTime: worldTime)
     }
 
     // MARK: - Standing short of the room
@@ -730,20 +783,70 @@ final class RoomScene {
     /// How many nodes stand directly under one layer.
     func childCount(in layer: Layer) -> Int { root(of: layer).childNodes.count }
 
-    /// How many meshes stand anywhere under one layer.
+    /// How many **solids** stand anywhere under one layer: meshes that are not
+    /// light — opaque, modelled, lit by something else.
+    ///
+    /// Wave 1 changed what this counts, and the change is the charter's: a
+    /// mesh that is light (marked by ``markAsLight(_:)``) is not a solid,
+    /// because light is not a figure (Build Charter II §4.5). Everything that
+    /// is left is the only kind of thing a figure could ever be made of.
     func solids(in layer: Layer) -> Int {
         var count = 0
         func walk(_ node: SCNNode) {
-            if node.geometry != nil { count += 1 }
+            if node.geometry != nil, !Self.isLight(node) { count += 1 }
             node.childNodes.forEach(walk)
         }
         walk(root(of: layer))
         return count
     }
 
-    /// How many meshes stand under her own layer. The binding condition, as a
-    /// number the tests can read: it is zero, in every room, forever.
+    /// How many light bodies stand anywhere under one layer — cores, glows,
+    /// seams, shafts, caustics, bands, motes.
+    func lights(in layer: Layer) -> Int {
+        var count = 0
+        func walk(_ node: SCNNode) {
+            if node.geometry != nil, Self.isLight(node) { count += 1 }
+            node.childNodes.forEach(walk)
+        }
+        walk(root(of: layer))
+        return count
+    }
+
+    /// Every node name under one layer, so a check can read the whole graph for
+    /// a figure without being handed a node.
+    func nodeNames(in layer: Layer) -> [String] {
+        var names: [String] = []
+        func walk(_ node: SCNNode) {
+            if let name = node.name { names.append(name) }
+            node.childNodes.forEach(walk)
+        }
+        walk(root(of: layer))
+        return names
+    }
+
+    /// How many solids stand under her own layer. Zero in every room: her
+    /// layer holds her light (``lights(in:)``) and nothing a figure could be
+    /// made of — which is the surviving principle, as a number.
     var solidsInHerLayer: Int { solids(in: .her) }
+
+    /// The same fact under the name the principle has now.
+    var figuresInHerLayer: Int { solids(in: .her) }
+
+    /// The category bit a light body carries. Light bodies keep the default
+    /// bit too, so every light and camera still sees them.
+    static let lightBodyCategory: Int = 1 << 10
+
+    /// Mark a node as light standing in the room: emissive, additive, drawing
+    /// its own colour. It casts no shadow.
+    static func markAsLight(_ node: SCNNode) {
+        node.categoryBitMask |= lightBodyCategory
+        node.castsShadow = false
+    }
+
+    /// Whether a node was marked as light.
+    static func isLight(_ node: SCNNode) -> Bool {
+        node.categoryBitMask & lightBodyCategory != 0
+    }
 
     /// One of the building's surfaces, as the facts a check needs about it.
     struct SurfaceFacts: Equatable {
@@ -840,27 +943,41 @@ final class RoomScene {
         building.addChildNode(riserNode)
     }
 
+    /// The walls, shaped like her seat (Wave 1 · ``RoomShell``): the Bhūpura's
+    /// square court, a lotus ring of petals, a triangle in plan, or the round
+    /// room of the Bindu — each with the seat's plan drawn in light where the
+    /// wall meets the floor.
     private func buildWalls(ink: UIColor) {
         let material = Self.stone(ink, roughness: 0.94, marks: [])
         material.name = "wall"
         material.isDoubleSided = true
-        let height = RoomUnits.roomHeight * 1.6
-        for (index, side) in [(x: -1.0, z: 0.0), (x: 1.0, z: 0.0), (x: 0.0, z: -1.0)].enumerated() {
-            let plane = SCNPlane(width: CGFloat(RoomUnits.extent), height: CGFloat(height))
-            plane.materials = [material]
-            let node = SCNNode(geometry: plane)
+        let seamColour = RoomLightRig.colour(room.gem.bright)
+        for (index, panel) in RoomShell.panels(for: seat).enumerated() {
+            let node = SCNNode(geometry: RoomShell.geometry(for: panel, material: material))
             node.name = "wall-\(index)"
             node.castsShadow = false
-            if side.x != 0 {
-                node.position = SCNVector3(Float(side.x * RoomUnits.halfExtent * 0.65), 0, 0)
-                node.eulerAngles = SCNVector3(0, Float(-side.x * .pi / 2), 0)
-            } else {
-                node.position = SCNVector3(0, 0, Float(-RoomUnits.halfExtent))
-            }
+            node.position = SCNVector3(Float(panel.x), 0, Float(panel.z))
+            node.eulerAngles = SCNVector3(0, Float(panel.yaw), 0)
+            node.addChildNode(RoomShell.seam(for: panel, panelCentreY: 0, colour: seamColour))
             wallNodes.append(node)
             wallBases.append(node.position)
+            wallCentres.append(SCNVector3(Float(panel.centreX), 0, Float(panel.centreZ)))
+            wallShrinks.append(panel.shrinksAsItCloses)
             building.addChildNode(node)
         }
+    }
+
+    /// Her light at her mark: a hot core and a wide halo, both light, both in
+    /// her own layer, posed with the stay (Wave 1).
+    private func buildHerLight() {
+        let hue = room.gem.bright.rgb
+        let colour = SIMD3<Double>(hue.r, hue.g, hue.b)
+        let halo = RoomAir.glow("her light · halo", colour: colour, size: 1, alpha: 0, hot: 0.4)
+        let core = RoomAir.glow("her light · core", colour: colour, size: 1, alpha: 0, hot: 2.2)
+        herLayer.addChildNode(halo)
+        herLayer.addChildNode(core)
+        herHalo = halo
+        herCore = core
     }
 
     /// The āvaraṇa's weather: motes standing in the air, moving on the world's
@@ -892,7 +1009,9 @@ final class RoomScene {
         material.blendMode = .add
         material.writesToDepthBuffer = false
         // The more veiled the world, the more of it is in the air.
-        material.transparency = CGFloat(0.20 + 0.34 * room.world.character.veil)
+        // Wave 1: lifted from 0.20 + 0.34·veil — the dust is light in the air,
+        // and the restrained build had left most of it unseen.
+        material.transparency = CGFloat(0.34 + 0.40 * room.world.character.veil)
         material.name = "motes"
         // A Swift string SceneKit compiles at run time — no build-target file
         // and nothing in the shipping binary. The ruling names this as the
@@ -921,7 +1040,7 @@ final class RoomScene {
         geometry.materials = [material]
         let node = SCNNode(geometry: geometry)
         node.name = "motes"
-        node.castsShadow = false
+        Self.markAsLight(node)
         weather.addChildNode(node)
     }
 
