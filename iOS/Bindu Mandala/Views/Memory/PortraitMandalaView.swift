@@ -181,7 +181,7 @@ struct PortraitMandalaView: View {
     /// Per-position stats for the Ring 2 lotus, keyed by local position 1–16.
     private var ring2Stats: [Int: PortraitStats] {
         var grouped: [Int: [Date]] = [:]
-        for entry in allEntries where entry.ringNumber == 2 {
+        for entry in allEntries where entry.ringNumber == 2 && entry.gesture == .felt {
             let localPos = entry.khadgamalaPosition - 28
             guard (1...16).contains(localPos) else { continue }
             grouped[localPos, default: []].append(entry.timestamp)
@@ -197,7 +197,8 @@ struct PortraitMandalaView: View {
             .mapValues(\.count)
         var statsByKp: [Int: PortraitStats] = [:]
         var grouped: [Int: [Date]] = [:]
-        for entry in allEntries {
+        // Silences are their own gesture and never draw a point as felt (Wave 0 · B3).
+        for entry in allEntries where entry.gesture == .felt {
             grouped[entry.khadgamalaPosition, default: []].append(entry.timestamp)
         }
         for (kp, dates) in grouped {

@@ -13,6 +13,11 @@ struct LivingMandalaView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
     @Query private var descentStates: [DescentState]
+    /// His own felt moments, on this phone. A seat lights the moment he feels
+    /// her — offline, and before Airtable answers — not when the server's
+    /// mirror catches up (Wave 0 · B2). Silences are their own gesture and do
+    /// not light a seat as felt (B3).
+    @Query private var moments: [RecognitionEntry]
 
     // Camera + viewport
     @State private var camera = MandalaCamera(scale: 0.5, tx: 0, ty: 0)
@@ -81,7 +86,7 @@ struct LivingMandalaView: View {
                         dayAccent: dayAtmo.accent, todayKp: todayKp,
                         focusKp: focus.map(kp), familyKp: familyKp,
                         focusAccentBright: (focus.map { atmos[kp($0)]?.accentBright } ?? nil) ?? Color.gold,
-                        felt: feltKp, flash: flash, constellation: constellation,
+                        felt: feltKp.union(locallyFelt), flash: flash, constellation: constellation,
                         constellationStart: constellationStart,
                         tier: camera.tier, reduceMotion: reduceMotion,
                         lightOn: lightOn,
@@ -110,6 +115,7 @@ struct LivingMandalaView: View {
             .onAppear { configure(size: geo.size) }
             .onChange(of: geo.size) { _, s in configure(size: s) }
             .onChange(of: shaktis.count) { _, _ in rebuild() }
+            .onChange(of: shaktis.map(\.hasBeenFelt)) { _, _ in rebuild() }
             .onChange(of: camera) { _, _ in
                 lastMoveAt = Date().timeIntervalSinceReferenceDate
                 // Written only when it changes: a drag is sixty camera changes a
@@ -456,6 +462,13 @@ struct LivingMandalaView: View {
             ready = true
             applyLaunchArgs()
         }
+    }
+
+    /// Positions he has felt on this phone (felt gesture only).
+    private var locallyFelt: Set<Int> {
+        Set(moments.lazy
+            .filter { $0.gesture == .felt && $0.khadgamalaPosition > 0 }
+            .map(\.khadgamalaPosition))
     }
 
     private func rebuild() {

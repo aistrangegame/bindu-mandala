@@ -28,7 +28,7 @@ struct TheHundredTwoView: View {
         NavigationStack {
             content
                 .navigationDestination(item: $detailFor) { shakti in
-                    ShaktiDetailView(shakti: shakti, backLabel: "the field")
+                    ShaktiDetailView(shakti: shakti, backLabel: "the field", source: .field)
                 }
                 .navigationDestination(item: $thresholdFor) { avarana in
                     AvaranaThresholdView(avarana: avarana)
@@ -220,7 +220,8 @@ struct TheHundredTwoView: View {
     /// server count, so a just-felt Śakti lights immediately and history persists.
     private var countByKp: [Int: Int] {
         var m: [Int: Int] = [:]
-        for r in recognitions {
+        // A silence is its own gesture: it never lights a seat as felt (Wave 0 · B3).
+        for r in recognitions where r.gesture == .felt {
             m[r.khadgamalaPosition, default: 0] += 1
         }
         for s in shaktis {

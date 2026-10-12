@@ -23,8 +23,8 @@ struct DailyRiteView: View {
 
     var today: Shakti? {
         guard !shaktis.isEmpty else { return nil }
-        if let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("ENERGY_POS=") }),
-           let pos = Int(arg.dropFirst("ENERGY_POS=".count)),
+        // One rule for the pin, app-wide: the last `ENERGY_POS` wins (Wave 0 · B8).
+        if let pos = AppRuntime.pinnedEnergyPosition,
            let s = shaktis.first(where: { $0.khadgamalaPosition == pos }) {
             return s
         }
@@ -60,7 +60,7 @@ struct DailyRiteView: View {
             if let s = today { RecognitionMomentView(shakti: s, isPresented: $showRecognition) }
         }
         .fullScreenCover(item: $detailFor) { shakti in
-            NavigationStack { ShaktiDetailView(shakti: shakti, backLabel: "today") }
+            NavigationStack { ShaktiDetailView(shakti: shakti, backLabel: "today", source: .today) }
         }
         .sheet(item: $nityaDetailFor) { slot in
             NityaDetailView(slot: slot)

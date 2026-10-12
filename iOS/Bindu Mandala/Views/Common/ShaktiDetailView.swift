@@ -7,6 +7,10 @@ struct ShaktiDetailView: View {
     /// Where she was opened from — names the back button ("today", "the field",
     /// "mandala"), matching the prototype's `backLabel`.
     var backLabel: String = "mandala"
+    /// Where he came to her from. A recognition made here is written to the
+    /// ledger with this origin, not always "Mandala" (Wave 0 · B6), and only a
+    /// recognition from the Rite settles into the Portrait (B4).
+    var source: AirtableService.RecognitionSource = .mandala
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -92,7 +96,7 @@ struct ShaktiDetailView: View {
         .fullScreenCover(isPresented: $showRecognition) {
             RecognitionMomentView(shakti: shakti,
                                   isPresented: $showRecognition,
-                                  source: .mandala)
+                                  source: source)
         }
         .fullScreenCover(isPresented: $showHerRoom) {
             // `entering(_:remembering:)` builds the whole threshold from her own
@@ -999,14 +1003,29 @@ private struct HerMomentsList: View {
     @State private var airtableLoaded = false
 
     var body: some View {
+        // Her Moments are felt moments. A silence is its own gesture and is not
+        // written here as "she was felt" (Wave 0 · B3); it stays in the record.
         let localEntries = RecognitionLogStore(context: context)
             .entries(forKhadgamala: khadgamalaPosition, limit: 200)
+            .filter { $0.gesture == .felt }
+        // A felt moment the ledger has not answered for yet (offline, or the
+        // queue still carrying it) is shown above the ledger's rows, so a
+        // just-felt moment never vanishes when Airtable answers (Wave 0 · B2).
+        let newestLedger = airtableMoments.compactMap(\.feltAt).max() ?? .distantPast
+        let unsynced = localEntries.filter { $0.timestamp > newestLedger.addingTimeInterval(5) }
 
         VStack(alignment: .leading, spacing: 0) {
             // Once Airtable has answered with anything, it becomes the authoritative
             // record. Local entries are shown immediately so the section is never
             // empty during the fetch. Offline / pre-sync / fetch-failure: keep local.
             if airtableLoaded && !airtableMoments.isEmpty {
+                ForEach(unsynced) { entry in
+                    momentRow(
+                        timestamp: formatTimestamp(entry.timestamp),
+                        note: entry.note,
+                        moonPhase: nil
+                    )
+                }
                 ForEach(airtableMoments) { moment in
                     momentRow(
                         timestamp: moment.feltAt.map(formatTimestamp) ?? "she was felt here",

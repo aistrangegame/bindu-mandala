@@ -159,7 +159,7 @@ final class AirtableService {
             // device has none — the path home after a reinstall/recovery.
             await restoreRecognitionsIfLocalEmpty(context: context)
             await restoreDescentIfLocalEmpty(context: context)
-            logVerification(shaktis: sk.count, avaranas: av.count, nityas: nt.count, context: context)
+            log.notice("Sync: \(sk.count) Śaktis · \(av.count) Āvaraṇas · \(nt.count) Nityās")
         } catch {
             log.error("Sync failed: \(Self.describe(error), privacy: .public)")
         }
@@ -292,9 +292,22 @@ final class AirtableService {
         let geometricShape: String?
         let personalConnection: String?
         let yogini: String?
+        // Wave 0 · D — the ring's own material, read live (Design's values in
+        // `HomeWorlds` stay only as the offline fallback).
+        let gem: String?
+        let dhatu: String?
+        let timeCycle: String?
+        let avaranaBeeja: String?
+        let bodyRegion: String?
 
-        // CodingKeys are Airtable field IDs (verified May 31 2026 via Airtable Omni).
+        // CodingKeys are Airtable field IDs (verified May 31 2026 via Airtable Omni;
+        // the five ring fields verified 12 Oct 2026).
         enum CodingKeys: String, CodingKey {
+            case gem                = "fldWlbdPNpmqPvfMj"
+            case dhatu              = "fldVjcApdGFVrIfq1"
+            case timeCycle          = "fldZLBoLGegod2xfy"
+            case avaranaBeeja       = "fldixnYtJ30lZEDJM"
+            case bodyRegion         = "fld6Ucmi8YqeAbOXU"
             case sanskritName       = "fldJOatnYrw9l6tff"
             case subtitle           = "fldXTUBJTDlkKEzEV"
             case presidingForm      = "fldgHVP1LqoVJsYu8"
@@ -564,6 +577,13 @@ final class AirtableService {
             avarana.personalConnection = row.fields.personalConnection
             avarana.yogini             = row.fields.yogini
             avarana.lastSyncedAt = .now
+            // Held beside the store, not in it: these five are read-only
+            // catalog strings, and adding them to the `Avarana` model would
+            // change a shipped schema version (BinduSchema's first law).
+            RingFactsCache.store(ring: ring, facts: RingFactsCache.Facts(
+                gem: row.fields.gem, dhatu: row.fields.dhatu,
+                timeCycle: row.fields.timeCycle, beeja: row.fields.avaranaBeeja,
+                bodyRegion: row.fields.bodyRegion))
         }
         try context.save()
     }
@@ -605,30 +625,6 @@ final class AirtableService {
         return ShaktiStatus(rawValue: r)
     }
 
-    // MARK: - Verification (Phase 1 — downgrade after Phase 2 verification passes)
-
-    private func logVerification(shaktis: Int, avaranas: Int, nityas: Int, context: ModelContext) {
-        log.notice("[Phase 1] Shaktis fetched: \(shaktis)")
-        let allS = (try? context.fetch(FetchDescriptor<Shakti>())) ?? []
-        for s in allS.sorted(by: { ($0.khadgamalaPosition ?? 0) < ($1.khadgamalaPosition ?? 0) }) {
-            let portrait = String((s.codexPortrait ?? "").prefix(80))
-            // Names/devanāgarī are catalog data; the codex portrait is reflective
-            // free-text and stays redacted so it never lands in the unified log.
-            log.notice("  \(s.khadgamalaPosition ?? 0) · ring \(s.ringNumber ?? 0) · \(s.name, privacy: .public) · \(s.devanagari ?? "—", privacy: .public) · \(portrait, privacy: .private)")
-        }
-        log.notice("[Phase 1] Avaranas fetched: \(avaranas)")
-        let allA = (try? context.fetch(FetchDescriptor<Avarana>())) ?? []
-        for a in allA.sorted(by: { $0.ringNumber < $1.ringNumber }) {
-            let conn = String((a.personalConnection ?? "").prefix(80))
-            // Personal connection is the practitioner's own reflection — redacted.
-            log.notice("  ring \(a.ringNumber) · \(a.sanskritName, privacy: .public) · \(conn, privacy: .private)")
-        }
-        log.notice("[Phase 1] Nityas fetched: \(nityas)")
-        let allN = (try? context.fetch(FetchDescriptor<NityaDevi>())) ?? []
-        for n in allN.sorted(by: { $0.tithiPosition < $1.tithiPosition }) {
-            log.notice("  \(n.tithiPosition) · \(n.sanskritName, privacy: .public) · \(n.quality ?? "—", privacy: .public)")
-        }
-    }
 }
 
 // MARK: - Her Moments · Recognition reads (App Activity)
@@ -718,13 +714,15 @@ extension AirtableService {
     enum RecognitionSource: String {
         case today    = "Today"
         case mandala  = "Mandala"
+        case field    = "Field"      // the 102 in their rings (TheHundredTwoView)
+        case room     = "Room"       // inside one of the 102 Homes
         case silence  = "Silence"
         case well     = "Well"
     }
 
     /// One unfulfilled recognition held in UserDefaults until the network returns.
-    /// `failCount` is incremented per failed flush; items are dropped after
-    /// `PendingQueuePolicy.maxFailures`. With no token nothing is bumped.
+    /// `failCount` is incremented per failed flush; the item is never dropped
+    /// (`PendingQueuePolicy.maxFailures` is nil). With no token nothing is bumped.
     /// The stored shape is build 36's, member for member — a queue written
     /// before the ledger rewire still decodes and drains into App Activity.
     private struct PendingRecognition: Codable, PendingQueueItem, RecognitionMoment {
@@ -775,9 +773,9 @@ extension AirtableService {
 
     /// Drain the Recognition and Letter pending queues plus the descent-crossing
     /// and activity-ledger queues. Called at the start of every `sync()` and on
-    /// scene-phase `.active`. Items that fail `PendingQueuePolicy.maxFailures`
-    /// times in a row are dropped — local SwiftData is already canonical, so the
-    /// only loss is the Airtable mirror. Without a token every queue holds.
+    /// scene-phase `.active`. A failed item stays and is retried on the next
+    /// sync, forever — a practice event never leaves the record (Wave 0 · B5).
+    /// Without a token every queue holds.
     /// Re-entrant calls (launch fires this twice at once) skip.
     func flushPending(context: ModelContext) async {
         if syncIsDisabled() { return }
@@ -1606,7 +1604,7 @@ extension AirtableService {
     /// Write one note to the ledger, and stamp it only if the row is confirmed.
     ///
     /// **This deliberately does not ride the UserDefaults activity queue.** That
-    /// queue drops an item after `PendingQueuePolicy.maxFailures` flushes, and
+    /// queue dropped an item after three failed flushes (until Wave 0), and
     /// its justification is that *"local SwiftData is already canonical, so the
     /// only loss is the Airtable mirror"* — true for a recognition, whose Shakti
     /// row still carries Last Felt, and false for a note, whose ledger row is
@@ -1947,11 +1945,16 @@ enum PendingQueueStorage {
 /// - No token: the queue is **held untouched** — nothing bumps, nothing drops.
 ///   Items wait for a token.
 /// - Success: the item leaves the queue.
-/// - Failure: `failCount` bumps; at `maxFailures` the item is dropped (local
-///   SwiftData is already canonical, so the only loss is the Airtable mirror).
+/// - Failure: `failCount` bumps and the item **stays**. Wave 0 (Build Charter
+///   II §4.1): his practice data is never lost from the record, and the ledger
+///   is the record that leaves the phone — so a practice event is never
+///   dropped. It is retried on every sync (launch, return to foreground),
+///   which is its own natural backoff. `failCount` is kept for the log.
+///   A cap may still be passed explicitly for a non-practice queue.
 enum PendingQueuePolicy {
 
-    static let maxFailures = 3
+    /// `nil` — never retire. Practice events wait as long as they must.
+    static let maxFailures: Int? = nil
 
     enum Decision: Equatable {
         /// No token — leave the item exactly as it is.
@@ -1967,11 +1970,12 @@ enum PendingQueuePolicy {
     static func decide(hasToken: Bool,
                        succeeded: Bool,
                        failCount: Int,
-                       maxFailures: Int = maxFailures) -> Decision {
+                       maxFailures: Int? = maxFailures) -> Decision {
         guard hasToken else { return .hold }
         if succeeded { return .remove }
         let bumped = failCount + 1
-        return bumped >= maxFailures ? .drop(failCount: bumped) : .retain(failCount: bumped)
+        if let cap = maxFailures, bumped >= cap { return .drop(failCount: bumped) }
+        return .retain(failCount: bumped)
     }
 
     /// Apply `decide` across a whole queue. `succeeded[i]` is the flush result
@@ -1983,7 +1987,7 @@ enum PendingQueuePolicy {
         _ queue: [Item],
         hasToken: Bool,
         succeeded: [Bool],
-        maxFailures: Int = maxFailures
+        maxFailures: Int? = maxFailures
     ) -> (remaining: [Item], dropped: [Item]) {
         guard hasToken else { return (queue, []) }
         var remaining: [Item] = []

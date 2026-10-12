@@ -163,7 +163,7 @@ struct MarginNoteComposerView: View {
     @State private var saveTask: Task<Void, Never>?
     @FocusState private var focused: Bool
 
-    /// Seconds of quiet before an autosave. Two, not the letter's five — see the
+    /// Seconds of quiet before an autosave. Two, as the letter's now is (Wave 0 · B7) — see the
     /// type's own note.
     static let autosaveSeconds: Double = 2
 

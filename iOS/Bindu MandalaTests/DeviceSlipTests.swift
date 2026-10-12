@@ -128,30 +128,44 @@ final class DeviceSlipTests: XCTestCase {
 
     func testTheMotesAnswerAReduceMotionChangeAndNotOnlyAnAppearance() {
         guard let f = source("DustMotesView.swift") else { return XCTFail("DustMotesView is gone") }
-
-        XCTAssertTrue(Rx.matches(#"\.onChange\(of: reduceMotion\)"#, f.text),
-                      "a mote still reads reduce-motion only at appear, so a loop already running "
-                      + "never stops when the walker turns the setting on mid-session")
-
-        // Every repeat lives inside the one gated function. A second
-        // `repeatForever` anywhere else in this file is a loop that no change of
-        // the setting can reach. Counted on the *masked* source, so the sentence
-        // above this test's own fix does not count as a second loop.
         let code = String(f.lexed.masked)
-        guard let follow = Rx.first(#"private func follow\(\) \{[\s\S]*?\n        \}"#, code) else {
-            return XCTFail("`follow()` is gone — the gate has no body")
-        }
-        let repeatsInFile = Rx.all(#"repeatForever"#, code).count
-        let repeatsInGate = Rx.all(#"repeatForever"#, follow).count
-        XCTAssertEqual(repeatsInFile, repeatsInGate,
-                       "\(repeatsInFile - repeatsInGate) repeating animation(s) in DustMotesView "
-                       + "start outside the reduce-motion gate")
 
-        XCTAssertTrue(follow.contains("guard !reduceMotion"),
-                      "`follow()` starts the loop without asking the setting first")
-        XCTAssertTrue(follow.contains("disablesAnimations"),
-                      "turning the setting on has to *replace* the running repeat — an assignment "
-                      + "inside an animated transaction would simply animate to the new value")
+        // Wave 0: the motes run on one clock. The clock is paused by the live
+        // setting, so a change mid-session stills them on the next frame.
+        XCTAssertTrue(Rx.matches(#"TimelineView\(\.animation\([^)]*paused:\s*reduceMotion"#, code),
+                      "the motes' clock is not paused by reduce motion")
+        XCTAssertEqual(Rx.all(#"repeatForever"#, code).count, 0,
+                       "a repeating animation is back in DustMotesView — a loop no clock can still, "
+                       + "and an envelope that only ever sees its two end values")
+    }
+
+    // MARK: Wave 0 · B1 — the motes are seen
+
+    /// The rise/fall envelope is 0 at both ends of the loop. Handed to an
+    /// animation, only the end values were ever drawn, and the motes were
+    /// invisible. Driven by time, a mote at any moment is somewhere inside its
+    /// path, and the field is full on the first frame.
+    func testEveryMoteIsMidFlightAndVisibleOnTheFirstFrame() {
+        let view = DustMotesView(count: 9, element: .fire)
+        let mirror = Mirror(reflecting: view)
+        guard let motes = mirror.children.first(where: { $0.label == "motes" })?.value
+                as? [DustMotesView.Mote] else {
+            return XCTFail("DustMotesView no longer carries its motes")
+        }
+        let t: TimeInterval = 0
+        var inside = 0
+        for m in motes {
+            let p = DustMotesView.phase(of: m, motion: .rise, at: t)
+            XCTAssert((0...1).contains(p))
+            if p > 0.14 && p < 0.86 { inside += 1 }
+        }
+        XCTAssertGreaterThan(inside, motes.count / 2,
+                             "most motes should open in the visible middle of their path")
+        // Breathing motions come back: a triangle wave, never a jump.
+        let m = motes[0]
+        let a = DustMotesView.phase(of: m, motion: .twinkle, at: m.duration * 0.25 - m.delay)
+        let b = DustMotesView.phase(of: m, motion: .twinkle, at: m.duration * 0.75 - m.delay)
+        XCTAssertEqual(a, b, accuracy: 1e-6)
     }
 
     /// FIDELITY rule 3 over the whole of `Views/`, not just the motes: every

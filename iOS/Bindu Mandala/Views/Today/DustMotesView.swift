@@ -26,7 +26,7 @@ struct DustMotesView: View {
         }
     }
 
-    private struct Mote: Identifiable {
+    struct Mote: Identifiable {
         let id: Int
         let xFrac: Double
         let yFrac: Double
@@ -61,17 +61,41 @@ struct DustMotesView: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                ForEach(motes) { m in
-                    MoteView(mote: m, motion: motion,
-                             color: m.isGold ? .gold : accent,
-                             width: geo.size.width, height: geo.size.height,
-                             reduceMotion: reduceMotion)
+        // One clock for every mote. Each mote is a pure function of time, so it
+        // is already mid-flight on the first frame (no mote waits on a delay),
+        // and the rise/fall envelope is drawn on every frame rather than handed
+        // to an animation that only ever saw its two end values (both 0).
+        // Reduce motion pauses the clock; it is read live, so turning it on
+        // mid-session stills every mote on the next frame.
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            GeometryReader { geo in
+                ZStack {
+                    ForEach(motes) { m in
+                        let p = reduceMotion ? 0.5 : Self.phase(of: m, motion: motion, at: t)
+                        MoteView(mote: m, motion: motion,
+                                 color: m.isGold ? .gold : accent,
+                                 width: geo.size.width, height: geo.size.height,
+                                 phase: p)
+                    }
                 }
             }
         }
         .allowsHitTesting(false)
+    }
+
+    /// Where a mote is in its loop at time `t`, 0…1.
+    /// `delay` is used as a phase *offset* — the mote started `delay` seconds
+    /// ago — so the field opens full, each mote somewhere along its path.
+    /// Rise and fall run one way and wrap; drift, still and twinkle breathe
+    /// (a triangle wave, out and back).
+    static func phase(of m: Mote, motion: Motion, at t: TimeInterval) -> Double {
+        let raw = ((t + m.delay) / m.duration).truncatingRemainder(dividingBy: 1)
+        let u = raw < 0 ? raw + 1 : raw
+        switch motion {
+        case .rise, .fall:            return u
+        case .drift, .still, .twinkle: return u < 0.5 ? u * 2 : (1 - u) * 2
+        }
     }
 
     private struct MoteView: View {
@@ -80,8 +104,7 @@ struct DustMotesView: View {
         let color: Color
         let width: CGFloat
         let height: CGFloat
-        let reduceMotion: Bool
-        @State private var phase: Double = 0
+        let phase: Double
 
         var body: some View {
             let travel = offset(for: phase)
@@ -93,36 +116,6 @@ struct DustMotesView: View {
                 .shadow(color: color.opacity(0.5), radius: mote.size * 2)
                 .position(x: mote.xFrac * width + travel.x,
                           y: mote.yFrac * height + travel.y)
-                .onAppear { follow() }
-                .onChange(of: reduceMotion) { _, _ in follow() }
-        }
-
-        /// The one place a mote's loop is started or stopped.
-        ///
-        /// Reduce motion switched on *mid-session* has to replace an animation
-        /// that is already running: a plain assignment would be picked up by the
-        /// repeat still in flight and simply animate to the new value, and the
-        /// mote would go on moving until the screen was left. Setting the still
-        /// phase inside a transaction with animations disabled removes the
-        /// repeat outright. Switched back off, the loop starts again from the
-        /// same place it always did.
-        private func follow() {
-            guard !reduceMotion else {
-                var stop = Transaction()
-                stop.disablesAnimations = true
-                withTransaction(stop) { phase = 0.5 }
-                return
-            }
-            var restart = Transaction()
-            restart.disablesAnimations = true
-            withTransaction(restart) { phase = 0 }
-            // rise/fall loop one direction; drift/still/twinkle breathe.
-            let autoreverse = (motion == .drift || motion == .still || motion == .twinkle)
-            withAnimation(.linear(duration: mote.duration)
-                .repeatForever(autoreverses: autoreverse)
-                .delay(mote.delay)) {
-                phase = 1
-            }
         }
 
         /// Local travel from the mote's anchor, by element.

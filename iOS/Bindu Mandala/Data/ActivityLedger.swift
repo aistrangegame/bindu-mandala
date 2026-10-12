@@ -190,6 +190,8 @@ enum ActivityLedger {
     enum GestureSource {
         static let today   = "Today"
         static let mandala = "Mandala"
+        static let field   = "Field"     // born by typecast on first write
+        static let room    = "Room"      // born by typecast on first write
         static let well    = "Well"
         static let silence = "Silence"
     }
@@ -761,7 +763,7 @@ protocol RecognitionMoment {
 
 /// One unfulfilled App Activity write held in UserDefaults until the network
 /// returns (`pendingActivities`). `failCount` is bumped per failed flush;
-/// items retire at `PendingQueuePolicy.maxFailures`. With no token nothing is
+/// items are never retired (`PendingQueuePolicy.maxFailures` is nil). With no token nothing is
 /// bumped.
 ///
 /// The members after `failCount` arrived with the ledger rewire and are all

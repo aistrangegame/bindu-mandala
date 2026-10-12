@@ -223,29 +223,47 @@ enum HomeWorlds {
         var presidingForm: String?
         var yogini: String?
         var mentalState: String?
+        // Wave 0 · D — the ring's own material, no longer only typed in Swift.
+        var gem: String?
+        var dhatu: String?
+        var clock: String?
+        var region: String?
+        var bija: String?
 
         init(sanskritName: String? = nil, presidingForm: String? = nil,
-             yogini: String? = nil, mentalState: String? = nil) {
+             yogini: String? = nil, mentalState: String? = nil,
+             gem: String? = nil, dhatu: String? = nil, clock: String? = nil,
+             region: String? = nil, bija: String? = nil) {
             self.sanskritName = sanskritName
             self.presidingForm = presidingForm
             self.yogini = yogini
             self.mentalState = mentalState
+            self.gem = gem
+            self.dhatu = dhatu
+            self.clock = clock
+            self.region = region
+            self.bija = bija
         }
     }
 
-    /// The live āvaraṇa row, reduced to the four strings this layer reads.
+    /// The live āvaraṇa row, reduced to the strings this layer reads: four from
+    /// the synced model, five from the ring-facts cache beside it.
     static func liveFacts(from avarana: Avarana) -> LiveFacts {
-        LiveFacts(sanskritName: avarana.sanskritName,
-                  presidingForm: avarana.presidingForm,
-                  yogini: avarana.yogini,
-                  mentalState: avarana.mentalState)
+        let ring = RingFactsCache.facts(ring: avarana.ringNumber)
+        return LiveFacts(sanskritName: avarana.sanskritName,
+                         presidingForm: avarana.presidingForm,
+                         yogini: avarana.yogini,
+                         mentalState: avarana.mentalState,
+                         gem: ring?.gem, dhatu: ring?.dhatu, clock: ring?.timeCycle,
+                         region: ring?.bodyRegion, bija: ring?.beeja)
     }
 
     /// The world of ring 1–9 with the live base laid over the authored table.
     ///
     /// Law 1: Airtable is the source of truth for all names and content. Where
     /// Design's JavaScript and the synced row disagree on the āvaraṇa's name,
-    /// its presiding Form, its Yoginī class or its mental state, the row wins.
+    /// its presiding Form, its Yoginī class, its mental state, its gem, dhātu,
+    /// time cycle, body region or bīja, the row wins.
     /// Where the row is silent, Design's value stands rather than a blank.
     static func world(ring: Int, live: LiveFacts?) -> HomeWorld? {
         guard let base = world(ring: ring) else { return nil }
@@ -260,12 +278,15 @@ enum HomeWorlds {
             state: preferring(live.mentalState, over: base.character.state),
             tempo: base.character.tempo,
             verb: base.character.verb,
-            bija: base.character.bija
+            bija: preferring(live.bija, over: base.character.bija)
         )
         return HomeWorld(ring: base.ring,
                          name: preferring(live.sanskritName, over: base.name),
-                         gem: base.gem, dhatu: base.dhatu, clock: base.clock,
-                         region: base.region, weather: base.weather,
+                         gem: preferring(live.gem, over: base.gem),
+                         dhatu: preferring(live.dhatu, over: base.dhatu),
+                         clock: preferring(live.clock, over: base.clock),
+                         region: preferring(live.region, over: base.region),
+                         weather: base.weather,
                          fog: base.fog, fogDensity: base.fogDensity,
                          character: character)
     }

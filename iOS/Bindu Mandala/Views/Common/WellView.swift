@@ -347,13 +347,16 @@ private struct WellRing: View {
 }
 
 /// Full-screen editor for one letter. Surface background, cream Cormorant.
-/// Auto-saves 5s after the last keystroke and on dismiss — but only when the
+/// Auto-saves 2s after the last keystroke, on dismiss, and whenever the app
+/// leaves `.active` (Wave 0 · B7: a swipe home never calls `onDisappear`, and a
+/// kill in the background took everything typed since the last save) — but only when the
 /// text differs from what was last saved (`LetterDraft.isDirty`). Merely
 /// opening a letter is not an edit and writes nothing, locally or to Airtable.
 struct LetterEditorView: View {
     @Bindable var shakti: Shakti
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     /// Saved baseline + live text; dirty iff they differ — see `LetterDraft`.
     @State private var draft = LetterDraft()
@@ -414,6 +417,11 @@ struct LetterEditorView: View {
         .toolbar(.hidden, for: .navigationBar)
         .enableSwipeBack()
         .onAppear(perform: load)
+        .onChange(of: scenePhase) { _, phase in
+            // `.inactive` arrives before `.background` and before the snapshot;
+            // `onDisappear` never arrives at all for a swipe to the home screen.
+            if phase != .active { saveIfNeeded() }
+        }
         .onDisappear {
             saveTask?.cancel()
             saveIfNeeded()
@@ -467,7 +475,7 @@ struct LetterEditorView: View {
     private func scheduleAutoSave() {
         saveTask?.cancel()
         saveTask = Task {
-            try? await Task.sleep(for: .seconds(5))
+            try? await Task.sleep(for: .seconds(2))
             if !Task.isCancelled {
                 await MainActor.run { saveIfNeeded() }
             }

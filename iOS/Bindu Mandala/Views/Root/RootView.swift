@@ -92,9 +92,12 @@ struct RootView: View {
             lastDestinationDay = DailyEnergyService.practiceDayIndex()
         }
         .onReceive(NotificationCenter.default.publisher(
-            for: RecognitionMomentView.didSettleNotification)) { _ in
-            // She has been felt. Settle into the Portrait — the practitioner
-            // sees the newly-lit point in the field of their attention.
+            for: RecognitionMomentView.didSettleNotification)) { note in
+            // She has been felt. From the Rite, settle into the Portrait — he
+            // sees the newly-lit point in the field of his attention. From
+            // anywhere else he stays where he was (Wave 0 · B4).
+            let from = (note.object as? String) ?? AirtableService.RecognitionSource.today.rawValue
+            guard from == AirtableService.RecognitionSource.today.rawValue else { return }
             withAnimation(.easeInOut(duration: 0.9)) {
                 destination = .memory
             }

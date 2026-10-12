@@ -343,7 +343,11 @@ struct RecognitionMomentView: View {
         isPresented = false
         // She settles into the Portrait — the practitioner sees the newly-lit
         // point in the field of their attention. RootView listens for this.
-        NotificationCenter.default.post(name: Self.didSettleNotification, object: nil)
+        // The notification carries where she was felt from: only a felt from
+        // the Rite settles into the Portrait. From the Mandala, the Field or
+        // a room he stays where he is (Wave 0 · B4); the Portrait still lights
+        // her point the next time it opens.
+        NotificationCenter.default.post(name: Self.didSettleNotification, object: src.rawValue)
     }
 
     private func timeString(_ d: Date) -> String {

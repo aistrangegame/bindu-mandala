@@ -2,7 +2,8 @@ import XCTest
 @testable import Bindu_Mandala
 
 /// The offline-queue policy every Airtable flush applies (§0.6 "make the pipe
-/// honest"): a failure bumps and retires the item at `maxFailures`; no token
+/// honest"): a failure bumps and the item stays — a practice event is never
+/// dropped (Wave 0 · B5, Charter II §4.1) — unless a cap is passed; no token
 /// holds the queue exactly as it is. Pure — no network, no UserDefaults.
 final class PendingQueuePolicyTests: XCTestCase {
 
@@ -26,14 +27,14 @@ final class PendingQueuePolicyTests: XCTestCase {
         XCTAssertEqual(PendingQueuePolicy.decide(hasToken: true, succeeded: true, failCount: 2), .remove)
     }
 
-    func testFailureBumpsUntilMaxThenDrops() {
-        XCTAssertEqual(PendingQueuePolicy.maxFailures, 3)
+    func testFailureBumpsAndNeverDropsByDefault() {
+        XCTAssertNil(PendingQueuePolicy.maxFailures, "a practice event is never retired")
         XCTAssertEqual(PendingQueuePolicy.decide(hasToken: true, succeeded: false, failCount: 0),
                        .retain(failCount: 1))
-        XCTAssertEqual(PendingQueuePolicy.decide(hasToken: true, succeeded: false, failCount: 1),
-                       .retain(failCount: 2))
         XCTAssertEqual(PendingQueuePolicy.decide(hasToken: true, succeeded: false, failCount: 2),
-                       .drop(failCount: 3))
+                       .retain(failCount: 3))
+        XCTAssertEqual(PendingQueuePolicy.decide(hasToken: true, succeeded: false, failCount: 999),
+                       .retain(failCount: 1000))
     }
 
     func testCustomMaxFailuresIsHonoured() {
@@ -58,10 +59,16 @@ final class PendingQueuePolicyTests: XCTestCase {
         XCTAssertTrue(r.dropped.isEmpty)
     }
 
-    func testUpdateRemovesBumpsAndDrops() {
-        let queue = [Item(id: "ok"), Item(id: "retry", failCount: 1), Item(id: "gone", failCount: 2)]
+    func testUpdateRemovesAndBumpsButNeverDropsByDefault() {
+        let queue = [Item(id: "ok"), Item(id: "retry", failCount: 1), Item(id: "old", failCount: 2)]
         let r = PendingQueuePolicy.update(queue, hasToken: true, succeeded: [true, false, false])
-        XCTAssertEqual(r.remaining, [Item(id: "retry", failCount: 2)])
+        XCTAssertEqual(r.remaining, [Item(id: "retry", failCount: 2), Item(id: "old", failCount: 3)])
+        XCTAssertTrue(r.dropped.isEmpty, "a practice event is never dropped from the queue")
+    }
+
+    func testUpdateWithAnExplicitCapStillDrops() {
+        let queue = [Item(id: "gone", failCount: 2)]
+        let r = PendingQueuePolicy.update(queue, hasToken: true, succeeded: [false], maxFailures: 3)
         XCTAssertEqual(r.dropped, [Item(id: "gone", failCount: 3)], "dropped items carry their final count")
     }
 

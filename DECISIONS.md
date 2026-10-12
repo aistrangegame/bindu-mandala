@@ -3745,3 +3745,62 @@ that law caught the first version of this fix.
   audit is taken: the two `touchesAShakti` claims sat inside `if let`, so a pinned
   file dropping out of the corpus would have passed its own claim silently. They
   are `XCTUnwrap` now.
+
+## 2026-10-12 · Wave 0 — Ground (Build Charter II)
+
+**Data, live in Airtable (done from the chat session, logged here so the repo knows):**
+- **Spellings.** Vaśinī (kp 87), Sarva-Stambhinī (58), Sarva-Jṛmbhiṇī (59),
+  Sarva-Mṛtyupraśamanī (73), and Sarva-Unmādinī for both kp 23 and kp 62
+  (the Devanāgarī is सर्वोन्मादिनी, sarva + unmādinī; "Onmādinī" was a wrong split).
+  The nine āvaraṇa names now carry full IAST like the 102 do
+  (Sarvāśāparipūraka, Sarvasaṅkṣobhaṇa, Sarvasaubhāgyadāyaka, Sarvārthasādhaka,
+  Sarvarakṣākara, Sarvānandamaya; the other three were already exact). Nothing
+  in Swift matches on any of these names: āvaraṇas are keyed by record id,
+  Śaktis by position.
+- **Avarana Beeja** given its diacritics (Aiṃ, Klīṃ, Sauḥ, Hrīṃ, Hsraiṃ, Hsklhrīṃ,
+  Hsauḥ, Aiṃ Klīṃ Sauḥ, Hrīṃ). Transliteration of what was there, nothing added.
+- **Function** written for the 16 Karṣiṇīs, in the voice of the other 86.
+- **The mirror agrees with the ledger.** Recognition Count and Last Felt were
+  recomputed from the 59 `Shakti Recognized` rows (45 Śaktis). Eight rows had
+  drifted: six Karṣiṇīs were under-counted by one, and Rasākarṣiṇī and
+  Bījākarṣiṇī showed as never felt although each has a recognition in the ledger.
+- **Khadgamala Position** description now says 1–102 and names it the identity key.
+
+**Code:**
+- **B1 · the motes are seen.** They ran on `repeatForever` with an opacity envelope
+  that is 0 at both ends of the loop, so an animation that only interpolates
+  between end values drew nothing; positive delays also left them standing for
+  up to 20 s. Each mote is now a pure function of one `TimelineView` clock, with
+  its delay used as a phase offset, so the field opens full. Reduce motion pauses
+  the clock (read live, so a mid-session change stills them on the next frame).
+  `DeviceSlipTests`' motes check was rewritten for the clock: it guarded an
+  implementation (`follow()`), and the principle it protected survives.
+- **B2 · a felt seat lights at once.** The Mandala unions the server's state with
+  his local felt moments, and re-derives when the server's felt states change
+  (it previously re-derived only when the row count changed). Her Moments shows a
+  local felt moment newer than the ledger's newest above the ledger's rows, so a
+  just-felt moment never disappears when Airtable answers.
+- **B3 · a silence is not a felt.** The Field, the Portrait and Her Moments now
+  read only the felt gesture. Silences stay in the record untouched.
+- **B4 · he stays where he is.** Only a recognition made from the Rite settles
+  into the Portrait; from the Mandala, the Field or a room the app stays put.
+- **B5 · nothing is dropped.** `PendingQueuePolicy.maxFailures` is now `nil`: a
+  failed practice event stays queued and is retried on every sync, forever. The
+  sync cadence (launch, foreground) is the backoff. A cap can still be passed
+  explicitly. The old justification ("only the mirror is lost") does not survive
+  Charter II §4.1: the ledger is the record that leaves the phone.
+- **B6 · the real origin.** `ShaktiDetailView` carries `source`; the Rite passes
+  `.today`, the Field `.field`, the Mandala defaults to `.mandala`. `Field` and
+  `Room` are new `Gesture Source` options, born by `typecast` on first write.
+- **B7 · letters survive a background kill.** The letter editor saves when the
+  scene leaves `.active`, as the margin does, and its debounce is 2 s, not 5 s.
+- **B8 · one pin rule.** The Rite reads `AppRuntime.pinnedEnergyPosition` (last
+  `ENERGY_POS` wins) like every other screen.
+- **B9 ·** the per-sync `logVerification` dump is gone; one summary line stays.
+- **D · the ring's own material, live.** Gem, Dhātu, Time Cycle, Avarana Beeja and
+  Body Region are decoded from the āvaraṇa rows and overlay Design's typed values
+  in `HomeWorlds.world(ring:live:)`. They are held in `RingFactsCache` (UserDefaults
+  JSON), **not** on the `Avarana` model: adding stored properties there would mutate
+  a shipped schema version, and `BinduSchema`'s first law is that it never drifts.
+  The climb's altitude still reads Design's body region (it parses the short
+  form), so nothing visual moves in Wave 0.
