@@ -750,7 +750,9 @@ struct RiteOfEnteringView: View {
         dwelling?.end()
         voice?.closes()
         handOverTheStay()
-        HomeAfterEffect.left(ring: room.ring)
+        // No after-effect here: Design's `walkTo` releases her room straight
+        // into the next crossing, and the lingering siddhi is the axis's, not
+        // the corridor's.
         onNeighbour?(next)
     }
 

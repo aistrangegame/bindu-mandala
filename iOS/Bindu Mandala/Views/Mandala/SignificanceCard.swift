@@ -118,7 +118,7 @@ struct SignificanceCard: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 4)
-                .accessibilityLabel(Text("Be with her — enter her room"))
+                .accessibilityLabel(Text("Enter her room"))
             }
         }
         .padding(EdgeInsets(top: 18, leading: 20, bottom: 16, trailing: 20))

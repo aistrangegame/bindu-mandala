@@ -337,7 +337,7 @@ struct DailyRiteView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Text("Be with her — enter her room"))
+            .accessibilityLabel(Text("Her seat — enter her room"))
         }
         .padding(.horizontal, 26)
         .padding(.bottom, 20)

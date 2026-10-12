@@ -108,6 +108,11 @@ struct WorldClimbView: View {
             WorldClimbLayer(climb: climb, box: box, seats: seats, met: met, todayKp: todayKp,
                             reduceMotion: reduceMotion, steps: steps)
                 .allowsHitTesting(false)
+            // The hand on the climb, on its own layer beneath the rail — the
+            // Mandala's own arrangement, so the rail's buttons answer first.
+            Color.clear
+                .contentShape(Rectangle())
+                .gesture(handOnTheClimb)
             words
             hint
             whisperLine
@@ -121,7 +126,6 @@ struct WorldClimbView: View {
         }
         .background(Color.ground)
         .contentShape(Rectangle())
-        .gesture(handOnTheClimb)
         // The same way out of the axis as out of a room, drawn by the same file
         // and held for the same length of crossing.
         .theWayOut(reduceMotion: reduceMotion,
@@ -450,7 +454,18 @@ struct WorldClimbView: View {
 
     // MARK: - The rail of nine
 
+    /// The rail follows where he stands; on the still path it changes only on
+    /// a step, which re-renders the surface anyway.
+    @ViewBuilder
     private var rail: some View {
+        if reduceMotion {
+            railBody
+        } else {
+            TimelineView(.periodic(from: .now, by: 0.25)) { _ in railBody }
+        }
+    }
+
+    private var railBody: some View {
         HStack {
             Spacer()
             VStack(alignment: .trailing, spacing: 0) {
@@ -627,6 +642,7 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
 
     /// The marks on the lights moved — a Śakti newly stood with, or the day
     /// turned. Only on change.
+    @MainActor
     func remark(met: Set<Int>, today: Int?) {
         guard met != marked.met || today != marked.today else { return }
         marked = (met, today)
@@ -709,6 +725,7 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
     // MARK: - Questions only the renderer can answer (main thread)
 
     /// The lights near where he stands, as screen points.
+    @MainActor
     private func projected() -> [(kp: Int, x: Double, y: Double, depth: Double)] {
         guard let view else { return [] }
         let f = climb.value()
@@ -721,11 +738,13 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
     }
 
     /// The light under a finger, if any.
+    @MainActor
     func pick(at point: CGPoint) -> Int? {
         ClimbLights.picked(from: projected(), atX: Double(point.x), y: Double(point.y))
     }
 
     /// The light nearest the middle of the glass, within reach of it.
+    @MainActor
     func nearest() -> Int? {
         guard let view else { return nil }
         let cx = Double(view.bounds.midX), cy = Double(view.bounds.midY)
@@ -735,6 +754,7 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
 
     /// Ring 6: carry the moving light to where the finger is, at the depth of
     /// her ring.
+    @MainActor
     func follow(at point: CGPoint) {
         guard let view else { return }
         let centre = ClimbLights.position(kp: KhadgamalaMap.ringStartOffset(6) + 1)
@@ -744,6 +764,7 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
     }
 
     /// Ring 6: the name the moving light has reached.
+    @MainActor
     func whispered(at point: CGPoint) -> Int? {
         let points = projected().map { (kp: $0.kp, x: $0.x, y: $0.y) }
         return ClimbLights.whispered(from: points, lightX: Double(point.x), lightY: Double(point.y))

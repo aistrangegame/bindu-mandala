@@ -440,7 +440,7 @@ private struct FieldRing: View {
             }
             .buttonStyle(.plain)
             .padding(.trailing, 10)
-            .accessibilityLabel(Text("Be with her — enter the room of \(spokenName(seat))"))
+            .accessibilityLabel(Text("Enter the room of \(spokenName(seat))"))
         }
         .background(
             isToday

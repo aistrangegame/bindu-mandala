@@ -109,7 +109,9 @@ struct TheCentre: View {
                 }
                 .allowsHitTesting(false)
             }
-            .ignoresSafeArea()
+            // Drawn in the glass's own coordinates — the same frame the
+            // camera's `binduScreen()` is measured in — so the bloom opens
+            // exactly from the point.
         }
     }
 
@@ -166,7 +168,10 @@ struct MaunaView: View {
 
     var body: some View {
         GeometryReader { geo in
-            TimelineView(.animation(paused: reduceMotion && !holding)) { tl in
+            // Under reduced motion nothing moves, but the captions still arrive
+            // on their seconds: the clock ticks once a second instead of a frame.
+            TimelineView(.animation(minimumInterval: reduceMotion && !holding ? 1 : nil,
+                                    paused: false)) { tl in
                 let now = tl.date
                 let state = fall.advance(now: now.timeIntervalSinceReferenceDate, holding: holding)
                 ZStack {
@@ -488,15 +493,21 @@ enum CentreYantra {
         guard nameOpacity > 0.01, !names.isEmpty, unit > 0.35 else { return }
         var words = context
         words.opacity = nameOpacity
-        for i in 0..<16 {
+        for (i, name) in ringOfSixteen(names).enumerated() {
             let a = CGFloat(i) * 2 * .pi / 16 - .pi / 2 + CGFloat(rotation.radians)
             let r = 121 * unit
             let at = CGPoint(x: centre.x + r * cos(a), y: centre.y + r * sin(a))
-            words.draw(Text(names[i % names.count])
+            words.draw(Text(name)
                         .font(AppFont.voice(11))
                         .foregroundColor(Color.cream),
                        at: at)
         }
+    }
+
+    /// Sixteen names round the lotus, her ring's own, repeated if fewer.
+    static func ringOfSixteen(_ names: [String]) -> [String] {
+        guard !names.isEmpty else { return [] }
+        return (0..<16).map { names[$0 % names.count] }
     }
 
     /// The point — Design's ember: a red glow with a cream heart.
