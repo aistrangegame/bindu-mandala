@@ -718,6 +718,7 @@ extension AirtableService {
         case room     = "Room"       // inside one of the 102 Homes
         case silence  = "Silence"
         case well     = "Well"
+        case play     = "Play"       // Wave 4 — a game handed off to her (born by typecast)
     }
 
     /// One unfulfilled recognition held in UserDefaults until the network returns.

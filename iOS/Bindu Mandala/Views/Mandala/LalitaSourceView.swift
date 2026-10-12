@@ -35,6 +35,8 @@ struct LalitaSourceView: View {
 
     @State private var appeared = false
     @State private var sounded = false
+    /// Wave 4 · Play — Lalitā's field, opened from her own point.
+    @State private var playing = false
     /// When she began to arrive — the clock the bloom and the presence read.
     @State private var arrivedAt: TimeInterval = Date().timeIntervalSinceReferenceDate
     /// Each seat's own hue, composed once on arrival, never per frame.
@@ -62,6 +64,9 @@ struct LalitaSourceView: View {
             for seat in seats { h[seat.id] = Atmosphere.derive(from: seat.shakti).accentBright }
             hues = h
             withAnimation(.easeOut(duration: 1.4)) { appeared = true }
+        }
+        .fullScreenCover(isPresented: $playing) {
+            PlayFieldView(onClose: { playing = false })
         }
     }
 
@@ -315,6 +320,24 @@ struct LalitaSourceView: View {
                 .buttonStyle(.plain)
                 .padding(.top, 22)
                 .padding(.horizontal, 24)
+            }
+            // Wave 4 · the arc's last movement — recognise, dwell, play. Every
+            // game in the yantra, gathered at her point.
+            emerge(delay: 3.22) {
+                Button {
+                    Haptics.soft()
+                    playing = true
+                } label: {
+                    Text("play in her field")
+                        .font(AppFont.voice(17))
+                        .tracking(1.2)
+                        .foregroundStyle(Color.gold)
+                        .frame(minWidth: 200, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 8)
+                .accessibilityLabel("Play in Lalitā's field")
             }
             emerge(delay: 3.3) {
                 Button {
