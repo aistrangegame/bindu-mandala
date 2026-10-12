@@ -180,9 +180,27 @@ final class PlaySound {
         try? session.setActive(true)
         build()
         if built, !engine.isRunning { try? engine.start() }
+        // Wave 6 · ask before sounding (C-1350): a game is a bed, and it
+        // stands in front of the room and the field while it is open.
+        Task { @MainActor in SoundConductor.shared.claim(.play) }
+    }
+
+    /// Wave 6 · how loud the game may stand, `0…1`, as ``SoundConductor``
+    /// decides — stepped back under a struck bīja, never stopped. Eased over
+    /// a quarter second so the step is never a click.
+    func setConductorGain(_ g: Double) {
+        let target = Float(min(max(g, 0), 1))
+        let from = engine.mainMixerNode.outputVolume
+        let steps = 8
+        for i in 1...steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.03 * Double(i)) { [weak self] in
+                self?.engine.mainMixerNode.outputVolume = from + (target - from) * Float(i) / Float(steps)
+            }
+        }
     }
 
     func end() {
+        Task { @MainActor in SoundConductor.shared.release(.play) }
         drone.stop()
         droneFrequency = 0
         for v in voices { v.stop() }

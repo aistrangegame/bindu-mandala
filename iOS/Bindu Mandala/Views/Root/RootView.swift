@@ -91,6 +91,8 @@ struct RootView: View {
         }
         // Wave 4 · Play: `PlayField.open(_:)` from anywhere in the shell.
         .playFieldPresenter()
+        // Wave 6 · B · rare, unannounced Leela drops.
+        .leelaDrops()
         .onChange(of: destination, initial: true) { _, new in
             lastDestinationRaw = new.rawValue
             lastDestinationDay = DailyEnergyService.practiceDayIndex()

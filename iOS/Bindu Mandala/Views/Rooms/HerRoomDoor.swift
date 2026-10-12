@@ -72,6 +72,8 @@ struct HerRoomPassage: View {
     let onLeft: () -> Void
 
     @State private var kp: Int
+    /// Wave 6 · B · the position whose rite has ended — he is inside.
+    @State private var enteredKp: Int?
 
     init(startingAt kp: Int, context: ModelContext, onLeft: @escaping () -> Void) {
         self.context = context
@@ -85,6 +87,12 @@ struct HerRoomPassage: View {
             room
                 .id(kp)
                 .transition(.opacity)
+            // Wave 6 · B · the game's own structure inside her room: the
+            // Trinity's face at its seat, and Knowledge — Will — Action.
+            if let shakti = Self.seat(kp, in: context) {
+                RoomGameLayer(shakti: shakti, entered: enteredKp == kp)
+                    .id(kp)
+            }
         }
         .animation(.easeInOut(duration: 0.7), value: kp)
     }
@@ -96,6 +104,7 @@ struct HerRoomPassage: View {
                                                   remembering: HomeMemoryStore(context: context),
                                                   forceReduceMotion: AppRuntime.forcesReduceMotion,
                                                   neighbours: Self.corridor(of: kp, in: context),
+                                                  onEntered: { enteredKp = kp },
                                                   onLeft: onLeft,
                                                   onNeighbour: { next in kp = next }) {
             rite

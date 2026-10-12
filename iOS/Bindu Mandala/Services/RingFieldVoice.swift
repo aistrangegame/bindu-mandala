@@ -82,11 +82,39 @@ final class RingFieldVoice {
 
     // MARK: - Sounding
 
+    // MARK: - Wave 6 · one sound at a time
+
+    /// How loud the field may stand, `0…1`, as ``SoundConductor`` decides: the
+    /// field is a bed, and steps back to nothing while a room or a game is in
+    /// front of it — alive, so it returns the instant they let go. Changing it
+    /// re-sounds the same voices at the new level; nothing starts or stops.
+    var conductorGain: Double = 1 {
+        didSet {
+            guard oldValue != conductorGain, !sounding else { return }
+            regain()
+        }
+    }
+    private var sounding = false
+
+    private func regain() {
+        guard allowed, !levels.isEmpty else { return }
+        sound(levels)
+    }
+
     /// Sound exactly these voices at these levels, and let every other go.
     func sound(_ want: [Int: Double]) {
         guard allowed else { levels = want; return }
+        sounding = true
+        defer { sounding = false }
         let audio = RingAudioService.shared
         let threshold = 0.02
+        // Ask before sounding (C-1350): the field is a bed.
+        if want.values.contains(where: { $0 > threshold }) {
+            SoundConductor.shared.claim(.field)
+        } else {
+            SoundConductor.shared.release(.field)
+        }
+        let g = conductorGain
         // The sustained voice is one slot shared by rings 3 and 6, which are
         // never neighbours — if both are asked for, the louder wins.
         let sustainedRing: Int? = {
@@ -106,28 +134,28 @@ final class RingFieldVoice {
             let was = (levels[ring] ?? 0) > threshold
             switch ring {
             case 0:
-                if on { audio.pointStart(); audio.pointGain(Float(0.035 * level)) }
+                if on { audio.pointStart(); audio.pointGain(Float(0.035 * level * g)) }
                 else if was { audio.pointStop() }
             case 1:
-                if on { audio.groundDroneStart(); audio.groundDroneGain(Float(0.05 * level)) }
+                if on { audio.groundDroneStart(); audio.groundDroneGain(Float(0.05 * level * g)) }
                 else if was { audio.groundDroneStop() }
             case 2:
-                if on { audio.homeBreathStart(); audio.homeBreathGain(Float(0.045 * level)) }
+                if on { audio.homeBreathStart(); audio.homeBreathGain(Float(0.045 * level * g)) }
                 else if was { audio.homeBreathStop() }
             case 3, 6:
                 break
             case 4, 5:
                 if on { startStepping(ring) } else { stopStepping(ring) }
             case 7:
-                if on { audio.sourcelessStart(); audio.sourcelessGain(Float(0.022 * level)) }
+                if on { audio.sourcelessStart(); audio.sourcelessGain(Float(0.022 * level * g)) }
                 else if was { audio.sourcelessStop() }
             case 8:
-                if on { audio.r8Start(); audio.r8Gain(Float(0.06 * level)) }
+                if on { audio.r8Start(); audio.r8Gain(Float(0.06 * level * g)) }
                 else if was { audio.r8Stop() }
             case 9:
                 if on {
                     audio.shepardStart()
-                    audio.shepardSet(intensity: 0.25 * level)
+                    audio.shepardSet(intensity: 0.25 * level * g)
                 } else if was, falling == nil {
                     audio.shepardStop()
                 }
@@ -144,10 +172,10 @@ final class RingFieldVoice {
             let freq = ring == 3 ? 116.5 : 207.65
             let base: Float = ring == 3 ? 0.03 : 0.02
             if sustainedRing != previousSustained {
-                audio.sustainedVoiceStart(freq: freq, vol: base * Float(level),
+                audio.sustainedVoiceStart(freq: freq, vol: base * Float(level * g),
                                           vibrato: ring == 3 ? 2 : 3)
             } else {
-                audio.sustainedVoiceGain(base * Float(level))
+                audio.sustainedVoiceGain(base * Float(level * g))
             }
         }
         levels = want
@@ -155,6 +183,7 @@ final class RingFieldVoice {
 
     /// Let every voice go.
     func silence() {
+        SoundConductor.shared.release(.field)
         for ring in Array(steppers.keys) { stopStepping(ring) }
         falling?.cancel()
         falling = nil
@@ -185,7 +214,7 @@ final class RingFieldVoice {
     func bloom(_ e: Double) {
         guard allowed else { return }
         let audio = RingAudioService.shared
-        let resting = 0.035 * (levels[0] ?? 0)
+        let resting = 0.035 * (levels[0] ?? 0) * conductorGain
         if e > 0.01 {
             audio.pointStart()
             audio.pointGain(Float(max(resting, 0.07 * min(1, e))))
@@ -257,7 +286,7 @@ final class RingFieldVoice {
         steppers[ring] = Task { @MainActor [weak self] in
             var k = 0
             while !Task.isCancelled {
-                let level = self?.levels[ring] ?? 0
+                let level = (self?.levels[ring] ?? 0) * (self?.conductorGain ?? 1)
                 if level > 0.02 {
                     RingAudioService.shared.playSteppedNote(
                         freq: root * RingFieldVoice.steps[k % RingFieldVoice.steps.count],

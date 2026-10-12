@@ -116,6 +116,10 @@ struct WorldClimbView: View {
             words
             hint
             whisperLine
+            // Wave 6 · B · Bindu at the foot of the climb, Lalitā at its
+            // summit — each one line, once a day; and the Om's floor follows
+            // the world he stands in.
+            ClimbGuide(ring: hereRing, roomOpen: roomKp != nil)
             rail
             // The world going out from under him as he withdraws from it. See
             // ``withdrawing``.

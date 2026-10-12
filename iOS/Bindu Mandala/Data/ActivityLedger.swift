@@ -133,6 +133,18 @@ enum ActivityLedger {
         static let garlandRecited   = "Garland Recited"
         /// The day offered at evening — Pūjā.
         static let dayOffered       = "Day Offered"
+        // Wave 6 · B · the game's own structure. Both born on first write by
+        // `typecast: true`.
+
+        /// A Leela drop came and was answered — carried into the day, or held
+        /// in silence. Either is the same act; the row says which and grades
+        /// nothing. Rare by construction (``LeelaDrops``).
+        static let leelaDrop        = "Leela Drop"
+        /// Knowledge, Will and Action closed in her room — the activation
+        /// cycle (master brief §4). *"Light is what enters when these three
+        /// close."* Linked to her row; how long it took is the archive's, never
+        /// his.
+        static let lightEntered     = "Light Entered"
     }
 
     // MARK: - The two once-ever milestones
@@ -517,6 +529,47 @@ enum ActivityLedger {
             at: at,
             lunarDay: LunarPhaseService.currentDay(at: at),
             moonPhase: LunarPhaseService.phaseName(at: at)
+        )
+    }
+
+    // MARK: - Wave 6 · B · the game's own structure
+
+    /// A `Leela Drop` row. `chakra` is the Map row the drop's words were drawn
+    /// from (provenance); `carried` is whether he took the action into his day
+    /// or held the moment in silence — both are answers, neither is a grade.
+    /// No link (The Map is not the Mandala table) and no Notes: the words were
+    /// the game's, not his.
+    static func leelaDrop(chakra: String, carried: Bool, at: Date) -> PendingActivity {
+        let site = chakra.isEmpty ? "The play" : chakra
+        return PendingActivity(
+            type: ActivityType.leelaDrop,
+            linkRecordId: "",
+            name: "Leela — a drop from \(site)",
+            detail: (carried ? "Carried into the day" : "Held in silence")
+                + " · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at)
+        )
+    }
+
+    /// A `Light Entered` row: the activation cycle closed in her room —
+    /// Knowledge, Will, Action. `family` is the gesture family her element
+    /// asked for ("fire", "water", … or "presence" where no gesture was asked).
+    /// `seconds` is the archive's record of the cycle and is never shown.
+    static func lightEntered(shaktiRecordId: String, name shaktiName: String,
+                             family: String, seconds: Double, at: Date) -> PendingActivity {
+        let name = shaktiName.isEmpty ? "A Śakti" : shaktiName
+        return PendingActivity(
+            type: ActivityType.lightEntered,
+            linkRecordId: shaktiRecordId,
+            name: "\(name) — knowledge, will, action",
+            detail: "\(family) · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.room,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            durationSec: max(0, seconds)
         )
     }
 

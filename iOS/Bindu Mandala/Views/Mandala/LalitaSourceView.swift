@@ -66,7 +66,9 @@ struct LalitaSourceView: View {
             withAnimation(.easeOut(duration: 1.4)) { appeared = true }
         }
         .fullScreenCover(isPresented: $playing) {
-            PlayFieldView(onClose: { playing = false })
+            // Wave 6 · B · Panel 9's eight dissolutions, and "Now go play.",
+            // before her field (``TheEightDissolutions`` opens it).
+            TheEightDissolutions(onClose: { playing = false })
         }
     }
 
