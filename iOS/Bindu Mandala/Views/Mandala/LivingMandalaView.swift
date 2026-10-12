@@ -8,6 +8,11 @@ import SwiftData
 /// Field's rows. Nothing auto-advances: the descent is always a chosen tap
 /// (Ruling 1 / 2). Every seat is lit by her own Atmosphere, so the 86 are never
 /// the false `.inner` gold (Ruling 7 / R3).
+///
+/// Wave 1 brings Design's light home here: the full yantra on the indigo sky,
+/// the hour's five states, the nine breaths, Lalitā's red bloom — and the Veil,
+/// the nine āvaraṇas as light, raised from the foot of the glass and gating
+/// nothing (`waves/wave-1/A-mandala.md`).
 struct LivingMandalaView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -35,6 +40,9 @@ struct LivingMandalaView: View {
     @State private var flash: MandalaCanvasLayer.RingFlash?
     @State private var constellation: Double = 0
     @State private var constellationStart: TimeInterval?   // clock for the per-thread stagger
+    /// Whether the Veil — the nine āvaraṇas as light — is raised. An optional
+    /// layer: it gates nothing, and closing it leaves the field exactly as it was.
+    @State private var veilOpen = false
 
     // Gesture bases (incremental deltas so pan + pinch compose)
     @State private var lastDrag: CGSize = .zero
@@ -90,18 +98,19 @@ struct LivingMandalaView: View {
                         constellationStart: constellationStart,
                         tier: camera.tier, reduceMotion: reduceMotion,
                         lightOn: lightOn,
-                        lastMoveAt: lastMoveAt, stillSeconds: stillSeconds)
+                        lastMoveAt: lastMoveAt, stillSeconds: stillSeconds,
+                        variant: variant)
 
                     // The drawing has no accessibility tree; this is it. It
                     // draws nothing and hit-tests nothing — the gesture catcher
                     // below is still the only thing a finger reaches — and it
                     // goes out of the tree entirely once the Bindu has opened,
-                    // so a voice is never offered a field that is no longer
-                    // there.
+                    // or while the Veil stands over the field, so a voice is
+                    // never offered a field that is not the one in front of it.
                     MandalaAccessibilityLayer(
                         camera: camera, size: geo.size, seats: seats, voices: voices,
                         reachable: reachableKp, onActivate: activate)
-                        .accessibilityHidden(descent)
+                        .accessibilityHidden(descent || veilOpen)
                 }
                 gestureCatcher
                 header
@@ -110,6 +119,7 @@ struct LivingMandalaView: View {
                 // hidden behind a focused seat.
                 controls
                 if let seat = focus { card(for: seat) }
+                if ready && !descent { veil(in: geo.size) }
                 if descent { lalita }
             }
             .onAppear { configure(size: geo.size) }
@@ -134,6 +144,19 @@ struct LivingMandalaView: View {
                     if clamped != stillSeconds { stillSeconds = clamped }
                 }
             }
+            // The hour moves while he stays. Read once a minute; when dawn turns
+            // to noon, or the moon goes dark, the whole field is re-lit in the
+            // new state rather than holding the hour he arrived in.
+            .task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(60))
+                    let now = LunarPhaseService.currentTimeVariant()
+                    if now != variant {
+                        variant = now
+                        rebuild()
+                    }
+                }
+            }
         }
         .ignoresSafeArea(edges: .bottom)
         .fullScreenCover(item: $detailFor) { s in
@@ -143,14 +166,11 @@ struct LivingMandalaView: View {
 
     // MARK: Layers
 
+    /// Design's indigo night sky, lit by the day's glow and carried through
+    /// the hour — see ``MandalaSky``. (It was the crimson-black `Color.ground`.)
     private var background: some View {
-        ZStack {
-            Color.ground.ignoresSafeArea()
-            RadialGradient(colors: [dayAtmo.glow.opacity(0.5), .clear],
-                           center: UnitPoint(x: 0.5, y: 0.44),
-                           startRadius: 0, endRadius: max(size.width, 320) * 0.9)
-                .ignoresSafeArea()
-        }
+        MandalaSky(variant: variant, dayGlow: dayAtmo.glow)
+            .ignoresSafeArea()
     }
 
     private var gestureCatcher: some View {
@@ -184,6 +204,16 @@ struct LivingMandalaView: View {
             Text(tierHint)
                 .font(AppFont.label(11.5)).tracking(1.6)
                 .foregroundStyle(Color.cream.opacity(0.55))
+            // Design's TemporalMark: one point of the hour's own light —
+            // *"almost imperceptible … never has text"* — so a walker who looks
+            // for it knows which of the five states the yantra is reading.
+            Circle()
+                .fill(variant.markColor)
+                .frame(width: 6, height: 6)
+                .opacity(0.6)
+                .shadow(color: variant.markColor, radius: 4)
+                .padding(.top, 5)
+                .accessibilityHidden(true)
         }
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -246,12 +276,15 @@ struct LivingMandalaView: View {
     /// *nothing* at the rim, so her light carries through the column instead of
     /// ending at an edge.
     private var controlWash: RadialGradient {
-        RadialGradient(
+        // The sky's own deepest colour, so the column sits in the indigo
+        // rather than stamping crimson-black discs onto it.
+        let ground = variant.sky.edge
+        return RadialGradient(
             stops: [
-                .init(color: Color.ground.opacity(0.72), location: 0.0),
-                .init(color: Color.ground.opacity(0.64), location: 0.5),
-                .init(color: Color.ground.opacity(0.26), location: 0.82),
-                .init(color: Color.ground.opacity(0.0), location: 1.0),
+                .init(color: ground.opacity(0.72), location: 0.0),
+                .init(color: ground.opacity(0.64), location: 0.5),
+                .init(color: ground.opacity(0.26), location: 0.82),
+                .init(color: ground.opacity(0.0), location: 1.0),
             ],
             center: .center, startRadius: 0, endRadius: 23)
     }
@@ -266,6 +299,86 @@ struct LivingMandalaView: View {
             .transition(.opacity)
             .zIndex(40)
         }
+    }
+
+    // MARK: The Veil — the nine āvaraṇas as light (an optional layer)
+
+    /// The peek at rest, or the risen Veil with the field dimmed behind it.
+    /// Hidden while a seat's card stands at the foot of the glass — the two
+    /// would share one place — and gone entirely once the Bindu has opened.
+    @ViewBuilder
+    private func veil(in size: CGSize) -> some View {
+        if veilOpen {
+            // Design: the yantra dims to about half behind the rising veil but
+            // is never hidden; a tap on it lowers the veil.
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture { closeVeil() }
+                .accessibilityHidden(true)
+                .transition(.opacity)
+            MandalaVeilSheet(
+                here: veilHere,
+                height: min(size.height * 0.8, 660),
+                reduceMotion: reduceMotion,
+                onRing: { fallTo(ring: $0) },
+                onBindu: {
+                    closeVeil()
+                    openDescent()
+                },
+                onClose: { closeVeil() })
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .transition(.move(edge: .bottom))
+            .zIndex(20)
+        } else if focus == nil {
+            MandalaVeilPeek(reduceMotion: reduceMotion, onOpen: { openVeil() })
+                .padding(.bottom, 30)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .transition(.opacity)
+        }
+    }
+
+    /// Where the walker stands, for the Veil's light: the enclosure the camera
+    /// has fallen into, or today's ring while he is outside the yantra.
+    private var veilHere: Int {
+        let todaySeat = seats.first(where: { kp($0) == todayKp })
+        let todayRing: Int = todaySeat?.shakti.ringNumber ?? 2
+        return MandalaVeil.here(entered: enteredRing, todayRing: todayRing)
+    }
+
+    /// Design's veil easing, `cubic-bezier(.22, 1, .36, 1)` over 0.52 s; a
+    /// short plain fade under reduce motion.
+    private var veilAnimation: Animation {
+        reduceMotion ? Animation.easeOut(duration: 0.2)
+                     : Animation.timingCurve(0.22, 1, 0.36, 1, duration: 0.52)
+    }
+
+    private func openVeil() {
+        Haptics.soft()
+        withAnimation(veilAnimation) { veilOpen = true }
+    }
+
+    private func closeVeil() {
+        withAnimation(veilAnimation) { veilOpen = false }
+    }
+
+    /// A row of the Veil: the veil lowers and the camera falls to that
+    /// āvaraṇa through the one continuous space. Nothing is gated — an ahead
+    /// or veiled ring is fallen to exactly as an open one is — and arriving is
+    /// an ordinary crossing, chimed and recorded by `updateEntered()` like any
+    /// pinch would be.
+    private func fallTo(ring: Int) {
+        guard size != .zero else { return }
+        Haptics.light()
+        closeVeil()
+        focus = nil
+        constellation = 0
+        constellationStart = nil
+        animating = true
+        withAnimation(.easeInOut(duration: 0.9)) {
+            camera = .ringTarget(ring: ring, in: size)
+        } completion: { animating = false }
+        updateEntered()
     }
 
     /// The Bindu's Śakti (ring 9), or the deepest one present — nil only if the

@@ -206,3 +206,135 @@ extension TimeVariant {
         }
     }
 }
+
+// MARK: - The living Mandala's sky and light (Wave 1 · Slice A)
+//
+// The absolute palette above is `home-mandala.jsx`'s `TIME_VARIANTS`, and it
+// stays byte-unchanged (`TimeVariantModulationTests`). What follows reads that
+// palette *into* the living canvas, which until now ignored it: the five time
+// states were computed, held in `@State`, and used only to tint Atmosphere.
+//
+// **Ratios, not a second dimmer.** Design's living Mandala
+// (`living-rite-mandala.jsx`) draws its geometry at fixed true weights; the
+// home Mandala (`home-mandala.jsx`) says how each hour changes them. So the
+// hour arrives here as a ratio against **noon** — the hour at which the two
+// prototypes agree — and noon is exactly Design's living Mandala. Dawn warms
+// the lines a little brighter, night silvers them, the new moon lets the
+// geometry recede and the Bindu rise to 1.6×. Nothing is multiplied by both a
+// filter and an opacity, which is the stacked-dimmer loss The Reading names.
+
+extension TimeVariant {
+
+    /// The sky behind the yantra: Design's indigo night ground
+    /// (`radial-gradient(circle at 50% 44%, #0a0611, #050308 60%, #030105)`),
+    /// carried through the five hours. Noon *is* Design's sky; the other four
+    /// lean it the way `TIME_VARIANTS.bg` leans — dawn violet, dusk rose,
+    /// night blue, the new moon almost black.
+    struct Sky {
+        /// The colour at the yantra's heart.
+        let center: Color
+        /// The colour 60% of the way out.
+        let mid: Color
+        /// The colour at the edge of the glass.
+        let edge: Color
+        /// A faint far air standing in the sky — depth, so the yantra floats
+        /// rather than sits on a flat ground.
+        let air: Color
+    }
+
+    var sky: Sky {
+        switch self {
+        case .dawn:
+            return Sky(center: Color(hex: "#160C24"), mid: Color(hex: "#09050F"),
+                       edge: Color(hex: "#040208"), air: Color(hex: "#3A2246"))
+        case .noon:
+            return Sky(center: Color(hex: "#0A0611"), mid: Color(hex: "#050308"),
+                       edge: Color(hex: "#030105"), air: Color(hex: "#221A3A"))
+        case .dusk:
+            return Sky(center: Color(hex: "#150918"), mid: Color(hex: "#09040C"),
+                       edge: Color(hex: "#040106"), air: Color(hex: "#3A1A2E"))
+        case .night:
+            return Sky(center: Color(hex: "#0A0E22"), mid: Color(hex: "#050711"),
+                       edge: Color(hex: "#020308"), air: Color(hex: "#1C2648"))
+        case .newmoon:
+            return Sky(center: Color(hex: "#09040D"), mid: Color(hex: "#040207"),
+                       edge: Color(hex: "#020001"), air: Color(hex: "#24101C"))
+        }
+    }
+
+    /// The triangles' tone at this hour, opaque — `triStroke` without the
+    /// new moon's baked-in alpha, because the strength travels separately in
+    /// ``geometryGain`` and must not be applied twice.
+    var triangleTone: Color {
+        switch self {
+        case .dawn:    return Color(hex: "#D4A067")
+        case .noon:    return Color(hex: "#C9963F")
+        case .dusk:    return Color(hex: "#C99443")
+        case .night:   return Color(hex: "#A4B8CC")
+        case .newmoon: return Color(hex: "#C9963F")
+        }
+    }
+
+    /// The Bhūpura's tone at this hour, opaque (the RGB of `bhupuraColor`).
+    var bhupuraTone: Color {
+        switch self {
+        case .dawn, .noon: return Color(red: 207/255, green: 148/255, blue: 67/255)
+        case .dusk:        return Color(red: 184/255, green: 132/255, blue: 62/255)
+        case .night:       return Color(red: 180/255, green: 200/255, blue: 220/255)
+        case .newmoon:     return Color(red: 201/255, green: 150/255, blue: 63/255)
+        }
+    }
+
+    /// The triangles' strength at this hour against noon: `triOpacity / 0.70`.
+    var geometryGain: Double { triOpacity / TimeVariant.noon.triOpacity }
+
+    /// The Bhūpura's strength at this hour against noon (its alpha / 0.25).
+    var bhupuraGain: Double {
+        switch self {
+        case .dawn:    return 0.30 / 0.25
+        case .noon:    return 1.0
+        case .dusk:    return 0.22 / 0.25
+        case .night:   return 0.18 / 0.25
+        case .newmoon: return 0.10 / 0.25
+        }
+    }
+
+    /// The sixteen-petal lotus's strength at this hour (`petalOpacityMul`).
+    var lotusGain: Double { petalOpacityMul }
+
+    /// The eight-petal lotus's strength at this hour against noon.
+    var innerLotusGain: Double { lotusInnerOp / TimeVariant.noon.lotusInnerOp }
+
+    /// How much colour the seats keep at this hour — Design's `saturate()`
+    /// filter, which is where the new moon's desaturation lives (0.30).
+    var seatSaturation: Double { petalSat }
+
+    /// How much light the seats keep at this hour. Design's `brightness()`
+    /// filter, softened to a quarter of its depth: a seat is a lit thing in the
+    /// air and is already carried by the field's own light, and the filter at
+    /// full depth on top of the opacity table would be exactly the stacked
+    /// dimmer this wave removes.
+    var seatBrightness: Double { 0.75 + 0.25 * petalBrightness }
+
+    /// How strongly the Bindu glows at this hour. It **rises** as the rest
+    /// recedes — the new moon is *"the Bindu rises"* — the inverse of the
+    /// geometry's fall, bounded.
+    var binduGlow: Double {
+        switch self {
+        case .dawn:    return 1.0
+        case .noon:    return 1.0
+        case .dusk:    return 1.08
+        case .night:   return 1.15
+        case .newmoon: return 1.35
+        }
+    }
+
+    /// One seat's colour under this hour's sky: Design's `saturate()` and a
+    /// softened `brightness()` applied to her HSL — so at the new moon the
+    /// whole field goes to near-grey and the red point is what is left.
+    func temper(_ c: HSL) -> HSL {
+        HSL(h: c.h,
+            s: HSL.clamp(c.s * seatSaturation, 0, 100),
+            l: HSL.clamp(c.l * seatBrightness, 0, 100))
+    }
+}

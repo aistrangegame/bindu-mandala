@@ -201,6 +201,24 @@ struct MandalaLight: Equatable {
                    l: min(r.l + 8 * reach, 80))
     }
 
+    /// **The felt state as warm light** (Wave 1). A seat that has been felt
+    /// carries a soft halo standing in the air around her: her own hue drawn a
+    /// third of the way toward the source and lifted, so what the instrument
+    /// remembers reads as warmth arriving from the Bindu rather than as a mark.
+    ///
+    /// Like ``seatColor(own:felt:)`` it is asked only *whether* she was felt —
+    /// the caller decides that with a set membership — and it takes no number
+    /// from anywhere a walker's practice lives. One felt seat and a hundred
+    /// felt seats are the same light, each.
+    static func feltWarmth(_ own: HSL) -> HSL {
+        let warmed = mix(own, source, feltWarmthPull)
+        return HSL(h: warmed.h, s: min(warmed.s + 12, 92), l: min(warmed.l + 16, 82))
+    }
+
+    /// How far the felt halo leans toward the source. Less than
+    /// ``refractionLimit``, so the halo is still recognisably hers.
+    static let feltWarmthPull: Double = 0.35
+
     /// The colour of an enclosure's own band — the ring shown empty, before any
     /// Śakti is seated in it. `Atmosphere`'s unjittered ring seed, refracted.
     var bandColor: HSL {

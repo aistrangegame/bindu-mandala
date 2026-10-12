@@ -3,15 +3,22 @@ import SwiftUI
 /// The whole living field drawn in one `Canvas`, re-lit each frame by a single
 /// `TimelineView(.animation)` clock — no per-seat views. Everything is drawn in
 /// screen space by mapping world points through the `camera`, so the 102 seats,
-/// the nine enclosures, the interlocking triangles, today's ring and the focused
+/// the nine enclosures, the full Śrī Yantra, today's ring and the focused
 /// constellation all move together as one continuous space.
 ///
-/// **Phase 5, behind `lightOn`.** With the flag off this draws exactly what it
-/// has always drawn: flat per-seat Atmosphere colour, hairline gold enclosure
-/// circles, a red Bindu. With it on, every mark is a refraction of one source —
-/// see ``MandalaLight``. The two paths are separated at the top of each `draw*`
-/// method rather than woven together, so the shipped drawing stays readable as
-/// itself and can be compared against `main` line by line.
+/// **Wave 1 · the light comes home.** The yantra is Design's whole yantra again
+/// (``SriYantraGeometry``): the Bhūpura with its four T-gates, the four circles,
+/// both lotus rings, the triangles at their true 0.585 proportion, the Bindu's
+/// red glow. It shimmers on Design's 8 s (`syShimmer`), every ring keeps its own
+/// breath (``MandalaBreath``), the Bindu swells ×1.28, and the hour re-lights
+/// all of it (``TimeVariant/sky`` and the gains beside it). With the light on,
+/// lines and seats stand in the air — each line carries an additive glow, felt
+/// seats a warm halo, the gates a light in each doorway.
+///
+/// **Phase 5's switch still gates the *light*, not the yantra.** With
+/// `MANDALA_LIGHT=off` the canvas draws the same full yantra at Design's weights
+/// but builds no ``MandalaLightField`` and stands no additive glow in the air:
+/// that path remains the control the reach tests compare the lit one against.
 struct MandalaCanvasLayer: View {
     let camera: MandalaCamera
     let size: CGSize
@@ -39,6 +46,10 @@ struct MandalaCanvasLayer: View {
     /// How long the glass has lain untouched, ticked once a second by the host.
     /// Tratak's clock, and deliberately *not* the frame clock: see ``field(at:)``.
     var stillSeconds: Double = 0
+    /// The hour the yantra is read in — one of Design's five time states.
+    /// Noon is Design's living Mandala exactly, so a caller that does not know
+    /// the hour (the spike bench) draws the prototype unchanged.
+    var variant: TimeVariant = .noon
 
     struct RingFlash: Equatable { let ring: Int; let bornAt: TimeInterval }
 
@@ -47,15 +58,17 @@ struct MandalaCanvasLayer: View {
             let t = tl.date.timeIntervalSinceReferenceDate
             Canvas { ctx, _ in
                 let light = field(at: t)
-                drawStarfield(ctx, t: t)
+                drawStarfield(ctx, t: t, light)
+                drawMotes(ctx, t: t, light)
                 drawEnclosures(ctx, light)
-                drawTodayRing(ctx, t: t)
-                drawFlash(ctx, t: t)
-                drawYantra(ctx, light)
+                drawTodayRing(ctx, t: t, light)
+                drawFlash(ctx, t: t, light)
+                drawYantra(ctx, t: t, light)
+                drawBinduGlow(ctx, t: t, light)
                 drawConstellation(ctx, t: t)
                 drawSeats(ctx, t: t, light)
                 drawEnclosureNames(ctx, light)
-                drawBinduGlow(ctx, t: t, light)
+                drawTratak(ctx, t: t, light)
             }
         }
         .allowsHitTesting(false)
@@ -63,6 +76,30 @@ struct MandalaCanvasLayer: View {
 
     private func p(_ world: CGPoint) -> CGPoint { camera.screen(for: world) }
     private var scale: CGFloat { camera.scale }
+
+    /// World → screen as one affine map, so a precomputed world path is placed
+    /// with a single `applying` per frame rather than rebuilt point by point.
+    private var worldToScreen: CGAffineTransform {
+        let o = p(.zero)
+        return CGAffineTransform(a: scale, b: 0, c: 0, d: scale, tx: o.x, ty: o.y)
+    }
+
+    /// A Design stroke width, in world units, as drawn on the glass. Design's
+    /// strokes sat inside its scaled layer and grew with the zoom, and that is
+    /// kept; the floor (three-quarters of the authored width) keeps a line
+    /// present at the widest view, and the ceiling keeps the deepest zoom a
+    /// line rather than a bar.
+    private func lineWidth(_ w: CGFloat) -> CGFloat {
+        min(max(w * scale, w * 0.75), 4.0)
+    }
+
+    /// A copy of the context that adds light rather than covering it —
+    /// `plusLighter`, so glows that overlap brighten as light does.
+    private func additive(_ ctx: GraphicsContext) -> GraphicsContext {
+        var add = ctx
+        add.blendMode = .plusLighter
+        return add
+    }
 
     /// The light over the field this frame, or `nil` when the phase flag is off.
     ///
@@ -89,17 +126,81 @@ struct MandalaCanvasLayer: View {
         Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
     }
 
-    // MARK: Starfield — a fixed, deterministic scatter that drifts with the camera.
+    private func onGlass(_ s: CGPoint, margin: CGFloat) -> Bool {
+        s.x > -margin && s.x < size.width + margin && s.y > -margin && s.y < size.height + margin
+    }
 
-    private func drawStarfield(_ ctx: GraphicsContext, t: TimeInterval) {
+    // MARK: Starfield — the space the yantra floats in, drifting with the camera.
+
+    /// Design's `SY_STARS`: points scattered round the yantra, every fifth gold,
+    /// four in ten twinkling between 0.15 and 0.7 on their own 5–11 s clocks.
+    /// They sit inside the scaled world, so they grow a little as you fall in,
+    /// and with the light on the brighter ones carry a soft additive halo.
+    private func drawStarfield(_ ctx: GraphicsContext, t: TimeInterval, _ light: MandalaLightField?) {
+        let add = additive(ctx)
+        let zoom = min(max(scale, 0.6), 2.2)
         for star in MandalaStars.all {
             let s = p(star.p)
-            guard s.x > -20, s.x < size.width + 20, s.y > -20, s.y < size.height + 20 else { continue }
-            let twinkle = star.twinkles && !reduceMotion
-                ? 0.6 + 0.4 * sin(t * 0.8 + star.phase) : 1
-            let r = star.r
-            ctx.fill(Path(ellipseIn: CGRect(x: s.x - r, y: s.y - r, width: r * 2, height: r * 2)),
-                     with: .color((star.gold ? Color.gold : Color.cream).opacity(star.opacity * twinkle)))
+            guard onGlass(s, margin: 20) else { continue }
+            let alpha: Double
+            if star.twinkles {
+                if reduceMotion {
+                    alpha = 0.42
+                } else {
+                    let period = 5 + star.phase
+                    let x = 0.5 - 0.5 * cos(2 * .pi * t / period + star.phase)
+                    alpha = 0.15 + 0.55 * x
+                }
+            } else {
+                alpha = min(0.7, star.opacity * 1.25)
+            }
+            let r = max(0.45, star.r * 0.6 * zoom)
+            let col: Color = star.gold ? Color.gold : Color.cream
+            ctx.fill(circle(s, r), with: .color(col.opacity(alpha)))
+            if light != nil && r > 0.8 {
+                let hr = r * 3.4
+                add.fill(circle(s, hr),
+                         with: .radialGradient(Gradient(colors: [col.opacity(alpha * 0.32), col.opacity(0)]),
+                                               center: s, startRadius: 0, endRadius: hr))
+            }
+        }
+    }
+
+    // MARK: Motes — the air the hour carries.
+
+    /// Design's `DustMotes`: a few gold motes rising slowly through the screen,
+    /// as many as the hour carries (`TimeVariant.motes` — three at the new moon,
+    /// twelve at night). They are air, not world: they rise through the glass
+    /// whatever the camera is doing. Under reduce motion they stand still where
+    /// they are.
+    private func drawMotes(_ ctx: GraphicsContext, t: TimeInterval, _ light: MandalaLightField?) {
+        let add = additive(ctx)
+        let travel = size.height + 24
+        for i in 0..<variant.motes {
+            let seed = (i * 73 + 17) % 100
+            let left = Double(8 + (seed * 7) % 84) / 100
+            let drift = Double(-10 + (seed * 13) % 20)
+            let dia = 1.4 + Double((seed * 3) % 22) / 10
+            let duration = Double(16 + (seed * 5) % 14)
+            let delay = Double(seed % 80) / 8
+            let peak = 0.18 + Double((seed * 11) % 28) / 100
+            var q = ((t - delay) / duration).truncatingRemainder(dividingBy: 1)
+            if q < 0 { q += 1 }
+            // moteRise: 0 → 1 by 8%, easing to 0.5 by 92%, gone at 100%.
+            let envelope: Double
+            if q < 0.08 { envelope = q / 0.08 }
+            else if q < 0.92 { envelope = 1 - 0.5 * (q - 0.08) / 0.84 }
+            else { envelope = 0.5 * (1 - (q - 0.92) / 0.08) }
+            let a = peak * envelope
+            guard a > 0.004 else { continue }
+            let c = CGPoint(x: CGFloat(left) * size.width + CGFloat(drift * q),
+                            y: size.height + 12 - CGFloat(q) * travel)
+            let r = CGFloat(dia / 2)
+            ctx.fill(circle(c, r), with: .color(Color.gold.opacity(a)))
+            let hr = r * (light == nil ? 3 : 5)
+            add.fill(circle(c, hr),
+                     with: .radialGradient(Gradient(colors: [Color.gold.opacity(a * 0.5), Color.gold.opacity(0)]),
+                                           center: c, startRadius: 0, endRadius: hr))
         }
     }
 
@@ -133,16 +234,17 @@ struct MandalaCanvasLayer: View {
     /// walker falls toward them and holds still.
     private func drawEnclosureBands(_ ctx: GraphicsContext, _ light: MandalaLightField) {
         let c = p(.zero)
+        let add = additive(ctx)
         for ring in 2...8 {
             let r = MandalaWorld.ringRadius(ring) * scale
             guard r > 4 else { continue }
             let l = light.light(ring: ring)
-            let col = l.bandColor.color()
+            let col = variant.temper(l.bandColor).color()
             let w = CGFloat(l.bandWidth) * min(max(scale, 0.6), 2.0)
             let core = l.veiledMark(0.30 * (0.45 + 0.55 * l.reach))
-            ctx.stroke(circle(c, r), with: .color(col.opacity(core)), lineWidth: w)
-            ctx.stroke(circle(c, r - w * 0.8), with: .color(col.opacity(core * 0.38)), lineWidth: w * 1.6)
-            ctx.stroke(circle(c, r + w * 0.8), with: .color(col.opacity(core * 0.38)), lineWidth: w * 1.6)
+            add.stroke(circle(c, r), with: .color(col.opacity(core)), lineWidth: w)
+            add.stroke(circle(c, r - w * 0.8), with: .color(col.opacity(core * 0.38)), lineWidth: w * 1.6)
+            add.stroke(circle(c, r + w * 0.8), with: .color(col.opacity(core * 0.38)), lineWidth: w * 1.6)
         }
     }
 
@@ -181,7 +283,7 @@ struct MandalaCanvasLayer: View {
         }
     }
 
-    private func drawTodayRing(_ ctx: GraphicsContext, t: TimeInterval) {
+    private func drawTodayRing(_ ctx: GraphicsContext, t: TimeInterval, _ light: MandalaLightField?) {
         guard let seat = seats.first(where: { seatKp($0) == todayKp }) else { return }
         let ring = seat.shakti.ringNumber ?? 2
         let rr = MandalaWorld.ringRadius(ring)
@@ -191,59 +293,143 @@ struct MandalaCanvasLayer: View {
         var stroke = StrokeStyle(lineWidth: 2, dash: [2, 4])
         stroke.lineCap = .round
         ctx.stroke(circle(c, r), with: .color(dayAccent.opacity(pulse)), style: stroke)
+        // Today's enclosure, softly lit (Design: "today's enclosure, softly
+        // lit") — with the light on, the day's ring holds a breath of its own
+        // colour in the air beside the dashes.
+        if light != nil {
+            additive(ctx).stroke(circle(c, r), with: .color(dayAccent.opacity(pulse * 0.16)), lineWidth: 9)
+        }
     }
 
-    private func drawFlash(_ ctx: GraphicsContext, t: TimeInterval) {
+    /// Design's `syRingFlash`: up to 0.85 in the first 18% of a second and a
+    /// half, then gone — a threshold crossed, lit once.
+    private func drawFlash(_ ctx: GraphicsContext, t: TimeInterval, _ light: MandalaLightField?) {
         guard let flash else { return }
         let rr = MandalaWorld.ringRadius(flash.ring)
         guard rr > 0 else { return }
         let age = t - flash.bornAt
         guard age >= 0, age < 1.5 else { return }
-        let fade = 1 - age / 1.5
+        let rise = 0.27
+        let a = age < rise ? 0.85 * age / rise : 0.85 * (1 - (age - rise) / (1.5 - rise))
         let c = p(.zero), r = rr * scale
-        ctx.stroke(circle(c, r), with: .color(Color.gold.opacity(0.7 * fade)), lineWidth: 2.5)
+        ctx.stroke(circle(c, r), with: .color(Color.gold.opacity(a)), lineWidth: 2.5)
+        if light != nil {
+            additive(ctx).stroke(circle(c, r), with: .color(Color.gold.opacity(a * 0.3)), lineWidth: 12)
+        }
     }
 
-    // MARK: The Śrī Yantra — nested squares + nine interlocking triangles.
+    // MARK: The Śrī Yantra — the whole of it, breathing.
 
-    /// With the light on, the yantra's own geometry is lit from the Bindu too:
-    /// the Bhūpura's three squares take the first enclosure's light, and each
-    /// triangle is drawn in the source's own colour at the strength that
-    /// reaches its mean radius. The lines do not become a different shape; they
-    /// stop being flat gold and start being *far from the centre* or *near it*.
-    private func drawYantra(_ ctx: GraphicsContext, _ light: MandalaLightField?) {
-        let squareColor: Color = light.map { $0.light(ring: 1).bandColor.color() } ?? Color.gold
-        for (i, f) in [1.0, 0.94, 0.88].enumerated() {
-            let h = MandalaWorld.radius * f
-            var sq = Path()
-            sq.move(to: p(CGPoint(x: -h, y: -h)))
-            sq.addLine(to: p(CGPoint(x: h, y: -h)))
-            sq.addLine(to: p(CGPoint(x: h, y: h)))
-            sq.addLine(to: p(CGPoint(x: -h, y: h)))
-            sq.closeSubpath()
-            let base = 0.5 - Double(i) * 0.1
-            let alpha = light.map { $0.light(ring: 1).veiledMark(base) } ?? base
-            ctx.stroke(sq, with: .color(squareColor.opacity(alpha)), lineWidth: 1.1)
-        }
-        let sourceColor: Color = light == nil ? Color.gold : MandalaLight.source.color()
-        for tri in MandalaYantra.triangles {
-            var path = Path()
-            path.move(to: p(tri.0))
-            path.addLine(to: p(tri.1))
-            path.addLine(to: p(tri.2))
-            path.closeSubpath()
-            var alpha = 0.34
+    /// Design's `SriYantraGeometry`, every element at its true weight, each
+    /// keeping its ring's breath under one 8 s shimmer and re-toned by the hour.
+    ///
+    /// With the light on each line is drawn three times — a wide faint glow, a
+    /// nearer glow, and the line — the two glows additive, so the geometry is
+    /// light standing in the air rather than ink on the ground, and lines that
+    /// cross brighten where they cross. Each line is also lit by how much of
+    /// the Bindu reaches it: the inner star a little brighter than the outer
+    /// square, the yantra lit from its own centre.
+    ///
+    /// When the gaze has held (Tratak), the breath and the shimmer settle to
+    /// their middle and stay — the field holds still, and keeps its light.
+    private func drawYantra(_ ctx: GraphicsContext, t: TimeInterval, _ light: MandalaLightField?) {
+        let m = worldToScreen
+        let add = additive(ctx)
+        let held = light?.tratak ?? 0
+        let shimmer = MandalaBreath.shimmer(at: t, reduceMotion: reduceMotion) * (1 - held) + held
+        for (index, layer) in SriYantraGeometry.layers.enumerated() {
+            let phase = MandalaBreath.phase(ring: layer.ring, at: t,
+                                            offset: Double(index % 5) * 0.06,
+                                            reduceMotion: reduceMotion)
+            let settled = phase * (1 - held) + 0.5 * held
+            let breath = 1 + MandalaBreath.lift(ring: layer.ring) * settled
+            let reach = light.map { _ in 0.82 + 0.36 * MandalaLight.reach(atRadius: layer.meanRadius) } ?? 1
+            let alpha = min(1, layer.alpha * timeGain(layer) * shimmer * breath * reach)
+            guard alpha > 0.003 else { continue }
+            let lineTone = tone(layer.kind)
+            let path = layer.path.applying(m)
+            let w = lineWidth(layer.width)
             if light != nil {
-                let mean = (hypot(tri.0.x, tri.0.y) + hypot(tri.1.x, tri.1.y)
-                            + hypot(tri.2.x, tri.2.y)) / 3
-                // 0.62 rather than 0.5 at the floor: the source's hue is a
-                // brighter gold than the flat token these lines used to be
-                // drawn in, and a straight reach multiplier would have dimmed
-                // the whole yantra to buy the gradient. This keeps the inner
-                // triangles where they were and lets the outer ones fall away.
-                alpha = 0.34 * (0.62 + 0.5 * MandalaLight.reach(atRadius: mean))
+                add.stroke(path, with: .color(lineTone.opacity(alpha * 0.10)),
+                           style: StrokeStyle(lineWidth: w * 5, lineCap: .round, lineJoin: .round))
+                add.stroke(path, with: .color(lineTone.opacity(alpha * 0.22)),
+                           style: StrokeStyle(lineWidth: w * 2.2, lineCap: .round, lineJoin: .round))
             }
-            ctx.stroke(path, with: .color(sourceColor.opacity(alpha)), lineWidth: 1)
+            ctx.stroke(path, with: .color(lineTone.opacity(alpha)),
+                       style: StrokeStyle(lineWidth: w, lineCap: .round, lineJoin: .round))
+        }
+        if light != nil { drawGateLights(add, shimmer: shimmer) }
+    }
+
+    /// A soft light standing in each of the Bhūpura's four doorways — the
+    /// gates are where the world is entered, so they hold a little of the
+    /// day's light open. (Beyond Design: its gates were lines; here they are
+    /// also thresholds you can see from across the field.)
+    private func drawGateLights(_ add: GraphicsContext, shimmer: Double) {
+        let tone = variant.bhupuraTone
+        let a = min(1, 0.20 * variant.bhupuraGain * shimmer)
+        let r = max(8, SriYantraGeometry.radius * SriYantraGeometry.gateHalfWidth * 0.9 * scale)
+        for mouth in SriYantraGeometry.gateMouths {
+            let s = p(mouth)
+            guard onGlass(s, margin: r) else { continue }
+            add.fill(circle(s, r),
+                     with: .radialGradient(Gradient(colors: [tone.opacity(a), tone.opacity(0)]),
+                                           center: s, startRadius: 0, endRadius: r))
+        }
+    }
+
+    /// The hour's tone for each kind of line: the Bhūpura in its amber (silver
+    /// at night), the lotuses and circles in gold, the triangles in the hour's
+    /// own stroke colour.
+    private func tone(_ kind: SriYantraGeometry.Kind) -> Color {
+        switch kind {
+        case .bhupura, .gate: return variant.bhupuraTone
+        case .circle, .lotus16, .lotus8: return Color.gold
+        case .triangle: return variant.triangleTone
+        }
+    }
+
+    /// The hour's strength for one line, as a ratio against noon — one factor,
+    /// never a second dimmer stacked on Design's weight.
+    private func timeGain(_ layer: SriYantraGeometry.Layer) -> Double {
+        switch layer.kind {
+        case .bhupura, .gate: return variant.bhupuraGain
+        case .lotus16: return variant.lotusGain
+        case .lotus8: return variant.innerLotusGain
+        case .triangle: return variant.geometryGain
+        case .circle:
+            if layer.ring <= 2 { return variant.lotusGain }
+            if layer.ring == 3 { return variant.innerLotusGain }
+            return variant.geometryGain
+        }
+    }
+
+    // MARK: The Bindu — the red point, breathing at the centre of everything.
+
+    /// Design's Bindu glow (`SY_R * 0.10`, red 0.6 → 0) on the ninth ring's
+    /// 4 s breath: ×1.28 at the top, its light 0.75 → 1 (`syBinduBreath`).
+    /// The hour sets its colour and its size — at the new moon it stands at
+    /// 1.6× and glows brighter while everything else recedes. With the light
+    /// on a wide additive halo stands round it: the source, visibly a source.
+    private func drawBinduGlow(_ ctx: GraphicsContext, t: TimeInterval, _ light: MandalaLightField?) {
+        let c = p(.zero)
+        let gaze = light?.tratak ?? 0
+        let swell = MandalaBreath.binduScale(at: t, reduceMotion: reduceMotion)
+        let breath = 1 + (swell - 1) * (1 - gaze)
+        let glowPhase = MandalaBreath.phase(ring: 9, at: t, reduceMotion: reduceMotion)
+        let strength = (0.75 + 0.25 * glowPhase) * variant.binduGlow
+        let r = max(SriYantraGeometry.binduGlowRadius * scale, 10)
+            * CGFloat(variant.binduScale * breath)
+        let red = variant.binduColor
+        ctx.fill(circle(c, r),
+                 with: .radialGradient(Gradient(colors: [red.opacity(min(1, 0.6 * strength)), red.opacity(0)]),
+                                       center: c, startRadius: 0, endRadius: r))
+        if light != nil {
+            let halo = r * 2.6
+            additive(ctx).fill(circle(c, halo),
+                               with: .radialGradient(Gradient(colors: [Color.accentRed.opacity(min(1, 0.26 * strength)),
+                                                                       Color.accentRed.opacity(0)]),
+                                                     center: c, startRadius: 0, endRadius: halo))
         }
     }
 
@@ -254,6 +440,7 @@ struct MandalaCanvasLayer: View {
               let focus = seats.first(where: { seatKp($0) == focusKp }),
               constellation > 0 else { return }
         let from = p(focus.point)
+        let add = additive(ctx)
         // Each thread draws in on its own slight delay (0.05 + i·0.035s over 0.7s),
         // so the family lights up as a cascade rather than all at once. When
         // reduce-motion is on (or no start time), fall back to the uniform reveal.
@@ -275,6 +462,7 @@ struct MandalaCanvasLayer: View {
             var line = Path()
             line.move(to: from)
             line.addLine(to: end)
+            add.stroke(line, with: .color(focusAccentBright.opacity(0.14 * prog)), lineWidth: 5)
             ctx.stroke(line, with: .color(focusAccentBright.opacity(0.55 * prog)), lineWidth: 1)
         }
     }
@@ -299,6 +487,7 @@ struct MandalaCanvasLayer: View {
 
     private func drawSeats(_ ctx: GraphicsContext, t: TimeInterval, _ light: MandalaLightField?) {
         let quiet = 1 - (light?.tratak ?? 0)      // Tratak: the field holds still.
+        let add = additive(ctx)
         for seat in seats {
             let kp = seatKp(seat)
             let screen = p(seat.point)
@@ -316,19 +505,24 @@ struct MandalaCanvasLayer: View {
             let dimmed = focusKp != nil && !isFocus && !inFamily
             let baseR: CGFloat = isFocus ? 7 : isToday ? 6 : inFamily ? 5.5
                 : wasFelt ? Self.feltRadius : Self.unfeltRadius
-            // Today's seat pulses stronger (syPulse, →1.35×); everyone else sways (syBreath).
-            let pulse: Double
-            if reduceMotion { pulse = 0 }
-            else if isToday && !isFocus { pulse = 0.35 * (0.5 + 0.5 * sin(t * 2.4)) * quiet }
-            else { pulse = 0.12 * sin(t * (0.9 + Double(kp % 7) * 0.12) + Double(kp)) * quiet }
-            let dotR = baseR * min(max(scale, 0.7), 2.4) * (1 + pulse)
+            // Today's seat pulses stronger (syPulse, →1.35× every 2.6 s);
+            // everyone else breathes on her enclosure's own clock (syBreath,
+            // ×1.22) — nine metabolisms, the Bhūpura holding still.
+            let swell: Double
+            if reduceMotion { swell = 0 }
+            else if isToday && !isFocus { swell = 0.35 * (0.5 + 0.5 * sin(t * 2.4)) * quiet }
+            else { swell = (MandalaBreath.seatScale(ring: ring, kp: kp, at: t) - 1) * quiet }
+            let dotR = baseR * min(max(scale, 0.7), 2.4) * CGFloat(1 + swell)
 
             // Her colour. With the light on it is her own Atmosphere hue arriving
             // through her enclosure's gem — one source, ninety-nine facets and
-            // the source itself — rather than a lamp of her own.
-            let own: Color
-            if let l { own = l.seatColor(own: a.hue, felt: wasFelt).color() }
-            else { own = wasFelt ? a.accentBright : a.accent }
+            // the source itself — rather than a lamp of her own. Either way the
+            // hour tempers it: at the new moon the field goes nearly grey.
+            let ownHSL: HSL
+            if let l { ownHSL = l.seatColor(own: a.hue, felt: wasFelt) }
+            else if wasFelt { ownHSL = HSL(h: a.hue.h, s: min(a.hue.s + 10, 88), l: min(a.hue.l + 18, 78)) }
+            else { ownHSL = a.hue }
+            let own = variant.temper(ownHSL).color()
             let color: Color = (isToday || isFocus) ? .cream
                 : inFamily ? focusAccentBright : own
             let lit = wasFelt || isToday || isFocus || inFamily
@@ -344,14 +538,26 @@ struct MandalaCanvasLayer: View {
                 let flareO: Double = (ph < 0.06 ? (ph / 0.06) * 0.55
                     : ph < 0.22 ? (1 - (ph - 0.06) / 0.16) * 0.55 : 0) * quiet
                 if flareO > 0.001 {
-                    let soft: Color = l.map { $0.seatColor(own: a.hue, felt: false).color(alpha: 0.62) }
-                        ?? a.accentSoft
+                    let softHSL: HSL = l.map { $0.seatColor(own: a.hue, felt: false) } ?? a.hue
+                    let soft: Color = variant.temper(softHSL).color(alpha: 0.62)
                     let flareColor = lit ? color : soft
                     let fr = dotR * (0.7 + 2.3 * min(ph / 0.22, 1))
-                    ctx.fill(circle(screen, fr),
-                             with: .radialGradient(Gradient(colors: [flareColor.opacity(flareO * alpha), .clear]),
+                    add.fill(circle(screen, fr),
+                             with: .radialGradient(Gradient(colors: [flareColor.opacity(flareO * alpha), flareColor.opacity(0)]),
                                                    center: screen, startRadius: 0, endRadius: fr))
                 }
+            }
+
+            // The felt state as warm light: a soft halo standing in the air
+            // round a seat that has been felt, her hue leaning toward the
+            // source. Asked of a set — whether, never how often — so every
+            // felt seat wears the same light.
+            if wasFelt && !dimmed {
+                let warm = variant.temper(MandalaLight.feltWarmth(a.hue)).color()
+                let hr = dotR * 4.2
+                add.fill(circle(screen, hr),
+                         with: .radialGradient(Gradient(colors: [warm.opacity(0.30 * alpha), warm.opacity(0)]),
+                                               center: screen, startRadius: dotR * 0.5, endRadius: hr))
             }
 
             // soft glow — how far it spreads is the gem's scattering, and how
@@ -360,9 +566,10 @@ struct MandalaCanvasLayer: View {
                 let spread = l.map { CGFloat($0.glowSpread) } ?? 3.2
                 let strength = l.map { 0.6 + 0.4 * $0.reach } ?? 1
                 let g = dotR * spread
-                ctx.fill(circle(screen, g),
-                         with: .radialGradient(Gradient(colors: [color.opacity(0.5 * alpha * strength), .clear]),
-                                               center: screen, startRadius: 0, endRadius: g))
+                let glow = light == nil ? ctx : add
+                glow.fill(circle(screen, g),
+                          with: .radialGradient(Gradient(colors: [color.opacity(0.5 * alpha * strength), color.opacity(0)]),
+                                                center: screen, startRadius: 0, endRadius: g))
             }
             ctx.fill(circle(screen, dotR), with: .color(color.opacity(alpha)))
 
@@ -401,7 +608,9 @@ struct MandalaCanvasLayer: View {
                 if tier >= 2 && !isFocus {
                     if let syllable = seat.shakti.bijaSyllable {
                         let bijaAlpha = l.map { $0.veiledText(0.85) } ?? 0.85
-                        let bijaColor = l.map { $0.seatColor(own: a.hue, felt: true).color() } ?? a.accentBright
+                        let bijaHSL: HSL = l.map { $0.seatColor(own: a.hue, felt: true) }
+                            ?? HSL(h: a.hue.h, s: min(a.hue.s + 10, 88), l: min(a.hue.l + 18, 78))
+                        let bijaColor = variant.temper(bijaHSL).color()
                         var bt = ctx.resolve(
                             Text("bīja \(syllable)")
                                 .font(.custom(AppFont.cormorantItalic, size: 11.5))
@@ -414,8 +623,8 @@ struct MandalaCanvasLayer: View {
         }
     }
 
-    /// The Bindu — and, when the gaze has held, Tratak.
-    ///
+    // MARK: Tratak — the white light behind the red point.
+
     /// Idea 38, the origin practice (C-1222): the Mandala holds still, the Bindu
     /// is a red dot for gazing, and after sustained stillness white light moves
     /// behind the red point. It is drawn **here, in the same canvas**, rather
@@ -428,69 +637,34 @@ struct MandalaCanvasLayer: View {
     /// little off the point, where its drift would have carried it — rather than
     /// absent or frozen mid-animation. The wait is the same length either way:
     /// Tratak is earned, and it is not handed over early.
-    private func drawBinduGlow(_ ctx: GraphicsContext, t: TimeInterval, _ light: MandalaLightField?) {
-        let c = p(.zero)
+    private func drawTratak(_ ctx: GraphicsContext, t: TimeInterval, _ light: MandalaLightField?) {
         let gaze = light?.tratak ?? 0
-        let breath = (reduceMotion || gaze > 0.999) ? 1 : 1 + 0.06 * sin(t * 1.1) * (1 - gaze)
-        let r = 30 * scale * 0.34 * breath + 4
+        guard gaze > 0.001 else { return }
+        let c = p(.zero)
+        let r = max(SriYantraGeometry.binduGlowRadius * scale, 10) * CGFloat(variant.binduScale)
 
         // The white light behind the red point — drawn first, so it is behind it.
-        if gaze > 0.001 {
-            let drift: CGPoint
-            if reduceMotion {
-                drift = CGPoint(x: c.x - r * 0.22, y: c.y - r * 0.16)
-            } else {
-                let a = t * 0.11
-                drift = CGPoint(x: c.x + cos(a) * r * 0.26, y: c.y + sin(a * 0.73) * r * 0.20)
-            }
-            let wr = r * 1.5
-            ctx.fill(circle(drift, wr),
-                     with: .radialGradient(Gradient(colors: [Color.cream.opacity(0.28 * gaze), .clear]),
-                                           center: drift, startRadius: 0, endRadius: wr))
+        let drift: CGPoint
+        if reduceMotion {
+            drift = CGPoint(x: c.x - r * 0.22, y: c.y - r * 0.16)
+        } else {
+            let a = t * 0.11
+            drift = CGPoint(x: c.x + cos(a) * r * 0.26, y: c.y + sin(a * 0.73) * r * 0.20)
         }
-
-        ctx.fill(circle(c, r),
-                 with: .radialGradient(Gradient(colors: [Color.accentRed.opacity(0.6), .clear]),
-                                       center: c, startRadius: 0, endRadius: r))
+        let wr = r * 1.5
+        additive(ctx).fill(circle(drift, wr),
+                           with: .radialGradient(Gradient(colors: [Color.cream.opacity(0.28 * gaze), Color.cream.opacity(0)]),
+                                                 center: drift, startRadius: 0, endRadius: wr))
 
         // The point itself firms as the gaze holds — a red dot to rest on,
         // rather than a haze.
-        if gaze > 0.001 {
-            let dot = max(3.0, r * 0.18)
-            ctx.fill(circle(c, dot), with: .color(Color.accentRed.opacity(0.35 + 0.5 * gaze)))
-        }
+        let dot = max(3.0, r * 0.18)
+        ctx.fill(circle(c, dot), with: .color(Color.accentRed.opacity(0.35 + 0.5 * gaze)))
     }
 
     private func seatKp(_ seat: MandalaWorld.Seat) -> Int {
         seat.shakti.khadgamalaPosition ?? seat.shakti.position
     }
-}
-
-/// The interlocking triangles of the Śrī Yantra, as world-space vertex triples
-/// (Bindu at origin). Ported from the prototype's `SY_DOWN` / `SY_UP`.
-enum MandalaYantra {
-    static let triangles: [(CGPoint, CGPoint, CGPoint)] = {
-        let r = MandalaWorld.radius
-        let down: [(CGFloat, CGFloat, CGFloat)] = [   // (topY, apexY, halfWidth) as fractions
-            (-0.30, 1.00, 0.98), (-0.48, 0.80, 0.80), (-0.64, 0.58, 0.62),
-            (-0.79, 0.36, 0.45), (-0.91, 0.16, 0.29),
-        ]
-        let up: [(CGFloat, CGFloat, CGFloat)] = [      // (botY, apexY, halfWidth)
-            (0.33, -0.99, 0.92), (0.51, -0.77, 0.75), (0.67, -0.55, 0.57), (0.81, -0.31, 0.41),
-        ]
-        var out: [(CGPoint, CGPoint, CGPoint)] = []
-        for t in down {
-            out.append((CGPoint(x: -t.2 * r, y: t.0 * r),
-                        CGPoint(x: t.2 * r, y: t.0 * r),
-                        CGPoint(x: 0, y: t.1 * r)))
-        }
-        for t in up {
-            out.append((CGPoint(x: -t.2 * r, y: t.0 * r),
-                        CGPoint(x: t.2 * r, y: t.0 * r),
-                        CGPoint(x: 0, y: t.1 * r)))
-        }
-        return out
-    }()
 }
 
 /// A fixed starfield around the yantra — deterministic (seeded LCG), so it never
