@@ -179,6 +179,10 @@ struct ShaktiDetailView: View {
     private func atmosphereLayer(side: CGFloat) -> some View {
         ZStack {
             AtmosphereBackground(atmosphere: atmo)
+            // Her Presence's own crown (Wave 1): `radial-gradient(ellipse 130%
+            // 55% at 50% -5%, glow, transparent 70%)` laid over her ground.
+            LightField(layers: Backdrop.presenceCrown(atmo))
+                .blendMode(.plusLighter)
             Color.clear.overlay(alignment: .top) {
                 RiteSigil(atmosphere: atmo, ring: shakti.ringNumber ?? 2,
                           size: side * 1.5, spin: -1)

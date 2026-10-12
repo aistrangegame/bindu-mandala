@@ -15,21 +15,42 @@ struct Atmosphere: Equatable {
     let glowAlpha: Double
     /// Slow sigil rotation, degrees — deterministic per Śakti.
     let rotation: Double
+    /// The hour she is lit by, when she is lit by one (`lrApplyTime`'s
+    /// `timeKey`). Nil for the timeless ring atmospheres the Field and the
+    /// threshold wear. Wave 1: the day's tint on the ground and the time-lit
+    /// caps on her bright accent and glow come back from this.
+    var timeKey: TimeVariant? = nil
 
     // MARK: - Derived colors (all inside the token family)
 
     var accent: Color { hue.color() }
+    /// `lrAtmosphere` caps her bright accent at l 78 / s 88; `lrApplyTime`
+    /// lets the hour lift it to l 80 / s 90.
     var accentBright: Color {
-        HSL(h: hue.h, s: min(hue.s + 10, 88), l: min(hue.l + 18, 78)).color()
+        let lCap: Double = timeKey == nil ? 78 : 80
+        let sCap: Double = timeKey == nil ? 88 : 90
+        return HSL(h: hue.h, s: min(hue.s + 10, sCap), l: min(hue.l + 18, lCap)).color()
     }
     var accentSoft: Color { hue.color(alpha: 0.62) }
     var accentFaint: Color { hue.color(alpha: 0.24) }
-    var glow: Color { HSL(h: hue.h, s: hue.s, l: min(hue.l + 6, 70)).color(alpha: glowAlpha) }
+    var glow: Color {
+        let lCap: Double = timeKey == nil ? 70 : 72
+        return HSL(h: hue.h, s: hue.s, l: min(hue.l + 6, lCap)).color(alpha: glowAlpha)
+    }
 
     /// Ground = the base ground tinted 20% toward her accent (an RGB blend
-    /// approximating the prototype's `color-mix` in oklab).
-    var ground: Color { Self.blend(Self.baseGround, hue.rgb, 0.20) }
-    var groundDeep: Color { Self.blend(Self.baseGroundDeep, hue.rgb, 0.12) }
+    /// approximating the prototype's `color-mix` in oklab), then — when she is
+    /// lit by an hour — mixed toward that hour's own tint (`lrApplyTime`):
+    /// dawn's rose, noon's slate, dusk's ember, night's indigo.
+    var ground: Color { Self.color(groundRGB) }
+    var groundDeep: Color { Self.color(groundDeepRGB) }
+
+    var groundRGB: (r: Double, g: Double, b: Double) {
+        Self.tinted(Self.mix(Self.baseGround, hue.rgb, 0.20), by: timeKey)
+    }
+    var groundDeepRGB: (r: Double, g: Double, b: Double) {
+        Self.tinted(Self.mix(Self.baseGroundDeep, hue.rgb, 0.12), by: timeKey)
+    }
 
     // MARK: - Derivation
 
@@ -49,7 +70,7 @@ struct Atmosphere: Equatable {
             glowAlpha = HSL.clamp(0.36 * m.glowMul, 0.12, 0.5)
         }
         return Atmosphere(hue: hue, element: element, glowAlpha: glowAlpha,
-                          rotation: jitter(khadgamala, 44).rounded())
+                          rotation: jitter(khadgamala, 44).rounded(), timeKey: variant)
     }
 
     /// Derive for a real Śakti. Bakes in the 86-degradation: cluster hue is used
@@ -108,9 +129,32 @@ struct Atmosphere: Equatable {
     private static let baseGround: (Double, Double, Double) = (13/255, 5/255, 8/255)     // #0D0508
     private static let baseGroundDeep: (Double, Double, Double) = (7/255, 2/255, 5/255)   // #070205
 
-    private static func blend(_ a: (Double, Double, Double), _ b: (r: Double, g: Double, b: Double), _ t: Double) -> Color {
-        Color(red: a.0 * (1 - t) + b.r * t,
-              green: a.1 * (1 - t) + b.g * t,
-              blue: a.2 * (1 - t) + b.b * t)
+    static func mix(_ a: (Double, Double, Double), _ b: (r: Double, g: Double, b: Double),
+                    _ t: Double) -> (r: Double, g: Double, b: Double) {
+        (a.0 * (1 - t) + b.r * t, a.1 * (1 - t) + b.g * t, a.2 * (1 - t) + b.b * t)
+    }
+
+    static func color(_ c: (r: Double, g: Double, b: Double)) -> Color {
+        Color(red: c.r, green: c.g, blue: c.b)
+    }
+
+    /// `LR_TIME_VARIANTS[*].tint` / `tintA`. The new moon has no prototype
+    /// variant; it takes the deepest of them, a little stronger.
+    static func timeTint(_ v: TimeVariant) -> (rgb: (Double, Double, Double), amount: Double) {
+        switch v {
+        case .dawn:    return ((58 / 255, 28 / 255, 34 / 255), 0.12)    // #3a1c22
+        case .noon:    return ((36 / 255, 40 / 255, 56 / 255), 0.07)    // #242838
+        case .dusk:    return ((51 / 255, 19 / 255, 6 / 255), 0.14)     // #331306
+        case .newmoon: return ((4 / 255, 3 / 255, 12 / 255), 0.18)
+        // `.night`, and any later hour, take night's indigo.
+        default:       return ((6 / 255, 7 / 255, 22 / 255), 0.16)      // #060716
+        }
+    }
+
+    static func tinted(_ c: (r: Double, g: Double, b: Double),
+                       by v: TimeVariant?) -> (r: Double, g: Double, b: Double) {
+        guard let v else { return c }
+        let tint = timeTint(v)
+        return mix((c.r, c.g, c.b), (r: tint.rgb.0, g: tint.rgb.1, b: tint.rgb.2), tint.amount)
     }
 }

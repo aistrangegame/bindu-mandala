@@ -7,6 +7,13 @@ import SwiftData
 /// often she has been felt. Tapping a Śakti pushes ShaktiDetailView; tapping a
 /// ring header's "the threshold" opens the Avaraṇa threshold.
 /// Ported from the prototype's `FieldScreen` / `FieldRing`.
+///
+/// Wave 1 · lit as Design's Field: the day's ground with its crown of glow
+/// (`Backdrop.crown`, an ellipse 130% × 40% — the port drew a circle), every
+/// ring's chip at the brightness Design drew it (it was 2–4× fainter), the open
+/// ring's geometry filling its room at 0.5, and each ring breathing at its own
+/// rate (`FieldBreath`). "Enter her ring" on the threshold comes back here and
+/// opens that ring.
 struct TheHundredTwoView: View {
     @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
@@ -18,6 +25,8 @@ struct TheHundredTwoView: View {
     @State private var userToggled = false
     /// Phase 3.7 — the way onto the axis. See ``theClimbDoor``.
     @State private var showClimb = false
+    /// The ring "enter her ring" asked to be brought into view.
+    @State private var scrollTarget: Int?
 
     /// The open ring. Until the practitioner touches the accordion it follows
     /// today's ring — computed at render, so it's correct even if the store
@@ -31,7 +40,9 @@ struct TheHundredTwoView: View {
                     ShaktiDetailView(shakti: shakti, backLabel: "the field", source: .field)
                 }
                 .navigationDestination(item: $thresholdFor) { avarana in
-                    AvaranaThresholdView(avarana: avarana)
+                    AvaranaThresholdView(avarana: avarana,
+                                         ringAtmosphere: ringAtmosphere(avarana.ringNumber),
+                                         onEnter: { enterRing(avarana.ringNumber) })
                 }
                 .onAppear {
                     // Debug: `OPEN_THRESHOLD=<ring>` opens that ring's threshold directly.
@@ -113,52 +124,79 @@ struct TheHundredTwoView: View {
     private var content: some View {
         ZStack {
             // The day's atmosphere as the ground, her glow pooling at the crown.
-            LinearGradient(colors: [dayAtmo.ground, dayAtmo.groundDeep],
-                           startPoint: .top, endPoint: .bottom)
+            LightField(layers: Backdrop.crown(dayAtmo))
                 .ignoresSafeArea()
-            RadialGradient(gradient: Gradient(colors: [dayAtmo.glow, .clear]),
-                           center: UnitPoint(x: 0.5, y: -0.05), startRadius: 0, endRadius: 460)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
 
             VStack(spacing: 0) {
                 header
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(1...9, id: \.self) { ring in
-                            let inRing = (shaktisByRing[ring] ?? []).sorted { $0.position < $1.position }
-                            if !inRing.isEmpty {
-                                FieldRing(
-                                    ring: ring,
-                                    avarana: avaranas.first(where: { $0.ringNumber == ring }),
-                                    seats: inRing,
-                                    ringAtmo: Atmosphere.derive(from: inRing[0]),
-                                    todayKp: todayPos,
-                                    todayRing: todayRing,
-                                    countByKp: countByKp,
-                                    open: effectiveOpen == ring,
-                                    onToggle: {
-                                        Haptics.light()
-                                        withAnimation(.easeInOut(duration: 0.34)) {
-                                            let cur = effectiveOpen
-                                            userToggled = true
-                                            openRing = (cur == ring) ? nil : ring
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(1...9, id: \.self) { ring in
+                                let inRing = (shaktisByRing[ring] ?? []).sorted { $0.position < $1.position }
+                                if !inRing.isEmpty {
+                                    FieldRing(
+                                        ring: ring,
+                                        avarana: avaranas.first(where: { $0.ringNumber == ring }),
+                                        seats: inRing,
+                                        ringAtmo: Atmosphere.derive(from: inRing[0]),
+                                        todayKp: todayPos,
+                                        todayRing: todayRing,
+                                        countByKp: countByKp,
+                                        open: effectiveOpen == ring,
+                                        onToggle: {
+                                            Haptics.light()
+                                            withAnimation(.easeInOut(duration: 0.34)) {
+                                                let cur = effectiveOpen
+                                                userToggled = true
+                                                openRing = (cur == ring) ? nil : ring
+                                            }
+                                        },
+                                        onOpenShakti: { Haptics.light(); detailFor = $0 },
+                                        onOpenThreshold: {
+                                            if let av = avaranas.first(where: { $0.ringNumber == ring }) {
+                                                Haptics.light(); thresholdFor = av
+                                            }
                                         }
-                                    },
-                                    onOpenShakti: { Haptics.light(); detailFor = $0 },
-                                    onOpenThreshold: {
-                                        if let av = avaranas.first(where: { $0.ringNumber == ring }) {
-                                            Haptics.light(); thresholdFor = av
-                                        }
-                                    }
-                                )
+                                    )
+                                    .id(ring)
+                                }
                             }
+                            Color.clear.frame(height: 32)
                         }
-                        Color.clear.frame(height: 32)
+                    }
+                    .onChange(of: scrollTarget) { _, target in
+                        guard let target else { return }
+                        withAnimation(.easeInOut(duration: 0.6)) { proxy.scrollTo(target, anchor: .top) }
+                        scrollTarget = nil
                     }
                 }
             }
         }
+    }
+
+    /// A ring's own light — the atmosphere of its first seat, as its row wears
+    /// it — or, before the store holds that ring, the light of its first
+    /// Khaḍgamālā position.
+    private func ringAtmosphere(_ ring: Int) -> Atmosphere {
+        if let first = (shaktisByRing[ring] ?? []).min(by: { $0.position < $1.position }) {
+            return Atmosphere.derive(from: first)
+        }
+        let firstKp = [1: 1, 2: 29, 3: 45, 4: 53, 5: 67, 6: 77, 7: 87, 8: 99, 9: 102][ring] ?? 1
+        return Atmosphere.derive(ring: ring, cluster: ring == 2 ? .inner : nil,
+                                 khadgamala: firstKp, element: Element.forRing(ring))
+    }
+
+    /// "Enter her ring": the threshold steps back, and the ring it stood at
+    /// opens and comes into view — the threshold was the way into this room.
+    private func enterRing(_ ring: Int) {
+        Haptics.medium()
+        thresholdFor = nil
+        withAnimation(.easeInOut(duration: 0.34)) {
+            userToggled = true
+            openRing = ring
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { scrollTarget = ring }
     }
 
     private var header: some View {
@@ -208,13 +246,7 @@ struct TheHundredTwoView: View {
     private var todayRing: Int { todayShakti?.ringNumber ?? 2 }
 
     /// The whole Field wears today's light.
-    private var dayAtmo: Atmosphere {
-        if let t = todayShakti {
-            return Atmosphere.derive(from: t, at: LunarPhaseService.currentTimeVariant())
-        }
-        return Atmosphere.derive(ring: 2, cluster: .inner, khadgamala: todayPos,
-                                 element: .ether, at: LunarPhaseService.currentTimeVariant())
-    }
+    private var dayAtmo: Atmosphere { DayLight.atmosphere(shaktis, position: todayPos) }
 
     /// How often each seat has been felt — local recognitions merged with the
     /// server count, so a just-felt Śakti lights immediately and history persists.
@@ -260,17 +292,9 @@ private struct FieldRing: View {
     private var ringHeader: some View {
         Button(action: onToggle) {
             HStack(spacing: 16) {
-                // Ring sigil chip — her geometry, glowing when the room is open.
-                ZStack {
-                    Circle()
-                        .fill(RadialGradient(gradient: Gradient(colors: [ringAtmo.accentFaint, .clear]),
-                                             center: .center, startRadius: 0, endRadius: 24))
-                    RiteSigil(atmosphere: ringAtmo, ring: ring, size: 44,
-                              spin: ring % 2 == 1 ? 1 : -1)
-                        .opacity(open ? 0.9 : 0.5)
-                }
-                .frame(width: 48, height: 48)
-                .shadow(color: open ? ringAtmo.glow : .clear, radius: open ? 16 : 0)
+                // Ring sigil chip — her geometry at full light, breathing at
+                // the ring's own rate, turning and glowing when the room is open.
+                RingChip(ring: ring, atmo: ringAtmo, open: open)
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 10) {
@@ -357,16 +381,11 @@ private struct FieldRing: View {
         }
         .padding(.bottom, 14)
         .background(
-            // The ring's geometry, faint, filling the room you've entered.
-            Color.clear.overlay(
-                RiteSigil(atmosphere: ringAtmo, ring: ring, size: 340,
-                          spin: ring % 2 == 1 ? 1 : -1)
-                    .opacity(0.4)
-            )
-            .clipped()
-            .allowsHitTesting(false)
+            // The ring's geometry filling the room you've entered — at the 0.5
+            // Design gave it, breathing at the ring's rate.
+            RingRoomGeometry(ring: ring, atmo: ringAtmo)
         )
-        .background(LinearGradient(colors: [ringAtmo.groundDeep.opacity(0.9), .clear],
+        .background(LinearGradient(colors: [ringAtmo.groundDeep, ringAtmo.groundDeep.opacity(0)],
                                    startPoint: .top, endPoint: .bottom))
     }
 
@@ -431,5 +450,67 @@ private struct FieldRing: View {
         case 3: return "3rd"
         default: return "\(n)th"
         }
+    }
+}
+
+// MARK: - The ring's chip, and the ring's room
+
+/// A ring's chip in the Field's list: her ring's geometry at the light Design
+/// drew it (`LrSigil … opacity={2.4}` — clamped, it is full), over a pool of
+/// her faint accent. The pool breathes at the ring's own period; the Bhūpura's
+/// holds. Open, the geometry turns and her glow stands around it.
+private struct RingChip: View {
+    let ring: Int
+    let atmo: Atmosphere
+    let open: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let period = FieldBreath.period(ring: ring)
+        let still = reduceMotion || AppRuntime.forcesReduceMotion || period == nil
+        ZStack {
+            TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: still)) { context in
+                let b = still ? 0.5 : FieldBreath.phase(at: context.date.timeIntervalSinceReferenceDate,
+                                                        period: period ?? 1)
+                Circle()
+                    .fill(RadialGradient(gradient: Gradient(colors: [atmo.accentFaint,
+                                                                     atmo.accentFaint.opacity(0)]),
+                                         center: .center, startRadius: 0, endRadius: 24.4))
+                    .scaleEffect(0.92 + 0.16 * b)
+                    .shadow(color: open ? atmo.glow : atmo.glow.opacity(0),
+                            radius: open ? 8 + 6 * b : 0)
+            }
+            RiteSigil(atmosphere: atmo, ring: ring, size: 48,
+                      spin: ring % 2 == 1 ? 1 : -1, spinning: open)
+                .opacity(DayLight.fieldChipOpacity)
+        }
+        .frame(width: 48, height: 48)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The open ring's geometry, 360 pt, standing at 46% of the room — the light
+/// of the enclosure you have walked into. It turns, and it breathes at the
+/// ring's rate around the 0.5 Design gave it.
+private struct RingRoomGeometry: View {
+    let ring: Int
+    let atmo: Atmosphere
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let period = FieldBreath.period(ring: ring)
+        let still = reduceMotion || AppRuntime.forcesReduceMotion || period == nil
+        GeometryReader { geo in
+            TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: still)) { context in
+                let b = still ? 0.5 : FieldBreath.phase(at: context.date.timeIntervalSinceReferenceDate,
+                                                        period: period ?? 1)
+                RiteSigil(atmosphere: atmo, ring: ring, size: 360,
+                          spin: ring % 2 == 1 ? 1 : -1)
+                    .opacity(DayLight.fieldRoomOpacity * (0.88 + 0.24 * b))
+                    .position(x: geo.size.width / 2, y: geo.size.height * 0.46)
+            }
+        }
+        .clipped()
+        .allowsHitTesting(false)
     }
 }
