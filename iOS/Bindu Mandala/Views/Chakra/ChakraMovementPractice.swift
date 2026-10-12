@@ -222,7 +222,7 @@ final class MovementField {
 
         case .hamHetHum:
             guard let start = breathStart, !completed else { break }
-            let cycle = ChakraMovement.hamHetHum.reduce(0.0) { $0 + $1.seconds }
+            let cycle = ChakraMovement.hamHetHumBreaths.reduce(0.0) { $0 + $1.seconds }
             let t = now - start
             if t >= cycle * 3 {
                 breathPhase = nil
@@ -233,7 +233,7 @@ final class MovementField {
             let within = t.truncatingRemainder(dividingBy: cycle)
             var acc = 0.0
             var phase = 0
-            for (i, b) in ChakraMovement.hamHetHum.enumerated() {
+            for (i, b) in ChakraMovement.hamHetHumBreaths.enumerated() {
                 if within < acc + b.seconds { phase = i; break }
                 acc += b.seconds
             }
@@ -442,17 +442,17 @@ final class MovementField {
             }
 
         case .hamHetHum:
-            let cycle = ChakraMovement.hamHetHum.reduce(0.0) { $0 + $1.seconds }
+            let cycle = ChakraMovement.hamHetHumBreaths.reduce(0.0) { $0 + $1.seconds }
             var r: CGFloat = 44
             if let start = breathStart, let phase = breathPhase {
                 let within = (now - start).truncatingRemainder(dividingBy: cycle)
-                let s0 = ChakraMovement.hamHetHum[0].seconds
-                let s1 = ChakraMovement.hamHetHum[1].seconds
+                let s0 = ChakraMovement.hamHetHumBreaths[0].seconds
+                let s1 = ChakraMovement.hamHetHumBreaths[1].seconds
                 switch phase {
                 case 0: r = 44 + 120 * CGFloat(min(1, within / s0))
                 case 1: r = 164
                 default:
-                    let k = min(1, (within - s0 - s1) / ChakraMovement.hamHetHum[2].seconds)
+                    let k = min(1, (within - s0 - s1) / ChakraMovement.hamHetHumBreaths[2].seconds)
                     r = 164 - 120 * CGFloat(k)
                     let out = CGFloat(k) * dim * 0.5
                     add.stroke(Path(ellipseIn: CGRect(x: heart.x - out, y: heart.y - out, width: out * 2, height: out * 2)),
@@ -660,7 +660,7 @@ struct ChakraMovementPractice: View {
     private var breathWords: some View {
         let phase = field.breathPhase
         HStack(spacing: 22) {
-            ForEach(Array(ChakraMovement.hamHetHum.enumerated()), id: \.offset) { pair in
+            ForEach(Array(ChakraMovement.hamHetHumBreaths.enumerated()), id: \.offset) { pair in
                 let lit = phase == pair.offset
                 let ours = field.breathIndex == pair.offset
                 Text(pair.element.syllable)
@@ -671,7 +671,7 @@ struct ChakraMovementPractice: View {
         }
         .padding(.top, 18)
         if let p = phase {
-            let b = ChakraMovement.hamHetHum[p]
+            let b = ChakraMovement.hamHetHumBreaths[p]
             Text(b.breath)
                 .font(AppFont.label(12))
                 .tracking(2.2)

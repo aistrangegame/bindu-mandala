@@ -117,7 +117,7 @@ enum ChakraMovement: String, CaseIterable, Identifiable {
         let seconds: Double
     }
 
-    static let hamHetHum: [Breath] = [
+    static let hamHetHumBreaths: [Breath] = [
         Breath(syllable: "HAM", breath: "inhale · receive", line: "I am being made aware", seconds: 4),
         Breath(syllable: "HET", breath: "hold", line: nil, seconds: 4),
         Breath(syllable: "HUM", breath: "exhale · transmit", line: "I realize it is possible", seconds: 4),

@@ -230,7 +230,7 @@ final class ChakraRoomTests: XCTestCase {
         XCTAssertEqual(ChakraMovement.breathIndex(forRoad: 16), 0, "Echo receives — HAM")
         XCTAssertEqual(ChakraMovement.breathIndex(forRoad: 6), 1, "Viśuddha holds — HET")
         XCTAssertEqual(ChakraMovement.breathIndex(forRoad: 15), 2, "Sonar transmits — HUM")
-        XCTAssertEqual(ChakraMovement.hamHetHum.map(\.syllable), ["HAM", "HET", "HUM"])
+        XCTAssertEqual(ChakraMovement.hamHetHumBreaths.map(\.syllable), ["HAM", "HET", "HUM"])
     }
 
     /// Never a score: nothing a practice says counts or measures.
@@ -240,7 +240,7 @@ final class ChakraRoomTests: XCTestCase {
             words.append(m.title)
             words.append(contentsOf: m.lines)
         }
-        words.append(contentsOf: ChakraMovement.hamHetHum.compactMap(\.line))
+        words.append(contentsOf: ChakraMovement.hamHetHumBreaths.compactMap(\.line))
         for w in words {
             XCTAssertTrue(NeverMeasure.measuresOutLoud(w).isEmpty, "\"\(w)\" measures")
             XCTAssertNil(w.rangeOfCharacter(from: .decimalDigits), "\"\(w)\" carries a digit")
