@@ -749,6 +749,19 @@ struct ClimbGestures: Equatable {
     var union: Double = 0
     /// Ring 6's light, where the finger has carried it, in scene units.
     var follow: SIMD3<Double>?
+    /// Wave 6 · Ring 1's families settling onto the Bhūpura's squares, 0 … 1.
+    var settle: Double = 0
+    /// Wave 6 · Ring 2's lotus following the sun, 0 closed … 1 open.
+    var lotus: Double = 1
+    /// Wave 6 · Ring 4's teaching travelling round, in seats; and its glow.
+    var lineage: Double = 0
+    var lineageGlow: Double = 0
+    /// Wave 6 · Ring 5's light overflowing its circle, 0 … 1.
+    var overflow: Double = 0
+    /// Wave 6 · Ring 8's vertex collapse: the light touched, and how far the
+    /// other two have drawn into it.
+    var collapseInto: Int? = nil
+    var collapse: Double = 0
 
     struct Flight: Equatable {
         let kp: Int
@@ -873,6 +886,10 @@ extension WorldClimbScene {
         ClimbLights.position(kp: kp)
             + ClimbLights.scatter(kp: kp, agitation: gestures.agitation)
             + ClimbLights.gather(kp: kp, union: gestures.union)
+            + ClimbLights.wholeMechanisms(kp: kp, settle: gestures.settle, openness: gestures.lotus,
+                                          lineageWave: gestures.lineage, lineageGlow: gestures.lineageGlow,
+                                          overflow: gestures.overflow,
+                                          collapseInto: gestures.collapseInto, collapse: gestures.collapse)
     }
 
     /// Ring 6's moving light — a soft glow, not a figure.

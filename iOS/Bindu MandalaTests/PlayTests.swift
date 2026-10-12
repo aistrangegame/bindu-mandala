@@ -34,6 +34,19 @@ final class PlayAddressTests: XCTestCase {
         .shakeToClear: (82, "Sarvādhārasvarūpā", 6),           // The Map: Crow
         .door:         (94, "Kaulinī", 7),                     // The Map: Innocence
         .yantraTrace:  (102, "Mahātripurasundarī", 9),
+        // Wave 6 · Slice E — read off the Mandala table (name `fldJOatnYrw9l6tff`,
+        // body location `fld6P1u43B0eqKU5e`) and The Map on 2026-10-12.
+        .seed:             (26,  "Sarva-Bīja (Mudrā)", 1),        // "the seed that holds everything"
+        .colourRivers:     (20,  "Sarva-Vidrāviṇī (Mudrā)", 1),   // "joints / fluid systems" — melting
+        .bhakti:           (24,  "Sarva-Mahāṅkuśā (Mudrā)", 1),   // "navel hook" — the one Maṇipūra seat at the navel
+        .mirrorMaze:       (30,  "Buddhyākarṣiṇī", 2),            // buddhi — the mind that reflects
+        .stillAjna:        (51,  "Anaṅga-Aṅkuśā", 3),             // Ājñā, "between the eyes"
+        .bodyMap:          (77,  "Sarvajñā", 6),                  // The Map: Vision
+        .letter:           (88,  "Kāmeśī", 7),                    // The Map: Intention
+        .flash:            (91,  "Aruṇā", 7),                     // The Map: Intuition
+        .join:             (92,  "Jayinī", 7),                    // The Map: Invention — "the third thing"
+        .shadowTranslator: (101, "Bhagamālinī", 8),               // The Map: Ego Reveal
+        .leela:            (102, "Mahātripurasundarī", 9),        // The Map: Lalitā — the play
     ]
 
     func testEverySeatedGameIsAtTheSeatTheRowsName() {
@@ -52,6 +65,17 @@ final class PlayAddressTests: XCTestCase {
         XCTAssertEqual(PlayGame.corridor.address, .threshold(from: 3, to: 4), "the Shadow crossing")
         XCTAssertEqual(PlayGame.rosary.address, .garland)
         XCTAssertEqual(PlayGame.bijaTones.address, .ring(1))
+        // Wave 6.
+        XCTAssertEqual(PlayGame.shadowScrolls.address, .threshold(from: 3, to: 4), "the Shadow's own scrolls")
+        XCTAssertEqual(PlayGame.tatTvamAsi.address, .threshold(from: 6, to: 7), "Armin")
+        XCTAssertEqual(PlayGame.mandalaCompletion.address, .ring(7), "Integration")
+        XCTAssertEqual(PlayGame.twelve.address, .ring(7), "the Vāk ring")
+        XCTAssertEqual(PlayGame.turn.address, .ring(8), "the three made one")
+        XCTAssertEqual(PlayGame.worldInABox.address, .ring(9))
+        XCTAssertEqual(PlayGame.ramJapa.address, .ring(9), "his own name: the point, never a Śakti's seat")
+        XCTAssertEqual(PlayGame.ramJapa.handoff, .stillness)
+        XCTAssertEqual(PlayGame.sandhya.address, .ring(2), "the lotus that follows the sun")
+        XCTAssertEqual(PlayGame.greatWheel.address, .ring(1))
     }
 
     func testEveryAddressIsInsideTheGarland() {
@@ -61,7 +85,8 @@ final class PlayAddressTests: XCTestCase {
             }
             XCTAssertTrue((1...9).contains(game.address.ring), "\(game)")
         }
-        XCTAssertEqual(PlayGame.allCases.count, 16, "the game reading names sixteen real games")
+        XCTAssertEqual(PlayGame.allCases.count, 36,
+                       "Wave 4's sixteen and Wave 6's twenty: every game in the corpus is home")
     }
 
     /// Her Detail's door asks only her position, and every one of the 102 has
@@ -78,6 +103,13 @@ final class PlayAddressTests: XCTestCase {
         XCTAssertEqual(PlayAddressBook.door(forPosition: 53), .drum)
         XCTAssertEqual(PlayAddressBook.door(forPosition: 70), .pulse, "Pulse leads at her seat; Coherence is beside it")
         XCTAssertEqual(PlayAddressBook.door(forPosition: 33), .rosary)
+        XCTAssertEqual(PlayAddressBook.door(forPosition: 102), .yantraTrace,
+                       "the Śrī Yantra leads at the Bindu; Leela's board is beside it")
+        XCTAssertEqual(PlayAddressBook.door(forPosition: 24), .bhakti)
+        XCTAssertEqual(PlayAddressBook.door(forPosition: 26), .seed)
+        XCTAssertEqual(PlayAddressBook.games(at: .ring(7)), [.mandalaCompletion, .twelve])
+        XCTAssertTrue(PlayAddressBook.games(inRing: 7).contains(.letter))
+        XCTAssertFalse(PlayAddressBook.games(inRing: 9).contains(.rosary), "the garland is everywhere, not one ring")
     }
 
     func testEveryGameEndsInRecognitionOrStillnessAndIsGivenWordsOnce() {
