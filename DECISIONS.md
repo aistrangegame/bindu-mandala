@@ -3804,3 +3804,25 @@ that law caught the first version of this fix.
   a shipped schema version, and `BinduSchema`'s first law is that it never drifts.
   The climb's altitude still reads Design's body region (it parses the short
   form), so nothing visual moves in Wave 0.
+
+### Wave 0 · The checks reach Xcode Cloud
+
+The first "Waves — test" run built clean (0 errors) and reported 192 failures.
+About 140 were one cause: Xcode Cloud runs tests on a machine that holds the built
+products, not the checkout, so every test that reads the app's own source through
+`#filePath` read an empty tree. The fix keeps the checks rather than skipping them:
+a "Bundle the source tree" build phase copies `iOS/Bindu Mandala`, the two test
+folders, `SnapshotBaselines`, `DECISIONS.md` and Design's `homes/` into the test
+bundle (`Config.local*.xcconfig` excluded by name, so the token never travels), and
+`SourceTree.repoRoot` reads the checkout when it exists and the bundled copy when
+it does not. The UI-test target bundles the baselines the same way. Both targets
+run their phase unsandboxed (`ENABLE_USER_SCRIPT_SANDBOXING = NO`, test targets only).
+
+Three failures were the simulator, not the app, and are answered on their merits:
+- `UIFontMetrics` does not quantise half-points on Xcode Cloud's OS. The test now
+  asserts only what ships (`labelPointSize` returns the size asked for); whether
+  the raw metric quantises is the OS's business.
+- The Mandala's spoken seats were read in layout order there. The layer now is one
+  accessibility container, so its sort priorities (the garland) govern.
+- The composition lock found no baselines (the same missing-tree cause); it stays
+  until Wave 1 re-baselines it.

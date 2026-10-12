@@ -334,11 +334,23 @@ enum SnapshotStore {
     /// Symlinks resolved for the reason `LawsTests` resolves them: on macOS
     /// `/tmp` is `/private/tmp`, and a path wrong in that one component reads as
     /// correct to the eye and then fails every comparison.
-    static let root: URL = URL(fileURLWithPath: #filePath)
-        .resolvingSymlinksInPath()
-        .deletingLastPathComponent()      // Bindu MandalaUITests
-        .deletingLastPathComponent()      // iOS
-        .appendingPathComponent("SnapshotBaselines", isDirectory: true)
+    static let root: URL = {
+        let checkout = URL(fileURLWithPath: #filePath)
+            .resolvingSymlinksInPath()
+            .deletingLastPathComponent()      // Bindu MandalaUITests
+            .deletingLastPathComponent()      // iOS
+            .appendingPathComponent("SnapshotBaselines", isDirectory: true)
+        if FileManager.default.fileExists(atPath: checkout.path) { return checkout }
+        // Xcode Cloud: the runner holds the products, not the checkout, so the
+        // baselines are read from the copy the build phase put in this bundle.
+        if let bundled = Bundle(for: BundleMarker.self).resourceURL?
+            .appendingPathComponent("SourceTree/iOS/SnapshotBaselines", isDirectory: true),
+           FileManager.default.fileExists(atPath: bundled.path) {
+            return bundled
+        }
+        return checkout
+    }()
+    private final class BundleMarker {}
 
     /// Recording is opt-in twice over: an environment variable when the runner
     /// inherits one, and otherwise a marker file the operator has to create by

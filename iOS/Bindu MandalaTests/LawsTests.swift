@@ -458,11 +458,7 @@ enum LawSource {
     /// symlink to `/private/tmp`: a checkout under one would have `#filePath`
     /// saying `/tmp/…` while the directory walker says `/private/tmp/…`, and
     /// every path in this file would be wrong in a way the naked eye skips over.
-    static let repoRoot: URL = URL(fileURLWithPath: #filePath)
-        .resolvingSymlinksInPath()
-        .deletingLastPathComponent()   // Bindu MandalaTests
-        .deletingLastPathComponent()   // iOS
-        .deletingLastPathComponent()   // repo root
+    static let repoRoot: URL = SourceTree.repoRoot   // the checkout, or the bundled copy on Xcode Cloud
 
     static let productionRoot = repoRoot.appendingPathComponent("iOS/Bindu Mandala", isDirectory: true)
     static let unitTestRoot  = repoRoot.appendingPathComponent("iOS/Bindu MandalaTests", isDirectory: true)

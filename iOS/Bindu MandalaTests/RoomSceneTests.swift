@@ -31,10 +31,7 @@ final class RoomSceneTests: XCTestCase {
     /// is about what the source has no room to grow, which no run-time value
     /// can show.
     private func renderSource(_ name: String) throws -> String {
-        let url = URL(fileURLWithPath: #filePath)
-            .resolvingSymlinksInPath()
-            .deletingLastPathComponent()      // Bindu MandalaTests
-            .deletingLastPathComponent()      // iOS
+        let url = SourceTree.iOSRoot
             .appendingPathComponent("Bindu Mandala/Homes/Render/\(name)")
         return try String(contentsOf: url, encoding: .utf8)
     }
