@@ -399,7 +399,11 @@ final class RingAudioService {
 
     // MARK: - Global stop (used on app background)
 
-    func stopAll() {
+    /// `givingBackTheSession` is false when the field merely falls quiet
+    /// between places (a room is opening, Mauna is beginning) — giving
+    /// `.playback` back then could land after the room has asked for
+    /// `.ambient`, and the room would sound through the silent switch.
+    func stopAll(givingBackTheSession: Bool = true) {
         groundDroneStop()
         homeBreathStop()
         sustainedVoiceStop()
@@ -409,7 +413,7 @@ final class RingAudioService {
         pointStop()
         // The field's ruling is the field's: give the session back the way the
         // rest of the app asks for it (see ``honourSilentSwitch()``).
-        if configured {
+        if configured, givingBackTheSession {
             try? AVAudioSession.sharedInstance()
                 .setCategory(.playback, mode: .default, options: [.mixWithOthers])
         }

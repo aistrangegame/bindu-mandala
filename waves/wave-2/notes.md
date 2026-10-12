@@ -140,4 +140,6 @@ modifier lines, the card's `onEnterRoom`), `Views/Mandala/SignificanceCard.swift
 `onEnterRoom`), `Views/Today/DailyRiteView.swift` (seat line as a door + `.herRoom`),
 `Views/Common/TheHundredTwoView.swift`, `Views/Common/ShaktiDetailView.swift`,
 `Data/AirtableService.swift` (one field), `Data/RingFactsCache.swift`, `Data/ActivityLedger.swift`,
-`Services/RingAudioService.swift`, `Services/HomeVoice.swift`.
+`Services/RingAudioService.swift`, `Services/HomeVoice.swift`, `Services/HomeSoundService.swift`
+(`start()` now builds the graph before configuring the session — a pre-existing ordering
+whose teardown gave `.playback` back after a room had asked for `.ambient`).

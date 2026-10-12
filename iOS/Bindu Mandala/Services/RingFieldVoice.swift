@@ -160,7 +160,7 @@ final class RingFieldVoice {
         falling = nil
         levels = [:]
         guard allowed else { return }
-        RingAudioService.shared.stopAll()
+        RingAudioService.shared.stopAll(givingBackTheSession: false)
     }
 
     /// Mauna: every voice goes quiet, and what was sounding is remembered.
