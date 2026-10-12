@@ -904,6 +904,8 @@ enum LedgerIsTheRecord {
     static let eventVocabulary = [
         "Shakti Recognized", "Ring Crossed", "Silence Held", "Letter Written",
         "Full Circle", "First Dwelling", "Note Left",
+        // Wave 5 · memory and words — held to the same rule.
+        "Letter Sealed", "Letter Opened", "Portrait Drawn", "Wager Resolved",
         "Activity Type",
     ]
 

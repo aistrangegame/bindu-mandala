@@ -82,6 +82,9 @@ struct BinduMandalaApp: App {
         // preserving any existing store aside. The recognition log and letters
         // then restore from Airtable on the next sync.
         container = PersistenceRecovery.makeContainer()
+        // Wave 5 · a tapped gift lands on her. Installed before launch finishes,
+        // so a gift that opens the app is not missed.
+        GiftRouter.shared.install()
     }
 
     var body: some Scene {
@@ -132,6 +135,10 @@ private struct AppRoot: View {
                 guard !AppRuntime.isUnitTesting else { return }
                 Task { await AirtableService.shared.flushPending(context: context) }
                 Task { await DailySummons.reschedule(enabled: summonsEnabled, hour: summonsHour) }
+                // Wave 5 · the gift's fortnight stays drawn, and practice set
+                // down offline (strokes, river letters, wagers) reaches the ledger.
+                Task { await EnergyGift.reschedule() }
+                Task { await PracticeLedger.flush(context: context) }
             case .background:
                 // Ring-world voices must not keep sounding once the app leaves
                 // the foreground; every drone, triad and descent stops here.

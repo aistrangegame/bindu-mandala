@@ -10,6 +10,9 @@ struct SettingsView: View {
 
     @AppStorage("daily_summons_enabled") private var summonsEnabled = true
     @AppStorage("daily_summons_hour")    private var summonsHour: Int = DailySummons.defaultHour
+    @AppStorage("energy_gift_enabled")      private var giftEnabled = true
+    @AppStorage("energy_gift_window_start") private var giftStart: Int = 10
+    @AppStorage("energy_gift_window_end")   private var giftEnd: Int = 20
     /// Debug: `OPEN_FILM` opens The Way Behind directly. The card that opens it
     /// is the fourth down a sheet that is off-screen on every width, so reaching
     /// it by touch means scrolling to a place that depends on where a flick
@@ -28,6 +31,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 28) {
                         marginSection
                         rhythmSection
+                        giftSection
                         fieldConnectionsSection
                         bijaSection
                         wayBehindSection
@@ -133,7 +137,11 @@ struct SettingsView: View {
                 }
                 .tint(Color.gold)
                 .onChange(of: summonsEnabled) { _, newValue in
-                    Task { await applySummonsChange(enabled: newValue) }
+                    Task {
+                        await applySummonsChange(enabled: newValue)
+                        // The gift rides on her arrivals (Wave 5).
+                        await EnergyGift.reschedule()
+                    }
                 }
 
                 if summonsEnabled {
@@ -156,6 +164,68 @@ struct SettingsView: View {
                 }
 
                 Text("Once a day, never twice. If the rite is already done, she lets the evening pass in stillness.")
+                    .font(AppFont.voice(13))
+                    .foregroundStyle(Color.cream.opacity(0.55))
+                    .lineSpacing(4)
+            }
+        }
+    }
+
+    /// Wave 5 · the random gift: one Śakti's own words at an hour he will not
+    /// expect, at most once a day, inside the window set here. It rides on her
+    /// arrivals: with "Let her arrive" off, no gift comes either.
+    private var giftSection: some View {
+        sectionShell("A Gift") {
+            VStack(alignment: .leading, spacing: 18) {
+                Toggle(isOn: $giftEnabled) {
+                    Text("Let her send a gift")
+                        .font(AppFont.sanskrit(18))
+                        .foregroundStyle(Color.cream)
+                }
+                .tint(Color.gold)
+                .disabled(!summonsEnabled)
+                .onChange(of: giftEnabled) { _, _ in
+                    Task { await EnergyGift.reschedule() }
+                }
+
+                if summonsEnabled && giftEnabled {
+                    HStack {
+                        Text("Not before")
+                            .font(AppFont.label(14))
+                            .foregroundStyle(Color.cream.opacity(0.7))
+                        Spacer()
+                        Picker("", selection: $giftStart) {
+                            ForEach(0..<23) { hour in
+                                Text(formatHour(hour)).tag(hour)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(Color.gold)
+                    }
+                    HStack {
+                        Text("Not after")
+                            .font(AppFont.label(14))
+                            .foregroundStyle(Color.cream.opacity(0.7))
+                        Spacer()
+                        Picker("", selection: $giftEnd) {
+                            ForEach(1..<25) { hour in
+                                Text(formatHour(hour % 24)).tag(hour)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(Color.gold)
+                    }
+                    .onChange(of: giftStart) { _, newStart in
+                        if giftEnd <= newStart { giftEnd = min(24, newStart + 1) }
+                        Task { await EnergyGift.reschedule() }
+                    }
+                    .onChange(of: giftEnd) { _, newEnd in
+                        if newEnd <= giftStart { giftStart = max(0, newEnd - 1) }
+                        Task { await EnergyGift.reschedule() }
+                    }
+                }
+
+                Text("Her own words, at an hour you will not expect — never more than once a day. Opening it brings you to her.")
                     .font(AppFont.voice(13))
                     .foregroundStyle(Color.cream.opacity(0.55))
                     .lineSpacing(4)

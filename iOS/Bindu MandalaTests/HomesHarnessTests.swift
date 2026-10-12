@@ -1015,10 +1015,15 @@ private func instant(_ y: Int, _ mo: Int, _ d: Int, _ h: Int, _ mi: Int, _ s: In
                                        hour: h, minute: mi, second: s))!
 }
 
-/// Thirty moments, one a day through a whole synodic month, so every moon phase
+/// Sixty moments, two a day through a whole synodic month, so every moon phase
 /// and every lunar day is read out of the real service rather than named here.
-private let aSynodicMonth: [Date] = (0..<30).map {
-    instant(2026, 1, 1, 9, 0, 0).addingTimeInterval(Double($0) * 86_400)
+///
+/// Wave 5: the lunar day is now the true tithi, and a true tithi runs from
+/// about nineteen to twenty-six hours — so one sample a day steps clean over
+/// the short ones (January 2026 at 09:00 UTC misses tithis 11 and 16). Two a
+/// day reads all thirty.
+private let aSynodicMonth: [Date] = (0..<60).map {
+    instant(2026, 1, 1, 9, 0, 0).addingTimeInterval(Double($0) * 43_200)
 }
 
 /// A private copy of a shipped Śakti, so no test ever mutates the seed array

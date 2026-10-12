@@ -20,6 +20,7 @@ struct WellView: View {
     @State private var openingFor: Shakti?
     @State private var openRing: Int? = WellView.homeRing
     @State private var didHandleLaunchArgument = false
+    @State private var riverOpen = false
 
     /// Ring 2 is the home ring and is where the Well opens; the other eight
     /// follow from the outer square inward to the point.
@@ -99,6 +100,7 @@ struct WellView: View {
                 LetterEditorView(shakti: shakti)
             }
             .onAppear(perform: openLetterFromLaunchArgument)
+            .fullScreenCover(isPresented: $riverOpen) { CorrespondenceView() }
         }
     }
 
@@ -150,6 +152,22 @@ struct WellView: View {
                 .foregroundStyle(Color.cream.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
+            // Wave 5 · the Well as a river: letters back to a moment and
+            // sealed forward to her day, beside the letters above.
+            Button {
+                Haptics.light()
+                riverOpen = true
+            } label: {
+                Text("the river ›")
+                    .font(AppFont.voice(16))
+                    .tracking(1.0)
+                    .foregroundStyle(Color.gold.opacity(0.85))
+                    .frame(minHeight: 44)
+                    .padding(.horizontal, 20)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the river of sealed letters")
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 18)
