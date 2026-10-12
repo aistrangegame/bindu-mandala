@@ -20,6 +20,26 @@ final class AirtableService {
 
     static let shared = AirtableService()
 
+    /// The notes with a POST in the air right now.
+    ///
+    /// `ledgeredAt` is stamped only *after* a create returns, so between the
+    /// POST leaving and the response landing a note looks, to every other
+    /// caller, exactly like a note that has never been written. Two callers can
+    /// be in that window at once: the composer's `onDisappear` spawns one, and
+    /// the scene-phase `.active` sweep — which fires the moment he switches back
+    /// to the app — finds the same un-stamped note and spawns another. Both pass
+    /// `ledgeredAt == nil`, both run their dedup GET before either create has
+    /// committed, and the ledger ends up holding his note twice. A later restore
+    /// then puts both copies in his margin, in his own words, with no delete.
+    ///
+    /// The dedup check cannot close this on its own: it is a read, and two reads
+    /// that race a write both see nothing. This is the interlock that makes the
+    /// dedup's job *retry after a failure* rather than *two simultaneous firsts*.
+    ///
+    /// `@MainActor` is what makes it safe: test-and-set happens with no `await`
+    /// between, so it is atomic without a lock.
+    private var notesInFlight: Set<UUID> = []
+
     static let baseId  = "app248ZTWhYJlvQj2"
     static let tableId = "tblrRwXJD0uP8HU8G"
 
@@ -110,6 +130,12 @@ final class AirtableService {
             log.notice("No PAT — local-only mode.")
             return
         }
+        // His margin, before anything that can throw. It lives nowhere but here
+        // and the phone, and it merges on identity rather than on the phone being
+        // empty — so it is idempotent, and it must not sit behind a field fetch
+        // that a dead network aborts. See `restoreNotesFromLedger`.
+        await restoreNotesFromLedger(context: context)
+
         do {
             log.notice("[Phase 1] sync starting…")
             async let s: [ShaktiRow]  = fetch(token: token, filter: "{fldw33m8YqrINlvrN}='Shakti'",
@@ -765,6 +791,9 @@ extension AirtableService {
         await flushPendingLetters()
         await flushPendingActivities()
         await flushPendingCrossings()
+        // The margin's own queue is the notes themselves, not UserDefaults —
+        // `recordNote` says why.
+        await flushUnledgeredNotes(context: context)
     }
 
     private func flushPendingRecognitions(context: ModelContext) async {
@@ -1498,7 +1527,18 @@ extension AirtableService {
     private func processActivity(_ item: PendingActivity) async -> Bool {
         guard let token = pat else { return false }
         do {
-            if !item.linkRecordId.isEmpty,
+            // A note carries no link, and an unlinked item would otherwise skip
+            // the check below entirely and always create — so a retry after a
+            // POST that landed but whose response was lost would write his note
+            // twice. Its key is the body instead of the link.
+            if item.type == ActivityLedger.ActivityType.noteLeft {
+                if await noteExistsOnServer(token: token,
+                                            feltAt: item.at,
+                                            body: item.notes ?? "") {
+                    log.notice("\(item.type, privacy: .public) row already on server — skipping create")
+                    return true
+                }
+            } else if !item.linkRecordId.isEmpty,
                await activityExistsOnServer(token: token,
                                             type: item.type,
                                             linkRecordId: item.linkRecordId,
@@ -1560,6 +1600,164 @@ extension AirtableService {
             return false
         }
     }
+
+    // MARK: The margin (`Note Left`)
+
+    /// Write one note to the ledger, and stamp it only if the row is confirmed.
+    ///
+    /// **This deliberately does not ride the UserDefaults activity queue.** That
+    /// queue drops an item after `PendingQueuePolicy.maxFailures` flushes, and
+    /// its justification is that *"local SwiftData is already canonical, so the
+    /// only loss is the Airtable mirror"* — true for a recognition, whose Shakti
+    /// row still carries Last Felt, and false for a note, whose ledger row is
+    /// the only copy that will ever leave the phone. So the note's own row is
+    /// the queue of record: `ledgeredAt` stays nil until a create succeeds, and
+    /// ``flushUnledgeredNotes(context:)`` sweeps it on every later sync, forever.
+    /// Raising `maxFailures` was the alternative and would have changed
+    /// behaviour for four other queues to fix one.
+    func recordNote(_ note: MarginNote, context: ModelContext) async {
+        if syncIsDisabled() { return }
+        guard note.ledgeredAt == nil, !note.isBlank else { return }
+        // One POST per note at a time — see `beginNoteFlight`.
+        guard beginNoteFlight(note.noteId) else {
+            log.notice("Note already being written — the second attempt stands down")
+            return
+        }
+        defer { endNoteFlight(note.noteId) }
+        let item = ActivityLedger.noteLeft(body: note.trimmedBody, at: note.createdAt)
+        guard await processActivity(item) else {
+            log.notice("Note held on the phone — the ledger row will follow on the next sync")
+            return
+        }
+        note.ledgeredAt = .now
+        try? context.save()
+    }
+
+
+    /// Claim the flight for this note. `false` means somebody else holds it and
+    /// this caller must not post. Internal, not private, so the interlock can be
+    /// proven without a network — the whole point of it is a case that needs two
+    /// callers and one instant.
+    @discardableResult
+    func beginNoteFlight(_ id: UUID) -> Bool {
+        guard !notesInFlight.contains(id) else { return false }
+        notesInFlight.insert(id)
+        return true
+    }
+
+    func endNoteFlight(_ id: UUID) {
+        notesInFlight.remove(id)
+    }
+
+    /// How many un-ledgered notes one sweep attempts. A bound, not a measure:
+    /// nothing reads it back, and the remainder is taken by the next sync.
+    static let notesPerSweep = 20
+
+    /// Every note that has never reached the ledger, tried again — the half of
+    /// "saved locally, synced when able" that the local save alone cannot keep.
+    /// Oldest first, so a long-offline stretch drains in the order he wrote in.
+    func flushUnledgeredNotes(context: ModelContext) async {
+        if syncIsDisabled() { return }
+        guard pat != nil else { return }
+        let store = MarginNoteStore(context: context)
+        // Never the one he is still typing into: this runs on scene-phase
+        // `.active`, which is exactly when he comes back to a composer he left
+        // open, and a half-written row would be stamped and never corrected.
+        let waiting = MarginNoteStore.sweepable(store.awaitingLedger(limit: Self.notesPerSweep),
+                                                openInComposer: MarginComposition.openNoteId)
+        for note in waiting {
+            await recordNote(note, context: context)
+        }
+    }
+
+    /// Is this exact note already in the ledger? The same ±60 s fetch every
+    /// other event uses, matched on `Felt At` to the second **and the body**
+    /// rather than on a link the note does not have. Fail-open, like every other
+    /// check here: a broken check must never strand a note.
+    private func noteExistsOnServer(token: String, feltAt: Date, body: String) async -> Bool {
+        let mine = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !mine.isEmpty else { return false }
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.dedup(type: ActivityLedger.ActivityType.noteLeft,
+                                             around: feltAt),
+                sort: [],
+                fields: ActivityLedger.noteDedupFields,
+                byFieldId: false
+            )
+            return rows.contains { ActivityLedger.noteRowMatches($0, feltAt: feltAt, body: mine) }
+        } catch {
+            log.error("Ledger note dedup check failed — proceeding with create: \(Self.describe(error), privacy: .public)")
+            return false
+        }
+    }
+
+    /// Bring back every note the ledger holds and the phone does not — the path
+    /// home after a reinstall, or after `PersistenceRecovery` opens a fresh
+    /// store. Without it, "saved locally, synced when able" is only half true:
+    /// Airtable would hold every note he ever wrote while his list came back
+    /// empty.
+    ///
+    /// **It merges on identity, and it used to guard on the phone being empty.**
+    /// That guard was a door that closes for good, and it closed on the most
+    /// ordinary sequence there is. Reinstall on a train with no signal: the sync
+    /// throws at the field fetch, so the restore — which sat at the *end* of the
+    /// `do` block — never runs at all. He writes one note. `MarginNote` is no
+    /// longer empty, so from that launch to the end of the install the guard
+    /// returns immediately, and every note he wrote before the reinstall stays in
+    /// Airtable and never comes back to his list. Nothing fails, nothing is
+    /// logged, and the words are authored: unlike a recognition, there is no
+    /// Shakti row still carrying them and nothing can re-derive them.
+    ///
+    /// So the emptiness test is gone, the merge is idempotent
+    /// (`ActivityLedger.notesMissingLocally`), and the call moved ahead of
+    /// everything that can throw. It may now run on every sync forever, and the
+    /// day a note is missing from his list is the day it comes back rather than
+    /// the day the door had already shut. Restored notes arrive already
+    /// ledgered — they came *from* the ledger.
+    func restoreNotesFromLedger(context: ModelContext) async {
+        if syncIsDisabled() { return }
+        guard let token = pat else { return }
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.restoreNotes,
+                sort: [],
+                fields: Self.restoreNoteFields,
+                byFieldId: false
+            )
+            let restored = ActivityLedger.marginNotes(from: rows)
+            guard !restored.isEmpty else { return }
+            let held = ((try? context.fetch(FetchDescriptor<MarginNote>())) ?? [])
+                .map { (createdAt: $0.createdAt, body: $0.trimmedBody) }
+            let missing = ActivityLedger.notesMissingLocally(restored: restored, local: held)
+            guard !missing.isEmpty else { return }
+            let now = Date()
+            for r in missing {
+                context.insert(MarginNote(body: r.body,
+                                          createdAt: r.createdAt,
+                                          updatedAt: r.createdAt,
+                                          ledgeredAt: now))
+            }
+            try? context.save()
+            // No quantity: the margin's layer never says how many, in ink, in a
+            // voice, or in a line somebody later pastes onto a screen.
+            log.notice("Margin restore: the ledger held notes this phone did not, and they are back")
+        } catch {
+            log.error("Margin restore failed: \(Self.describe(error), privacy: .public)")
+        }
+    }
+
+    /// The ledger columns the margin restore reads (`fields[]`, by name).
+    private static let restoreNoteFields = [
+        ActivityLedger.Field.activityType,
+        ActivityLedger.Field.activityDate,
+        ActivityLedger.Field.feltAt,
+        ActivityLedger.Field.notes,
+    ]
 
     private func flushPendingActivities() async {
         let queue = loadPendingActivities()

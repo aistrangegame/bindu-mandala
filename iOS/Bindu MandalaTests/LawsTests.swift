@@ -807,6 +807,35 @@ enum PositionIsIdentity {
     ]
 
     /// A `.name` reached from inside one of these is a lookup, not a label.
+    /// **Keys and predicates on an entity that is not about a Śakti at all.**
+    ///
+    /// The rule above is *"everything that files a Śakti files her by
+    /// position"*, and until the margin arrived every `@Model` in the tree was
+    /// per-Śakti, so a blanket scan said the same thing. `MarginNote` is the
+    /// first entity that carries no Śakti: it is a sentence he wrote about the
+    /// app, and there is no natural key for a sentence.
+    ///
+    /// So an entry here is **not** an exemption from the law — it is a claim
+    /// that the law has no subject, and `testEveryPerShaktiKeyIsAPosition`
+    /// checks the claim structurally rather than taking it: the file naming the
+    /// key or the predicate must mention **no** Śakti anywhere in it — no
+    /// `khadgamalaPosition`, no `Shakti`, no `shakti` — so the pin can never be
+    /// used to launder a Śakti-keyed store onto a UUID. An entity that grows a
+    /// link to her fails here the day it does.
+    static let pinnedNonShaktiKeys: Set<String> = [
+        "Models/MarginNote.swift · noteId",
+    ]
+
+    static let pinnedNonShaktiPredicates: Set<String> = [
+        "Services/MarginNoteStore.swift · #Predicate { $0.ledgeredAt == nil }",
+    ]
+
+    /// A file that mentions a Śakti in any form. A pinned non-Śakti key or
+    /// predicate must live in a file where this is false.
+    static func touchesAShakti(_ f: SourceFile) -> Bool {
+        Rx.matches(#"(?i)\bshakti|khadgamalaPosition|ringNumber"#, String(f.lexed.masked))
+    }
+
     static let lookupHeads = #"(?<![A-Za-z0-9_])(?:first|firstIndex|last|lastIndex|filter|contains|partition|removeAll|drop|prefix)"#
 }
 
@@ -873,9 +902,12 @@ enum LedgerIsTheRecord {
     /// Phase 3.6 added the two once-ever milestones the brief keeps — `Full
     /// Circle` and `First Dwelling` — and they are held to exactly the same
     /// rule: an event's name is a fact about the ledger and lives in its file.
+    /// The margin adds one more — `Note Left` — and is held to exactly the same
+    /// rule: the name of an event is a fact about the ledger and lives in its
+    /// file. Everywhere else refers to it through `ActivityLedger.ActivityType`.
     static let eventVocabulary = [
         "Shakti Recognized", "Ring Crossed", "Silence Held", "Letter Written",
-        "Full Circle", "First Dwelling",
+        "Full Circle", "First Dwelling", "Note Left",
         "Activity Type",
     ]
 
@@ -1580,7 +1612,7 @@ final class LawsTests: XCTestCase {
 
     /// Everything that files a Śakti — the uniqueness constraints, the store
     /// APIs, the SwiftData predicates — files her by position.
-    func testEveryPerShaktiKeyIsAPosition() {
+    func testEveryPerShaktiKeyIsAPosition() throws {
         var uniques: [(file: String, property: String, type: String)] = []
         for f in LawSource.production {
             for g in Rx.groups(#"@Attribute\(\s*\.unique\s*\)\s*var\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)"#,
@@ -1589,11 +1621,32 @@ final class LawsTests: XCTestCase {
             }
         }
         XCTAssertGreaterThanOrEqual(uniques.count, 4, "no uniqueness constraints were found")
+        var claimedKeys: Set<String> = []
         for u in uniques {
+            let pin = "\(u.file) · \(u.property)"
+            if PositionIsIdentity.pinnedNonShaktiKeys.contains(pin) {
+                claimedKeys.insert(pin)
+                // The claim is that this entity is not about a Śakti at all —
+                // checked, never taken on trust.
+                // `XCTUnwrap`, not `if let`: a pinned file that has dropped out
+                // of the corpus would otherwise pass its own claim silently.
+                let f = try XCTUnwrap(LawSource.production.first(where: { $0.path == u.file }),
+                                      "\(u.file) is pinned as carrying no Śakti and is not in the "
+                                      + "corpus — the claim cannot be checked")
+                XCTAssertFalse(PositionIsIdentity.touchesAShakti(f),
+                               """
+                               \(u.file) is pinned as carrying no Śakti, and it names one. \
+                               Anything that files a Śakti files her by position — take the \
+                               pin out and key on `khadgamalaPosition`.
+                               """)
+                continue
+            }
             XCTAssertEqual(u.type, "Int", "\(u.file): \(u.property) is unique but is not a number")
             XCTAssertTrue(u.property.hasSuffix("Position") || u.property.hasSuffix("Number"),
                           "\(u.file): \(u.property) is the uniqueness key and is not a position")
         }
+        XCTAssertEqual(claimedKeys, PositionIsIdentity.pinnedNonShaktiKeys,
+                       "a pinned non-Śakti key no longer exists — a dead pin is a pin nobody reads")
 
         // Every SwiftData predicate in the tree keys on a position.
         var predicates: [String] = []
@@ -1603,10 +1656,23 @@ final class LawsTests: XCTestCase {
             }
         }
         XCTAssertGreaterThanOrEqual(predicates.count, 4, "no SwiftData predicates were found")
+        var claimedPredicates: Set<String> = []
         for p in predicates {
+            if PositionIsIdentity.pinnedNonShaktiPredicates.contains(p) {
+                claimedPredicates.insert(p)
+                let file = String(p.prefix(while: { $0 != " " }))
+                let f = try XCTUnwrap(LawSource.production.first(where: { $0.path == file }),
+                                      "\(file) is pinned as carrying no Śakti and is not in the "
+                                      + "corpus — the claim cannot be checked")
+                XCTAssertFalse(PositionIsIdentity.touchesAShakti(f),
+                               "\(file) is pinned as carrying no Śakti, and it names one")
+                continue
+            }
             XCTAssertTrue(p.contains("khadgamalaPosition"),
                           "a predicate keys on something other than her position: \(p)")
         }
+        XCTAssertEqual(claimedPredicates, PositionIsIdentity.pinnedNonShaktiPredicates,
+                       "a pinned non-Śakti predicate no longer exists — delete the pin")
 
         // The per-Śakti stores are asked for a position, never for a name.
         for name in ["RecognitionLogStore.swift", "HomeMemoryStore.swift"] {
@@ -2105,5 +2171,235 @@ final class LawsDrawnMeasureTests: XCTestCase {
             previous = ch
         }
         return false
+    }
+}
+
+// MARK: - Law 2 · the margin hands back words and never a count
+
+/// A note is **authored content**, not a practice event, and that distinction is
+/// what makes a list of notes lawful where Her Moments was not.
+///
+/// The 2026-09-23 breach took three things together: the scroll's length was a
+/// function of his practice (a row per recognition), it arrived on a screen he
+/// had opened for something else, and it stood *in front of* two doors, so a
+/// VoiceOver walker paid the measure in swipes and paid more the more he had
+/// practised. A list of notes fails all three, and the first is what decides it:
+/// recognitions, crossings, silences and dwells are the instrument watching him
+/// walk, and counting those back to him is precisely what law 2 forbids. A note
+/// is the thing he made — the same category as a letter, which may run to a
+/// hundred lines without measuring anything, because its length is a fact about
+/// what he chose to write and not a score the instrument kept about him. The
+/// charter's own words: *"no count, streak, percentage, or visit number is ever
+/// shown to the walker."* A note is none of those; it is the thing itself.
+///
+/// The other two properties are not design accidents, so they are asserted here
+/// rather than intended: the notes stand **behind a door** (Settings is the same
+/// length on the first day and the thousandth), and **nothing stands behind the
+/// list** (it is a destination, not a corridor, so the parity asymmetry that
+/// made 3.8 a failure cannot arise).
+final class LawsTheMarginTests: XCTestCase {
+
+    private let marginFile = "Views/Common/MarginView.swift"
+    private let storeFile  = "Services/MarginNoteStore.swift"
+    private let settingsFile = "Views/Common/SettingsView.swift"
+    private let modelFile = "Models/MarginNote.swift"
+
+    private func source(_ path: String) -> SourceFile {
+        guard let f = LawSource.production.first(where: { $0.path == path }) else {
+            fatalError("\(path) is gone — the margin's laws cannot be checked")
+        }
+        return f
+    }
+
+    /// The corpus floor: an emptied scan reads as a pass.
+    func testTheMarginIsReallyOnDisk() {
+        for path in [marginFile, storeFile, settingsFile, modelFile] {
+            XCTAssertGreaterThan(source(path).text.count, 400, "\(path) has gone thin")
+        }
+    }
+
+    /// **The number must never exist.** `NeverMeasure.practiceSymbols` has no
+    /// exception mechanism precisely so that a count of anything he did cannot
+    /// be laundered onto a screen; the surest way to keep that true of the
+    /// margin is for nothing in its layer to be able to say *how many*. A
+    /// `notes.count` reaching a `Text` should fail the day somebody writes it,
+    /// not the day somebody notices.
+    ///
+    /// `isEmpty` is not a count and is deliberately allowed: "Nothing left here
+    /// yet." is a **state**, the same shape as the shipped "She has not been
+    /// felt here yet."
+    /// **The scan's reach, widened.** It read the view and the store only, and
+    /// the margin has two more files a quantity could be written into: the model
+    /// and the one Settings section that carries its doors. Neither counts
+    /// anything today, and neither could grow one unnoticed now.
+    func testTheMarginCannotSayHowMany() {
+        for path in [marginFile, storeFile, settingsFile, modelFile] {
+            let body = String(source(path).lexed.masked)
+            for line in body.components(separatedBy: "\n") {
+                XCTAssertFalse(Rx.matches(#"[A-Za-z_][A-Za-z0-9_.]*(?:\.count|Count)\b"#, line),
+                               """
+                               \(path) counts something. A list of his notes is his own words \
+                               handed back and is correct; a count, a badge or an ordinal is \
+                               law 2 broken:
+                                   \(line.trimmingCharacters(in: .whitespaces))
+                               """)
+            }
+        }
+    }
+
+    /// **The door, and why it is the law fix rather than a layout choice.** If
+    /// the notes rendered inline, Settings would grow with his writing, "Re-enter
+    /// the Homecoming" would sink a little further with every note, and a
+    /// VoiceOver walker — who has no flick to the foot of a scroll — would pass
+    /// his whole correspondence to reach the last control on the sheet. That is
+    /// Phase 3.8's breach in a new place. So Settings never reads a note at all:
+    /// not a query, not a store, not a fetch.
+    func testSettingsNeverReadsANoteAndSoCannotGrowWithHisWriting() {
+        let body = String(source(settingsFile).lexed.masked)
+        for reader in ["MarginNoteStore", "FetchDescriptor<MarginNote>", "[MarginNote]"] {
+            XCTAssertFalse(body.contains(reader),
+                           "SettingsView reads the margin (\(reader)) — the sheet would then be "
+                           + "longer the more he has written, which is the measure 3.8 folded away")
+        }
+        XCTAssertFalse(Rx.matches(#"ForEach\s*\(\s*notes"#, body),
+                       "SettingsView lists his notes inline")
+        XCTAssertTrue(body.contains("MarginNoteListView()"),
+                      "the door to the list has gone — an element behind a door that is not there "
+                      + "is an element nobody can reach")
+        XCTAssertTrue(body.contains("MarginNoteComposerView()"), "the door to the composer has gone")
+    }
+
+    /// **Nothing behind the list.** It is the last thing in tree order — its own
+    /// screen, reached from a door, with no control waiting past it — so a long
+    /// scroll costs a walker nothing he did not come for. That asymmetry is the
+    /// whole of what made Her Moments a §4.4 parity failure.
+    func testTheListIsADestinationAndNotACorridor() {
+        let body = String(source(marginFile).lexed.masked)
+        // The only push out of the list is the reader for one note.
+        let pushes = Rx.all(#"navigationDestination"#, body)
+        XCTAssertEqual(pushes.count, 1,
+                       "the list has grown a second way onward — a walker would then pass every "
+                       + "note he has ever written to reach it")
+    }
+
+    /// **No numeral reaches the ear.** Every literal on the margin's own screens,
+    /// and every accessibility string in them, is free of digits — and the one
+    /// thing that is not a literal, the day a note was written, is spoken in
+    /// words by `MarginDate.spoken` (`MarginDateTests` walks a whole year of it).
+    func testNothingInTheMarginIsSpokenAsADigit() {
+        for lit in source(marginFile).literals {
+            XCTAssertFalse(lit.text.contains(where: \.isNumber),
+                           "a digit in the margin's words: \"\(lit.text)\"")
+        }
+        for call in source(settingsFile).calls(to: ["accessibilityLabel", "accessibilityHint"]) {
+            for lit in call.literals {
+                XCTAssertFalse(lit.text.contains(where: \.isNumber),
+                               "a digit in Settings' spoken margin: \"\(lit.text)\"")
+            }
+        }
+    }
+
+    /// **The reduce-motion path is real rather than stilled.** Nothing in the
+    /// margin animates at all: there is no ambient motion to gate, and the only
+    /// movement is the navigation push the whole app already uses. A screen that
+    /// had to *disable* something here would be a screen that should not have
+    /// had it.
+    func testTheMarginHasNothingToStill() {
+        let body = String(source(marginFile).lexed.masked)
+        for motion in ["withAnimation", ".animation(", "repeatForever", "TimelineView",
+                       "autoreverses", "Canvas("] {
+            XCTAssertFalse(body.contains(motion),
+                           "\(motion) in the margin — a still path that has to switch something "
+                           + "off is not the same as a screen with nothing to switch off")
+        }
+    }
+
+    /// **The composer holds the note until the write has settled.** It used to
+    /// clear `MarginComposition.openNoteId` one line *before* spawning the
+    /// ledger task, which left a window in which the note was nobody's:
+    /// `ledgeredAt` is nil until the create returns, so a scene-phase `.active`
+    /// sweep landing in that window found an un-stamped note that `sweepable` no
+    /// longer excluded, and posted his words a second time.
+    ///
+    /// Checked structurally rather than only at the service, because the two
+    /// halves guard different things: `beginNoteFlight` stops the second POST,
+    /// and this stops the second *claim*, which is what keeps the intent legible
+    /// — the note belongs to the composer until the composer is done with it.
+    func testTheComposerDoesNotLetGoOfANoteItIsStillWriting() {
+        let body = String(source(marginFile).lexed.masked)
+        XCTAssertFalse(Rx.matches(#"openNoteId\s*=\s*nil\s*\n\s*ledgerIfNeeded\(\)"#, body),
+                       "the composition claim is dropped before the write is spawned — that is "
+                       + "the window the `.active` sweep posts his note twice in")
+        XCTAssertTrue(body.contains("releaseComposition"),
+                      "the claim is no longer released through one guarded path")
+        // …and the release is conditional on it still being this note: he can
+        // open a second composer while the first POST is in the air.
+        XCTAssertTrue(Rx.matches(#"MarginComposition\.openNoteId\s*==\s*id"#, body),
+                      "an unconditional clear would hand the sentence he is typing right now "
+                      + "to the next sweep")
+    }
+
+    /// **Leaving nothing saves nothing.** An emptied note that stood anyway made
+    /// everything typed permanent two seconds later, with no gesture anywhere in
+    /// the app able to take it back — and a permanent ledger row with it.
+    func testTheComposerCanStillTakeSomethingBack() {
+        let body = String(source(marginFile).lexed.masked)
+        XCTAssertTrue(body.contains("discardIfEmptied"),
+                      "the composer no longer honours an emptied field on the way out")
+        let store = String(source(storeFile).lexed.masked)
+        XCTAssertTrue(store.contains("shouldDiscard"), "the discard rule has gone")
+        XCTAssertTrue(store.contains("ledgeredAt == nil"),
+                      "a note the ledger already holds must never be discarded — the row cannot "
+                      + "be retracted, and the next restore would bring the note straight back")
+    }
+
+    /// **The path home is not behind a door that can shut.** Two properties,
+    /// held in source because neither is visible in a passing run: the restore
+    /// is not gated on the phone holding no notes, and it does not sit behind a
+    /// field fetch that a dead network aborts.
+    ///
+    /// Both together were the loss. Reinstall with no signal → the fetch throws
+    /// → the restore, which was the last call in the `do` block, never runs. He
+    /// writes one note. The local table is not empty again for the life of the
+    /// install, so the guard returned immediately on every later launch and
+    /// every note he wrote before the reinstall stayed in Airtable forever.
+    func testTheMarginsRestoreCannotBeShutOutByOneOfflineLaunch() throws {
+        let f = try XCTUnwrap(LawSource.production.first { $0.path == "Data/AirtableService.swift" },
+                              "the service is not in the corpus — this cannot be checked")
+        let body = String(f.lexed.masked)
+        XCTAssertTrue(body.contains("restoreNotesFromLedger"),
+                      "the margin's restore has gone, or gone back to a name that describes a "
+                      + "guard rather than a merge")
+        XCTAssertFalse(body.contains("restoreNotesIfLocalEmpty"),
+                       "the restore is gated on the phone being empty again — that guard closes "
+                       + "for good the first time he writes a note before a successful sync")
+        XCTAssertTrue(body.contains("notesMissingLocally"),
+                      "the restore no longer merges on the ledger identity, so it cannot safely "
+                      + "run more than once")
+        // …and it is called before the field fetch that can throw. The call sits
+        // above the `do`, which is the whole of what makes it reachable offline.
+        let callAt = body.range(of: "await restoreNotesFromLedger(context: context)")
+        let doAt = body.range(of: "reconcileShaktis")
+        let call = try XCTUnwrap(callAt, "the restore is never called from sync")
+        let start = try XCTUnwrap(doAt, "sync has changed shape — re-read this check")
+        XCTAssertLessThan(call.lowerBound, start.lowerBound,
+                          "the restore sits behind the field fetch again; a launch with no signal "
+                          + "never reaches it")
+    }
+
+    /// The composer inherits the letter's discipline: a note becomes real at the
+    /// moment it has words in it, and a composer he opens and abandons writes
+    /// nothing. `LetterDraft` is reused unchanged rather than re-invented.
+    func testTheComposerWritesOnlyWhatHeTyped() {
+        let body = String(source(marginFile).lexed.masked)
+        XCTAssertTrue(body.contains("LetterDraft"),
+                      "the composer stopped using the draft type that makes opening not an edit")
+        XCTAssertTrue(body.contains("draft.isDirty"),
+                      "the save is no longer gated on the text having changed")
+        XCTAssertTrue(body.contains("scenePhase"),
+                      "the composer stopped saving when the app leaves the foreground — a swipe "
+                      + "to the home screen never calls onDisappear, and a pending debounce then "
+                      + "sits in a suspended app where a kill takes everything typed since the "
+                      + "last autosave")
     }
 }

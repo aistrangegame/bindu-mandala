@@ -79,11 +79,48 @@ enum BinduSchemaV2: VersionedSchema {
     }
 }
 
+// MARK: - V3 — the margin
+
+/// The practitioner's notes to the instrument arrive as one new entity,
+/// `MarginNote`. Nothing that exists changes shape: no property is added to a
+/// model, no uniqueness constraint moves, nothing is deleted or rewritten. That
+/// is the **lightweight** case by definition — the very sentence V2's own header
+/// writes about `HomeMemory` — and `notesArrive` below is a lightweight stage
+/// with no custom closure of any kind.
+///
+/// **Why this is a new version rather than one more type in V2's list, which is
+/// the whole reason this enum exists.** `HomeMemory` could be folded into V2
+/// without its own version because no store on disk had ever been at
+/// V2-without-`HomeMemory`: 2.1 and 2.2 shipped together. That is no longer
+/// true. Build 58 is on the practitioner's phone and his store is at V2 **as V2
+/// is defined today**. Adding `MarginNote` to `BinduSchemaV2.models` in place
+/// would make the code's V2 and the store's V2 two different schemas with no
+/// version in the plan describing what is actually on disk: step 1 of
+/// `PersistenceRecovery.makeContainer` throws, and **step 2 moves the whole
+/// store aside and opens an empty one**. Letters and recognitions come back
+/// from Airtable; `HomeMemory` never can — it is phone-only by R17 and is never
+/// synced — so every room's accumulated dwell, visit softening and deepest
+/// adaptation would be gone on a launch where nothing visibly failed. A charter
+/// §7 halt condition, manufactured by a one-line convenience.
+///
+/// **So: never mutate a shipped version's model list.** `SchemaMigrationTests`
+/// holds it — it writes a real V2 store on disk, reopens it under
+/// `BinduSchema.makeLatest()`, and fails if the preserve path was ever taken.
+enum BinduSchemaV3: VersionedSchema {
+    static var versionIdentifier = Schema.Version(3, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        [Shakti.self, RecognitionEntry.self, ShaktiLetter.self,
+         Avarana.self, NityaDevi.self, DescentState.self, HomeMemory.self,
+         MarginNote.self]
+    }
+}
+
 /// The single place that names the version the app runs on today. Every site
 /// that opens a container builds *this* — never a pinned version — so adding a
-/// V3 is one edit here plus its stage.
+/// V4 is one edit here plus its stage.
 enum BinduSchema {
-    static var latest: any VersionedSchema.Type { BinduSchemaV2.self }
+    static var latest: any VersionedSchema.Type { BinduSchemaV3.self }
 
     /// The `Schema` the app opens its store with.
     static func makeLatest() -> Schema {
@@ -94,8 +131,20 @@ enum BinduSchema {
 // MARK: - The plan
 
 enum BinduMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [BinduSchemaV1.self, BinduSchemaV2.self] }
-    static var stages: [MigrationStage] { [lettersOntoKhadgamalaKey] }
+    static var schemas: [any VersionedSchema.Type] {
+        [BinduSchemaV1.self, BinduSchemaV2.self, BinduSchemaV3.self]
+    }
+    static var stages: [MigrationStage] { [lettersOntoKhadgamalaKey, notesArrive] }
+
+    /// V2 → V3: one new, empty table. **The safest migration is the one you do
+    /// not write** — there is no closure here to kill inside, nothing is lifted
+    /// out of the store, nothing is deleted, and the letters stage above (with
+    /// its fsync'd sidecar) is untouched. A V1 store runs that custom stage and
+    /// then this one; a V2 store runs only this one; a fresh store runs neither.
+    static let notesArrive = MigrationStage.lightweight(
+        fromVersion: BinduSchemaV2.self,
+        toVersion: BinduSchemaV3.self
+    )
 
     /// Ring-2 offset: per-ring index 1–16 → Khaḍgamālā 29–44.
     private static let ringTwoOffset = KhadgamalaMap.ringStartOffset(2)

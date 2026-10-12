@@ -170,6 +170,24 @@ enum FeltRegisterClassifications {
         + "settled 12.5 pt against the 11 that had been classified. Measured, not estimated: on "
         + "every other screen in the roster, nothing moved past the bound it already had."
 
+    /// **The margin's rigid translation, measured.** Top of THE MARGIN to top of
+    /// DAILY RHYTHM on the running app: 247.50 pt on the SE, 247.67 on the phone
+    /// and 247.67 on the Pro Max. One number rather than three, because the
+    /// section is two doors and a gloss that wraps to the same line count in
+    /// every column — and `TheMarginUITests` re-measures it with three notes
+    /// written, because a section that grew with his writing would be a measure
+    /// drawn in scroll height, which is what Phase 3.8 folded away.
+    static let marginSectionHeight: Double = 247.5
+
+    /// The margin, as every element of Settings experiences it.
+    private static let theMargin =
+        "\n\nThe margin is a new first section on this sheet, so everything below it is "
+        + "translated down by its own height plus the stack's 28 pt spacing — 247.5 pt, measured "
+        + "on all three device classes and stable across them. Nothing is re-composed: the same "
+        + "cards in the same order at the same margin. The notes he writes are behind its two "
+        + "doors and never in the section, so this translation is the same on the first day and "
+        + "the thousandth."
+
     /// §4.2, the reported frame rather than the drawn one.
     private static let reportedFrame =
         "This is the control's reported frame opening out, not the words moving. Its own padding "
@@ -266,6 +284,30 @@ enum FeltRegisterClassifications {
          + "header's own bottom padding, 14 → 6, because a 15 pt line centred in a 44 pt target "
          + "already stands about fourteen points clear of its own box. The other 44 are the shift "
          + "entry below."),
+
+        // ── The margin · four things that were not on this sheet ───────────
+        //
+        // The whole of what the margin adds to Settings: a section title, two
+        // doors, and one line saying what they are for. **The notes themselves
+        // are not here and can never be** — they live behind the doors, which is
+        // why this section is the same height on the first day and the
+        // thousandth (`TheMarginUITests.testTheSheetIsTheSameLengthHoweverMuchHeHasWritten`
+        // writes three notes and measures it again).
+        ("settings", "text|THE MARGIN",
+         "The margin's section title, in the sheet's own gold small-caps idiom. It is first "
+         + "rather than last on §4.4 parity: a finger reaches the foot of a scroll with one "
+         + "flick and VoiceOver passes every element in tree order, which is the argument "
+         + "Phase 3.8 used to fold Her Moments."),
+        ("settings", "button|Leave a note",
+         "The door to the composer. The letter editor's page, reached from Settings — the one "
+         + "control on this sheet he will press several times a week."),
+        ("settings", "button|What you have left",
+         "The door to the list of his own notes. A door and not a list: rendered inline, the "
+         + "sheet would be longer the more he had written, which is a measure drawn rather "
+         + "than printed."),
+        ("settings", "text|Anything you see",
+         "One line of gloss under the two doors, in the same voice and at the same size as "
+         + "every other section's."),
 
         ("settings", "text|Settings|1",
          "A second \"Settings\" — the principal toolbar item that says the sheet's name in "
@@ -465,11 +507,55 @@ enum FeltRegisterClassifications {
             + "lines, their words and their 2.6 / 4.1 / 5.1 second staging are untouched."),
 
         // ── Settings ─────────────────────────────────────────────────────────
-        ClassifiedShift(screen: "settings", keyContains: "text|", maxDelta: 14, reason: settingsTitles),
-        ClassifiedShift(screen: "settings", keyContains: "button|", maxDelta: 14, reason: settingsTitles),
-        ClassifiedShift(screen: "settings", keyContains: "switch|", maxDelta: 14, reason: settingsTitles),
-        ClassifiedShift(screen: "settings", keyContains: "field|", maxDelta: 14, reason:
-            settingsTitles + " The rename field also carries 2 pt of new touch area under its box "
+        ClassifiedShift(screen: "settings", keyContains: "text|", maxDelta: 14,
+                        settles: [0, marginSectionHeight], reason: settingsTitles + theMargin),
+        ClassifiedShift(screen: "settings", keyContains: "button|", maxDelta: 14,
+                        settles: [0, marginSectionHeight], reason: settingsTitles + theMargin),
+        ClassifiedShift(screen: "settings", keyContains: "switch|", maxDelta: 14,
+                        settles: [0, marginSectionHeight], reason: settingsTitles + theMargin),
+
+        // ── The margin · the sheet's one rigid translation ───────────────────
+        //
+        // **What moved, and by exactly how much.** The margin is a new *first*
+        // section, so every element of Settings below it is translated down by
+        // the section's own height plus the stack's 28 pt spacing, and nothing
+        // is re-composed: same cards, same order, same margin, same words.
+        //
+        // Measured on the running app rather than estimated, top of THE MARGIN
+        // to top of DAILY RHYTHM, one device class at a time:
+        //
+        //     se        247.50 pt
+        //     phone     247.67 pt
+        //     promax    247.67 pt
+        //
+        // Device-stable to a sixth of a point — the section is two rows and a
+        // gloss that wraps to the same line count in all three columns — so
+        // unlike Phase 3.8's fold this is one number and not three. It is
+        // written into `settles` rather than added to the bound, for the reason
+        // Phase 3.7 wrote `settles` in the first place: a single 262 pt bound
+        // would also pass an element that drifted a hundred points for no
+        // reason, or one that failed to move while all its neighbours did.
+        // Charter §3: never weaken a check to make it pass. The 14 pt
+        // `maxDelta` is untouched — it is the Phase-4 allowance these entries
+        // already carried, and every element's residual against 247.5 lands
+        // inside it (the widest, "She will greet you again", at 10.28 pt).
+        //
+        // **`0` is in `settles`, and it is load-bearing.** This baseline was
+        // read with Settings presented over the Well, and a sheet leaves the
+        // screen beneath it in the accessibility tree — so roughly half of
+        // `settings.geom` is the Well's own rows, which this phase does not
+        // touch and which must not move at all.
+        //
+        // **Re-recording the three baselines was the alternative and it is
+        // refused.** This file's own header says why: these are the geometry of
+        // `main` **before Phase 4**, and re-recording one from this tree would
+        // dissolve every Phase 4 entry it is holding. The design handed to this
+        // phase called for a deliberate re-record; it is wrong on the house's
+        // own rule, and `settles` is the vocabulary that already exists for
+        // exactly this.
+        ClassifiedShift(screen: "settings", keyContains: "field|", maxDelta: 14,
+                        settles: [0, marginSectionHeight], reason:
+            settingsTitles + theMargin + " The rename field also carries 2 pt of new touch area under its box "
             + "(§4.2) — the box itself is the size it was drawn, and the hint below gives the 2 pt "
             + "back, so nothing under it moves."),
     ]
