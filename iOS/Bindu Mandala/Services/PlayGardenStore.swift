@@ -20,7 +20,7 @@ import Foundation
 /// Not isolated to an actor on purpose, as `PlaySession` is not: every caller
 /// is on the main thread (touches, timelines, the host's hand-off), and the
 /// game models that read it run inside a `Canvas`.
-struct PlayTrace: Codable, Equatable {
+struct GardenTrace: Codable, Equatable {
     var game: String
     var at: Date
 }
@@ -32,7 +32,7 @@ struct SeedPlanting: Codable, Equatable, Identifiable {
 }
 
 struct PlayGardenArchive: Codable, Equatable {
-    var traces: [PlayTrace] = []
+    var traces: [GardenTrace] = []
     var seeds: [SeedPlanting] = []
     var worldVisitedAt: Date? = nil
 }
@@ -51,11 +51,11 @@ final class PlayGardenStore {
             ?? PlayGardenArchive()
     }
 
-    var traces: [PlayTrace] { archive.traces }
+    var traces: [GardenTrace] { archive.traces }
 
     /// One game played. Called once per game, beside its ledger row.
     func record(game: String, at now: Date = .now) {
-        archive.traces.append(PlayTrace(game: game, at: now))
+        archive.traces.append(GardenTrace(game: game, at: now))
         persist()
     }
 
