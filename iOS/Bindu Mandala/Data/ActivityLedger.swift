@@ -107,6 +107,19 @@ enum ActivityLedger {
         /// carries how long the game was played in `Duration (sec)`, and nothing
         /// about it is ever shown to him.
         static let played           = "Played"
+
+        // Wave 5 · memory and words. All born on first write by `typecast: true`.
+
+        /// A river letter set down — sealed forward to her day, or sent back to
+        /// a moment. One row per letter; his words ride in `Notes` so the
+        /// ledger, like everywhere else, holds the practitioner's own text.
+        static let letterSealed     = "Letter Sealed"
+        /// A sealed letter opened on its day.
+        static let letterOpened     = "Letter Opened"
+        /// One sitting at the Portrait — his strokes mirrored by the ring.
+        static let portraitDrawn    = "Portrait Drawn"
+        /// A watch for her answered: "watch for her today… did she appear?"
+        static let wagerResolved    = "Wager Resolved"
     }
 
     // MARK: - The two once-ever milestones
@@ -406,6 +419,85 @@ enum ActivityLedger {
             lunarDay: LunarPhaseService.currentDay(at: at),
             moonPhase: LunarPhaseService.phaseName(at: at),
             notes: body
+        )
+    }
+
+    // MARK: - Wave 5 · memory and words
+
+    /// A river letter set down. Forward letters are "sealed"; back letters are
+    /// "sent back". Linked to her Shakti row, so the create-time dedup (type +
+    /// link + `Felt At` to the second) keeps a retried POST to one row. `Notes`
+    /// carries his words — the ledger is the one place they are kept off the
+    /// phone — and nothing here composes them.
+    static func letterSealed(shaktiRecordId: String, name shaktiName: String,
+                             forward: Bool, opensOn: String?, body: String,
+                             at: Date) -> PendingActivity {
+        let name = shaktiName.isEmpty ? "a Śakti" : shaktiName
+        let detail: String
+        if forward {
+            let when = (opensOn ?? "").isEmpty ? "her day" : (opensOn ?? "her day")
+            detail = "Sealed forward · opens on \(when)"
+        } else {
+            detail = "Sent back to a moment · \(LunarPhaseService.phaseName(at: at))"
+        }
+        return PendingActivity(
+            type: ActivityType.letterSealed,
+            linkRecordId: shaktiRecordId,
+            name: forward ? "A letter to \(name) — sealed" : "A letter to \(name) — sent back",
+            detail: detail,
+            at: at,
+            gestureSource: GestureSource.well,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            notes: body
+        )
+    }
+
+    /// A sealed letter opened on its day. No Notes: the words went in once,
+    /// with the seal.
+    static func letterOpened(shaktiRecordId: String, name shaktiName: String,
+                             at: Date) -> PendingActivity {
+        let name = shaktiName.isEmpty ? "a Śakti" : shaktiName
+        return PendingActivity(
+            type: ActivityType.letterOpened,
+            linkRecordId: shaktiRecordId,
+            name: "A letter to \(name) — opened",
+            detail: "Opened on its day · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.well,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at)
+        )
+    }
+
+    /// One sitting at the Portrait, linked to the Avaraṇa row of the ring most
+    /// drawn in. No count of strokes anywhere — a sitting is one act.
+    static func portraitDrawn(ring: Int, at: Date) -> PendingActivity {
+        PendingActivity(
+            type: ActivityType.portraitDrawn,
+            linkRecordId: AirtableService.avaranaRecordId(forRing: ring) ?? "",
+            name: "The Portrait — drawn in the \(ordinal(ring)) Āvaraṇa",
+            detail: "Strokes mirrored by the ring · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at)
+        )
+    }
+
+    /// A watch for her, answered. Either answer is the same act of having
+    /// watched; the words say what he said and grade nothing.
+    static func wagerResolved(shaktiRecordId: String, name shaktiName: String,
+                              appeared: Bool, at: Date) -> PendingActivity {
+        let name = shaktiName.isEmpty ? "A Śakti" : shaktiName
+        return PendingActivity(
+            type: ActivityType.wagerResolved,
+            linkRecordId: shaktiRecordId,
+            name: "\(name) — watched for",
+            detail: (appeared ? "She appeared" : "Watched for, and left open")
+                + " · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at)
         )
     }
 

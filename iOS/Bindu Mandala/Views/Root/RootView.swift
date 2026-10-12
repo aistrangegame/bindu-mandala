@@ -11,6 +11,8 @@ struct RootView: View {
     @State private var destination: Destination = Self.initialDestination()
     @State private var menuOpen = false
     @State private var settingsPresented = false
+    /// Wave 5 · the Śakti a tapped gift named.
+    @State private var giftShakti: Shakti?
 
     enum Destination: String { case mandala, rite, well, the102, memory }
 
@@ -111,10 +113,33 @@ struct RootView: View {
             RecognitionMigrator.backfillIfNeeded(context: context)
             DailySummons.migrateDefaultHourIfNeeded()
             primeSummons()                     // name mornings from seeded (16) data
+            landOnGift()                       // a gift that opened the app
             await AirtableService.shared.sync(context: context)
             primeSummons()                     // refresh with the full 102
             await DailySummons.reschedule()     // upcoming mornings now named
+            await EnergyGift.reschedule()       // Wave 5 · the random gift
+            landOnGift()
         }
+        // Wave 5 · a gift opened lands on her screen.
+        .onReceive(NotificationCenter.default.publisher(for: GiftRouter.openNotification)) { _ in
+            landOnGift()
+        }
+        .fullScreenCover(item: $giftShakti) { shakti in
+            NavigationStack {
+                ShaktiDetailView(shakti: shakti, backLabel: "the gift", source: .mandala)
+            }
+        }
+    }
+
+    /// The Śakti a tapped gift named, presented once.
+    /// Held until her row is in the store (a first launch reads it from the
+    /// sync), then taken exactly once.
+    private func landOnGift() {
+        guard let kp = GiftRouter.shared.peek() else { return }
+        let all = (try? context.fetch(FetchDescriptor<Shakti>())) ?? []
+        guard let her = all.first(where: { $0.khadgamalaPosition == kp }) else { return }
+        _ = GiftRouter.shared.take()
+        giftShakti = her
     }
 
     /// Build the morning-greeting map (Khaḍgamālā position → title + line) from
@@ -130,6 +155,19 @@ struct RootView: View {
             map[kp] = (title: s.name, body: body)
         }
         DailySummons.greetingProvider = { map[$0] }
+
+        // Wave 5 · the gift speaks only her own authored words: her
+        // Appreciation Phrase, else her Function. A seat holding neither is
+        // passed over by `EnergyGift.reschedule`.
+        var gifts: [Int: (title: String, body: String)] = [:]
+        for s in shaktis {
+            guard let kp = s.khadgamalaPosition else { continue }
+            let phrase = (s.appreciationPhrase ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let function = (s.shaktiFunction ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let words = phrase.isEmpty ? function : phrase
+            if !words.isEmpty { gifts[kp] = (title: s.name, body: words) }
+        }
+        EnergyGift.giftProvider = { gifts[$0] }
     }
 }
 

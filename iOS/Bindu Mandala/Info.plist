@@ -51,6 +51,8 @@
 		<string>CormorantGaramond-Light.ttf</string>
 		<string>CormorantGaramond-LightItalic.ttf</string>
 	</array>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>To keep the image of your Portrait in your photos.</string>
 	<key>AIRTABLE_PAT</key>
 	<string>$(AIRTABLE_PAT)</string>
 </dict>

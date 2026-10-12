@@ -9,8 +9,12 @@ final class ActivityLedgerTests: XCTestCase {
 
     // MARK: fixtures
 
-    /// 2026-09-06T14:34:41.097Z — the sealed plist's queued moment: synodic
-    /// day 25, Waning Crescent (the backfill's lunar self-check agrees).
+    /// 2026-09-06T14:34:41.097Z — the sealed plist's queued moment, Waning
+    /// Crescent. It was mean synodic day 25; since Wave 5 the service reads the
+    /// true moon, and the Moon then stood 300.3° from the Sun — tithi 26
+    /// (Kṛṣṇa Ekādaśī). `lunarFromService` is that true value; the `Moment`
+    /// fixtures below still carry the 25 the queue item was written with.
+    private let lunarFromService = 26
     private let instant = Date(timeIntervalSinceReferenceDate: 810_398_081.097376)
 
     private let newYork = TimeZone(identifier: "America/New_York")!
@@ -67,7 +71,7 @@ final class ActivityLedgerTests: XCTestCase {
 
     func testLunarFixtureIsWhatTheDetailTextsAssume() {
         XCTAssertEqual(LunarPhaseService.phaseName(at: instant), "Waning Crescent")
-        XCTAssertEqual(LunarPhaseService.currentDay(at: instant), 25)
+        XCTAssertEqual(LunarPhaseService.currentDay(at: instant), lunarFromService)
     }
 
     // MARK: recognition — first vs return
@@ -174,7 +178,7 @@ final class ActivityLedgerTests: XCTestCase {
         XCTAssertEqual(a.detail, "Dwelt past the first adaptation · Waning Crescent")
         XCTAssertEqual(a.gestureSource, "Silence")
         XCTAssertEqual(a.durationSec, 2056)
-        XCTAssertEqual(a.lunarDay, 25)
+        XCTAssertEqual(a.lunarDay, lunarFromService)
         XCTAssertEqual(a.moonPhase, "Waning Crescent")
         XCTAssertNil(a.notes, "no Notes on a silence")
         XCTAssertNil(a.descentRing)
@@ -230,7 +234,7 @@ final class ActivityLedgerTests: XCTestCase {
         XCTAssertEqual(f["Activity Type"] as? String, "Silence Held")
         XCTAssertEqual(f["Duration (sec)"] as? Double, 2056.5)
         XCTAssertEqual(f["Gesture Source"] as? String, "Silence")
-        XCTAssertEqual(f["Lunar Day"] as? Int, 25)
+        XCTAssertEqual(f["Lunar Day"] as? Int, lunarFromService)
         XCTAssertEqual(f["Moon Phase"] as? String, "Waning Crescent")
         XCTAssertEqual(f["Link to Mandala"] as? [String], ["recS"])
         XCTAssertNil(f["Notes"])
@@ -677,7 +681,7 @@ final class ActivityLedgerTests: XCTestCase {
         XCTAssertEqual(f[ActivityLedger.Field.notes] as? String, "the way out is hard to find")
         XCTAssertEqual(f[ActivityLedger.Field.activityDate] as? String, "2026-09-06")
         XCTAssertEqual(f[ActivityLedger.Field.feltAt] as? String, "2026-09-06T14:34:41Z")
-        XCTAssertEqual(f[ActivityLedger.Field.lunarDay] as? Int, 25)
+        XCTAssertEqual(f[ActivityLedger.Field.lunarDay] as? Int, lunarFromService)
         XCTAssertEqual(f[ActivityLedger.Field.moonPhase] as? String, "Waning Crescent")
         XCTAssertEqual(f[ActivityLedger.Field.detail] as? String,
                        "Left in the instrument · Waning Crescent")

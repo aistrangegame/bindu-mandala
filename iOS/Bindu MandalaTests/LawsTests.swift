@@ -910,6 +910,8 @@ enum LedgerIsTheRecord {
         // rule — named in the ledger's file, referred to everywhere else as
         // `ActivityLedger.ActivityType.played`.
         "Played",
+        // Wave 5 · memory and words — held to the same rule.
+        "Letter Sealed", "Letter Opened", "Portrait Drawn", "Wager Resolved",
         "Activity Type",
     ]
 

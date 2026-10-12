@@ -1,12 +1,17 @@
 import Foundation
 
-/// Maps the current moment to one of the 16 Karṣiṇī Śaktis using lunar age.
+/// The instrument's moon: phase, lunar day (tithi), header and time state.
 ///
-/// Today's Shakti index = `floor(moon_age_in_days) mod 16` → 0–15
-/// (so petal index — petal 0 sits at 12 o'clock).
+/// **Wave 5 — one moon, the real one.** Until Wave 5 this counted mean synodic
+/// days from one new moon in January 2000, which is right on average and up to
+/// about fourteen hours wrong on a given day — long enough to name the wrong
+/// tithi, and so the wrong Nityā. It is now a façade over `Ephemeris` /
+/// `Panchanga` (Meeus ch. 25 and 47): the phase is the Moon's true elongation
+/// from the Sun, and the lunar day is the true tithi, `floor(elongation / 12) + 1`.
+/// The Temporal Layer's clocks read the same functions, so the Rite's Nityā,
+/// the ledger's `Lunar Day` and the clock around the point never disagree.
 ///
-/// Moon age is computed as days since a known new moon epoch, modulo the
-/// synodic period. This is local-only and deterministic — no network.
+/// Local-only and deterministic — no network.
 enum LunarPhaseService {
 
     /// Synodic month — average days between new moons.
@@ -21,16 +26,16 @@ enum LunarPhaseService {
         return Calendar(identifier: .gregorian).date(from: c) ?? Date(timeIntervalSince1970: 947182440)
     }()
 
-    /// Days since the most recent new moon at `date`. Range [0, synodicMonth).
+    /// The Moon's age in mean days, [0, synodicMonth): the true elongation
+    /// scaled onto the mean month. Kept for callers that think in days.
     static func moonAgeDays(at date: Date = .now) -> Double {
-        let elapsed = date.timeIntervalSince(referenceNewMoon) / 86_400
-        let age = elapsed.truncatingRemainder(dividingBy: synodicMonth)
-        return age < 0 ? age + synodicMonth : age
+        phaseFraction(at: date) * synodicMonth
     }
 
-    /// Phase 0…1 around the synodic cycle (0 = new moon, 0.5 = full).
+    /// Phase 0…1 around the synodic cycle (0 = new moon, 0.5 = full) — the
+    /// Moon's true elongation from the Sun over 360°.
     static func phaseFraction(at date: Date = .now) -> Double {
-        moonAgeDays(at: date) / synodicMonth
+        Ephemeris.elongation(date) / 360
     }
 
     enum Phase {
@@ -69,7 +74,7 @@ enum LunarPhaseService {
     /// "Waning Crescent · 23rd Night" — for the Today header.
     static func headerLabel(at date: Date = .now) -> String {
         let p = phase(at: date)
-        let night = Int(floor(moonAgeDays(at: date))) + 1
+        let night = currentDay(at: date)
         return "\(p.label) · \(ordinalNight(night)) Night"
     }
 
@@ -85,10 +90,11 @@ enum LunarPhaseService {
         return (1 - cos(2 * .pi * f)) / 2
     }
 
-    /// Lunar day 1–30 — the integer day of the synodic cycle, 1-indexed.
-    /// Used by Phase 6 Recognition writes (`Lunar Day` field on the Airtable row).
+    /// Lunar day 1–30 — the true tithi (Wave 5): 1–15 Śukla, 16–30 Kṛṣṇa.
+    /// Used by Recognition writes (`Lunar Day` on the ledger row) and the
+    /// Rite's Nityā.
     static func currentDay(at date: Date = .now) -> Int {
-        Int(floor(moonAgeDays(at: date))) + 1
+        Panchanga.tithi(at: date)
     }
 
     /// Human-readable phase name — "Waxing Crescent", "Full Moon", etc.
@@ -114,11 +120,16 @@ enum LunarPhaseService {
         currentDay(at: date) <= 15
     }
 
-    /// The Mandala's atmospheric state. New moon (phaseFraction < 0.03) overrides
-    /// everything; otherwise hour-of-day → dawn / noon / dusk / night, contiguously.
+    /// The Mandala's atmospheric state. New moon overrides everything;
+    /// otherwise hour-of-day → dawn / noon / dusk / night, contiguously.
+    ///
+    /// Wave 5: "new moon" is the `.newMoon` phase on both sides of the
+    /// conjunction (fraction < 0.03 or ≥ 0.97). On the true moon the
+    /// conjunction itself reads 0.9999…, and with only the after-side counted
+    /// the darkest night of the month would not have been the new moon at all.
     static func currentTimeVariant(at date: Date = .now,
                                    calendar: Calendar = .current) -> TimeVariant {
-        if phaseFraction(at: date) < 0.03 { return .newmoon }
+        if phase(at: date) == .newMoon { return .newmoon }
         let hour = calendar.component(.hour, from: date)
         if hour < 5 || hour >= 21 { return .night }
         if hour < 10                { return .dawn }
