@@ -67,6 +67,19 @@ final class PlaySession: ObservableObject {
     func settle() {
         if phase != .still { phase = .still }
     }
+
+    /// Wave 6 · the game asks him for a word (Mirror Maze, the Letter, Flash).
+    /// Published on the next turn of the run loop, so a frame may ask.
+    @Published private(set) var asking = false
+    /// The line the empty field shows while it waits.
+    @Published private(set) var askingFor = "one word"
+
+    func ask(_ on: Bool, prompt: String = "one word") {
+        DispatchQueue.main.async {
+            if self.askingFor != prompt { self.askingFor = prompt }
+            if self.asking != on { self.asking = on }
+        }
+    }
 }
 
 // MARK: - The ledger, for play
@@ -137,6 +150,8 @@ struct PlayGameHost: View {
     @State private var felt = false
     @State private var ledgered = false
     @State private var hintVisible = true
+    @State private var word = ""
+    @FocusState private var wordFocused: Bool
 
     init(game: PlayGame, startPosition: Int? = nil, onClose: @escaping () -> Void) {
         self.game = game
@@ -183,8 +198,14 @@ struct PlayGameHost: View {
                         .transition(.opacity)
                 }
             }
+
+            if session.asking && session.phase == .playing {
+                wordField
+                    .transition(.opacity)
+            }
         }
         .onAppear {
+            model.meet(herWords)
             PlaySound.shared.begin()
             if game.usesMotion { motion.start() }
             DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
@@ -227,11 +248,62 @@ struct PlayGameHost: View {
         .accessibilityLabel("Leave \(game.title)")
     }
 
+    // MARK: His word (Wave 6)
+
+    /// One line for his own word, standing over the game's light. What he
+    /// writes is handed to the game and the line goes; nothing here keeps it.
+    private var wordField: some View {
+        VStack(spacing: 14) {
+            Spacer()
+            TextField("", text: $word, prompt: Text(session.askingFor).foregroundColor(Color.cream.opacity(0.3)))
+                .font(AppFont.sanskrit(30))
+                .foregroundStyle(Color.cream.opacity(0.9))
+                .multilineTextAlignment(.center)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
+                .submitLabel(.done)
+                .focused($wordFocused)
+                .onSubmit { giveWord() }
+                .padding(.horizontal, 40)
+                .accessibilityLabel("Your word")
+            Rectangle()
+                .fill(game.hue.opacity(0.4))
+                .frame(height: 1)
+                .padding(.horizontal, 60)
+            Spacer()
+            Spacer()
+        }
+        .onAppear { wordFocused = true }
+    }
+
+    private func giveWord() {
+        let w = word.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !w.isEmpty else { return }
+        PlayHaptics.tap(0.4)
+        wordFocused = false
+        model.give(word: w, session: session)
+        session.ask(false)
+        session.acted()
+        word = ""
+    }
+
     // MARK: The hand-off
 
     private var names: [Int: String] {
         var out: [Int: String] = [:]
         for s in shaktis { out[s.playPosition] = s.name }
+        return out
+    }
+
+    /// Her own words by position, for the games that answer from her rows.
+    private var herWords: [Int: PlayWords] {
+        var out: [Int: PlayWords] = [:]
+        for s in shaktis {
+            out[s.playPosition] = PlayWords(name: s.name,
+                                            appreciation: s.appreciationPhrase ?? "",
+                                            function: s.shaktiFunction ?? "",
+                                            quality: s.quality)
+        }
         return out
     }
 
@@ -286,6 +358,9 @@ struct PlayGameHost: View {
                                  seconds: PlayClock.now - session.startedAt,
                                  at: .now)
         PlayLedger.write(row)
+        // Wave 6: the same act, remembered on the phone so the World in a Box
+        // can stand an object for it (an object, never a total).
+        PlayGardenStore.shared.record(game: game.rawValue)
     }
 }
 

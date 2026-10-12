@@ -38,16 +38,75 @@ enum PlayFieldLayout {
             let nudge = twin.count > 1 ? (twin.firstIndex(of: game) == 0 ? -0.16 : 0.16) : 0
             angle = -Double.pi / 2 + 2 * Double.pi * Double(i - 1) / Double(n) + nudge
         case .ring(let r):
-            d = distance(ring: r, radius: radius)
-            angle = Double.pi * 0.75
+            // Wave 6: a ring may hold several games; they stand apart round it.
+            let here = PlayAddressBook.games(at: game.address)
+            let k = Double(here.firstIndex(of: game) ?? 0)
+            if r == 9 {
+                d = radius * 0.16
+                angle = Double.pi * 0.75 + k * 0.9
+            } else {
+                d = distance(ring: r, radius: radius)
+                angle = Double.pi * 0.75 + (k - Double(here.count - 1) / 2) * 0.32
+            }
         case .threshold(let from, let to):
+            let here = PlayAddressBook.games(at: game.address)
+            let k = Double(here.firstIndex(of: game) ?? 0)
             d = (distance(ring: from, radius: radius) + distance(ring: to, radius: radius)) / 2
-            angle = Double.pi * 0.25
+            angle = Double.pi * 0.25 + (k - Double(here.count - 1) / 2) * 0.3
         case .garland:
             d = radius * 1.1
             angle = Double.pi / 2
         }
+        // The Bindu's own seat holds the Śrī Yantra on the point itself; any
+        // other game there stands just beside it.
+        if case .seat(let kp) = game.address, kp == KhadgamalaMap.total,
+           let first = PlayAddressBook.games(atPosition: kp).first, first != game {
+            return CGPoint(x: c.x + radius * 0.16, y: c.y - radius * 0.12)
+        }
         return CGPoint(x: c.x + d * CGFloat(cos(angle)), y: c.y + d * CGFloat(sin(angle)))
+    }
+
+    /// Wave 6 · every light at its address, then eased apart until no two
+    /// stand closer than a finger — so thirty-six games can share one field
+    /// and each can still be touched. The Śrī Yantra stays pinned to the
+    /// point; everything else moves only as far as it must.
+    static func relaxed(center c: CGPoint, radius: CGFloat,
+                        minimum: CGFloat = 50, passes: Int = 80) -> [PlayGame: CGPoint] {
+        let games = PlayGame.allCases
+        var pts = games.map { point(for: $0, center: c, radius: radius) }
+        let pinned = games.firstIndex(of: .yantraTrace)
+        let limit = radius * 1.18
+        for _ in 0..<max(0, passes) {
+            var moved = false
+            for i in 0..<pts.count {
+                for j in (i + 1)..<pts.count {
+                    var dx = pts[j].x - pts[i].x
+                    var dy = pts[j].y - pts[i].y
+                    var d = hypot(dx, dy)
+                    guard d < minimum else { continue }
+                    if d < 0.001 {
+                        let a = Double(i * 7 + j * 3)
+                        dx = CGFloat(cos(a)); dy = CGFloat(sin(a)); d = 1
+                    }
+                    let push = (minimum - d) / 2 + 0.5
+                    let ux = dx / d, uy = dy / d
+                    if i != pinned { pts[i] = CGPoint(x: pts[i].x - ux * push, y: pts[i].y - uy * push) }
+                    if j != pinned { pts[j] = CGPoint(x: pts[j].x + ux * push, y: pts[j].y + uy * push) }
+                    moved = true
+                }
+            }
+            for i in 0..<pts.count where i != pinned {
+                let dx = pts[i].x - c.x, dy = pts[i].y - c.y
+                let d = hypot(dx, dy)
+                if d > limit {
+                    pts[i] = CGPoint(x: c.x + dx / d * limit, y: c.y + dy / d * limit)
+                }
+            }
+            if !moved { break }
+        }
+        var out: [PlayGame: CGPoint] = [:]
+        for (i, g) in games.enumerated() { out[g] = pts[i] }
+        return out
     }
 }
 
@@ -56,11 +115,14 @@ struct PlayFieldView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var playing: PlayGame? = nil
     @State private var arrived = false
+    /// The season the field is opened in (Wave 6 · the seasonal yantra).
+    let season = Panchanga.rtu(at: Date())
 
     var body: some View {
         GeometryReader { geo in
             let c = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.47)
-            let radius = min(geo.size.width * 0.40, geo.size.height * 0.34)
+            let radius = min(geo.size.width * 0.42, geo.size.height * 0.36)
+            let spots = PlayFieldLayout.relaxed(center: c, radius: radius)
             ZStack {
                 Color(red: 6 / 255, green: 2 / 255, blue: 5 / 255).ignoresSafeArea()
 
@@ -76,7 +138,7 @@ struct PlayFieldView: View {
 
                 ForEach(PlayGame.allCases) { game in
                     lightButton(game)
-                        .position(PlayFieldLayout.point(for: game, center: c, radius: radius))
+                        .position(spots[game] ?? PlayFieldLayout.point(for: game, center: c, radius: radius))
                         .opacity(arrived ? 1 : 0)
                         .animation(reduceMotion ? .easeOut(duration: 0.3)
                                    : .easeOut(duration: 1.2).delay(0.2 + 0.05 * Double(game.address.ring)),
@@ -134,7 +196,7 @@ struct PlayFieldView: View {
                     .frame(width: 30, height: 30)
                     .blendMode(.plusLighter)
                 Text(game.verb)
-                    .font(AppFont.voice(13))
+                    .font(AppFont.voice(12))
                     .foregroundStyle(Color.cream.opacity(0.72))
                     .fixedSize()
             }
@@ -158,6 +220,10 @@ struct PlayFieldView: View {
         let rim = radius
         add.stroke(Path(CGRect(x: c.x - rim, y: c.y - rim, width: rim * 2, height: rim * 2)),
                    with: .color(Color.gold.opacity(0.10)), lineWidth: 0.7)
+        // Wave 6 · the seasonal yantra: the field stands in the ṛtu's light.
+        let rgb = SeasonLight.colour(season)
+        add.glow(at: c, radius: radius * 1.05, color: Color(red: rgb.0, green: rgb.1, blue: rgb.2),
+                 alpha: 0.09 * SeasonLight.intensity(season))
         // The garland: 102 beads strung round everything, turning once in
         // three minutes.
         let g = radius * 1.1

@@ -622,6 +622,9 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
     /// The hand's state, integrated frame to frame.
     private var gestures = ClimbGestures()
     private var lastStand: TimeInterval?
+    /// Wave 6 · Ring 2's lotus, read from the day's sun once a minute.
+    private var lotusReadAt: TimeInterval = -1_000
+    private var lotusOpenness: Double = 1
 
     init(climb: WorldClimbSource, reduceMotion: Bool) {
         self.climb = climb
@@ -704,6 +707,7 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
             gestures.union, toward: holding ? 1 : 0, dt: dt,
             tau: holding ? ClimbLights.unionRise : ClimbLights.unionSettle)
         gestures.follow = climb.follow
+        standTheWholeMechanisms(ring: ring, now: now, dt: dt)
         if let flight = climb.flight {
             gestures.flight = .init(kp: flight.kp,
                                     progress: reduceMotion ? 1
@@ -715,6 +719,37 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
         scene.gestures = gestures
         scene.stand(atFraction: f, at: now - epoch)
         standsApplied += 1
+    }
+
+    /// Wave 6 · the Ring Worlds mechanisms not yet reborn (`RingMechanisms.swift`):
+    /// rings 1, 4 and 5 answer a still hand, Ring 2 follows the sun, and
+    /// Ring 8's other two lights collapse into the one he flies into.
+    private func standTheWholeMechanisms(ring: Int, now: TimeInterval, dt: Double) {
+        let stillHand = climb.touching && !climb.moving
+        func answer(_ value: Double, _ on: Bool) -> Double {
+            ClimbLights.follow(value, toward: on ? 1 : 0, dt: dt,
+                               tau: on ? ClimbLights.stillHandRise : ClimbLights.stillHandSettle)
+        }
+        gestures.settle = answer(gestures.settle, stillHand && ring == 1)
+        gestures.overflow = answer(gestures.overflow, stillHand && ring == 5)
+        let teaching = stillHand && ring == 4
+        gestures.lineageGlow = answer(gestures.lineageGlow, teaching)
+        if teaching { gestures.lineage += dt / ClimbLights.lineageSecondsPerSeat }
+        if now - lotusReadAt > 60 {
+            lotusReadAt = now
+            let date = Date()
+            let sun = Panchanga.sunTimes(on: date, place: TemporalPlace.current(at: date))
+            lotusOpenness = LotusSun.openness(at: date, sun: sun)
+        }
+        gestures.lotus = lotusOpenness
+        if let flight = climb.flight, KhadgamalaMap.ringNumber(forKhadgamala: flight.kp) == 8 {
+            gestures.collapseInto = flight.kp
+            gestures.collapse = reduceMotion ? 1
+                : min(1, ClimbFlight.progress(since: flight.since, now: now) * 2)
+        } else {
+            gestures.collapseInto = nil
+            gestures.collapse = 0
+        }
     }
 
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
