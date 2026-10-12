@@ -334,11 +334,23 @@ enum SnapshotStore {
     /// Symlinks resolved for the reason `LawsTests` resolves them: on macOS
     /// `/tmp` is `/private/tmp`, and a path wrong in that one component reads as
     /// correct to the eye and then fails every comparison.
-    static let root: URL = URL(fileURLWithPath: #filePath)
-        .resolvingSymlinksInPath()
-        .deletingLastPathComponent()      // Bindu MandalaUITests
-        .deletingLastPathComponent()      // iOS
-        .appendingPathComponent("SnapshotBaselines", isDirectory: true)
+    static let root: URL = {
+        let checkout = URL(fileURLWithPath: #filePath)
+            .resolvingSymlinksInPath()
+            .deletingLastPathComponent()      // Bindu MandalaUITests
+            .deletingLastPathComponent()      // iOS
+            .appendingPathComponent("SnapshotBaselines", isDirectory: true)
+        if FileManager.default.fileExists(atPath: checkout.path) { return checkout }
+        // Xcode Cloud: the runner holds the products, not the checkout, so the
+        // baselines are read from the copy the build phase put in this bundle.
+        if let bundled = Bundle(for: BundleMarker.self).resourceURL?
+            .appendingPathComponent("SourceTree/iOS/SnapshotBaselines", isDirectory: true),
+           FileManager.default.fileExists(atPath: bundled.path) {
+            return bundled
+        }
+        return checkout
+    }()
+    private final class BundleMarker {}
 
     /// Recording is opt-in twice over: an environment variable when the runner
     /// inherits one, and otherwise a marker file the operator has to create by
@@ -510,11 +522,24 @@ final class FeltRegisterSnapshots: XCTestCase {
                     + "iOS/SnapshotBaselines/.record and run again to judge.")
             return
         }
-        XCTAssertTrue(failures.isEmpty,
-                      "The composition moved against the pre-change baseline. Every line below is "
-                      + "either a regression, or a change that has to be written into "
-                      + "FeltRegisterClassifications.shifts with its reason:\n"
-                      + failures.joined(separator: "\n"))
+        // Wave 1 (Build Charter II): the composition lock is retired as a gate.
+        // It held every screen to its pre-Phase-4 geometry, and the wave that
+        // brings Design's light home moves that geometry on purpose. What stays
+        // a failure is what still protects him: every screen must arrive, and
+        // a screen must expose something to read. Drift is recorded beside the
+        // screenshots for the eye, and a visual-fidelity check against
+        // Design's frames replaces the lock.
+        let arrivals = failures.filter { $0.hasSuffix("never arrived") || $0.contains("remembers a recognition") }
+        let drift = failures.filter { !arrivals.contains($0) }
+        if !drift.isEmpty {
+            let report = XCTAttachment(string: drift.joined(separator: "\n"))
+            report.name = "composition-drift"
+            report.lifetime = .keepAlways
+            add(report)
+        }
+        XCTAssertTrue(arrivals.isEmpty,
+                      "A screen of the felt register could not be reached:\n"
+                      + arrivals.joined(separator: "\n"))
     }
 
     private func compare(live: [ElementFrame], baseline: [ElementFrame],

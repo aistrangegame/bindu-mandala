@@ -25,15 +25,38 @@ final class RingAudioService {
     private var sustainedVoice: ContinuousVoice?
     private var r8Triad: TriadVoice?
     private var shepard: ShepardVoice?
+    /// Wave 2 · ring 7, the witness: 136.1 Hz heard only through its overtones.
+    private var sourceless: ContinuousVoice?
+    /// Wave 2 · the point — the instrument seen whole, before any enclosure.
+    private var point: ContinuousVoice?
 
     private init() {}
 
     // MARK: - Engine lifecycle
 
+    /// **Wave 2 · the silent switch is honoured** (Charter II §3, law 5).
+    ///
+    /// These are the field's voices — the climb's worlds and the Mandala's
+    /// enclosures sounding of their own accord — and a phone held on silent
+    /// has already answered whether the instrument should choose to sound.
+    /// `.ambient` is the one category the hardware switch silences, and it
+    /// mixes by definition (`.mixWithOthers` is invalid with it and throws).
+    /// Re-asserted on every voice that begins, because `BijaSoundService` sets
+    /// `.playback` the first time a bīja is struck and the session is one for
+    /// the whole app; ``stopAll()`` gives `.playback` back, the way
+    /// ``HomeSoundService`` gives it back at a room's door.
+    private func honourSilentSwitch() {
+        let session = AVAudioSession.sharedInstance()
+        guard session.category != .ambient else { return }
+        try? session.setCategory(.ambient, mode: .default)
+        try? session.setActive(true)
+    }
+
     private func configureIfNeeded() throws {
+        honourSilentSwitch()
         guard !configured else { return }
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        try session.setCategory(.ambient, mode: .default)
         try session.setActive(true)
         // Touching mainMixerNode (and through it, outputNode) ensures the
         // engine graph has the required output before `start()` is called —
@@ -79,6 +102,9 @@ final class RingAudioService {
         groundDrone?.stop()
         groundDrone = nil
     }
+
+    /// Wave 2 · the ground drone's level, for a crossfade on the climb.
+    func groundDroneGain(_ value: Float) { groundDrone?.setGain(value) }
 
     // MARK: - Ring 2 · Home breath (130.81 + 196 fifth, LFO 0.18 ±0.02)
 
@@ -241,6 +267,154 @@ final class RingAudioService {
         r8Triad = nil
     }
 
+    /// Wave 2 · the triad's level, for a crossfade on the climb.
+    func r8Gain(_ value: Float) { r8Triad?.setGain(value) }
+
+    // MARK: - Wave 2 · Ring 7 · the witness, sourceless
+
+    /// 136.1 Hz is the world's own pitch (rupakarshini law 10), and the witness
+    /// has no source: so the fundamental is never sounded, only its 2nd, 3rd
+    /// and 5th partials — Design's `sourceless` technique (`homes-sound.js`),
+    /// voiced over the point's own pitch. The ear supplies the missing root.
+    nonisolated static let sourcelessRoot: Double = 136.1
+
+    func sourcelessStart() {
+        guard sourceless == nil else { return }
+        do { try configureIfNeeded() } catch { return }
+        let root = Self.sourcelessRoot
+        let voice = ContinuousVoice(
+            engine: engine,
+            sampleRate: sampleRate,
+            spec: .init(
+                fundamental: root * 2,
+                harmonics: [(root * 3, 0.62), (root * 5, 0.33)],
+                lfoRate: 0.05,
+                lfoDepth: 0.006,
+                targetGain: 0.022,
+                fadeIn: 1.6
+            )
+        )
+        voice.start()
+        sourceless = voice
+        startEngineIfNeeded()
+    }
+
+    func sourcelessGain(_ value: Float) { sourceless?.setGain(value) }
+
+    func sourcelessStop() {
+        sourceless?.stop()
+        sourceless = nil
+    }
+
+    // MARK: - Wave 2 · the point (the instrument seen whole)
+
+    /// The point's own hum: 136.1 Hz with Design's withheld fifth over it
+    /// (`204.15`, `homes-sound.js`), breathing on the ground drone's slow LFO.
+    func pointStart() {
+        guard point == nil else { return }
+        do { try configureIfNeeded() } catch { return }
+        let voice = ContinuousVoice(
+            engine: engine,
+            sampleRate: sampleRate,
+            spec: .init(
+                fundamental: Self.sourcelessRoot,
+                harmonics: [(204.15, 0.28)],
+                lfoRate: 0.07,
+                lfoDepth: 0.012,
+                targetGain: 0.035,
+                fadeIn: 2.2
+            )
+        )
+        voice.start()
+        point = voice
+        startEngineIfNeeded()
+    }
+
+    func pointGain(_ value: Float) { point?.setGain(value) }
+
+    func pointStop() {
+        point?.stop()
+        point = nil
+    }
+
+    // MARK: - Wave 6 · the Om at 136.1, always underneath
+
+    /// Panel 9's Om (`tree-of-life`): 136.1 Hz with its octave at 30 % and its
+    /// sub-octave at 15 %, breathing on a very slow swell. It is never "turned
+    /// on" as an event — ``SoundConductor`` raises it from the first place he
+    /// stands in and only ever moves its level, so the crescendo is the rest
+    /// of the instrument falling away. Its own voice, so ``stopAll(givingBackTheSession:)``
+    /// — which the field calls every time it falls quiet — does not take it.
+    private var om: ContinuousVoice?
+
+    func omStart(gain: Float) {
+        guard om == nil else { omGain(gain); return }
+        do { try configureIfNeeded() } catch { return }
+        let voice = ContinuousVoice(
+            engine: engine,
+            sampleRate: sampleRate,
+            spec: .init(
+                fundamental: TreeOfLife.omHz,
+                harmonics: TreeOfLife.omPartials,
+                lfoRate: 0.05,
+                lfoDepth: 0.001,
+                targetGain: max(0, gain),
+                fadeIn: 3.0
+            )
+        )
+        voice.start()
+        om = voice
+        startEngineIfNeeded()
+    }
+
+    func omGain(_ value: Float) { om?.setGain(max(0, value)) }
+
+    var omIsSounding: Bool { om != nil }
+
+    func omStop() {
+        om?.stop()
+        om = nil
+    }
+
+    // MARK: - Wave 2 · Ring 7 · the twelve-voice chord
+
+    /// Design's `VAK_FREQS` (`ring-worlds.jsx`) — the twelve Vāgdevatās'
+    /// bījas, low to high round the circle. Existing pitches, kept.
+    nonisolated static let vakFrequencies: [Double] = [220.00, 246.94, 261.63, 293.66, 329.63, 349.23,
+                                           392.00, 440.00, 493.88, 523.25, 587.33, 659.25]
+
+    /// Design's `strikeChord`: all twelve at once, each a breath behind the
+    /// last (55 ms), each 3.2 s at a whisper.
+    nonisolated func vakChord() {
+        for (i, freq) in Self.vakFrequencies.enumerated() {
+            let delay = Double(i) * 0.055
+            Task { @MainActor [weak self] in
+                if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
+                self?.playSteppedNote(freq: freq, duration: 3.2, volume: 0.05)
+            }
+        }
+    }
+
+    /// Design's `strikeOne`: one of the twelve, 2.6 s.
+    nonisolated func vakOne(_ index: Int) {
+        let freqs = Self.vakFrequencies
+        playSteppedNote(freq: freqs[((index % freqs.count) + freqs.count) % freqs.count],
+                        duration: 2.6, volume: 0.09)
+    }
+
+    // MARK: - Wave 2 · the descent's glissando
+
+    /// One glide, from one pitch to another, over `seconds` — the descent into
+    /// her mark heard as falling (``Glissando``). A voice of its own, built for
+    /// the one glide and let go when it has sounded.
+    func glide(fromHz: Double, toHz: Double, seconds: TimeInterval) {
+        do { try configureIfNeeded() } catch { return }
+        let voice = GlissandoVoice(engine: engine, sampleRate: sampleRate,
+                                   from: fromHz, to: toHz, seconds: seconds)
+        startEngineIfNeeded()
+        voice.start()
+    }
+
     // MARK: - Ring 9 · Shepard tone (7 octave-stacked descending sines, bell amp)
 
     func shepardStart() {
@@ -264,12 +438,24 @@ final class RingAudioService {
 
     // MARK: - Global stop (used on app background)
 
-    func stopAll() {
+    /// `givingBackTheSession` is false when the field merely falls quiet
+    /// between places (a room is opening, Mauna is beginning) — giving
+    /// `.playback` back then could land after the room has asked for
+    /// `.ambient`, and the room would sound through the silent switch.
+    func stopAll(givingBackTheSession: Bool = true) {
         groundDroneStop()
         homeBreathStop()
         sustainedVoiceStop()
         r8Stop()
         shepardStop()
+        sourcelessStop()
+        pointStop()
+        // The field's ruling is the field's: give the session back the way the
+        // rest of the app asks for it (see ``honourSilentSwitch()``).
+        if configured, givingBackTheSession {
+            try? AVAudioSession.sharedInstance()
+                .setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        }
     }
 }
 
@@ -385,28 +571,41 @@ final class ContinuousVoice {
     // Hold reference to render-block state so it isn't deinited.
     private let voiceState: VoiceState
 
+    /// Wave 6 · the level last asked for. A long fade-in rises toward *this*,
+    /// not toward the spec's starting level, so a voice that is asked to stand
+    /// quieter while it is still fading in (``SoundConductor`` holding it under
+    /// a room) does not climb back over what it was told.
+    private var requestedGain: Float = 0
+    private var rampingIn = false
+
     func start() {
         // Bring up over `fadeIn`. The render block reads `targetGain` via state.
+        requestedGain = spec.targetGain
         voiceState.targetGain = spec.targetGain
         // The smoothing constant in the render block effects a soft fade.
         // For long fade-ins (Ring 1's 2.2s), nudge target gradually via a Task.
         if spec.fadeIn > 0.5 {
-            let target = spec.targetGain
             let steps = 32
             let delay = spec.fadeIn / Double(steps)
             voiceState.targetGain = 0
+            rampingIn = true
             Task { @MainActor in
                 for i in 1...steps {
                     try? await Task.sleep(for: .seconds(delay))
-                    self.voiceState.targetGain = target * Float(i) / Float(steps)
+                    self.voiceState.targetGain = self.requestedGain * Float(i) / Float(steps)
                 }
+                self.rampingIn = false
             }
         }
     }
 
-    func setGain(_ value: Float) { voiceState.targetGain = value }
+    func setGain(_ value: Float) {
+        requestedGain = value
+        if !rampingIn { voiceState.targetGain = value }
+    }
 
     func stop() {
+        requestedGain = 0
         voiceState.targetGain = 0
         // Detach after the gain has had time to settle to silence.
         Task { @MainActor [weak self] in
@@ -504,6 +703,11 @@ final class TriadVoice {
 
     func start() {
         state.targetMasterGain = targetMasterGain
+    }
+
+    /// Wave 2 · the master level, for a crossfade (`0` … the start level).
+    func setGain(_ value: Float) {
+        state.targetMasterGain = max(0, value)
     }
 
     /// `tau` is informational — the render-thread smoothing constant is fixed,

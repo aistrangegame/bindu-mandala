@@ -20,6 +20,26 @@ final class AirtableService {
 
     static let shared = AirtableService()
 
+    /// The notes with a POST in the air right now.
+    ///
+    /// `ledgeredAt` is stamped only *after* a create returns, so between the
+    /// POST leaving and the response landing a note looks, to every other
+    /// caller, exactly like a note that has never been written. Two callers can
+    /// be in that window at once: the composer's `onDisappear` spawns one, and
+    /// the scene-phase `.active` sweep — which fires the moment he switches back
+    /// to the app — finds the same un-stamped note and spawns another. Both pass
+    /// `ledgeredAt == nil`, both run their dedup GET before either create has
+    /// committed, and the ledger ends up holding his note twice. A later restore
+    /// then puts both copies in his margin, in his own words, with no delete.
+    ///
+    /// The dedup check cannot close this on its own: it is a read, and two reads
+    /// that race a write both see nothing. This is the interlock that makes the
+    /// dedup's job *retry after a failure* rather than *two simultaneous firsts*.
+    ///
+    /// `@MainActor` is what makes it safe: test-and-set happens with no `await`
+    /// between, so it is atomic without a lock.
+    private var notesInFlight: Set<UUID> = []
+
     static let baseId  = "app248ZTWhYJlvQj2"
     static let tableId = "tblrRwXJD0uP8HU8G"
 
@@ -110,6 +130,12 @@ final class AirtableService {
             log.notice("No PAT — local-only mode.")
             return
         }
+        // His margin, before anything that can throw. It lives nowhere but here
+        // and the phone, and it merges on identity rather than on the phone being
+        // empty — so it is idempotent, and it must not sit behind a field fetch
+        // that a dead network aborts. See `restoreNotesFromLedger`.
+        await restoreNotesFromLedger(context: context)
+
         do {
             log.notice("[Phase 1] sync starting…")
             async let s: [ShaktiRow]  = fetch(token: token, filter: "{fldw33m8YqrINlvrN}='Shakti'",
@@ -133,7 +159,10 @@ final class AirtableService {
             // device has none — the path home after a reinstall/recovery.
             await restoreRecognitionsIfLocalEmpty(context: context)
             await restoreDescentIfLocalEmpty(context: context)
-            logVerification(shaktis: sk.count, avaranas: av.count, nityas: nt.count, context: context)
+            // Wave 6 · river letters, lights sent back and the kept name come
+            // home from the ledger — merged on identity, so it runs every sync.
+            await restoreRiverFromLedger(context: context)
+            log.notice("Sync:\(sk.count) Śaktis · \(av.count) Āvaraṇas · \(nt.count) Nityās")
         } catch {
             log.error("Sync failed: \(Self.describe(error), privacy: .public)")
         }
@@ -228,6 +257,12 @@ final class AirtableService {
         let lastFelt: String?
         let recognitionCount: Int?
         let letter: String?
+        // Wave 6 · her extras, held beside the store (`ShaktiFactsCache`).
+        let scoreJSON: String?
+        let phonetic: String?
+        let seedVerb: String?
+        let relatedShaktis: [String]?
+        let relatedFrom: [String]?
 
         // CodingKeys are Airtable field IDs (verified May 31 2026 via Airtable Omni).
         // Read with `returnFieldsByFieldId=true` so the response is keyed by ID.
@@ -253,6 +288,12 @@ final class AirtableService {
             case lastFelt           = "fldWT0dGqdUQrdRGT"
             case recognitionCount   = "flddp0tLpf8iuxyt4"
             case letter             = "fldgASyV031Hr4sHp"
+            // Wave 6 · verified 12 Oct 2026 (read-only schema read).
+            case scoreJSON          = "fldz1vCCMpXiw8s1n"   // multilineText
+            case phonetic           = "fldadDCi4OJYEaAFX"   // singleLineText
+            case seedVerb           = "fldVgkRZmbc7STB7S"   // singleLineText
+            case relatedShaktis     = "fldQNnFoom72Nr6vh"   // link → Mandala rows
+            case relatedFrom        = "fldtAau1NIP4QDZrk"   // its reverse
         }
     }
 
@@ -266,9 +307,32 @@ final class AirtableService {
         let geometricShape: String?
         let personalConnection: String?
         let yogini: String?
+        // Wave 0 · D — the ring's own material, read live (Design's values in
+        // `HomeWorlds` stay only as the offline fallback).
+        let gem: String?
+        let dhatu: String?
+        let timeCycle: String?
+        let avaranaBeeja: String?
+        let bodyRegion: String?
+        // Wave 2 · the ring's Siddhi, for the Gates of Release.
+        let siddhi: String?
+        // Wave 6 · the ring's mudrā, phase and prose.
+        let mudra: String?
+        let phase: String?
+        let notes: String?
 
-        // CodingKeys are Airtable field IDs (verified May 31 2026 via Airtable Omni).
+        // CodingKeys are Airtable field IDs (verified May 31 2026 via Airtable Omni;
+        // the five ring fields verified 12 Oct 2026).
         enum CodingKeys: String, CodingKey {
+            case gem                = "fldWlbdPNpmqPvfMj"
+            case dhatu              = "fldVjcApdGFVrIfq1"
+            case timeCycle          = "fldZLBoLGegod2xfy"
+            case avaranaBeeja       = "fldixnYtJ30lZEDJM"
+            case bodyRegion         = "fld6Ucmi8YqeAbOXU"
+            case siddhi             = "fldx9jXyTVWxp19o1"   // verified 12 Oct 2026 (Wave 2)
+            case mudra              = "fld1C14f4MsVIrA9F"   // Wave 6 · singleLineText
+            case phase              = "fldKWGAI16XjdqoI3"   // Wave 6 · singleSelect
+            case notes              = "fld1HR38cQAtEicFc"   // Wave 6 · multilineText
             case sanskritName       = "fldJOatnYrw9l6tff"
             case subtitle           = "fldXTUBJTDlkKEzEV"
             case presidingForm      = "fldgHVP1LqoVJsYu8"
@@ -393,7 +457,34 @@ final class AirtableService {
             }
 
             shakti.lastSyncedAt = .now
+
+            // Wave 6 · her live phonetic, when the base has one, is preferred
+            // over the bundled one (an existing column — no schema change).
+            if let v = row.fields.phonetic?.trimmingCharacters(in: .whitespacesAndNewlines), !v.isEmpty {
+                shakti.phonetic = v
+            }
         }
+        // Wave 6 · her extras beside the store. Related Śaktis arrive as record
+        // links, both directions, and are resolved here to positions — the only
+        // key — using this very page of rows.
+        var kpByRecord: [String: Int] = [:]
+        for row in rows {
+            if let kp = row.fields.khadgamalaPosition, (1...102).contains(kp) { kpByRecord[row.id] = kp }
+        }
+        var extras: [Int: ShaktiFactsCache.Facts] = [:]
+        for row in rows {
+            guard let kp = row.fields.khadgamalaPosition, (1...102).contains(kp) else { continue }
+            let links = (row.fields.relatedShaktis ?? []) + (row.fields.relatedFrom ?? [])
+            var related: [Int] = []
+            for id in links {
+                if let p = kpByRecord[id], p != kp, !related.contains(p) { related.append(p) }
+            }
+            extras[kp] = ShaktiFactsCache.Facts(scoreJSON: row.fields.scoreJSON,
+                                                phonetic: row.fields.phonetic,
+                                                seedVerb: row.fields.seedVerb,
+                                                related: related.isEmpty ? nil : related)
+        }
+        ShaktiFactsCache.storeAll(extras)
         try context.save()
     }
 
@@ -538,6 +629,17 @@ final class AirtableService {
             avarana.personalConnection = row.fields.personalConnection
             avarana.yogini             = row.fields.yogini
             avarana.lastSyncedAt = .now
+            // Held beside the store, not in it: these five are read-only
+            // catalog strings, and adding them to the `Avarana` model would
+            // change a shipped schema version (BinduSchema's first law).
+            RingFactsCache.store(ring: ring, facts: RingFactsCache.Facts(
+                gem: row.fields.gem, dhatu: row.fields.dhatu,
+                timeCycle: row.fields.timeCycle, beeja: row.fields.avaranaBeeja,
+                bodyRegion: row.fields.bodyRegion,
+                siddhi: row.fields.siddhi,
+                mudra: row.fields.mudra,
+                phase: row.fields.phase,
+                notes: row.fields.notes))
         }
         try context.save()
     }
@@ -579,30 +681,6 @@ final class AirtableService {
         return ShaktiStatus(rawValue: r)
     }
 
-    // MARK: - Verification (Phase 1 — downgrade after Phase 2 verification passes)
-
-    private func logVerification(shaktis: Int, avaranas: Int, nityas: Int, context: ModelContext) {
-        log.notice("[Phase 1] Shaktis fetched: \(shaktis)")
-        let allS = (try? context.fetch(FetchDescriptor<Shakti>())) ?? []
-        for s in allS.sorted(by: { ($0.khadgamalaPosition ?? 0) < ($1.khadgamalaPosition ?? 0) }) {
-            let portrait = String((s.codexPortrait ?? "").prefix(80))
-            // Names/devanāgarī are catalog data; the codex portrait is reflective
-            // free-text and stays redacted so it never lands in the unified log.
-            log.notice("  \(s.khadgamalaPosition ?? 0) · ring \(s.ringNumber ?? 0) · \(s.name, privacy: .public) · \(s.devanagari ?? "—", privacy: .public) · \(portrait, privacy: .private)")
-        }
-        log.notice("[Phase 1] Avaranas fetched: \(avaranas)")
-        let allA = (try? context.fetch(FetchDescriptor<Avarana>())) ?? []
-        for a in allA.sorted(by: { $0.ringNumber < $1.ringNumber }) {
-            let conn = String((a.personalConnection ?? "").prefix(80))
-            // Personal connection is the practitioner's own reflection — redacted.
-            log.notice("  ring \(a.ringNumber) · \(a.sanskritName, privacy: .public) · \(conn, privacy: .private)")
-        }
-        log.notice("[Phase 1] Nityas fetched: \(nityas)")
-        let allN = (try? context.fetch(FetchDescriptor<NityaDevi>())) ?? []
-        for n in allN.sorted(by: { $0.tithiPosition < $1.tithiPosition }) {
-            log.notice("  \(n.tithiPosition) · \(n.sanskritName, privacy: .public) · \(n.quality ?? "—", privacy: .public)")
-        }
-    }
 }
 
 // MARK: - Her Moments · Recognition reads (App Activity)
@@ -692,13 +770,16 @@ extension AirtableService {
     enum RecognitionSource: String {
         case today    = "Today"
         case mandala  = "Mandala"
+        case field    = "Field"      // the 102 in their rings (TheHundredTwoView)
+        case room     = "Room"       // inside one of the 102 Homes
         case silence  = "Silence"
         case well     = "Well"
+        case play     = "Play"       // Wave 4 — a game handed off to her (born by typecast)
     }
 
     /// One unfulfilled recognition held in UserDefaults until the network returns.
-    /// `failCount` is incremented per failed flush; items are dropped after
-    /// `PendingQueuePolicy.maxFailures`. With no token nothing is bumped.
+    /// `failCount` is incremented per failed flush; the item is never dropped
+    /// (`PendingQueuePolicy.maxFailures` is nil). With no token nothing is bumped.
     /// The stored shape is build 36's, member for member — a queue written
     /// before the ledger rewire still decodes and drains into App Activity.
     private struct PendingRecognition: Codable, PendingQueueItem, RecognitionMoment {
@@ -749,9 +830,9 @@ extension AirtableService {
 
     /// Drain the Recognition and Letter pending queues plus the descent-crossing
     /// and activity-ledger queues. Called at the start of every `sync()` and on
-    /// scene-phase `.active`. Items that fail `PendingQueuePolicy.maxFailures`
-    /// times in a row are dropped — local SwiftData is already canonical, so the
-    /// only loss is the Airtable mirror. Without a token every queue holds.
+    /// scene-phase `.active`. A failed item stays and is retried on the next
+    /// sync, forever — a practice event never leaves the record (Wave 0 · B5).
+    /// Without a token every queue holds.
     /// Re-entrant calls (launch fires this twice at once) skip.
     func flushPending(context: ModelContext) async {
         if syncIsDisabled() { return }
@@ -765,6 +846,11 @@ extension AirtableService {
         await flushPendingLetters()
         await flushPendingActivities()
         await flushPendingCrossings()
+        // Wave 6 · his words sent to the Codex.
+        await flushPendingCodexNotes()
+        // The margin's own queue is the notes themselves, not UserDefaults —
+        // `recordNote` says why.
+        await flushUnledgeredNotes(context: context)
     }
 
     private func flushPendingRecognitions(context: ModelContext) async {
@@ -1498,11 +1584,31 @@ extension AirtableService {
     private func processActivity(_ item: PendingActivity) async -> Bool {
         guard let token = pat else { return false }
         do {
-            if !item.linkRecordId.isEmpty,
+            // A note carries no link, and an unlinked item would otherwise skip
+            // the check below entirely and always create — so a retry after a
+            // POST that landed but whose response was lost would write his note
+            // twice. Its key is the body instead of the link.
+            if item.type == ActivityLedger.ActivityType.noteLeft {
+                if await noteExistsOnServer(token: token,
+                                            feltAt: item.at,
+                                            body: item.notes ?? "") {
+                    log.notice("\(item.type, privacy: .public) row already on server — skipping create")
+                    return true
+                }
+            } else if !item.linkRecordId.isEmpty,
                await activityExistsOnServer(token: token,
                                             type: item.type,
                                             linkRecordId: item.linkRecordId,
                                             feltAt: item.at) {
+                log.notice("\(item.type, privacy: .public) row already on server — skipping create")
+                return true
+            } else if item.linkRecordId.isEmpty,
+                      let map = item.linkToMap?.first, !map.isEmpty,
+                      await mapActivityExistsOnServer(token: token, type: item.type,
+                                                      mapRecordId: map, feltAt: item.at) {
+                // Wave 6 · a chakra with no Mandala row behind it (the two
+                // thresholds) is keyed by its Map link instead, so a retry
+                // after a lost response still writes one row.
                 log.notice("\(item.type, privacy: .public) row already on server — skipping create")
                 return true
             }
@@ -1560,6 +1666,189 @@ extension AirtableService {
             return false
         }
     }
+
+    /// Wave 6 · the Map-keyed twin of ``activityExistsOnServer``: rows of
+    /// `type` within ±60 s of `feltAt` that link `mapRecordId` in `Link to The
+    /// Map` at this second. Fail-open, like its twin.
+    private func mapActivityExistsOnServer(token: String,
+                                           type: String,
+                                           mapRecordId: String,
+                                           feltAt: Date) async -> Bool {
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.dedup(type: type, around: feltAt),
+                sort: [],
+                fields: ActivityLedger.mapDedupFields,
+                byFieldId: false
+            )
+            return rows.contains {
+                ActivityLedger.mapRowMatches($0, mapRecordId: mapRecordId, feltAt: feltAt)
+            }
+        } catch {
+            log.error("Ledger map dedup check failed — proceeding with create: \(Self.describe(error), privacy: .public)")
+            return false
+        }
+    }
+
+    // MARK: The margin (`Note Left`)
+
+    /// Write one note to the ledger, and stamp it only if the row is confirmed.
+    ///
+    /// **This deliberately does not ride the UserDefaults activity queue.** That
+    /// queue dropped an item after three failed flushes (until Wave 0), and
+    /// its justification is that *"local SwiftData is already canonical, so the
+    /// only loss is the Airtable mirror"* — true for a recognition, whose Shakti
+    /// row still carries Last Felt, and false for a note, whose ledger row is
+    /// the only copy that will ever leave the phone. So the note's own row is
+    /// the queue of record: `ledgeredAt` stays nil until a create succeeds, and
+    /// ``flushUnledgeredNotes(context:)`` sweeps it on every later sync, forever.
+    /// Raising `maxFailures` was the alternative and would have changed
+    /// behaviour for four other queues to fix one.
+    func recordNote(_ note: MarginNote, context: ModelContext) async {
+        if syncIsDisabled() { return }
+        guard note.ledgeredAt == nil, !note.isBlank else { return }
+        // One POST per note at a time — see `beginNoteFlight`.
+        guard beginNoteFlight(note.noteId) else {
+            log.notice("Note already being written — the second attempt stands down")
+            return
+        }
+        defer { endNoteFlight(note.noteId) }
+        let item = ActivityLedger.noteLeft(body: note.trimmedBody, at: note.createdAt)
+        guard await processActivity(item) else {
+            log.notice("Note held on the phone — the ledger row will follow on the next sync")
+            return
+        }
+        note.ledgeredAt = .now
+        try? context.save()
+    }
+
+
+    /// Claim the flight for this note. `false` means somebody else holds it and
+    /// this caller must not post. Internal, not private, so the interlock can be
+    /// proven without a network — the whole point of it is a case that needs two
+    /// callers and one instant.
+    @discardableResult
+    func beginNoteFlight(_ id: UUID) -> Bool {
+        guard !notesInFlight.contains(id) else { return false }
+        notesInFlight.insert(id)
+        return true
+    }
+
+    func endNoteFlight(_ id: UUID) {
+        notesInFlight.remove(id)
+    }
+
+    /// How many un-ledgered notes one sweep attempts. A bound, not a measure:
+    /// nothing reads it back, and the remainder is taken by the next sync.
+    static let notesPerSweep = 20
+
+    /// Every note that has never reached the ledger, tried again — the half of
+    /// "saved locally, synced when able" that the local save alone cannot keep.
+    /// Oldest first, so a long-offline stretch drains in the order he wrote in.
+    func flushUnledgeredNotes(context: ModelContext) async {
+        if syncIsDisabled() { return }
+        guard pat != nil else { return }
+        let store = MarginNoteStore(context: context)
+        // Never the one he is still typing into: this runs on scene-phase
+        // `.active`, which is exactly when he comes back to a composer he left
+        // open, and a half-written row would be stamped and never corrected.
+        let waiting = MarginNoteStore.sweepable(store.awaitingLedger(limit: Self.notesPerSweep),
+                                                openInComposer: MarginComposition.openNoteId)
+        for note in waiting {
+            await recordNote(note, context: context)
+        }
+    }
+
+    /// Is this exact note already in the ledger? The same ±60 s fetch every
+    /// other event uses, matched on `Felt At` to the second **and the body**
+    /// rather than on a link the note does not have. Fail-open, like every other
+    /// check here: a broken check must never strand a note.
+    private func noteExistsOnServer(token: String, feltAt: Date, body: String) async -> Bool {
+        let mine = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !mine.isEmpty else { return false }
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.dedup(type: ActivityLedger.ActivityType.noteLeft,
+                                             around: feltAt),
+                sort: [],
+                fields: ActivityLedger.noteDedupFields,
+                byFieldId: false
+            )
+            return rows.contains { ActivityLedger.noteRowMatches($0, feltAt: feltAt, body: mine) }
+        } catch {
+            log.error("Ledger note dedup check failed — proceeding with create: \(Self.describe(error), privacy: .public)")
+            return false
+        }
+    }
+
+    /// Bring back every note the ledger holds and the phone does not — the path
+    /// home after a reinstall, or after `PersistenceRecovery` opens a fresh
+    /// store. Without it, "saved locally, synced when able" is only half true:
+    /// Airtable would hold every note he ever wrote while his list came back
+    /// empty.
+    ///
+    /// **It merges on identity, and it used to guard on the phone being empty.**
+    /// That guard was a door that closes for good, and it closed on the most
+    /// ordinary sequence there is. Reinstall on a train with no signal: the sync
+    /// throws at the field fetch, so the restore — which sat at the *end* of the
+    /// `do` block — never runs at all. He writes one note. `MarginNote` is no
+    /// longer empty, so from that launch to the end of the install the guard
+    /// returns immediately, and every note he wrote before the reinstall stays in
+    /// Airtable and never comes back to his list. Nothing fails, nothing is
+    /// logged, and the words are authored: unlike a recognition, there is no
+    /// Shakti row still carrying them and nothing can re-derive them.
+    ///
+    /// So the emptiness test is gone, the merge is idempotent
+    /// (`ActivityLedger.notesMissingLocally`), and the call moved ahead of
+    /// everything that can throw. It may now run on every sync forever, and the
+    /// day a note is missing from his list is the day it comes back rather than
+    /// the day the door had already shut. Restored notes arrive already
+    /// ledgered — they came *from* the ledger.
+    func restoreNotesFromLedger(context: ModelContext) async {
+        if syncIsDisabled() { return }
+        guard let token = pat else { return }
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.restoreNotes,
+                sort: [],
+                fields: Self.restoreNoteFields,
+                byFieldId: false
+            )
+            let restored = ActivityLedger.marginNotes(from: rows)
+            guard !restored.isEmpty else { return }
+            let held = ((try? context.fetch(FetchDescriptor<MarginNote>())) ?? [])
+                .map { (createdAt: $0.createdAt, body: $0.trimmedBody) }
+            let missing = ActivityLedger.notesMissingLocally(restored: restored, local: held)
+            guard !missing.isEmpty else { return }
+            let now = Date()
+            for r in missing {
+                context.insert(MarginNote(body: r.body,
+                                          createdAt: r.createdAt,
+                                          updatedAt: r.createdAt,
+                                          ledgeredAt: now))
+            }
+            try? context.save()
+            // No quantity: the margin's layer never says how many, in ink, in a
+            // voice, or in a line somebody later pastes onto a screen.
+            log.notice("Margin restore: the ledger held notes this phone did not, and they are back")
+        } catch {
+            log.error("Margin restore failed: \(Self.describe(error), privacy: .public)")
+        }
+    }
+
+    /// The ledger columns the margin restore reads (`fields[]`, by name).
+    private static let restoreNoteFields = [
+        ActivityLedger.Field.activityType,
+        ActivityLedger.Field.activityDate,
+        ActivityLedger.Field.feltAt,
+        ActivityLedger.Field.notes,
+    ]
 
     private func flushPendingActivities() async {
         let queue = loadPendingActivities()
@@ -1749,11 +2038,16 @@ enum PendingQueueStorage {
 /// - No token: the queue is **held untouched** — nothing bumps, nothing drops.
 ///   Items wait for a token.
 /// - Success: the item leaves the queue.
-/// - Failure: `failCount` bumps; at `maxFailures` the item is dropped (local
-///   SwiftData is already canonical, so the only loss is the Airtable mirror).
+/// - Failure: `failCount` bumps and the item **stays**. Wave 0 (Build Charter
+///   II §4.1): his practice data is never lost from the record, and the ledger
+///   is the record that leaves the phone — so a practice event is never
+///   dropped. It is retried on every sync (launch, return to foreground),
+///   which is its own natural backoff. `failCount` is kept for the log.
+///   A cap may still be passed explicitly for a non-practice queue.
 enum PendingQueuePolicy {
 
-    static let maxFailures = 3
+    /// `nil` — never retire. Practice events wait as long as they must.
+    static let maxFailures: Int? = nil
 
     enum Decision: Equatable {
         /// No token — leave the item exactly as it is.
@@ -1769,11 +2063,12 @@ enum PendingQueuePolicy {
     static func decide(hasToken: Bool,
                        succeeded: Bool,
                        failCount: Int,
-                       maxFailures: Int = maxFailures) -> Decision {
+                       maxFailures: Int? = maxFailures) -> Decision {
         guard hasToken else { return .hold }
         if succeeded { return .remove }
         let bumped = failCount + 1
-        return bumped >= maxFailures ? .drop(failCount: bumped) : .retain(failCount: bumped)
+        if let cap = maxFailures, bumped >= cap { return .drop(failCount: bumped) }
+        return .retain(failCount: bumped)
     }
 
     /// Apply `decide` across a whole queue. `succeeded[i]` is the flush result
@@ -1785,7 +2080,7 @@ enum PendingQueuePolicy {
         _ queue: [Item],
         hasToken: Bool,
         succeeded: [Bool],
-        maxFailures: Int = maxFailures
+        maxFailures: Int? = maxFailures
     ) -> (remaining: [Item], dropped: [Item]) {
         guard hasToken else { return (queue, []) }
         var remaining: [Item] = []
@@ -1924,4 +2219,201 @@ enum RecognitionDedup {
         guard let raw = rowFeltAt, let server = normalizedServerFeltAt(raw) else { return false }
         return server == writtenFeltAt(feltAt)
     }
+}
+
+// MARK: - Wave 3 · grace, read back from the ledger (read only)
+
+extension AirtableService {
+    /// The ledger rows grace may return to the Rite: those linked to a Mandala
+    /// row inside the last moon (`GraceChannel.formula`), read by name as the
+    /// ledger always is. A read and nothing else — grace writes no row, sets no
+    /// "surfaced" flag on the server, and is empty when sync is off, the token
+    /// is missing, or the network is not there (silence when nothing fits).
+    func graceRows() async -> [ActivityLedger.Row] {
+        guard !syncIsDisabled(), let token = pat else { return [] }
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: GraceChannel.formula,
+                sort: [],
+                fields: GraceChannel.fields,
+                byFieldId: false
+            )
+            return rows
+        } catch {
+            log.error("Grace read failed: \(Self.describe(error), privacy: .public)")
+            return []
+        }
+    }
+
+    /// Wave 6.1 · his own gratitude lines (``GratitudeGrace``): one column of
+    /// the Gratitude table, read only, by field id. Empty when sync is off, the
+    /// token is missing, the token cannot read the table, or the network is not
+    /// there — grace is then simply silent.
+    func gratitudeRows() async -> [GratitudeGrace.Row] {
+        guard !syncIsDisabled(), let token = pat else { return [] }
+        do {
+            let rows: [GratitudeGrace.Row] = try await fetch(
+                token: token,
+                table: GratitudeGrace.tableId,
+                filter: GratitudeGrace.formula,
+                sort: [],
+                fields: [GratitudeGrace.wordsFieldId],
+                byFieldId: true
+            )
+            return rows
+        } catch {
+            log.error("Gratitude read failed: \(Self.describe(error), privacy: .public)")
+            return []
+        }
+    }
+}
+
+// MARK: - Wave 6 · the raw Codex write (his note, not an event)
+
+/// The Mandala's second create, and the only one outside the ledger: his own
+/// spoken or typed word, sent to the **Codex** when he asks for it to become
+/// Codex ("leave my own word"). Shape and dedup are `CodexWrite` (pure). It
+/// rides its own UserDefaults queue under `PendingQueuePolicy`, so it is never
+/// dropped; a retry first asks the Codex whether the same words already stand
+/// there on that day (fail-open, as every check here is).
+extension AirtableService {
+
+    private static let pendingCodexKey = "pendingCodexNotes"
+
+    /// Write one note to the Codex. Fire-and-forget; on failure it is queued.
+    func writeCodexNote(_ note: PendingCodexNote) async {
+        if syncIsDisabled() { return }
+        if await processCodexNote(note) == false {
+            var queue = loadPendingCodexNotes()
+            queue.append(note)
+            savePendingCodexNotes(queue)
+            log.notice("Codex note queued (queue size: \(queue.count))")
+        }
+    }
+
+    private func processCodexNote(_ note: PendingCodexNote) async -> Bool {
+        guard let token = pat else { return false }
+        do {
+            if await codexNoteExists(token: token, note: note) {
+                log.notice("Codex note already in the Codex — skipping create")
+                return true
+            }
+            let body: [String: Any] = ["fields": CodexWrite.fields(for: note), "typecast": true]
+            let data = try JSONSerialization.data(withJSONObject: body)
+            var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(CodexWrite.tableId)")!)
+            req.httpMethod = "POST"
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = data
+            let (respData, response) = try await session.data(for: req)
+            try Self.checkHTTP(response, data: respData)
+            return true
+        } catch {
+            log.error("Codex write failed: \(Self.describe(error), privacy: .public)")
+            return false
+        }
+    }
+
+    private func codexNoteExists(token: String, note: PendingCodexNote) async -> Bool {
+        do {
+            let rows: [CodexWrite.Row] = try await fetch(
+                token: token,
+                table: CodexWrite.tableId,
+                filter: CodexWrite.dedupFormula(for: note),
+                sort: [],
+                fields: [CodexWrite.FieldID.rawMemo],
+                byFieldId: true
+            )
+            return rows.contains { CodexWrite.rowMatches($0, body: note.body) }
+        } catch {
+            log.error("Codex dedup check failed — proceeding with create: \(Self.describe(error), privacy: .public)")
+            return false
+        }
+    }
+
+    fileprivate func flushPendingCodexNotes() async {
+        let queue = loadPendingCodexNotes()
+        guard !queue.isEmpty else { return }
+        guard pat != nil else {
+            log.notice("Codex queue: \(queue.count) waiting for a token")
+            return
+        }
+        var succeeded: [Bool] = []
+        for item in queue {
+            succeeded.append(await processCodexNote(item))
+        }
+        let update = PendingQueuePolicy.update(queue, hasToken: true, succeeded: succeeded)
+        let remaining = PendingQueuePolicy.merge(remaining: update.remaining, drained: queue,
+                                                 stored: loadPendingCodexNotes())
+        savePendingCodexNotes(remaining)
+    }
+
+    private func loadPendingCodexNotes() -> [PendingCodexNote] {
+        guard let data = UserDefaults.standard.data(forKey: Self.pendingCodexKey) else { return [] }
+        let (queue, stamped): ([PendingCodexNote], Bool) = PendingQueueStorage.decode(data)
+        if stamped { savePendingCodexNotes(queue) }
+        return queue
+    }
+
+    private func savePendingCodexNotes(_ queue: [PendingCodexNote]) {
+        if queue.isEmpty {
+            UserDefaults.standard.removeObject(forKey: Self.pendingCodexKey)
+            return
+        }
+        if let data = try? JSONEncoder().encode(queue) {
+            UserDefaults.standard.set(data, forKey: Self.pendingCodexKey)
+        }
+    }
+}
+
+// MARK: - Wave 6 · the river, home from the ledger
+
+extension AirtableService {
+
+    /// Bring back every river letter, light sent back and kept name the ledger
+    /// holds and this phone does not — Wave 5's follow-up. Merged on identity
+    /// (`ActivityLedger.riverLettersMissingLocally`), so it is idempotent and
+    /// runs on every sync; restored items arrive already ledgered, because they
+    /// came *from* the ledger. Silent on any failure.
+    func restoreRiverFromLedger(context: ModelContext) async {
+        if syncIsDisabled() { return }
+        guard let token = pat else { return }
+        let shaktis = (try? context.fetch(FetchDescriptor<Shakti>())) ?? []
+        var byRecord: [String: Int] = [:]
+        for s in shaktis {
+            if let rec = s.airtableRecordId, let kp = s.khadgamalaPosition { byRecord[rec] = kp }
+        }
+        guard !byRecord.isEmpty else { return }
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.restoreRiver,
+                sort: [],
+                fields: Self.restoreRiverFields,
+                byFieldId: false
+            )
+            let river = CorrespondenceStore.shared
+            river.mergeRestored(letters: ActivityLedger.riverLetters(from: rows, byRecord: byRecord))
+            river.mergeRestored(lights: ActivityLedger.lightsSentBack(from: rows, byRecord: byRecord))
+            if let kept = ActivityLedger.latestNameKept(from: rows) {
+                BinduMemory.shared.restore(name: kept.name, keptAt: kept.at)
+            }
+        } catch {
+            log.error("River restore failed: \(Self.describe(error), privacy: .public)")
+        }
+    }
+
+    /// The ledger columns the river's restore reads (`fields[]`, by name).
+    private static let restoreRiverFields = [
+        ActivityLedger.Field.activityType,
+        ActivityLedger.Field.activityName,
+        ActivityLedger.Field.detail,
+        ActivityLedger.Field.activityDate,
+        ActivityLedger.Field.feltAt,
+        ActivityLedger.Field.notes,
+        ActivityLedger.Field.linkToMandala,
+    ]
 }

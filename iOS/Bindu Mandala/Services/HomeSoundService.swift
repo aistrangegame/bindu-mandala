@@ -190,6 +190,35 @@ enum HomeCarrier {
     /// The fifth's level once it has been granted.
     static let fifthLevel: Double = 0.05
 
+    // MARK: Wave 6 · the absent fifth as ground (Bindu Field's carrier law)
+    //
+    // Field's law: *the carrier is what the song reaches for and does not
+    // say* — the absent fifth is the ground, from the first beat. In a room it
+    // is offered **below** her carrier, an octave under the fifth (×¾), from
+    // the moment the crossing begins, while the Mandala's own fifth (×1½)
+    // still arrives above as completion after dwelling. Both live.
+
+    /// The ground fifth: her fifth, an octave down.
+    static let groundFifthRatio: Double = 0.75
+    /// Its ceiling — beneath the carrier, felt more than heard.
+    static let groundFifthLevel: Double = 0.035
+
+    /// The ground fifth's gain at a crossing `amount` (0…1), scaled by a
+    /// Score's `ground` when it gives one. Present from the first beat.
+    static func groundFifthGain(amount: Double, scoreGround: Double? = nil) -> Double {
+        max(0, min(1, amount)) * groundFifthLevel * max(0, min(1, scoreGround ?? 1))
+    }
+
+    /// The Mandala's own fifth under a Score: `.granted` from the first beat,
+    /// `.ground` never above (only the ground sounds), else the grammar's.
+    static func fifthGain(b: Double, ring: Int, score: ShaktiScore.Sound.Fifth?) -> Double {
+        switch score {
+        case .granted?: return fifthLevel
+        case .ground?:  return 0
+        default:        return fifthGain(b: b, ring: ring)
+        }
+    }
+
     /// The ground's level when it is the one you are standing in.
     static let groundLevel: Double = 0.16
     /// The carrier's level at full entry.
@@ -527,6 +556,13 @@ final class HomeRenderState {
     let fifthFreqCoef: Double
     let fifthGainCoef: Double
 
+    // Wave 6 · the absent fifth, offered as ground from the first beat.
+    var groundFifthFreqTarget: Double = HomeCarrier.initialCarrierHz * HomeCarrier.groundFifthRatio
+    var groundFifthFreqCurrent: Double = HomeCarrier.initialCarrierHz * HomeCarrier.groundFifthRatio
+    var groundFifthGainTarget: Double = 0
+    var groundFifthGainCurrent: Double = 0
+    var groundFifthPhase: Double = 0
+
     // Air — the room's own breath, bandpassed noise.
     var airGainTarget: Double = 0
     var airGainCurrent: Double = 0
@@ -614,6 +650,8 @@ final class HomeRenderState {
             carrierGainCurrent += (carrierGainTarget - carrierGainCurrent) * carrierGainCoef
             fifthFreqCurrent += (fifthFreqTarget - fifthFreqCurrent) * fifthFreqCoef
             fifthGainCurrent += (fifthGainTarget - fifthGainCurrent) * fifthGainCoef
+            groundFifthFreqCurrent += (groundFifthFreqTarget - groundFifthFreqCurrent) * fifthFreqCoef
+            groundFifthGainCurrent += (groundFifthGainTarget - groundFifthGainCurrent) * carrierGainCoef
 
             // Grounds, carrier and fifth all pass through the room's filter.
             var pre = 0.0
@@ -629,6 +667,11 @@ final class HomeRenderState {
             fifthPhase += fifthFreqCurrent * dt
             if fifthPhase >= 1 { fifthPhase -= 1 }
             pre += sin(fifthPhase * 2 * .pi) * fifthGainCurrent
+            if groundFifthGainCurrent > 0.00002 || groundFifthGainTarget > 0.00002 {
+                groundFifthPhase += groundFifthFreqCurrent * dt
+                if groundFifthPhase >= 1 { groundFifthPhase -= 1 }
+                pre += sin(groundFifthPhase * 2 * .pi) * groundFifthGainCurrent
+            }
             let filtered = lowpass.process(pre)
 
             // Air and the strikes reach the master directly.
@@ -709,7 +752,28 @@ final class HomeSoundService {
     /// before the first `start()`.
     var respectsSilentSwitch = false
 
+    /// Wave 6 · the room's live Score, when her row carries one: her carrier,
+    /// how her fifth is given, the ground's level. Set by `HomeVoice` as a stay
+    /// opens and cleared as it closes; `nil` is the grammar, whole.
+    var score: ShaktiScore.Sound?
+
     private init() {}
+
+    // MARK: Wave 6 · one sound at a time
+
+    /// How loud the room may stand, `0…1`, as ``SoundConductor`` decides. A
+    /// room is a bed: it steps back to nothing while a game is in front of it,
+    /// and under a struck bīja for as long as it rings — the graph stays up, so
+    /// it returns on the same breath it left on.
+    var conductorGain: Double = 1 {
+        didSet {
+            guard oldValue != conductorGain, isBuilt, !isPaused, !isQuiet, let state else { return }
+            state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.master))
+            state.masterTarget = Float(HomeCarrier.wakeLevel * conductorGain)
+        }
+    }
+    /// `quiet()` was asked for: the conductor does not wake what was quieted.
+    private var isQuiet = false
 
     /// True while the instrument is actually sounding.
     var isSounding: Bool {
@@ -725,13 +789,24 @@ final class HomeSoundService {
     /// but silent calls `start()` then `quiet()`.
     func start() {
         if isBuilt {
+            SoundConductor.shared.claim(.room)
             resume()
             wakeMaster()
             return
         }
-        guard configureSession() else { return }
+        // Wave 2: the graph is built **before** the session is configured.
+        // `build()` lets go of a graph still fading out from `stopAll`, and that
+        // teardown gives `.playback` back — so configuring first and building
+        // second left a room (or the climb) opened straight after another on
+        // `.playback`, sounding through the silent switch it had asked for.
         build()
         guard isBuilt, let engine else { return }
+        // Ask before sounding (C-1350): the room is a bed.
+        SoundConductor.shared.claim(.room)
+        guard configureSession() else {
+            teardown()
+            return
+        }
         do {
             try engine.start()
         } catch {
@@ -746,13 +821,15 @@ final class HomeSoundService {
 
     private func wakeMaster() {
         guard let state else { return }
+        isQuiet = false
         state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.master))
-        state.masterTarget = Float(HomeCarrier.wakeLevel)
+        state.masterTarget = Float(HomeCarrier.wakeLevel * conductorGain)
     }
 
     /// Fade to silence but keep the graph — Design's `stop()`.
     func quiet() {
         guard isBuilt, let state else { return }
+        isQuiet = true
         state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.masterOut))
         state.masterTarget = 0
     }
@@ -761,6 +838,7 @@ final class HomeSoundService {
     /// ever started: the whole graph is lazy, so a service that never sounded
     /// holds no engine to stop.
     func stopAll() {
+        SoundConductor.shared.release(.room)
         for task in scheduled { task.cancel() }
         scheduled.removeAll()
         removeObservers()
@@ -785,6 +863,8 @@ final class HomeSoundService {
     }
 
     private func teardown() {
+        // Wave 6 · a graph that is gone is not asking to sound.
+        SoundConductor.shared.release(.room)
         if let engine {
             if engine.isRunning { engine.stop() }
             if let sourceNode {
@@ -912,7 +992,7 @@ final class HomeSoundService {
             do { try engine.start() } catch { return }
         }
         state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.master))
-        state.masterTarget = Float(HomeCarrier.wakeLevel)
+        state.masterTarget = Float(HomeCarrier.wakeLevel * conductorGain)
     }
 
     // MARK: The graph
@@ -1068,8 +1148,12 @@ final class HomeSoundService {
     /// Entering her: the carrier comes up, the ground recedes.
     func setCarrier(ring: Int, amount: Double, syllable: String?) {
         guard isBuilt, let state else { return }
-        state.carrierFreqTarget = HomeCarrier.carrierFor(ring: ring, syllable: syllable)
+        let carrier = score?.carrierHz ?? HomeCarrier.carrierFor(ring: ring, syllable: syllable)
+        state.carrierFreqTarget = carrier
         state.carrierGainTarget = max(0, min(1, amount)) * HomeCarrier.carrierLevel
+        // Wave 6 · the absent fifth as ground, from the first beat of the crossing.
+        state.groundFifthFreqTarget = carrier * HomeCarrier.groundFifthRatio
+        state.groundFifthGainTarget = HomeCarrier.groundFifthGain(amount: amount, scoreGround: score?.ground)
     }
 
     /// Her adaptation opens the filter; the second adaptation grants the fifth.
@@ -1078,9 +1162,9 @@ final class HomeSoundService {
         let first = max(0, min(1, a))
         let second = max(0, min(1, b))
         state.lowpassTarget = HomeCarrier.filterCutoff(adaptation: first)
-        state.fifthFreqTarget = HomeCarrier.carrierFor(ring: ring, syllable: syllable)
+        state.fifthFreqTarget = (score?.carrierHz ?? HomeCarrier.carrierFor(ring: ring, syllable: syllable))
             * HomeCarrier.fifthRatio
-        state.fifthGainTarget = HomeCarrier.fifthGain(b: second, ring: ring)
+        state.fifthGainTarget = HomeCarrier.fifthGain(b: second, ring: ring, score: score?.fifth)
         state.airGainTarget = HomeCarrier.airGain(adaptation: first)
         state.airFreqTarget = HomeCarrier.airCutoff(adaptation: first)
     }

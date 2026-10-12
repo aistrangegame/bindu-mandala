@@ -7,6 +7,10 @@ struct ShaktiDetailView: View {
     /// Where she was opened from — names the back button ("today", "the field",
     /// "mandala"), matching the prototype's `backLabel`.
     var backLabel: String = "mandala"
+    /// Where he came to her from. A recognition made here is written to the
+    /// ledger with this origin, not always "Mandala" (Wave 0 · B6), and only a
+    /// recognition from the Rite settles into the Portrait (B4).
+    var source: AirtableService.RecognitionSource = .mandala
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -23,8 +27,11 @@ struct ShaktiDetailView: View {
     @State private var momentsExpanded: Bool = false
     @State private var goDeeperExpanded: Bool = false
     @State private var showRecognition = false
-    /// Phase 3.7 — the way in. See ``herDoor``.
-    @State private var showHerRoom = false
+    /// Phase 3.7 — the way in. See ``herDoor``. Wave 2: a position, handed to
+    /// ``HerRoomDoor``, which is where every way into a room passes the rite.
+    @State private var herRoomKp: Int?
+    /// Wave 4 — play at her address. See ``herPlay``.
+    @State private var showPlay = false
 
     /// Ruling 7 / R3: cluster is a Ring-2-only taxonomy. The 86 carry `.inner`
     /// as `clusterRaw`'s default — never surface it as a color or a family label.
@@ -66,10 +73,19 @@ struct ShaktiDetailView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             // The hero leads, then the soul.
                             heroSection
+                            // Wave 6 · one line, or the whole of her home (C-1279).
+                            OnePageAnswerSection(shakti: shakti,
+                                                 onWhole: { herRoomKp = shakti.khadgamalaPosition })
                             codexPortraitSection
                             somaticSection
                             bijaSection
                             appreciationPhraseSection
+                            // Wave 5 · the doorway, the seal, the wager.
+                            HerDoorwaysSection(shakti: shakti)
+                            // Wave 6 · her sealed witness page (C-1280).
+                            HerWitnessPage(shakti: shakti)
+                            // Wave 6 · her seed, and one more layer each return.
+                            HerDeepeningSection(shakti: shakti)
                             embodimentSection
                             if shakti.hasFieldConnection { fieldConnectionSection }
                             // The library — the record, then the reference.
@@ -82,6 +98,7 @@ struct ShaktiDetailView: View {
                     }
                     .overlay(alignment: .bottom) { BottomScrollFade() }
                     herDoor
+                    herPlay
                     recognitionFooter
                 }
             }
@@ -92,30 +109,42 @@ struct ShaktiDetailView: View {
         .fullScreenCover(isPresented: $showRecognition) {
             RecognitionMomentView(shakti: shakti,
                                   isPresented: $showRecognition,
-                                  source: .mandala)
+                                  source: source)
         }
-        .fullScreenCover(isPresented: $showHerRoom) {
-            // `entering(_:remembering:)` builds the whole threshold from her own
-            // row and what her room remembers, and it is the **only** way a room
-            // is ever constructed in the shell. There is no call anywhere that
-            // reaches a `RoomView` without the rite in front of it, which is what
-            // makes "no room without the rite" a fact about the tree rather than
-            // a rule somebody has to keep.
-            //
-            // `nil` is impossible for a row the walker is looking at — she is on
-            // this screen, so she has a position and a ring — and the door below
-            // asks the same question before it draws, so this branch is the
-            // compiler's rather than the walker's.
-            if let rite = RiteOfEnteringView.entering(shakti,
-                                                      remembering: HomeMemoryStore(context: context),
-                                                      forceReduceMotion: AppRuntime.forcesReduceMotion,
-                                                      onLeft: { showHerRoom = false }) {
-                rite
-            } else {
-                Color.ground.ignoresSafeArea()
-                    .onAppear { showHerRoom = false }
-            }
+        // Wave 2 · one building. Her room opens through ``HerRoomDoor`` — the
+        // one place that calls the rite of entering — and from inside it the
+        // corridor walks to her neighbours, each through their own rite.
+        .herRoom($herRoomKp)
+        .fullScreenCover(isPresented: $showPlay) {
+            PlayField.host(PlayAddressBook.door(forPosition: shakti.playPosition),
+                           atPosition: shakti.playPosition,
+                           onClose: { showPlay = false })
         }
+    }
+
+    /// **Wave 4 · play at her address.** The game that lives at her seat —
+    /// the Drum at Sarva-Saṅkṣobhiṇī, the Door at Kaulinī — and, for every
+    /// other seat, the garland opened at her own bead. So it asks only her
+    /// position, and every one of the 102 can be played with. It stands
+    /// between staying with her and feeling her: the arc is recognise, dwell,
+    /// play, and a game hands back to her Recognition when it ends.
+    private var herPlay: some View {
+        let game = PlayAddressBook.door(forPosition: shakti.playPosition)
+        return Button {
+            Haptics.light()
+            showPlay = true
+        } label: {
+            Text(game == .rosary ? "her bead in the garland ›" : "\(game.verb) with her ›")
+                .font(AppFont.voice(15))
+                .tracking(1.2)
+                .foregroundStyle(Color.cream.opacity(0.62))
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 26)
+        .accessibilityLabel("\(game.title) — play at her seat")
     }
 
     /// **The way into her room, and the one place in the shell it is opened.**
@@ -152,7 +181,7 @@ struct ShaktiDetailView: View {
         if HomeRooms.resolve(shakti) != nil {
             Button {
                 Haptics.medium()
-                showHerRoom = true
+                herRoomKp = shakti.khadgamalaPosition
             } label: {
                 Text("be with her ›")
                     .font(AppFont.voice(16))
@@ -175,6 +204,10 @@ struct ShaktiDetailView: View {
     private func atmosphereLayer(side: CGFloat) -> some View {
         ZStack {
             AtmosphereBackground(atmosphere: atmo)
+            // Her Presence's own crown (Wave 1): `radial-gradient(ellipse 130%
+            // 55% at 50% -5%, glow, transparent 70%)` laid over her ground.
+            LightField(layers: Backdrop.presenceCrown(atmo))
+                .blendMode(.plusLighter)
             Color.clear.overlay(alignment: .top) {
                 RiteSigil(atmosphere: atmo, ring: shakti.ringNumber ?? 2,
                           size: side * 1.5, spin: -1)
@@ -395,8 +428,11 @@ struct ShaktiDetailView: View {
                     .shadow(color: i == level ? atmo.accentBright.opacity(0.8) : .clear, radius: 5)
             }
         }
-        .accessibilityElement()
-        .accessibilityLabel("Embodiment: \(shakti.status.label), level \(level + 1) of \(ShaktiStatus.allCases.count)")
+        // Wave 6 · the mark is in the architecture, not in the claiming of it
+        // (C-1338, C-1284). The spoken "level ⟨n⟩ of four" is gone: a rung
+        // read aloud is a claim. The track is drawn light, and the pill beneath
+        // it speaks her stage by name, which is all a voice needs.
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -999,14 +1035,29 @@ private struct HerMomentsList: View {
     @State private var airtableLoaded = false
 
     var body: some View {
+        // Her Moments are felt moments. A silence is its own gesture and is not
+        // written here as "she was felt" (Wave 0 · B3); it stays in the record.
         let localEntries = RecognitionLogStore(context: context)
             .entries(forKhadgamala: khadgamalaPosition, limit: 200)
+            .filter { $0.gesture == .felt }
+        // A felt moment the ledger has not answered for yet (offline, or the
+        // queue still carrying it) is shown above the ledger's rows, so a
+        // just-felt moment never vanishes when Airtable answers (Wave 0 · B2).
+        let newestLedger = airtableMoments.compactMap(\.feltAt).max() ?? .distantPast
+        let unsynced = localEntries.filter { $0.timestamp > newestLedger.addingTimeInterval(5) }
 
         VStack(alignment: .leading, spacing: 0) {
             // Once Airtable has answered with anything, it becomes the authoritative
             // record. Local entries are shown immediately so the section is never
             // empty during the fetch. Offline / pre-sync / fetch-failure: keep local.
             if airtableLoaded && !airtableMoments.isEmpty {
+                ForEach(unsynced) { entry in
+                    momentRow(
+                        timestamp: formatTimestamp(entry.timestamp),
+                        note: entry.note,
+                        moonPhase: nil
+                    )
+                }
                 ForEach(airtableMoments) { moment in
                     momentRow(
                         timestamp: moment.feltAt.map(formatTimestamp) ?? "she was felt here",

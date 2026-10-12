@@ -41,6 +41,7 @@ struct RiteBlockView: View {
         HStack(spacing: 10) {
             if c.hasCluster {
                 Circle().fill(atmo.accent).frame(width: 8, height: 8)
+                    .shadow(color: atmo.accent, radius: 4)   // `LrClusterDot`: 0 0 8px
             }
             Text(kickerLabel.uppercased())
                 .font(AppFont.label(11.5))
@@ -115,7 +116,7 @@ struct RiteBlockView: View {
     private var rule: some View {
         Rectangle()
             .fill(atmo.accentSoft)
-            .frame(width: 54, height: 0.6)
+            .frame(width: 54, height: 1)   // `LrHairline`: 1 px (the port drew 0.6)
             .padding(.vertical, 24)
             .frame(maxWidth: .infinity, alignment: alignment)
     }

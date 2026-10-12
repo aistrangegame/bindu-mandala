@@ -22,6 +22,18 @@ struct PortraitMandalaView: View {
     @State private var settlePhase: CGFloat = 0
     @State private var exportedImage: Image? = nil  // stretch: long-press to hold
 
+    // Wave 5 · the Living Mandala — his hand in the Portrait, the river, the
+    // body's places and the point. See `LivingMandalaLayers.swift`.
+    @State private var drawingNow = false
+    @State private var liveStroke: [CGPoint] = []
+    @State private var riverOpen = false
+    @State private var bodyOpen = false
+    @State private var pointOpen = false
+    @State private var bookOpen = false
+    @State private var monthOpen = false
+    private var strokeStore: PortraitStrokeStore { PortraitStrokeStore.shared }
+    private var river: CorrespondenceStore { CorrespondenceStore.shared }
+
     private var variant: TimeVariant { LunarPhaseService.currentTimeVariant() }
 
     /// During a settle, the whole field rises from dark over the first ~45% of the
@@ -32,17 +44,28 @@ struct PortraitMandalaView: View {
         ZStack {
             background
 
-            VStack(spacing: 0) {
-                header.opacity(fieldP)
-                Spacer(minLength: 24)
-                mandala
-                Spacer(minLength: 24)
-                whisper.opacity(fieldP)
-                Spacer(minLength: 36)
+            // Wave 6 added a third row of doors (the book, the month). On a small
+            // screen at the largest type the column no longer fits the glass, so
+            // there — and only there — it scrolls; everywhere else it stands
+            // still, as it always has. While he draws, the page holds still.
+            ViewThatFits(in: .vertical) {
+                column
+                ScrollView(.vertical, showsIndicators: false) { column }
+                    .scrollDisabled(drawingNow)
             }
         }
         .preferredColorScheme(.dark)
         .onAppear(perform: settleIfRecent)
+        .onAppear {
+            let ctx = context
+            Task { await PracticeLedger.flush(context: ctx) }
+        }
+        .onDisappear(perform: finishDrawing)
+        .fullScreenCover(isPresented: $riverOpen) { CorrespondenceView() }
+        .fullScreenCover(isPresented: $bodyOpen) { WhereSheSpeaksView() }
+        .fullScreenCover(isPresented: $pointOpen) { ThePointView() }
+        .fullScreenCover(isPresented: $bookOpen) { ArchiveBookView() }
+        .fullScreenCover(isPresented: $monthOpen) { MonthMirrorView() }
         .sheet(isPresented: Binding(
             get: { exportedImage != nil },
             set: { if !$0 { exportedImage = nil } }
@@ -73,8 +96,15 @@ struct PortraitMandalaView: View {
     // MARK: - Background
 
     private var background: some View {
-        ZStack {
+        let day = DayLight.atmosphere(shaktis)
+        return ZStack {
             variant.bg.ignoresSafeArea()
+            // Wave 1 · the Memory lit as Design lit it: the day's glow pooled
+            // where the portrait stands (`radial-gradient(ellipse 100% 60% at
+            // 50% 45%, glow, transparent 75%)`) over her deep ground falling to
+            // near-black. The hour's own ambient stays above it.
+            LightField(layers: Backdrop.memory(day))
+                .ignoresSafeArea()
             // Ambient warmth that breathes with the time of day. The 600×540 glow
             // is clamped onto a flexible Color.clear so its overdraw never inflates
             // layout — a raw fixed frame here grows RootView's top-trailing ZStack
@@ -93,8 +123,23 @@ struct PortraitMandalaView: View {
                 .frame(width: 600, height: 540)
             }
             .allowsHitTesting(false)
-            DustMotesView(count: variant.motes)
+            DustMotesView(count: variant.motes, element: day.element, accent: day.accentBright)
                 .allowsHitTesting(false)
+        }
+    }
+
+    private var column: some View {
+        VStack(spacing: 0) {
+            header.opacity(fieldP)
+            Spacer(minLength: 16)
+            mandala
+                .overlay { livingOverlay }
+            Spacer(minLength: 16)
+            whisper.opacity(fieldP)
+            doors
+                .opacity(fieldP)
+                .padding(.top, 10)
+            Spacer(minLength: 20)
         }
     }
 
@@ -138,6 +183,109 @@ struct PortraitMandalaView: View {
             .onLongPressGesture(minimumDuration: 0.9) { holdToExport() }
     }
 
+    // MARK: - Wave 5 · his hand, and the doors
+
+    /// While he draws, the whole artwork takes his finger; otherwise the point
+    /// at the centre is a door to the gaze and the clocks.
+    @ViewBuilder
+    private var livingOverlay: some View {
+        if drawingNow {
+            StrokeCaptureLayer(diameter: diameter, live: $liveStroke) { points in
+                if strokeStore.add(points: points) != nil { Haptics.soft() }
+            }
+        } else {
+            Circle()
+                .fill(Color.clear)
+                .frame(width: 56, height: 56)
+                .contentShape(Circle())
+                .onTapGesture {
+                    Haptics.light()
+                    pointOpen = true
+                }
+                .accessibilityLabel("The point")
+                .accessibilityHint("Opens the gaze and the five clocks")
+                .accessibilityAddTraits(.isButton)
+        }
+    }
+
+    private var doors: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                door(drawingNow ? "set it down" : "draw into her rings", action: toggleDrawing)
+                door("the point ›") { pointOpen = true }
+            }
+            HStack(spacing: 0) {
+                door("the river ›") { riverOpen = true }
+                door("where she speaks ›") { bodyOpen = true }
+            }
+            // Wave 6 · the Archive as a book, and the month sat with.
+            HStack(spacing: 0) {
+                door("the book ›") { bookOpen = true }
+                door("the month ›") { monthOpen = true }
+            }
+        }
+        .padding(.horizontal, 18)
+    }
+
+    private func door(_ words: String, action: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.light()
+            action()
+        } label: {
+            Text(words)
+                .font(AppFont.voice(15))
+                .tracking(0.6)
+                .foregroundStyle(Color.gold.opacity(0.85))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func toggleDrawing() {
+        if drawingNow {
+            finishDrawing()
+        } else {
+            strokeStore.begin()
+            drawingNow = true
+        }
+    }
+
+    /// Set the sitting down: one ledger row for the whole of it.
+    private func finishDrawing() {
+        guard drawingNow else { return }
+        drawingNow = false
+        liveStroke = []
+        strokeStore.end()
+        let ctx = context
+        Task { await PracticeLedger.flush(context: ctx) }
+    }
+
+    /// The days he practised this year — a recognition, a sitting at the
+    /// Portrait, a letter set in the river — each in the light of the Śakti who
+    /// presided over that day.
+    private var yearBeads: [YearBead] {
+        var instants: [Date] = []
+        for entry in allEntries where entry.gesture == .felt { instants.append(entry.timestamp) }
+        instants.append(contentsOf: strokeStore.drawingInstants)
+        instants.append(contentsOf: river.letters.map(\.writtenAt))
+        // Wave 6 · a moment light was sent back to warms its own day's bead.
+        let warmed = Set(river.lights.map { Calendar.current.startOfDay(for: $0.moment) })
+        instants.append(contentsOf: river.lights.map(\.moment))
+        let days = LivingMandala.practiceDays(instants, inYearOf: .now)
+        var light: [Int: Color] = [:]
+        for s in shaktis {
+            if let kp = s.khadgamalaPosition { light[kp] = SeatLighting.accentBright(for: s) }
+        }
+        return days.map { day in
+            let noon = day.addingTimeInterval(12 * 3_600)
+            let kp = DailyEnergyService.todaysPosition(for: noon)
+            return YearBead(day: day, color: warmed.contains(day) ? Color.goldWarm : (light[kp] ?? Color.gold))
+        }
+    }
+
     /// The mandala itself, free of any chrome — used both for the on-screen
     /// rendering and for the exported image. Diameter is parameterised so the
     /// exporter can render at high resolution.
@@ -158,11 +306,18 @@ struct PortraitMandalaView: View {
                     diameter: diameter,
                     variant: variant
                 )
+                // Wave 5 · the year accreting round the rim, and his strokes
+                // mirrored by their rings — both part of the Record.
+                YearRingLayer(beads: yearBeads, diameter: diameter)
+                // Wave 6 · the layers play feeds: beads, roots, petals, seed, wheel.
+                LivingPlayLayers(traces: PlayTraceStore.shared.traces, diameter: diameter)
+                LivingStrokesLayer(strokes: strokeStore.strokes, live: liveStroke, diameter: diameter)
             }
             .opacity(fieldP)
 
-            // The bindu is always lit — her point departs from it.
-            PortraitBindu(diameter: diameter)
+            // The bindu is always lit — her point departs from it. While a
+            // letter is sealed in the river, the eye is closed.
+            PortraitBindu(diameter: diameter, sealed: river.hasSealed())
 
             if let kp = settleHighlight, let pt = points.first(where: { $0.khadgamalaPosition == kp }) {
                 PortraitSettleFlight(point: pt, diameter: diameter, phase: settlePhase)
@@ -181,7 +336,7 @@ struct PortraitMandalaView: View {
     /// Per-position stats for the Ring 2 lotus, keyed by local position 1–16.
     private var ring2Stats: [Int: PortraitStats] {
         var grouped: [Int: [Date]] = [:]
-        for entry in allEntries where entry.ringNumber == 2 {
+        for entry in allEntries where entry.ringNumber == 2 && entry.gesture == .felt {
             let localPos = entry.khadgamalaPosition - 28
             guard (1...16).contains(localPos) else { continue }
             grouped[localPos, default: []].append(entry.timestamp)
@@ -197,7 +352,8 @@ struct PortraitMandalaView: View {
             .mapValues(\.count)
         var statsByKp: [Int: PortraitStats] = [:]
         var grouped: [Int: [Date]] = [:]
-        for entry in allEntries {
+        // Silences are their own gesture and never draw a point as felt (Wave 0 · B3).
+        for entry in allEntries where entry.gesture == .felt {
             grouped[entry.khadgamalaPosition, default: []].append(entry.timestamp)
         }
         for (kp, dates) in grouped {
@@ -623,8 +779,19 @@ private struct ShareSheetView: View {
 
 private struct PortraitBindu: View {
     let diameter: CGFloat
+    /// A letter is sealed in the river: the centre's eye is closed.
+    var sealed: Bool = false
 
     var body: some View {
+        ZStack {
+            openPoint
+                .opacity(sealed ? 0.35 : 1)
+            if sealed { SealedLid(diameter: diameter) }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var openPoint: some View {
         ZStack {
             Circle()
                 .fill(

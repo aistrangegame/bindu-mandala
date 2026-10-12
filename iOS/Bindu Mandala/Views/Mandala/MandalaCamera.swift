@@ -98,6 +98,24 @@ struct MandalaCamera: Equatable, Animatable {
                              ty: size.height * 0.44 - center * s)
     }
 
+    /// The camera that stands the walker inside an enclosure — centred on the
+    /// Bindu, the viewport reaching halfway between this ring and the next one
+    /// in, so ``enteredRing(in:)`` reads exactly this ring. The Veil's rows
+    /// travel with it: tapping an āvaraṇa falls to it through the same space,
+    /// and the crossing it makes is an ordinary crossing.
+    ///
+    /// Ring 9 has no radius; it answers with the descent's own camera.
+    static func ringTarget(ring: Int, in size: CGSize) -> MandalaCamera {
+        let radius = MandalaWorld.ringRadius(ring)
+        guard ring >= 1, ring <= 8, radius > 0 else { return descentTarget(in: size) }
+        let inner: CGFloat = ring < 8 ? MandalaWorld.ringRadius(ring + 1) : 0
+        let reach = (radius + inner) / 2
+        let s = clamp((min(size.width, size.height) * 0.5) / reach)
+        return MandalaCamera(scale: s,
+                             tx: size.width / 2 - center * s,
+                             ty: size.height / 2 - center * s)
+    }
+
     // MARK: Semantic tier
 
     /// 0 cosmic (dots only) · 1 named (enclosures + names resolve) · 2 significance

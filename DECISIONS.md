@@ -3490,3 +3490,339 @@ Footprint over the whole residency — one process, four scenes, seven windows, 
 The bench also independently confirms the census model: it reported mean primitives of 277.5 at tier 0 and 93.6 at the bloom against the census's 277.1 and 93.6, so the model that the baseline is built on is still tracking the canvas it models.
 
 **Verdict on charter §3's performance gate: green, lit.** Which is what the flag was waiting on.
+
+---
+
+## 2026-09-23 · The margin — where he says what he sees
+
+The first thing built after the ship, and it is additive to a finished instrument, so the whole of it is judged on what it disturbs. In his own words: *"the ability to go into the settings and leave a note … a basic text entry … where I can describe ideas, thoughts, anything new that I want to add onto the app, anything that's broken … and then I can save it as a new entry, and I can also see all of the old entries that I've done."* His two rulings govern the scope: **text only this pass**, and **saved locally, synced when able**.
+
+### The schema: V3 and a lightweight stage, and the version bump is the whole safety argument
+
+`MarginNote` is a brand-new entity. Nothing existing changes shape, no uniqueness constraint moves, nothing is deleted or rewritten — which is the **lightweight** case in `BinduSchema.swift`'s own words, and the same sentence it already writes about `HomeMemory`. What forced the V1→V2 letters stage was one specific thing, stated in that file: `khadgamalaPosition` is `@Attribute(.unique)`, so a lightweight migration would have handed all sixteen existing letters the same key. There are no existing note rows to collide, so none of that reasoning transfers. **No custom stage was written, and the letters stage with its fsync'd sidecar is untouched.** The safest migration is the one you do not write.
+
+**The version still had to bump, and that is the part that matters.** `HomeMemory` was folded into V2 without a stage of its own because no store on disk had ever been at V2-without-`HomeMemory` — 2.1 and 2.2 shipped together. That is no longer true. Build 58 is on his phone and his store is at V2 **as V2 is defined today**. Adding `MarginNote` to `BinduSchemaV2.models` in place would make the code's V2 and the store's V2 two different schemas, with no version in the plan describing what is actually on disk. `PersistenceRecovery.makeContainer` then does exactly what it is written to do: step 1 throws, and **step 2 moves the whole store aside and opens an empty one.** Letters and recognitions come back from Airtable; `HomeMemory` never can — it is phone-only by R17 and is never synced — so every room's accumulated dwell, visit softening and deepest adaptation would be gone on a launch where nothing visibly failed. A charter §7 halt condition, manufactured by a one-line convenience.
+
+So: `BinduSchemaV3` (3,0,0) = V2's list plus `MarginNote`, `BinduSchemaV2` byte-untouched, `BinduSchema.latest → V3`, `stages = [lettersOntoKhadgamalaKey, notesArrive]` with `notesArrive` a plain `.lightweight`. `SchemaMigrationTests` writes a real V2 store on disk — two letters, a recognition, a `HomeMemory` with seven visits and a second adaptation, a descent at ring 4 — reopens it the way the app opens it, and asserts every row survives, the margin arrives empty, and **the preserve path was never taken**. A fourth test refuses `MarginNote` in `BinduSchemaV2.models` outright, which is the check that would have caught the mistake above.
+
+### The ledger word: `Note Left`
+
+A past-participle verb phrase like every other option, born on first write by `typecast: true`, no Airtable schema work and no new field. **Not `Note Written`:** `Letter Written` already owns "written", and a letter is to *her* while a note is to the instrument — two near-identical types would read as one thing to every other Bindu instrument that shares the ledger. "Left" is his own verb.
+
+`Activity Name` is the **constant** `"A note left in the instrument"`. Putting the note's first line there would have made the Airtable primary column scannable, and it is refused for a reason that is not cosmetic: his words would flow into a *composed* ledger string, and `HomesHarnessTests` runs Design's nine MEASURING patterns over exactly those. A note that happened to read "day 3 of this" would fail the harness, leaving only two ways out — weaken the harness, or censor his sentence. `ActivityLedger`'s own convention already settles it: *"`Notes` is the practitioner's text … never metadata."* His words live in one field and are never quoted into another; `testHisWordsReachExactlyOneFieldAndNeverTheName` drives that exact string through and checks.
+
+`Detail` = `"Left in the instrument · <phase>"`. `Felt At` and `Activity Date` come from the note's **own `createdAt`**, never the flush time, so a note queued for three days still lands on the day he wrote it. `Lunar Day` and `Moon Phase` are carried — free, pure, invisible to him, and they let a note be found beside whatever practice surrounded it. `Link to Mandala` is **empty**: a note is about the app, not about a Śakti. `Gesture Source` is **omitted**: those four options name where a gesture *toward a Śakti* began, and a fifth would dilute a vocabulary other instruments read.
+
+**The hole that created, and the fix.** `processActivity` guarded its idempotency check on `!item.linkRecordId.isEmpty`, so an unlinked row would have skipped the check entirely and always created — a retry after a POST that landed but whose response was lost would have written his note twice. The key for a note is **`Activity Type` + `Felt At` to the second + the trimmed body**. Two notes one second apart with different words are two notes and both are written; two rows at the same second with the same words are one note posted twice. `noteDedupFields` is its own two columns and deliberately **not** a widening of `RecognitionDedup.readFields`, which four other call sites share.
+
+### Not lost: by backgrounding, by a crash, by the migration, or by a POST that failed
+
+- **Backgrounding.** The composer observes `scenePhase` and saves on `.inactive` — which arrives before `.background` and before the snapshot — because swiping to the home screen never calls `onDisappear`, and a pending debounce then sits in a suspended app where a force-quit or a jetsam kill takes everything typed since the last autosave. **This is a live defect in the shipped letter editor too** (`WellView.LetterEditorView` has no `scenePhase` observer and a five-second debounce); it is named here and left for its own pass rather than smuggled into this one.
+- **A crash.** The debounce is two seconds, not five. A per-keystroke write was refused: wrong trade against store churn, and the letter's idiom is proven.
+- **A POST that failed.** Notes do **not** ride the UserDefaults activity queue. `PendingQueuePolicy.maxFailures` drops an item after three failed flushes, justified by *"local SwiftData is already canonical, so the only loss is the Airtable mirror"* — true for a recognition, false for a note, whose ledger row is the only copy that will ever leave the phone. So `MarginNote.ledgeredAt` is stamped only on a confirmed create and `flushUnledgeredNotes` sweeps every un-ledgered note on each sync, oldest first, forever. `maxFailures` was not raised: that would change behaviour for four other queues to fix one.
+- **A reinstall.** `restoreNotesIfLocalEmpty` is built in the shape of the two existing restores and called from the same place, through the pure mapper `ActivityLedger.marginNotes(from:)`. Without it, "synced when able" was only half true — Airtable would hold every note while his list came back empty.
+- **One thing the design did not anticipate.** The sweep runs on scene-phase `.active`, which is exactly when he returns to a composer he left open — so it would have posted and stamped the half-sentence he had typed, and the finished note would then never be sent. `MarginComposition.openNoteId` is the flag that excludes it, and `MarginNoteStore.sweepable` is the pure rule, tested.
+
+### The law: a list is not a measure, and the door is what keeps it that way
+
+Law 2 forbids the instrument telling him about **himself**. Recognitions, crossings, silences and dwells are the instrument watching him walk; counting those back is what the law exists for. A note is **authored content** — the same category as a letter, which may run to a hundred lines without measuring anything, because its length is a fact about what he chose to write and not a score the instrument kept. The charter's own words: *"no count, streak, percentage, or visit number."* A note is none of those; it is the thing itself.
+
+The 2026-09-23 Her Moments breach needed all three of: a length that was a function of his practice, on a screen opened for something else, standing in front of something. The margin fails all three **because it is built to**:
+
+- **Behind its own door.** The notes never render in Settings. If they did, the sheet would be longer the more he had written and "Re-enter the Homecoming" would sink with every note — 3.8's breach in a new place. `TheMarginUITests.testTheSheetIsTheSameLengthHoweverMuchHeHasWritten` writes three notes and measures the section again: 247.5 pt, unchanged.
+- **Nothing behind the list.** It is a destination, not a corridor — its only way onward is the reader for one note — so a long scroll costs a VoiceOver walker nothing he did not come for. The §4.4 asymmetry cannot arise.
+- **The number never exists.** `MarginNoteStore` has no counting API at all, and `LawsTheMarginTests.testTheMarginCannotSayHowMany` fails on any `.count` in the margin's layer the day one is written. `isEmpty` is allowed and used once: "Nothing left here yet." is a *state*, the shape of the shipped "She has not been felt here yet."
+
+**And no numeral reaches the ear.** The ink says today / yesterday / the weekday / "Aug 21"; `MarginDate.spoken` says "August the twenty-first", through `MandalaVoice.ordinal` — the same table §4.4 already speaks a seat with. A unit test walks a whole year and refuses a digit in any of them; a UI test reads every label **and every value** in the margin's own container on the running app and refuses one there.
+
+### The surface
+
+First section on the sheet, not last. Last would have cost nothing; first is chosen on §4.4 parity — a finger reaches the foot of a scroll with one flick and **VoiceOver has no such shortcut**, which is the exact argument Phase 3.8 used to fold Her Moments. It is also the only section on that sheet that is *authored input* rather than configuration. The composer is `LetterEditorView`'s idiom almost verbatim — full-screen page, ground gradient, one back control, no title, no fields, no picker, no Save button, `LetterDraft` reused unchanged so **opening writes nothing** — and leaving the page is saving.
+
+**Once left, a note is left.** No editing after dismissal and no delete, this pass. The ledger has only a POST path in this house; an editable note would let the phone and the body's memory disagree with no way to reconcile, and a delete would leave an orphan row. Read-only is also what makes the list honestly *his own words handed back* rather than a workspace. Both are cheap to add the day he reaches for them — the same "wait until he has used it" logic as his own text-only ruling.
+
+### The composition lock: `settles`, not a re-record
+
+The design handed to this phase called for re-recording `settings.geom` on all three device classes. **That is wrong on the house's own rule and was refused.** `FeltRegisterSnapshots`' header says these baselines are the geometry of `main` **before Phase 4**, and `FeltRegisterClassifications`' header says re-recording one from this tree would dissolve every Phase 4 entry it is holding — the same edit Phase 3.7 had to undo on the Field. The vocabulary for this already exists: the margin is a rigid translation of everything below it, so it goes in `settles`.
+
+Measured on the running app, top of THE MARGIN to top of DAILY RHYTHM, one device at a time: **247.50 pt on the SE, 247.67 on the phone, 247.67 on the Pro Max** — device-stable to a sixth of a point, so one number and not 3.8's three. `maxDelta` stays at 14 (the Phase-4 allowance those entries already carried); every element's residual against 247.5 lands inside it, the widest at 10.28 pt. `0` stays in `settles` and is load-bearing: this baseline is read with Settings presented over the Well, and a sheet leaves the screen beneath it in the tree, so half of `settings.geom` is the Well's own rows, which must not move at all. Four `appeared` entries name the four things that are on the sheet now and were not.
+
+### One law check was scoped rather than weakened
+
+`LawsTests.testEveryPerShaktiKeyIsAPosition` asserted that *every* `@Attribute(.unique)` in the tree is an `Int` position and *every* `#Predicate` mentions `khadgamalaPosition`. That said the right thing while every `@Model` was per-Śakti. `MarginNote` is the first entity that carries no Śakti at all — it is a sentence he wrote about the app, and there is no natural key for a sentence. So `PositionIsIdentity.pinnedNonShaktiKeys` and `pinnedNonShaktiPredicates` name exactly one entry each, and the claim each makes is **checked structurally rather than taken**: the file naming it must mention no Śakti anywhere in it — no `shakti`, no `khadgamalaPosition`, no `ringNumber` — so the pin can never launder a Śakti-keyed store onto a UUID, and an entity that grows a link to her fails here the day it does. A dead pin fails too. No assertion was removed.
+
+### Two things routed elsewhere rather than into this pass
+
+- **The letter editor's missing `scenePhase` save.** The identical hole, on words that are older and more precious than any note. `iOS/Bindu Mandala/Views/Common/WellView.swift`.
+- **`PendingQueuePolicy.maxFailures`' comment**, which is now true only for events whose state survives elsewhere, and should say so.
+
+### Left open, deliberately
+
+**Two devices.** The dedup key is server-derived, so a second device cannot duplicate a row it did not write — this does not repeat the `Letter Written` wound, where a per-install flag re-logged milestones on a second install. What *does* happen is divergence: device B restores up to its install and then the two lists drift apart. The cure would be a pull-on-every-launch that merges the ledger into the local list, which makes Airtable authoritative over his own words, reopens the dirty-on-load class of bug the WellView audit found, and needs a merge rule nobody has asked for. He has one phone. Restore-if-empty is the right scope.
+
+---
+
+## The margin, audited · Two ways his words could be lost, and the one gesture that could not take anything back
+
+**2026-09-23, after the margin's first pass.** The branch was walked on the glass
+and read for data loss before it went anywhere. Three things came back that the
+charter calls a §7 condition — *any path would lose, duplicate, or corrupt his
+practice data* — and none of them were in the migration, which is where the
+attention was. They were all in the sync layer, and two of them were invisible
+to a green suite.
+
+### 1 · The note dedup was dead on every device, and a test held it that way
+
+`ActivityLedger.noteDedupFields` named `Felt At` and `Notes`.
+`noteExistsOnServer` passes that array as `fields[]`, which is a **narrowing**:
+Airtable returns only the columns named, and `Row.Fields` decodes every key with
+`decodeIfPresent`. So `activityType` came back `nil` on every live row — while
+`noteRowMatches` opened by requiring it to equal `Note Left`. `nil` is never
+`"Note Left"`, so the match returned false for every row the server could
+possibly send, `noteExistsOnServer` could never return true, and `processActivity`
+always created.
+
+What that costs him: the POST commits on Airtable and the response is lost — a
+timeout, a dropped connection, a kill between `createActivityRow` returning and
+`ledgeredAt` being stamped. `ledgeredAt` stays nil, the next sweep re-posts, and
+**the ledger holds his note twice**. Then a reinstall, and the restore puts both
+copies into his margin, in his own words, with no delete path this pass. That
+retry is the *exact* case the three-part key was written to defend against.
+
+Every unit test was green throughout, because every one of them hand-built a
+`Row` in Swift with `Activity Type` already populated — and
+`testTheNoteDedupReadsItsOwnTwoColumns` asserted the omission as though it were
+the design. **A test that pins a bug is worse than no test**, and the shape that
+would have caught it is the one now there:
+`testTheDedupAsksForEveryColumnItsMatchThenReads` builds the JSON page from
+`noteDedupFields` itself and decodes it, so it asks the question the device asks.
+
+Fixed by adding `Field.activityType` to the read rather than by dropping the
+guard. Both were one line. The guard is kept because the formula and the match
+then say the same thing twice, and the failure mode of the alternative is silent:
+drop the guard and a future formula change that widened the type would start
+matching notes against other events with no check to notice. The doc comment now
+says why every column the match reads must be in the fetch, and
+`testNoDedupEverChecksAColumnItDidNotAskFor` states it structurally beside the
+recognition path's own (consistent) asymmetry, so the two rules are read together
+instead of drifting apart again.
+
+### 2 · The path home closed permanently the first time he wrote a note offline
+
+`restoreNotesIfLocalEmpty` guarded on `existing.isEmpty` and was called at the
+**end** of `sync`, inside the `do` block — after `try await (s, a, n)`. So:
+
+Reinstall, or `PersistenceRecovery` step 2 quietly opening a fresh store. First
+launch has no signal → the field fetch throws → the restore never runs at all. He
+writes one note. `MarginNote` is no longer empty, so the guard returns on
+**every future launch, for the life of the install** — and every note he wrote
+before the reinstall stays in Airtable and never comes back to his list. Nothing
+fails, nothing is logged, and the words are authored: unlike a recognition, whose
+Shakti row still carries Last Felt, a note is re-derivable from nothing.
+
+The emptiness guard was borrowed from the recognitions restore, and it is the
+wrong guard here for a reason worth writing down: **that restore is gated on
+emptiness because it is expensive and lossless to skip; this one is the only way
+a note ever comes home.** So the guard is gone. `notesMissingLocally` merges on
+the ledger identity instead — the instant to the second plus the trimmed words,
+which is the same key `noteRowMatches` already compares by, said once so the two
+cannot drift. The merge is idempotent, so it may run on every sync forever, and
+the call moved **ahead of everything that can throw**.
+
+Second precision is the load-bearing detail and it is asserted on its own
+(`testASecondIsThePrecisionThatSurvivesTheRoundTrip`): `Felt At` carries seconds
+and no fraction, so comparing raw `Date`s would call every note he ever wrote a
+note the phone had never seen — and re-insert all of them, on every sync. The
+fix for a loss bug would have been a duplication bug.
+
+### 3 · The composer let go of a note while its POST was still in the air
+
+`onDisappear` cleared `MarginComposition.openNoteId` one line *before* spawning
+the ledger task. `ledgeredAt` is nil until the create returns, so in that window
+the note was nobody's: a scene-phase `.active` sweep — which fires the instant he
+switches back to the app — found an un-stamped note that `sweepable` no longer
+excluded, and posted it again.
+
+Closed twice, deliberately. `AirtableService.beginNoteFlight` is a per-note
+interlock on the one `@MainActor` service, so test-and-set is atomic without a
+lock and **no two callers can have a POST in the air for the same note**; and the
+composer now releases its claim only after `recordNote` returns, and only if the
+claim is still its own (he can open a second composer while the first is
+flushing). The dedup cannot close this on its own and it is worth being explicit
+about why: it is a *read*, and two reads that race a write both see nothing. The
+interlock is what makes the dedup's job *retry after a failure* rather than *two
+simultaneous firsts*.
+
+### 4 · He deleted every word, left, and the sentence was still there
+
+Not a loss — the opposite, and it is the one thing in the pass that would have
+cost him something. Verified on the running app: type a sentence, wait past the
+two-second autosave so the row exists, clear the field until it reads empty,
+leave by the back control. The note is still in the list.
+
+`MarginNoteStore.save` refuses an emptied body, which the first pass called a
+feature — *"an emptied saved note is left standing"* — and combined with the
+deliberate no-delete-this-pass ruling the consequence is that **after two seconds
+of quiet, anything he has typed is permanent, and there is no gesture anywhere in
+the app that can take it back.** He opens the margin to say something is broken,
+starts on the wrong thought or mistypes, wipes it — and the wrong thought is now
+a permanent row in his list and a permanent row in the ledger. He asked to
+*"save it as a new entry"*. He never asked for immutability, and the screen said
+empty while the store said otherwise.
+
+So: leaving is saving here, and **leaving nothing saves nothing**.
+`MarginNoteStore.discard(_:typed:)` takes the note away when he walks out of the
+composer with the field empty. The rule is pure (`shouldDiscard`) and has one
+hard condition: **a note the ledger already holds is never discarded.** That is
+the line between this and a delete feature — the ledger has only a POST path in
+this house, so removing a ledgered note locally would orphan a row nothing can
+retract, and the next restore would bring the note straight back, which is worse
+than leaving it standing. In the composer the case cannot arise (`ledgerIfNeeded`
+runs on the way out and the sweep excludes the open note); the guard is there
+because the rule is the rule.
+
+This is still not an edit-and-delete feature, and that scope is unchanged: it is
+the same ruling as his own text-only one — wait until he has used it.
+
+### 5 · The one screen in the margin with a title was the one that broke
+
+On the smallest glass at AccessibilityXXXL the list's header ate about two fifths
+of the screen: the title wrapped over four lines and the back control's single
+word broke **mid-word**, reading *"Settin / gs"*. This is the app's own header
+rather than a system navigation bar, so nothing was going to hold it but the
+house — and the composer's header, which has no title, is clean at the same
+setting on the same glass. The title is the difference, so the title is what
+moves.
+
+**Stacked rather than scaled down.** A `minimumScaleFactor` small enough to keep
+that header on one line at AX5 is a floor that would take ordinary type under
+FIDELITY's eleven points on some other width, and the point of the accessibility
+sizes is that he asked for large. So at those sizes the header is simply taller,
+each line has the full width, and nothing has to shrink to fit. The back control
+keeps `.lineLimit(1)` with the house's own 0.55 floor beside it — which
+`DynamicTypeTests.testEverySingleLineStringCanShrink` required, and correctly:
+that law caught the first version of this fix.
+
+### What was checked and refuted, said rather than padded
+
+- **The placeholder's "different face and inset" is not a defect.** It is the
+  shipped letter editor's block, copied verbatim, and the italic-to-roman shift
+  is this house's register — `voice` is what the instrument says *to* him,
+  `sanskrit` is his own words — not an accident. The inset differs by about one
+  point once the `TextEditor`'s own container inset is counted. Diverging the
+  margin from the letter for that is worse than leaving it.
+- **A note past Airtable's long-text ceiling** was reported as an ungrounded
+  hypothesis and stays refuted for now: that ceiling is a hundred thousand
+  characters, and the failure mode if it were ever reached is fail-safe — the
+  phone keeps the note and the sweep retries. Nothing is lost; there is only a
+  ledger row that never appears. Not worth a speculative guard.
+- **The migration is genuinely clean** and this was re-read rather than taken on
+  trust. `notesArrive` is `MigrationStage.lightweight` with no closure to be
+  killed inside; `BinduSchemaV2.models` is byte-untouched; the V1→V2 letters
+  stage with its fsync'd sidecar is not on the V2→V3 path. The safest migration
+  is the one nobody wrote, and that is what is here.
+- **The scroll-length question**, which the never-measure law makes subtle, is
+  settled the way `LawsTheMarginTests` already argues it and the argument holds:
+  the Her Moments breach needed three things together — a length that was a
+  function of his *practice*, arriving on a screen opened for something else, and
+  standing *in front of* two doors. A list of notes fails all three, and the
+  first is what decides it. The length of his own writing is the same category as
+  a letter that runs to a hundred lines.
+- **Nothing counts him.** No `.count` exists in the margin's view, model, store
+  or Settings layer; the spoken surface carries no numeral on any day of any
+  year. The scan that proves it read two files and now reads four — the model and
+  Settings were in range of the law and out of range of the check. The one
+  `.count` in the margin's server code was an `os_log` line that never reached a
+  walker, and it is gone anyway rather than left as a temptation.
+- **VoiceOver reading a long note whole in the list row** is left as it is. It
+  looked like the Her Moments cost-in-swipes shape and it is not: a right-swipe
+  interrupts speech immediately, so a walker pays one gesture to move on, not the
+  length of the note. The row gets *more* than the eye, which harms nobody.
+- **LawsTests was not weakened.** It gains the two new margin checks, two more
+  files in the never-measure scan, and the structural dedup rule; the only
+  behavioural change to an existing check is `testTheNoteDedupReadsItsOwnTwoColumns`,
+  renamed and corrected because what it asserted was the defect. One nit from the
+  audit is taken: the two `touchesAShakti` claims sat inside `if let`, so a pinned
+  file dropping out of the corpus would have passed its own claim silently. They
+  are `XCTUnwrap` now.
+
+## 2026-10-12 · Wave 0 — Ground (Build Charter II)
+
+**Data, live in Airtable (done from the chat session, logged here so the repo knows):**
+- **Spellings.** Vaśinī (kp 87), Sarva-Stambhinī (58), Sarva-Jṛmbhiṇī (59),
+  Sarva-Mṛtyupraśamanī (73), and Sarva-Unmādinī for both kp 23 and kp 62
+  (the Devanāgarī is सर्वोन्मादिनी, sarva + unmādinī; "Onmādinī" was a wrong split).
+  The nine āvaraṇa names now carry full IAST like the 102 do
+  (Sarvāśāparipūraka, Sarvasaṅkṣobhaṇa, Sarvasaubhāgyadāyaka, Sarvārthasādhaka,
+  Sarvarakṣākara, Sarvānandamaya; the other three were already exact). Nothing
+  in Swift matches on any of these names: āvaraṇas are keyed by record id,
+  Śaktis by position.
+- **Avarana Beeja** given its diacritics (Aiṃ, Klīṃ, Sauḥ, Hrīṃ, Hsraiṃ, Hsklhrīṃ,
+  Hsauḥ, Aiṃ Klīṃ Sauḥ, Hrīṃ). Transliteration of what was there, nothing added.
+- **Function** written for the 16 Karṣiṇīs, in the voice of the other 86.
+- **The mirror agrees with the ledger.** Recognition Count and Last Felt were
+  recomputed from the 59 `Shakti Recognized` rows (45 Śaktis). Eight rows had
+  drifted: six Karṣiṇīs were under-counted by one, and Rasākarṣiṇī and
+  Bījākarṣiṇī showed as never felt although each has a recognition in the ledger.
+- **Khadgamala Position** description now says 1–102 and names it the identity key.
+
+**Code:**
+- **B1 · the motes are seen.** They ran on `repeatForever` with an opacity envelope
+  that is 0 at both ends of the loop, so an animation that only interpolates
+  between end values drew nothing; positive delays also left them standing for
+  up to 20 s. Each mote is now a pure function of one `TimelineView` clock, with
+  its delay used as a phase offset, so the field opens full. Reduce motion pauses
+  the clock (read live, so a mid-session change stills them on the next frame).
+  `DeviceSlipTests`' motes check was rewritten for the clock: it guarded an
+  implementation (`follow()`), and the principle it protected survives.
+- **B2 · a felt seat lights at once.** The Mandala unions the server's state with
+  his local felt moments, and re-derives when the server's felt states change
+  (it previously re-derived only when the row count changed). Her Moments shows a
+  local felt moment newer than the ledger's newest above the ledger's rows, so a
+  just-felt moment never disappears when Airtable answers.
+- **B3 · a silence is not a felt.** The Field, the Portrait and Her Moments now
+  read only the felt gesture. Silences stay in the record untouched.
+- **B4 · he stays where he is.** Only a recognition made from the Rite settles
+  into the Portrait; from the Mandala, the Field or a room the app stays put.
+- **B5 · nothing is dropped.** `PendingQueuePolicy.maxFailures` is now `nil`: a
+  failed practice event stays queued and is retried on every sync, forever. The
+  sync cadence (launch, foreground) is the backoff. A cap can still be passed
+  explicitly. The old justification ("only the mirror is lost") does not survive
+  Charter II §4.1: the ledger is the record that leaves the phone.
+- **B6 · the real origin.** `ShaktiDetailView` carries `source`; the Rite passes
+  `.today`, the Field `.field`, the Mandala defaults to `.mandala`. `Field` and
+  `Room` are new `Gesture Source` options, born by `typecast` on first write.
+- **B7 · letters survive a background kill.** The letter editor saves when the
+  scene leaves `.active`, as the margin does, and its debounce is 2 s, not 5 s.
+- **B8 · one pin rule.** The Rite reads `AppRuntime.pinnedEnergyPosition` (last
+  `ENERGY_POS` wins) like every other screen.
+- **B9 ·** the per-sync `logVerification` dump is gone; one summary line stays.
+- **D · the ring's own material, live.** Gem, Dhātu, Time Cycle, Avarana Beeja and
+  Body Region are decoded from the āvaraṇa rows and overlay Design's typed values
+  in `HomeWorlds.world(ring:live:)`. They are held in `RingFactsCache` (UserDefaults
+  JSON), **not** on the `Avarana` model: adding stored properties there would mutate
+  a shipped schema version, and `BinduSchema`'s first law is that it never drifts.
+  The climb's altitude still reads Design's body region (it parses the short
+  form), so nothing visual moves in Wave 0.
+
+### Wave 0 · The checks reach Xcode Cloud
+
+The first "Waves — test" run built clean (0 errors) and reported 192 failures.
+About 140 were one cause: Xcode Cloud runs tests on a machine that holds the built
+products, not the checkout, so every test that reads the app's own source through
+`#filePath` read an empty tree. The fix keeps the checks rather than skipping them:
+a "Bundle the source tree" build phase copies `iOS/Bindu Mandala`, the two test
+folders, `SnapshotBaselines`, `DECISIONS.md` and Design's `homes/` into the test
+bundle (`Config.local*.xcconfig` excluded by name, so the token never travels), and
+`SourceTree.repoRoot` reads the checkout when it exists and the bundled copy when
+it does not. The UI-test target bundles the baselines the same way. Both targets
+run their phase unsandboxed (`ENABLE_USER_SCRIPT_SANDBOXING = NO`, test targets only).
+
+Three failures were the simulator, not the app, and are answered on their merits:
+- `UIFontMetrics` does not quantise half-points on Xcode Cloud's OS. The test now
+  asserts only what ships (`labelPointSize` returns the size asked for); whether
+  the raw metric quantises is the OS's business.
+- The Mandala's spoken seats were read in layout order there. The layer now is one
+  accessibility container, so its sort priorities (the garland) govern.
+- The composition lock found no baselines (the same missing-tree cause); it stays
+  until Wave 1 re-baselines it.

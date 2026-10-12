@@ -310,24 +310,70 @@ final class HomeDescentTests: XCTestCase {
         XCTAssertFalse(descent.goesOn(), "a let-go with no beginning moves nothing")
     }
 
-    /// **The sharpest edge of the return memory, and it is felt rather than
-    /// read.** The way down opens when her room has adapted — so a walker whose
-    /// accumulated dwell has already opened the room past the adaptation can go
-    /// deeper the moment he arrives, and a stranger waits out the settling.
-    func testTheWayDownIsEarnedByDwellAndNeverAnnounced() {
-        XCTAssertFalse(TheDescent.isOffered(atChamberTime: 0))
-        XCTAssertFalse(TheDescent.isOffered(atChamberTime: HomeMemory.firstAdaptation - 0.001))
-        XCTAssertTrue(TheDescent.isOffered(atChamberTime: HomeMemory.firstAdaptation))
+    /// **The way down is always offered, and dwelling makes it deeper** (Wave 2
+    /// · rewritten).
+    ///
+    /// The 62-second gate enforced a rule Charter II reshaped (the Reading's §3
+    /// row *"Descent gated until 62 s of dwell"*, padakarshini law 5: *staying
+    /// opens things; nothing new is locked*). What survives is that depth is
+    /// earned by staying, never withheld from the first visit: the shaft is
+    /// offered from the first moment and reaches three of her five stations;
+    /// once her room has adapted — or his accumulated dwell opened it there on
+    /// arrival — it reaches all five. Nothing announces it.
+    func testTheWayDownIsAlwaysOfferedAndDwellingDeepensIt() {
+        XCTAssertTrue(TheDescent.isOffered(atChamberTime: 0), "the way down is withheld from a stranger")
+        XCTAssertTrue(TheDescent.isOffered(atChamberTime: HomeMemory.firstAdaptation - 0.001))
 
-        // A room never stood in opens at the beginning: he waits.
-        XCTAssertEqual(HomeMemory.headStart(dwell: 0), 0)
-        XCTAssertFalse(TheDescent.isOffered(atChamberTime: HomeMemory.headStart(dwell: 0)))
-        // Two minutes of accumulated dwell opens it on arrival.
-        XCTAssertTrue(TheDescent.isOffered(atChamberTime: HomeMemory.headStart(dwell: 120)))
-        // And the head start is capped short of the second adaptation, so the
-        // relationship opens the way down and never buys the room's floor.
+        XCTAssertEqual(DescentReach.stations(atChamberTime: 0), DescentReach.shallow)
+        XCTAssertEqual(DescentReach.stations(atChamberTime: HomeMemory.firstAdaptation - 0.001),
+                       DescentReach.shallow)
+        XCTAssertEqual(DescentReach.stations(atChamberTime: HomeMemory.firstAdaptation),
+                       TheDescent.stations)
+        XCTAssertGreaterThan(DescentReach.shallow, 0, "a descent that reaches nothing is a lock")
+        XCTAssertLessThan(DescentReach.shallow, TheDescent.stations, "dwelling deepens nothing")
+
+        // A room never stood in opens at the beginning: shallow at first.
+        XCTAssertEqual(DescentReach.stations(atChamberTime: HomeMemory.headStart(dwell: 0)),
+                       DescentReach.shallow)
+        // Two minutes of accumulated dwell opens it to its floor on arrival.
+        XCTAssertEqual(DescentReach.stations(atChamberTime: HomeMemory.headStart(dwell: 120)),
+                       TheDescent.stations)
+        // And the head start is capped short of the second adaptation.
         XCTAssertLessThan(HomeMemory.headStart(dwell: HomeMemory.dwellCap),
                           HomeMemory.holdEnd)
+    }
+
+    /// The shallow shaft's floor is its third station, and a touch there
+    /// brings him back up — the circle closes wherever the shaft reaches.
+    func testTheShallowShaftClosesItsCircleAtItsOwnFloor() {
+        var descent = TheDescent()
+        for expected in [1.0, 2, 3] {
+            XCTAssertEqual(descent.onward(reach: DescentReach.shallow), expected)
+        }
+        XCTAssertEqual(descent.station, .etymology)
+        XCTAssertEqual(descent.onward(reach: DescentReach.shallow), 0, "the shallow floor did not return him")
+        // Deepened mid-stay, the same shaft goes on to her own sentence.
+        for _ in 0..<TheDescent.stations { descent.onward(reach: TheDescent.stations) }
+        XCTAssertEqual(descent.station, .phrase)
+    }
+
+    /// The descent sounds: a glide from her carrier, down a minor third per
+    /// station, and back up the same path — and nothing about it is structural.
+    func testTheDescentIsSoundedAsAFall() {
+        let carrier = 220.0
+        XCTAssertEqual(Glissando.pitch(carrier: carrier, station: 0), carrier, accuracy: 1e-9)
+        var last = carrier
+        for station in 1...TheDescent.stations {
+            let p = Glissando.pitch(carrier: carrier, station: station)
+            XCTAssertLessThan(p, last, "station \(station) does not sound deeper")
+            last = p
+        }
+        let down = Glissando.glide(carrier: carrier, from: 2, to: 3)
+        let up = Glissando.glide(carrier: carrier, from: 3, to: 2)
+        XCTAssertEqual(down.from, up.to, accuracy: 1e-9)
+        XCTAssertEqual(down.to, up.from, accuracy: 1e-9)
+        XCTAssertGreaterThan(Glissando.pitch(carrier: carrier, station: TheDescent.stations), 20,
+                             "the floor of the descent falls below hearing")
     }
 
     /// Nothing in the descent's own surface counts, and there is nowhere to put

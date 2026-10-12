@@ -23,6 +23,13 @@
 // never drive a pixel past white. That is Design's invariant 7 enforced by the
 // blend rather than by hoping.
 //
+// WAVE 1 · THE CAPS LIFTED. The restrained build held this pass under a set of
+// "choose quiet when legible" caps — a 0.86 clamp, the wash at ×0.09, the rake
+// retreating by 22% as the room reversed — and the rooms came out at a third of
+// Design's measured brightness. Build Charter II §1: when a frame washes out,
+// the answer is better light, not less light. The screen blend is still what
+// keeps a pixel from passing white, so the clamp is now the blend's own range.
+//
 // ANICONIC, BY CONSTRUCTION. It carries no glyph, no figure and no sampled
 // image: it is a wash, a set of shafts, a bloom and a grain. Every colour it is
 // handed comes from `Theme/Atmosphere.swift` through `HomeGem` in Swift — it
@@ -138,18 +145,18 @@ namespace room {
     const float3 accent = float3(tint.rgb);
     const float3 hot = float3(bright.rgb);
 
-    float3 lit = accent * (wash * 0.09 + gravity * 0.16 + suspended * 0.10);
-    lit += hot * (shafts * 0.34);
-    lit += mix(accent, hot, saturate(0.35 + 0.65 * b)) * bloom;
+    float3 lit = accent * (wash * 0.15 + gravity * 0.22 + suspended * 0.16);
+    lit += hot * (shafts * 0.46);
+    lit += mix(accent, hot, saturate(0.35 + 0.65 * b)) * bloom * 1.25;
 
     // Grain, so a dark room does not band. Keyed to her phase.
     lit += (room::hash21(pos + phase * 512.0) - 0.5) * 0.014;
 
-    // The rake retreats as the room reverses and her mark replaces it; the
-    // total never climbs, because the reversal is a change of source and not
-    // a swell.
-    lit *= (1.0 - 0.22 * b);
+    // The rake retreats a little as the room reverses and her mark replaces
+    // it: the reversal is a change of source, and the source it changes to is
+    // her own light.
+    lit *= (1.0 - 0.08 * b);
 
-    lit = clamp(lit, 0.0, 0.86);
+    lit = clamp(lit, 0.0, 1.0);
     return half4(half3(lit), 1.0h);
 }

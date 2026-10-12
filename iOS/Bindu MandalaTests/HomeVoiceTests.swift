@@ -153,10 +153,7 @@ final class HomeVoiceTests: XCTestCase {
     /// whose every member returns `Void`.
     func testTheVoiceHasNothingAViewCouldDraw() throws {
         let source = try String(
-            contentsOf: URL(fileURLWithPath: #filePath)
-                .resolvingSymlinksInPath()
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
+            contentsOf: SourceTree.iOSRoot
                 .appendingPathComponent("Bindu Mandala/Services/HomeVoice.swift"),
             encoding: .utf8)
         for forbidden in ["@Published", "ObservableObject", "@Observable", "import SwiftUI"]
@@ -208,10 +205,7 @@ final class HomeVoiceTests: XCTestCase {
     /// rest of the app ruled the other way for a struck bīja.
     func testTheRoomAsksForTheSilentSwitchAndTheServiceDefaultStandsUnchanged() throws {
         let source = try String(
-            contentsOf: URL(fileURLWithPath: #filePath)
-                .resolvingSymlinksInPath()
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
+            contentsOf: SourceTree.iOSRoot
                 .appendingPathComponent("Bindu Mandala/Services/HomeSoundService.swift"),
             encoding: .utf8)
         // `.mixWithOthers` is not valid with `.ambient`; passing it throws and
@@ -225,10 +219,7 @@ final class HomeVoiceTests: XCTestCase {
         XCTAssertTrue(source.contains("var respectsSilentSwitch = false"))
         // …and the room is the one that asks for the other reading.
         let voiceSource = try String(
-            contentsOf: URL(fileURLWithPath: #filePath)
-                .resolvingSymlinksInPath()
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
+            contentsOf: SourceTree.iOSRoot
                 .appendingPathComponent("Bindu Mandala/Services/HomeVoice.swift"),
             encoding: .utf8)
         XCTAssertTrue(voiceSource.contains("respectsSilentSwitch = true"))

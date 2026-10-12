@@ -198,6 +198,23 @@ final class HomeWorldsTests: XCTestCase {
         XCTAssertEqual(w.fogDensity, 0.017, accuracy: 1e-9)
     }
 
+    /// Wave 0 · D: the ring's own material is the base's too. Gem, dhātu, time
+    /// cycle, body region and bīja come from the row when it speaks.
+    func testLiveBaseOverridesTheRingsOwnMaterial() {
+        let live = HomeWorlds.LiveFacts(gem: "Sapphire (Indranila)", dhatu: "Rakta (blood)",
+                                        clock: "Hour (Hora)", region: "Pelvis / Guhya (root region)",
+                                        bija: "Klīṃ")
+        guard let w = HomeWorlds.world(ring: 2, live: live) else { return XCTFail("ring 2") }
+        XCTAssertEqual(w.gem, "Sapphire (Indranila)")
+        XCTAssertEqual(w.dhatu, "Rakta (blood)")
+        XCTAssertEqual(w.clock, "Hour (Hora)")
+        XCTAssertEqual(w.region, "Pelvis / Guhya (root region)")
+        XCTAssertEqual(w.character.bija, "Klīṃ")
+        // The weather and the physics stay Design's.
+        XCTAssertEqual(w.fogDensity, 0.017, accuracy: 1e-9)
+        XCTAssertEqual(w.character.veil, 0.12, accuracy: 1e-9)
+    }
+
     func testSilentBaseLeavesTheAuthoredValueStanding() {
         let blank = HomeWorlds.LiveFacts(sanskritName: "", presidingForm: nil,
                                          yogini: "   ", mentalState: nil)

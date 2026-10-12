@@ -20,6 +20,7 @@ struct WellView: View {
     @State private var openingFor: Shakti?
     @State private var openRing: Int? = WellView.homeRing
     @State private var didHandleLaunchArgument = false
+    @State private var riverOpen = false
 
     /// Ring 2 is the home ring and is where the Well opens; the other eight
     /// follow from the outer square inward to the point.
@@ -48,26 +49,16 @@ struct WellView: View {
         return m
     }
 
-    /// The Well wears today's light, like every other room.
-    private var dayAtmo: Atmosphere {
-        let pos = DailyEnergyService.todaysPosition()
-        if let t = allShaktis.first(where: { $0.khadgamalaPosition == pos }) {
-            return Atmosphere.derive(from: t, at: LunarPhaseService.currentTimeVariant())
-        }
-        return Atmosphere.derive(ring: 2, cluster: .inner, khadgamala: pos,
-                                 element: .ether, at: LunarPhaseService.currentTimeVariant())
-    }
+    /// The Well wears today's light, like every other room — and answers to
+    /// the same pin every other screen does.
+    private var dayAtmo: Atmosphere { DayLight.atmosphere(allShaktis) }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [dayAtmo.ground, dayAtmo.groundDeep],
-                               startPoint: .top, endPoint: .bottom)
+                // The Field's ground: her glow as a wide crown, layer for layer.
+                LightField(layers: Backdrop.crown(dayAtmo))
                     .ignoresSafeArea()
-                RadialGradient(gradient: Gradient(colors: [dayAtmo.glow, .clear]),
-                               center: UnitPoint(x: 0.5, y: -0.05), startRadius: 0, endRadius: 440)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
 
                 VStack(spacing: 0) {
                     header
@@ -109,6 +100,7 @@ struct WellView: View {
                 LetterEditorView(shakti: shakti)
             }
             .onAppear(perform: openLetterFromLaunchArgument)
+            .fullScreenCover(isPresented: $riverOpen) { CorrespondenceView() }
         }
     }
 
@@ -160,6 +152,22 @@ struct WellView: View {
                 .foregroundStyle(Color.cream.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
+            // Wave 5 · the Well as a river: letters back to a moment and
+            // sealed forward to her day, beside the letters above.
+            Button {
+                Haptics.light()
+                riverOpen = true
+            } label: {
+                Text("the river ›")
+                    .font(AppFont.voice(16))
+                    .tracking(1.0)
+                    .foregroundStyle(Color.gold.opacity(0.85))
+                    .frame(minHeight: 44)
+                    .padding(.horizontal, 20)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the river of sealed letters")
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 18)
@@ -203,9 +211,11 @@ private struct WellRing: View {
                     Circle()
                         .fill(RadialGradient(gradient: Gradient(colors: [ringAtmo.accentFaint, .clear]),
                                              center: .center, startRadius: 0, endRadius: 24))
+                    // The ring's geometry at full light (Wave 1 — it was dimmed
+                    // to 0.45 closed); it turns only while its room is open.
                     RiteSigil(atmosphere: ringAtmo, ring: ring, size: 44,
-                              spin: ring % 2 == 1 ? 1 : -1)
-                        .opacity(open ? 0.9 : 0.5)
+                              spin: ring % 2 == 1 ? 1 : -1, spinning: open)
+                        .opacity(DayLight.fieldChipOpacity)
                 }
                 .frame(width: 48, height: 48)
                 .shadow(color: open ? ringAtmo.glow : .clear, radius: open ? 16 : 0)
@@ -347,13 +357,16 @@ private struct WellRing: View {
 }
 
 /// Full-screen editor for one letter. Surface background, cream Cormorant.
-/// Auto-saves 5s after the last keystroke and on dismiss — but only when the
+/// Auto-saves 2s after the last keystroke, on dismiss, and whenever the app
+/// leaves `.active` (Wave 0 · B7: a swipe home never calls `onDisappear`, and a
+/// kill in the background took everything typed since the last save) — but only when the
 /// text differs from what was last saved (`LetterDraft.isDirty`). Merely
 /// opening a letter is not an edit and writes nothing, locally or to Airtable.
 struct LetterEditorView: View {
     @Bindable var shakti: Shakti
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     /// Saved baseline + live text; dirty iff they differ — see `LetterDraft`.
     @State private var draft = LetterDraft()
@@ -414,6 +427,11 @@ struct LetterEditorView: View {
         .toolbar(.hidden, for: .navigationBar)
         .enableSwipeBack()
         .onAppear(perform: load)
+        .onChange(of: scenePhase) { _, phase in
+            // `.inactive` arrives before `.background` and before the snapshot;
+            // `onDisappear` never arrives at all for a swipe to the home screen.
+            if phase != .active { saveIfNeeded() }
+        }
         .onDisappear {
             saveTask?.cancel()
             saveIfNeeded()
@@ -467,7 +485,7 @@ struct LetterEditorView: View {
     private func scheduleAutoSave() {
         saveTask?.cancel()
         saveTask = Task {
-            try? await Task.sleep(for: .seconds(5))
+            try? await Task.sleep(for: .seconds(2))
             if !Task.isCancelled {
                 await MainActor.run { saveIfNeeded() }
             }

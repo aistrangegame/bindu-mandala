@@ -16,9 +16,11 @@ import SceneKit
 //
 //   1. **No room without the rite.** There is exactly one place in the shipping
 //      tree where a `RoomView` is constructed, and it is the threshold.
-//   2. **One door, and it is unconditional.** The Detail asks whether she has a
-//      room and nothing else — not her ring, not her cluster, not whether the
-//      base has answered.
+//   2. **Many doors, one threshold, and unconditional** (Wave 2 — the one-door
+//      rule was lifted by Charter II). Every way in — the Mandala seat, the
+//      Rite, the Field, the climb, her Detail, the corridor — passes the rite
+//      through ``HerRoomDoor``; the Detail still asks whether she has a room
+//      and nothing else.
 //   3. **All 102, not a sample.** Every seat with a position and a ring is put
 //      through the *same* production call the door makes.
 //   4. **The way out is real.** The stay is recorded when he crosses out, which
@@ -157,20 +159,82 @@ final class TheWayInTests: XCTestCase {
                        """)
     }
 
-    /// …and the threshold itself is opened from exactly one place, which is her
-    /// own screen.
-    func testTheDoorIsCutInOnePlaceAndItIsHerOwnScreen() throws {
-        var doors: [String] = []
+    /// **Many doors, one threshold** (Wave 2 · rewritten).
+    ///
+    /// Phase 3.7 pinned the threshold to *one door on her Detail*. Charter II
+    /// lifted that rule — the Reading's §3 row *"One door into a room"* →
+    /// **Lift**: the room is reachable from her seat in the Mandala, the Rite,
+    /// the Field, the climb, her Detail and the corridor. What the one-door rule
+    /// protected survives and is what this now holds: **every way in passes the
+    /// rite of entering**, because exactly one place in the shell builds a
+    /// threshold (``HerRoomDoor``), and every door is that one modifier.
+    func testEveryDoorPassesTheOneThreshold() throws {
+        var thresholds: [String] = []
         for f in LawSource.production {
             let code = String(f.lexed.masked)
-            for _ in Rx.all(#"RiteOfEnteringView\.entering\("#, code) { doors.append(f.path) }
+            for _ in Rx.all(#"RiteOfEnteringView\.entering\("#, code) { thresholds.append(f.path) }
         }
-        XCTAssertEqual(doors, ["Views/Common/ShaktiDetailView.swift"],
+        XCTAssertEqual(thresholds, ["Views/Rooms/HerRoomDoor.swift"],
                        """
-                       the way into a room is opened from \(doors.count) place(s). One door, \
-                       reached by every path that finds her, is what makes the hundred and two \
-                       equally reachable; a second door is a second set of conditions to drift.
+                       a threshold is built in \(thresholds.count) place(s): \(thresholds). Every way \
+                       into a room passes the rite of entering through ``HerRoomDoor``; a second \
+                       builder is a way in that could drift from the rite.
                        """)
+
+        // …and the doors that use it stand where the charter says one building
+        // is entered: her seat in the Mandala, the Rite, the Field, the climb,
+        // and her Detail.
+        var doors: Set<String> = []
+        for f in LawSource.production where String(f.lexed.masked).contains(".herRoom(") {
+            doors.insert(f.path)
+        }
+        for expected in ["Views/Common/ShaktiDetailView.swift",
+                         "Views/Mandala/LivingMandalaView.swift",
+                         "Views/Today/DailyRiteView.swift",
+                         "Views/Common/TheHundredTwoView.swift",
+                         "Views/Rooms/WorldClimbView.swift"] {
+            XCTAssertTrue(doors.contains(expected),
+                          "\(expected) no longer opens her room — one building has a wall in it again")
+        }
+    }
+
+    /// The corridor: from inside a room, her two garland neighbours, each
+    /// entered through her own rite (the passage rebuilds the threshold for the
+    /// next position; it never draws a room itself).
+    func testTheCorridorWalksThroughTheRiteAndHandsTheStayOver() throws {
+        let door = try XCTUnwrap(LawSource.production("HerRoomDoor.swift"))
+        let code = String(door.lexed.masked)
+        XCTAssertTrue(code.contains("neighbours: Self.corridor(of: kp, in: context)"),
+                      "the passage no longer hands the room its corridor")
+        XCTAssertTrue(code.contains("onNeighbour: { next in kp = next }"),
+                      "a neighbour door no longer opens the next room through the passage")
+        XCTAssertFalse(code.contains("RoomView("), "the passage draws a room without the rite")
+
+        let rite = try XCTUnwrap(LawSource.production("RiteOfEnteringView.swift"))
+        let walk = try XCTUnwrap(
+            Rx.first(#"private func walk\(to next: Int\) \{[\s\S]*?\n    \}"#, String(rite.lexed.masked)),
+            "the room has no corridor walk")
+        for step in ["handOverTheStay()", "voice?.closes()", "dwelling?.end()", "onNeighbour?(next)"] {
+            XCTAssertTrue(walk.contains(step),
+                          "walking the corridor no longer does `\(step)` — leaving by a neighbour door "
+                          + "must cost exactly what leaving by the hold costs")
+        }
+    }
+
+    /// **Leaving is one gesture, never punished** — the 2.2 s hold stays, and
+    /// an equal way out from the edge stands beside it, through the same `out()`.
+    func testTheEdgeIsAnEqualWayOut() throws {
+        let rite = try XCTUnwrap(LawSource.production("RiteOfEnteringView.swift"))
+        let code = String(rite.lexed.masked)
+        XCTAssertTrue(code.contains(".theEdgeWayOut(shown: !rite.isCeremonial, onOut: { out() })"),
+                      "the room's edge way out is gone, or goes somewhere other than the hold's own door")
+        XCTAssertTrue(code.contains("onOut: { out() })"), "the held way out no longer reaches `out()`")
+        let climb = try XCTUnwrap(LawSource.production("WorldClimbView.swift"))
+        XCTAssertTrue(String(climb.lexed.masked).contains(".theEdgeWayOut("),
+                      "the climb has no edge way out")
+        XCTAssertGreaterThan(TheEdgeWayOut.travel, TheEdgeWayOut.edgeWidth,
+                             "an edge swipe that ends where it began is a tap, not a leaving")
+        XCTAssertGreaterThanOrEqual(TheEdgeWayOut.edgeWidth, 16)
     }
 
     /// **And it is unconditional.**
@@ -426,27 +490,28 @@ final class TheWayInTests: XCTestCase {
 
     // MARK: - 6 · The climb's door
 
-    /// The climb is opened from one place, and that place is the Field —
-    /// never the menu. See ``TheHundredTwoView``'s own reasoning.
-    func testTheClimbIsOpenedFromTheFieldAndNotFromTheMenu() throws {
-        var doors: [String] = []
+    /// **The climb is reachable, and it is part of the building** (Wave 2 ·
+    /// rewritten).
+    ///
+    /// Phase 3.7 pinned the climb to *only* the Field and pinned the shell's
+    /// `Destination` enum by equality — both enforced the lifted one-door rule
+    /// (*"climb only from the Field"*, the Reading's §3). What survives is that
+    /// the climb can be reached at all, and that it is one building with the
+    /// rooms: its lights open her room through the same threshold as every
+    /// other door.
+    func testTheClimbIsReachableAndOpensRoomsThroughTheOneThreshold() throws {
+        var doors: Set<String> = []
         for f in LawSource.production {
-            for _ in Rx.all(#"WorldClimbView\("#, String(f.lexed.masked)) { doors.append(f.path) }
+            if !Rx.all(#"WorldClimbView\("#, String(f.lexed.masked)).isEmpty { doors.insert(f.path) }
         }
-        XCTAssertEqual(doors, ["Views/Common/TheHundredTwoView.swift"],
-                       "the climb is reached from \(doors.count) place(s): \(doors)")
+        XCTAssertTrue(doors.contains("Views/Common/TheHundredTwoView.swift"),
+                      "the climb can no longer be reached from the Field: \(doors.sorted())")
 
-        let menu = try XCTUnwrap(LawSource.production("HamburgerMenuView.swift"))
-        let root = try XCTUnwrap(LawSource.production("RootView.swift"))
-        for f in [menu, root] {
-            XCTAssertFalse(String(f.lexed.masked).contains("WorldClimb"),
-                           "\(f.path) names the climb — it is not a sixth way of being in the app")
-        }
-        // The shell's destinations are untouched: the enum having room for one
-        // more is not an argument that one belongs there.
-        XCTAssertTrue(String(root.lexed.masked)
-            .contains("enum Destination: String { case mandala, rite, well, the102, memory }"),
-                      "a destination was added to the shell")
+        let climb = try XCTUnwrap(LawSource.production("WorldClimbView.swift"))
+        let code = String(climb.lexed.masked)
+        XCTAssertTrue(code.contains(".herRoom($roomKp"),
+                      "the climb's lights no longer open her room through the one threshold")
+        XCTAssertFalse(code.contains("RoomView("), "the climb draws a room without the rite")
     }
 
     /// He rises from where he is already standing in the Field, not from the
@@ -478,7 +543,9 @@ final class TheWayInTests: XCTestCase {
             .map(\.path))
         for f in LawSource.production {
             let code = String(f.lexed.masked)
-            if code.contains("RiteOfEnteringView.entering(") || code.contains("WorldClimbView(") {
+            // Wave 2: every screen that cuts a door into a room uses `.herRoom(`.
+            if code.contains("RiteOfEnteringView.entering(") || code.contains("WorldClimbView(")
+                || code.contains(".herRoom(") {
                 surfaces.insert(f.path)
             }
         }

@@ -380,9 +380,18 @@ final class TheWayInUITests: XCTestCase {
             // `LawsTests`; these are the ones that can only be caught *here*,
             // on the running app, where what is on the glass is the evidence
             // rather than what a literal says before it is interpolated.
+            // An ordinal naming the yantra's own structure ("the second
+            // āvaraṇa") describes the place, not him (Charter II §4.6), so it
+            // is lifted out before the measuring words are looked for.
             let measuring = arrived.filter { label in
-                TheWayInUITests.wordsThatMeasure.contains { word in
-                    label.range(of: word, options: [.caseInsensitive]) != nil
+                let place = label.replacingOccurrences(
+                    of: #"\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth) (āvaraṇa|enclosure)"#,
+                    with: "", options: [.regularExpression, .caseInsensitive])
+                // Whole words only: "Totality" (the ninth world's body region)
+                // is not "total".
+                return TheWayInUITests.wordsThatMeasure.contains { word in
+                    place.range(of: "\\b" + NSRegularExpression.escapedPattern(for: word) + "\\b",
+                                options: [.caseInsensitive, .regularExpression]) != nil
                 }
             }
             XCTAssertTrue(measuring.isEmpty,

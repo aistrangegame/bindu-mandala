@@ -82,18 +82,24 @@ struct BinduMandalaApp: App {
         // preserving any existing store aside. The recognition log and letters
         // then restore from Airtable on the next sync.
         container = PersistenceRecovery.makeContainer()
+        // Wave 5 · a tapped gift lands on her. Installed before launch finishes,
+        // so a gift that opens the app is not missed.
+        GiftRouter.shared.install()
     }
 
     var body: some Scene {
         WindowGroup {
             AppRoot()
+                // Wave 1 · the Homes: her siddhi lingers on the whole
+                // instrument after a stay (`Views/Rooms/HerSiddhiLingers.swift`).
+                .herSiddhiLingers()
                 .preferredColorScheme(.dark)
         }
         .modelContainer(container)
     }
 }
 
-/// Wraps RootView and gates the Homecoming screen on first launch.
+/// Wraps RootView and lays the Homecoming over it on every launch.
 private struct AppRoot: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
@@ -105,7 +111,10 @@ private struct AppRoot: View {
         let args = ProcessInfo.processInfo.arguments
         if args.contains("FORCE_HOMECOMING") { return true }
         if args.contains("SKIP_HOMECOMING")  { return false }
-        return !HomecomingView.hasLaunched
+        // Wave 3: the Homecoming greets every launch. The first is the whole
+        // Origin; every return after it compresses to one breath (HomecomingView).
+        // The XCTest host stays quiet, as it does for sync and the summons.
+        return !AppRuntime.isUnitTesting
     }()
 
     var body: some View {
@@ -129,11 +138,17 @@ private struct AppRoot: View {
                 guard !AppRuntime.isUnitTesting else { return }
                 Task { await AirtableService.shared.flushPending(context: context) }
                 Task { await DailySummons.reschedule(enabled: summonsEnabled, hour: summonsHour) }
+                // Wave 5 · the gift's fortnight stays drawn, and practice set
+                // down offline (strokes, river letters, wagers) reaches the ledger.
+                Task { await EnergyGift.reschedule() }
+                Task { await PracticeLedger.flush(context: context) }
             case .background:
                 // Ring-world voices must not keep sounding once the app leaves
                 // the foreground; every drone, triad and descent stops here.
                 RingAudioService.shared.stopAll()
                 HomeSoundService.shared.stopAll()
+                // Wave 6 · and the Om, which the field's stop leaves standing.
+                SoundConductor.shared.letGo()
             default:
                 break
             }

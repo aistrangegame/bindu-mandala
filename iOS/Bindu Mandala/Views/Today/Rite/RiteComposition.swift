@@ -34,13 +34,16 @@ struct RitePlan {
                          order: [.kicker, .name, .phon, .know, .rule, .quality, .prompt],
                          align: .center, sigil: .bottomWide, sigilScale: 1.15,
                          horizonLine: false, veilName: false, nameCap: 58)
-        case .air:    // horizon — she drifts: sigil off one edge + a horizon line
-            // (Centered stack; the drift lives in the offset sigil + horizon line.
-            // Lean text asymmetry is a later polish pass — center is clip-proof.)
+        case .air:    // horizon — she drifts: asymmetric, the stack leans to one edge,
+                      // the sigil stands off the other, a horizon line crosses
+            // Wave 1: the lean comes home. Design's air plan is `align: 'lean'`
+            // with the lean cap of 66 (`plan.align === 'lean' ? 66 : 58`); the
+            // first port centred it "for clip-proofing", which made air the
+            // same tableau as earth with the sigil moved.
             return .init(archetype: "horizon",
                          order: [.kicker, .name, .phon, .know, .rule, .quality, .prompt],
-                         align: .center, sigil: .side, sigilScale: 1.0,
-                         horizonLine: true, veilName: false, nameCap: 58)
+                         align: .lean, sigil: .side, sigilScale: 1.0,
+                         horizonLine: true, veilName: false, nameCap: 66)
         case .ether:  // veil — she pervades: her name is the vast ground; a quiet stack floats
             return .init(archetype: "veil",
                          order: [.kicker, .nameSmall, .rule, .quality, .prompt, .know],

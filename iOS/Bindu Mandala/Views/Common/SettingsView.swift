@@ -10,6 +10,9 @@ struct SettingsView: View {
 
     @AppStorage("daily_summons_enabled") private var summonsEnabled = true
     @AppStorage("daily_summons_hour")    private var summonsHour: Int = DailySummons.defaultHour
+    @AppStorage("energy_gift_enabled")      private var giftEnabled = true
+    @AppStorage("energy_gift_window_start") private var giftStart: Int = 10
+    @AppStorage("energy_gift_window_end")   private var giftEnd: Int = 20
     /// Debug: `OPEN_FILM` opens The Way Behind directly. The card that opens it
     /// is the fourth down a sheet that is off-screen on every width, so reaching
     /// it by touch means scrolling to a place that depends on where a flick
@@ -20,11 +23,15 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.ground.ignoresSafeArea()
+                // Wave 1: the sheet is lit by the day, like the Nityā sheet.
+                LightField(layers: Backdrop.sheet(DayLight.atmosphere(shaktis)))
+                    .ignoresSafeArea()
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
+                        marginSection
                         rhythmSection
+                        giftSection
                         fieldConnectionsSection
                         bijaSection
                         wayBehindSection
@@ -48,13 +55,77 @@ struct SettingsView: View {
                         .foregroundStyle(Color.cream)
                 }
             }
-            .toolbarBackground(Color.ground, for: .navigationBar)
+            .toolbarBackground(DayLight.atmosphere(shaktis).ground, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .preferredColorScheme(.dark)
     }
 
     // MARK: - Sections
+
+    /// **The margin, and it is first rather than last.**
+    ///
+    /// Last would have cost nothing — the geometry below it would not have
+    /// moved, and no baseline would have had to say so. It is first anyway, on
+    /// §4.4 parity: a finger reaches the foot of a scroll with one flick and
+    /// **VoiceOver has no such shortcut** — it passes every element in tree
+    /// order, which is the exact argument Phase 3.8 used to fold Her Moments.
+    /// Putting the one control he will reach for several times a week behind
+    /// four configuration sections would make the instrument say two different
+    /// things to two different walkers. It is also the only section on this
+    /// sheet that is *authored input* rather than configuration, and it does not
+    /// belong filed under them.
+    ///
+    /// Two doors and nothing else. The notes themselves never render here: a
+    /// section that grew with his writing would sink `Re-enter the Homecoming`
+    /// a little further with every note, which is Phase 3.8's breach in a new
+    /// place. This section is the same height on the first day and the
+    /// thousandth.
+    private var marginSection: some View {
+        sectionShell("The Margin") {
+            VStack(alignment: .leading, spacing: 14) {
+                NavigationLink {
+                    MarginNoteComposerView()
+                } label: {
+                    doorLabel("Leave a note")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Leave a note")
+                .accessibilityHint("Writes a note to the instrument")
+
+                NavigationLink {
+                    MarginNoteListView()
+                } label: {
+                    doorLabel("What you have left")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("What you have left")
+                .accessibilityHint("Opens the notes you have written")
+
+                Text("Anything you see — an idea, a wish, something broken. Say it here and it waits.")
+                    .font(AppFont.voice(13))
+                    .foregroundStyle(Color.cream.opacity(0.55))
+                    .lineSpacing(4)
+            }
+        }
+    }
+
+    /// The bordered-button idiom this sheet already speaks in — the same face,
+    /// tracking, padding and stroke as "Remember the descent" and "Re-enter the
+    /// Homecoming", and the same ≥ 44 pt drawn height.
+    private func doorLabel(_ words: String) -> some View {
+        Text(words)
+            .font(AppFont.sanskrit(18))
+            .tracking(0.6)
+            .foregroundStyle(Color.gold)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.gold.opacity(0.5), lineWidth: 0.6)
+            )
+            .contentShape(Rectangle())
+    }
 
     private var rhythmSection: some View {
         sectionShell("Daily Rhythm") {
@@ -66,7 +137,11 @@ struct SettingsView: View {
                 }
                 .tint(Color.gold)
                 .onChange(of: summonsEnabled) { _, newValue in
-                    Task { await applySummonsChange(enabled: newValue) }
+                    Task {
+                        await applySummonsChange(enabled: newValue)
+                        // The gift rides on her arrivals (Wave 5).
+                        await EnergyGift.reschedule()
+                    }
                 }
 
                 if summonsEnabled {
@@ -96,14 +171,79 @@ struct SettingsView: View {
         }
     }
 
+    /// Wave 5 · the random gift: one Śakti's own words at an hour he will not
+    /// expect, at most once a day, inside the window set here. It rides on her
+    /// arrivals: with "Let her arrive" off, no gift comes either.
+    private var giftSection: some View {
+        sectionShell("A Gift") {
+            VStack(alignment: .leading, spacing: 18) {
+                Toggle(isOn: $giftEnabled) {
+                    Text("Let her send a gift")
+                        .font(AppFont.sanskrit(18))
+                        .foregroundStyle(Color.cream)
+                }
+                .tint(Color.gold)
+                .disabled(!summonsEnabled)
+                .onChange(of: giftEnabled) { _, _ in
+                    Task { await EnergyGift.reschedule() }
+                }
+
+                if summonsEnabled && giftEnabled {
+                    HStack {
+                        Text("Not before")
+                            .font(AppFont.label(14))
+                            .foregroundStyle(Color.cream.opacity(0.7))
+                        Spacer()
+                        Picker("", selection: $giftStart) {
+                            ForEach(0..<23) { hour in
+                                Text(formatHour(hour)).tag(hour)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(Color.gold)
+                    }
+                    HStack {
+                        Text("Not after")
+                            .font(AppFont.label(14))
+                            .foregroundStyle(Color.cream.opacity(0.7))
+                        Spacer()
+                        Picker("", selection: $giftEnd) {
+                            ForEach(1..<25) { hour in
+                                Text(formatHour(hour % 24)).tag(hour)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(Color.gold)
+                    }
+                    .onChange(of: giftStart) { _, newStart in
+                        if giftEnd <= newStart { giftEnd = min(24, newStart + 1) }
+                        Task { await EnergyGift.reschedule() }
+                    }
+                    .onChange(of: giftEnd) { _, newEnd in
+                        if newEnd <= giftStart { giftStart = max(0, newEnd - 1) }
+                        Task { await EnergyGift.reschedule() }
+                    }
+                }
+
+                Text("Her own words, at an hour you will not expect — never more than once a day. Opening it brings you to her.")
+                    .font(AppFont.voice(13))
+                    .foregroundStyle(Color.cream.opacity(0.55))
+                    .lineSpacing(4)
+            }
+        }
+    }
+
     private var fieldConnectionsSection: some View {
         sectionShell("Field Connections") {
             VStack(alignment: .leading, spacing: 18) {
-                fieldRow(position: 3, defaultName: "Gaia",
+                // Wave 6 · keyed by khaḍgamālā position 1–102 (position is
+                // identity) — Ahaṅkārākarṣiṇī 31, Nāmākarṣiṇī 40, Ātmākarṣiṇī 42 —
+                // not by the old ring-2 local index 3 / 12 / 14.
+                fieldRow(khadgamala: 31, defaultName: "Gaia",
                          hint: "She anchors here.")
-                fieldRow(position: 12, defaultName: "Ashrey",
+                fieldRow(khadgamala: 40, defaultName: "Ashrey",
                          hint: "She weaves through here.")
-                fieldRow(position: 14, defaultName: "Ram",
+                fieldRow(khadgamala: 42, defaultName: "Ram",
                          hint: "Holds her frequency.")
                 Text("These names appear on each Śakti's Detail screen and may be edited freely. They are personal to this practitioner.")
                     .font(AppFont.voice(13))
@@ -199,8 +339,13 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private func fieldRow(position: Int, defaultName: String, hint: String) -> some View {
-        if let shakti = shaktis.first(where: { $0.position == position && ($0.ringNumber ?? 2) == 2 }) {
+    private func fieldRow(khadgamala kp: Int, defaultName: String, hint: String) -> some View {
+        // Her row by position; a bootstrap row not yet synced (no position
+        // stamped) is found by its ring-2 index, the only key it carries.
+        let local = KhadgamalaMap.perRingIndex(forKhadgamala: kp)
+        if let shakti = shaktis.first(where: { $0.khadgamalaPosition == kp })
+            ?? shaktis.first(where: { $0.khadgamalaPosition == nil && $0.position == local
+                                      && ($0.ringNumber ?? 2) == 2 }) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 8) {
                     Circle()

@@ -61,6 +61,10 @@ struct MandalaAccessibilityLayer: View {
             }
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
+        // One container, so the sort priorities above are read against each
+        // other and the garland is the order, not the rectangles' layout
+        // (seen on Xcode Cloud's simulator, Wave 0).
+        .accessibilityElement(children: .contain)
         .allowsHitTesting(false)
     }
 

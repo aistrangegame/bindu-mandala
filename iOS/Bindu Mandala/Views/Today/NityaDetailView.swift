@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// What presides over today — a Nityā Devī (most days), or Lalitā via the
 /// Ring 9 Avaraṇa (full moon), or nothing (pre-sync / no data → card hidden).
@@ -19,12 +20,21 @@ enum NityaSlot: Identifiable, Equatable {
 /// Compact detail sheet for whoever presides today. Half-height by default;
 /// drag to large. Swipe down to dismiss. Shown when the practitioner taps
 /// the Nityā card on the Today screen.
+///
+/// Wave 1: the sheet is lit by the day (`NityaSheet`): today's glow pooled at
+/// its top edge over her ground, the tithi line and the framing sentence in
+/// her bright accent, the hairline in her soft one.
 struct NityaDetailView: View {
     let slot: NityaSlot
+    @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
+
+    private var dayAtmo: Atmosphere { DayLight.atmosphere(shaktis) }
 
     var body: some View {
+        let day = dayAtmo
         ZStack {
-            Color.ground.ignoresSafeArea()
+            LightField(layers: Backdrop.sheet(day))
+                .ignoresSafeArea()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
@@ -37,11 +47,11 @@ struct NityaDetailView: View {
                     Text(display.tithiLabel)
                         .font(AppFont.label(11.5))
                         .tracking(2.4)
-                        .foregroundStyle(Color.gold.opacity(0.7))
+                        .foregroundStyle(day.accentBright)
 
                     Rectangle()
-                        .fill(Color.gold.opacity(0.4))
-                        .frame(width: 32, height: 0.5)
+                        .fill(day.accentSoft)
+                        .frame(width: 40, height: 1)
 
                     // The framing line — generated from the tithi, always present.
                     // (The design shows this italic line unconditionally; it never
@@ -51,7 +61,7 @@ struct NityaDetailView: View {
                             .font(AppFont.voice(21))
                             .tracking(0.3)
                             .lineSpacing(4)
-                            .foregroundStyle(Color.gold)
+                            .foregroundStyle(day.accentBright)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
