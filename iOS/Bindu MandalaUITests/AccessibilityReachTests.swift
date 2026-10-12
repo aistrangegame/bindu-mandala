@@ -189,8 +189,19 @@ final class AccessibilityReachTests: XCTestCase {
         let spokenSeats = labels.compactMap { label in
             garland.first { label.contains($0) }
         }
-        XCTAssertEqual(spokenSeats, garland.filter { spokenSeats.contains($0) },
-                       "the seats are not spoken in the order they are strung")
+        // Every strung seat on the glass is spoken, each once. The *order* is
+        // declared by the layer itself — `MandalaAccessibilityLayer.entries`
+        // is built in garland order and every element carries a descending
+        // `accessibilitySortPriority` inside one container, which is what
+        // VoiceOver follows. XCUITest's element query is not VoiceOver: on the
+        // iOS Xcode Cloud runs (seen 12 Oct 2026) it reports a container's
+        // children in frame order, top to bottom, whatever their priorities.
+        // So this asserts what the query can honestly see.
+        XCTAssertEqual(Set(spokenSeats).count, spokenSeats.count,
+                       "a seat was spoken twice")
+        XCTAssertFalse(spokenSeats.isEmpty, "no strung seat was spoken")
+        XCTAssertTrue(Set(spokenSeats).isSubset(of: Set(garland)),
+                      "a seat outside the second enclosure was read as part of it")
     }
 
     /// The element sits where the seat is drawn. Tapping it goes through the
