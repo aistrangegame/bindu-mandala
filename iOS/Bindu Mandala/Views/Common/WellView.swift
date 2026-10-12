@@ -48,26 +48,16 @@ struct WellView: View {
         return m
     }
 
-    /// The Well wears today's light, like every other room.
-    private var dayAtmo: Atmosphere {
-        let pos = DailyEnergyService.todaysPosition()
-        if let t = allShaktis.first(where: { $0.khadgamalaPosition == pos }) {
-            return Atmosphere.derive(from: t, at: LunarPhaseService.currentTimeVariant())
-        }
-        return Atmosphere.derive(ring: 2, cluster: .inner, khadgamala: pos,
-                                 element: .ether, at: LunarPhaseService.currentTimeVariant())
-    }
+    /// The Well wears today's light, like every other room — and answers to
+    /// the same pin every other screen does.
+    private var dayAtmo: Atmosphere { DayLight.atmosphere(allShaktis) }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(colors: [dayAtmo.ground, dayAtmo.groundDeep],
-                               startPoint: .top, endPoint: .bottom)
+                // The Field's ground: her glow as a wide crown, layer for layer.
+                LightField(layers: Backdrop.crown(dayAtmo))
                     .ignoresSafeArea()
-                RadialGradient(gradient: Gradient(colors: [dayAtmo.glow, .clear]),
-                               center: UnitPoint(x: 0.5, y: -0.05), startRadius: 0, endRadius: 440)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
 
                 VStack(spacing: 0) {
                     header
@@ -203,9 +193,11 @@ private struct WellRing: View {
                     Circle()
                         .fill(RadialGradient(gradient: Gradient(colors: [ringAtmo.accentFaint, .clear]),
                                              center: .center, startRadius: 0, endRadius: 24))
+                    // The ring's geometry at full light (Wave 1 — it was dimmed
+                    // to 0.45 closed); it turns only while its room is open.
                     RiteSigil(atmosphere: ringAtmo, ring: ring, size: 44,
-                              spin: ring % 2 == 1 ? 1 : -1)
-                        .opacity(open ? 0.9 : 0.5)
+                              spin: ring % 2 == 1 ? 1 : -1, spinning: open)
+                        .opacity(DayLight.fieldChipOpacity)
                 }
                 .frame(width: 48, height: 48)
                 .shadow(color: open ? ringAtmo.glow : .clear, radius: open ? 16 : 0)

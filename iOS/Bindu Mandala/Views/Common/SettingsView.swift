@@ -20,7 +20,9 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.ground.ignoresSafeArea()
+                // Wave 1: the sheet is lit by the day, like the Nityā sheet.
+                LightField(layers: Backdrop.sheet(DayLight.atmosphere(shaktis)))
+                    .ignoresSafeArea()
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
@@ -49,7 +51,7 @@ struct SettingsView: View {
                         .foregroundStyle(Color.cream)
                 }
             }
-            .toolbarBackground(Color.ground, for: .navigationBar)
+            .toolbarBackground(DayLight.atmosphere(shaktis).ground, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .preferredColorScheme(.dark)

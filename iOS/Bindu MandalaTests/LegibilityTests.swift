@@ -393,6 +393,13 @@ enum LegibilityExemptions {
         "Views/Today/Rite/RiteBlockView.swift:c.name":
             "the Rite block's name, sized by the same composition arithmetic — 27 pt at its "
             + "smallest, drawn at full cream",
+        // Wave 1 · the Living Rite threshold. `lrNameSize(av.name, 46)`: the
+        // enclosure's name tapered by length, 46 · 42 · 37 pt
+        // (`AvaranaThresholdView.nameSize`, asserted in DayLightTests), at full
+        // cream in its own glow.
+        "Views/Common/AvaranaThresholdView.swift:avarana.sanskritName":
+            "the threshold's enclosure name — `nameSize(_:)` tapers it 46 → 42 → 37 pt by "
+            + "length, never under 37, drawn at full cream",
     ]
 
     static func reason(for site: TypeSite) -> String? {

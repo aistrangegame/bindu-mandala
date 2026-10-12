@@ -73,8 +73,15 @@ struct PortraitMandalaView: View {
     // MARK: - Background
 
     private var background: some View {
-        ZStack {
+        let day = DayLight.atmosphere(shaktis)
+        return ZStack {
             variant.bg.ignoresSafeArea()
+            // Wave 1 · the Memory lit as Design lit it: the day's glow pooled
+            // where the portrait stands (`radial-gradient(ellipse 100% 60% at
+            // 50% 45%, glow, transparent 75%)`) over her deep ground falling to
+            // near-black. The hour's own ambient stays above it.
+            LightField(layers: Backdrop.memory(day))
+                .ignoresSafeArea()
             // Ambient warmth that breathes with the time of day. The 600×540 glow
             // is clamped onto a flexible Color.clear so its overdraw never inflates
             // layout — a raw fixed frame here grows RootView's top-trailing ZStack
@@ -93,7 +100,7 @@ struct PortraitMandalaView: View {
                 .frame(width: 600, height: 540)
             }
             .allowsHitTesting(false)
-            DustMotesView(count: variant.motes)
+            DustMotesView(count: variant.motes, element: day.element, accent: day.accentBright)
                 .allowsHitTesting(false)
         }
     }

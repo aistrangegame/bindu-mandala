@@ -144,11 +144,13 @@ private struct HamburgerButton: View {
             if !hasSeen { hasSeen = true }
             action()
         } label: {
-            VStack(spacing: 5) {
+            // Design's three lines: 19 × 1 at rgba(201,150,63,0.75), 6 apart — the
+            // port drew them at 0.45. The first-run breath now rises to full.
+            VStack(spacing: 6) {
                 ForEach(0..<3, id: \.self) { _ in
                     Rectangle()
-                        .fill(Color.gold.opacity(0.45 + 0.45 * Double(breathPhase)))
-                        .frame(width: 18, height: 1)
+                        .fill(Color.gold.opacity(0.75 + 0.25 * Double(breathPhase)))
+                        .frame(width: 19, height: 1)
                         .shadow(color: Color.gold.opacity(0.7 * Double(breathPhase)),
                                 radius: 6 * Double(breathPhase))
                 }
