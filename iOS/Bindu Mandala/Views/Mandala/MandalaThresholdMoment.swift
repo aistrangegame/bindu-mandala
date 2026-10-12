@@ -32,18 +32,26 @@ struct MandalaThresholdMoment: View {
     @State private var born = Date()
     @State private var appeared = false
 
-    /// The whole moment, in seconds.
-    static func duration(reduceMotion: Bool) -> Double { reduceMotion ? 2.4 : 4.2 }
+    /// The whole moment, in seconds. Wave 6 lengthened it: the moment now
+    /// speaks the Map's own phrases (see ``phrase``), word by word.
+    static func duration(reduceMotion: Bool) -> Double {
+        reduceMotion ? ChakraTeaching.thresholdMomentStillSeconds : ChakraTeaching.thresholdMomentSeconds
+    }
 
     var body: some View {
         TimelineView(.animation(paused: reduceMotion)) { tl in
-            let age = reduceMotion ? 1.4 : tl.date.timeIntervalSince(born)
-            Canvas { ctx, size in
-                if chakra.kind == .shadow {
-                    drawCorridor(ctx, size: size, age: age)
-                } else {
-                    drawGate(ctx, size: size, age: age)
+            let age = reduceMotion ? 6.0 : tl.date.timeIntervalSince(born)
+            ZStack {
+                Canvas { ctx, size in
+                    let drawn = reduceMotion ? 1.4 : age
+                    if chakra.kind == .shadow {
+                        drawCorridor(ctx, size: size, age: drawn)
+                    } else {
+                        drawGate(ctx, size: size, age: drawn)
+                        drawAurora(ctx, size: size, age: age)
+                    }
                 }
+                phrase(age: age)
             }
         }
         .overlay(alignment: .bottom) { words }
@@ -68,6 +76,110 @@ struct MandalaThresholdMoment: View {
             }
         }
         .padding(.bottom, 132)
+    }
+
+    // MARK: Wave 6 · the thresholds in the Map's own words (C-1345)
+    //
+    // Shadow: *"please come back home."* — its Signature Phrase, revealed in
+    // the order the Map's own Act 2 Voice gives (home / come / please / back,
+    // "the word back arriving last to re-mean the whole phrase"), each word
+    // arriving in its place until the phrase stands whole.
+    // Armin: **Tat · Tvam · Asi** — from Armin's Mirror Frequency Instruction,
+    // "one word at a time. Let each land completely before the next arrives" —
+    // then its Signature Phrase, *"Nothing needed repair. Only arrival."*
+    // Nothing here is typed in: an empty Map cell is an unspoken moment.
+
+    /// When the words begin, and how far apart they land.
+    static let wordsBegin: Double = 2.8
+    static let wordStep: Double = 0.9
+
+    /// How present a word is at `age`, arriving at `at`.
+    private func presence(_ age: Double, at start: Double) -> Double {
+        // Under reduce motion the moment is one still image: the words whole.
+        if reduceMotion { return 1 }
+        let fadeIn = min(1, max(0, (age - start) / 0.7))
+        let end = Self.duration(reduceMotion: reduceMotion)
+        let fadeOut = min(1, max(0, (end - 0.8 - age) / 0.6))
+        return fadeIn * fadeOut
+    }
+
+    @ViewBuilder
+    private func phrase(age: Double) -> some View {
+        if chakra.kind == .shadow {
+            shadowPhrase(age: age)
+        } else {
+            arminPhrase(age: age)
+        }
+    }
+
+    private func shadowPhrase(age: Double) -> some View {
+        let inOrder = ChakraTeaching.words(of: chakra.signaturePhrase)
+        let revealed = ChakraTeaching.revealOrder(chakra)
+        return HStack(spacing: 9) {
+            ForEach(Array(inOrder.enumerated()), id: \.offset) { pair in
+                let rank = revealed.firstIndex(of: pair.element) ?? pair.offset
+                Text(pair.element)
+                    .font(AppFont.sanskrit(30))
+                    .foregroundStyle(Color.cream.opacity(0.9))
+                    .opacity(presence(age, at: Self.wordsBegin + Double(rank) * Self.wordStep))
+            }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+        .padding(.horizontal, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .offset(y: -40)
+    }
+
+    private func arminPhrase(age: Double) -> some View {
+        let tat = ChakraTeaching.tatTvamAsi(chakra)
+        let afterWords = Self.wordsBegin + Double(max(tat.count, 1)) * Self.wordStep + 0.6
+        return VStack(spacing: 22) {
+            HStack(spacing: 20) {
+                ForEach(Array(tat.enumerated()), id: \.offset) { pair in
+                    Text(pair.element)
+                        .font(AppFont.sanskrit(34))
+                        .tracking(1.6)
+                        .foregroundStyle(Color.cream.opacity(0.92))
+                        .opacity(presence(age, at: Self.wordsBegin + Double(pair.offset) * Self.wordStep))
+                }
+            }
+            if let seed = chakra.signaturePhrase {
+                Text(seed)
+                    .font(AppFont.voice(20))
+                    .foregroundStyle(Color.cream.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 34)
+                    .opacity(presence(age, at: afterWords))
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .offset(y: -40)
+    }
+
+    /// Armin's colour is *"Spectrum / Aurora"*: once the three words have
+    /// landed, the light parts into its colours, ONE → ALL, and stands.
+    private func drawAurora(_ ctx: GraphicsContext, size: CGSize, age: Double) {
+        let start = Self.wordsBegin + 3 * Self.wordStep
+        let k = reduceMotion ? 1 : min(1, max(0, (age - start) / 1.8))
+        guard k > 0 else { return }
+        var add = ctx
+        add.blendMode = .plusLighter
+        let hues: [Color] = [
+            Color(red: 0.85, green: 0.35, blue: 0.45), Color(red: 0.95, green: 0.70, blue: 0.35),
+            Color(red: 0.55, green: 0.85, blue: 0.55), Color(red: 0.40, green: 0.70, blue: 0.95),
+            Color(red: 0.70, green: 0.55, blue: 0.95),
+        ]
+        let w = size.width, h = size.height
+        for (i, c) in hues.enumerated() {
+            let y = h * (0.16 + 0.05 * CGFloat(i))
+            let sway = reduceMotion ? 0 : CGFloat(sin(age * 0.6 + Double(i))) * 18
+            var band = Path()
+            band.move(to: CGPoint(x: 0, y: y + sway))
+            band.addQuadCurve(to: CGPoint(x: w, y: y - sway),
+                              control: CGPoint(x: w / 2, y: y - 60 * CGFloat(k)))
+            add.stroke(band, with: .color(c.opacity(0.22 * k)), lineWidth: 26)
+        }
     }
 
     private func begin() {
@@ -95,8 +207,14 @@ struct MandalaThresholdMoment: View {
                                                      duration: 3.4, volume: 0.04, stagger: 0.12)
             }
         }
+        // The voice hears the Map's own words too: the phrase, and at Armin
+        // the three words before it.
+        var spoken = [ChakraConstellation.spokenLabel(chakra, seatName: nil)]
+        let three = ChakraTeaching.tatTvamAsi(chakra)
+        if !three.isEmpty { spoken.append(three.joined(separator: ", ")) }
+        if let seed = chakra.signaturePhrase { spoken.append(seed) }
         UIAccessibility.post(notification: .announcement,
-                             argument: ChakraConstellation.spokenLabel(chakra, seatName: nil))
+                             argument: spoken.joined(separator: ". "))
         let whole = Self.duration(reduceMotion: reduceMotion)
         DispatchQueue.main.asyncAfter(deadline: .now() + whole - 0.7) {
             withAnimation(.easeIn(duration: 0.7)) { appeared = false }

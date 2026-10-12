@@ -57,6 +57,52 @@ struct Chakra33: Codable, Identifiable, Equatable {
     /// Why this chakra sits at these seats — the bake's join, in words.
     let joinedBy: String?
 
+    // MARK: Wave 6 · the teaching its room carries
+    //
+    // Re-baked from every field of The Map on 12 Oct 2026. Each is the Map's
+    // own cell, verbatim, or absent where the Map's cell is empty — nothing is
+    // composed here. All optional (and `var` with a default, so the synthesized
+    // decoder reads them with `decodeIfPresent`): a bake from before Wave 6, or
+    // one that loses a column, still decodes and the room simply says less.
+
+    /// Core Question — the one line at each place ("Am I safe here?").
+    var coreQuestion: String? = nil
+    /// Signature Phrase — the seed line ("please come back home.").
+    var signaturePhrase: String? = nil
+    /// Hero Threshold — the sub-line under the verb.
+    var heroThreshold: String? = nil
+    /// Practice Prompt — the room's practice.
+    var practicePrompt: String? = nil
+    /// Three Ways In — three doors into the practice, as the Map writes them.
+    var threeWaysIn: String? = nil
+    /// Practice Gate Type — Textarea · Sound Response · Device Tilt · Canvas · Tap Rhythm.
+    var gateType: String? = nil
+    /// Gate Text — the physical instruction before the gate opens (its last
+    /// line names the gate's button: "Button: I feel the ground").
+    var gateText: String? = nil
+    /// Story Thread — the Bindu → Lalitā story at this place.
+    var storyThread: String? = nil
+    /// Leela Story — what the room says once the gate has been walked.
+    var leelaStory: String? = nil
+    /// Act 1 Voice / Act 2 Voice — the two-act telling (Act 2 is 10 of 33).
+    var act1Voice: String? = nil
+    var act2Voice: String? = nil
+    /// Bindu Reflection and Witness Perspective — the two further voices.
+    var binduReflection: String? = nil
+    var witnessPerspective: String? = nil
+    /// Writing Prompt / Writing Reflection — the offering, and the line after it.
+    var writingPrompt: String? = nil
+    var writingReflection: String? = nil
+    /// Mirror Frequency Instruction (33) and Mirror Frequency (10) — the wake-up.
+    var mirrorFrequencyInstruction: String? = nil
+    var mirrorFrequency: String? = nil
+    /// Subtle Mirror — its twin at the other density (Soles ↔ Mūlādhāra …).
+    var subtleMirror: String? = nil
+    /// Voice — whose light speaks here (Gaia · Bindu · Sakshi · Higher Self · Lalita).
+    var voice: String? = nil
+    /// Codex References — provenance only (4 of 33).
+    var codexReferences: String? = nil
+
     var id: Int { road }
 
     enum Kind: String, Codable, CaseIterable {
@@ -69,6 +115,10 @@ struct Chakra33: Codable, Identifiable, Equatable {
     }
 
     var isThreshold: Bool { kind == .shadow || kind == .armin }
+
+    /// Wave 6 · the room's address in the ledger: its own Map record. The
+    /// ledger's `Link to The Map` is filled with exactly this.
+    var mapRecordId: String { recordId }
 }
 
 /// The bake, loaded once, plus the pure geometry of where each chakra stands.

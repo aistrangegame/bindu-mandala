@@ -116,6 +116,8 @@ struct WorldClimbView: View {
             words
             hint
             whisperLine
+            // Wave 6 · the ten body chakras, touchable at their own heights.
+            ClimbBodyChakras(source: climb, reduceMotion: reduceMotion)
             rail
             // The world going out from under him as he withdraws from it. See
             // ``withdrawing``.

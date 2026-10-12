@@ -1,7 +1,13 @@
 """Bake The Map (33 chakras) joined to the Mandala table (102 seats) into
 ChakraConstellation.json. Read-only: the inputs are JSON pulled from Airtable
 by the MCP tools on 2026-10-12 (map.json = The Map, every record, the fields
-listed below). The join to khadgamala positions is written out here, one line
+listed below). Wave 6 re-baked it from a full export of every field (all 33
+records, 12 Oct 2026) and added the rooms' teaching: Core Question, Signature
+Phrase, Hero Threshold, Practice Prompt, Three Ways In, Practice Gate Type, Gate
+Text, Story Thread, Leela Story, the voice layers (Act 1 / Act 2 Voice, Bindu
+Reflection, Witness Perspective, Voice), Writing Prompt / Reflection, the Mirror
+Frequency (+ Instruction), Subtle Mirror and Codex References. Each chakra's
+Airtable record id was already carried (`recordId`). The join to khadgamala positions is written out here, one line
 per chakra, with the Map text it rests on, because The Map carries no kp field.
 """
 import json, sys
@@ -17,7 +23,26 @@ F = dict(
     road='fldEvXGbqdHOGZlDz', stage='fld6UsxyU5vel1isl', subtitle='fldHCNApDOqZjinn4',
     sanskrit='fldUfO0k1sLhQZWnt', bija='flduXNmHwo7YQwwEB', essence='fldgKEqNCw6VHlJIa',
     codex='fldqcBq4XpvURwov9', voice='fldPFCAGzcorqrqHH',
+    # Wave 6 · the teaching the rooms carry. Copied verbatim, never filled.
+    coreQuestion='fldFJsfXRts1MECj0', signaturePhrase='flddjDTJBa0o4KyLS',
+    heroThreshold='fldMA4kqwUTYsGFBs', practicePrompt='fldMTSYXwFrUc9VpL',
+    threeWaysIn='fldrlqps5wS0lWxd5', gateType='fldsrQQB5yBYvqIVB', gateText='fld1rj2QuUuuGvvqc',
+    storyThread='fldIOc83AOzSiDmgi', leelaStory='flduxpB6EM5tFRxUe',
+    act1Voice='fldopinrnQ5W0T8kE', act2Voice='fldnALQ6e9iF7fmnO',
+    binduReflection='fldGfgZtoGNZTqIEM', witnessPerspective='fldvHuQwNxgjsh4su',
+    writingPrompt='fldtIqRA8QgXolDd9', writingReflection='fldS7BiDwPV5grdLy',
+    mirrorFrequencyInstruction='fld1lfG7r96PQGPxP', mirrorFrequency='fldNkcMhpaeuVQC22',
+    subtleMirror='fldJsogD1W8AkWhl6',
 )
+
+# Wave 6 · fields carried for the rooms (the Map's own names in the comments).
+# Gaia Voice (fldBiFWEG8gWb06DE) and Teaching Text are *not* carried: the walk's
+# own canon marks Gaia Voice as author substrate, never surfaced verbatim.
+ROOM_FIELDS = ['coreQuestion', 'signaturePhrase', 'heroThreshold', 'practicePrompt',
+               'threeWaysIn', 'gateType', 'gateText', 'storyThread', 'leelaStory',
+               'act1Voice', 'act2Voice', 'binduReflection', 'witnessPerspective',
+               'writingPrompt', 'writingReflection', 'mirrorFrequencyInstruction',
+               'mirrorFrequency', 'subtleMirror', 'voice', 'codex']
 
 # The Map's own Avarana select → ring. "n/a" and "Bindu inverted" carry no
 # ring by themselves; for those rows the ring is read from the Map's own
@@ -73,6 +98,8 @@ def val(c, k):
     if isinstance(v, dict):
         v = v.get('name')
     if isinstance(v, str):
+        # Outer whitespace only: the Map's own line breaks inside a cell are
+        # its paragraphs and are kept exactly.
         v = v.strip()
         if not v:
             return None
@@ -114,6 +141,7 @@ for r in MAP['records']:
         essence=val(c, 'essence'),
         bodyLocation=val(c, 'body'),
         joinedBy=why,
+        **{('codexReferences' if k == 'codex' else k): val(c, k) for k in ROOM_FIELDS},
     ))
 
 rows.sort(key=lambda x: x['road'])

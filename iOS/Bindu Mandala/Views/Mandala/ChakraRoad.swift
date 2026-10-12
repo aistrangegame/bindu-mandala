@@ -100,9 +100,19 @@ enum ChakraRoad {
     /// How long the walk rests at a stop: one breath, and a little longer at
     /// the two thresholds and at the point — the places that are crossings.
     static func dwell(at stop: Stop) -> Double {
+        // Wave 6 · the two stations C-1330 names before Lalitā's play — Atma and
+        // the Gaia reveal — are dwelt in: long enough for the Map's own story
+        // thread there to be read, and a touch still moves on.
+        if ChakraTeaching.station(stop.chakra) != nil { return stationDwell }
         switch stop.chakra.kind {
-        case .shadow, .armin, .bindu: return 6.5
+        // The thresholds now speak the Map's own phrases word by word, so the
+        // Road stands in them for the whole of their moment.
+        case .shadow, .armin: return max(6.5, ChakraTeaching.thresholdMomentSeconds + 0.6)
+        case .bindu: return 6.5
         default: return stop.chakra.road == 33 ? 7.0 : 5.0
         }
     }
+
+    /// How long the Road rests at Atma and at the Gaia reveal.
+    static let stationDwell: Double = 16
 }

@@ -66,6 +66,10 @@ enum ActivityLedger {
         static let descentRing   = "Descent Ring"
         /// `fldrIOx1id7Esm2fd` — number, precision 2 — how long the silence was held.
         static let durationSec   = "Duration (sec)"
+        /// `fldkF65ySNGGkeugH` — multipleRecordLinks to The Map (`tblwpmyKOeMxEEHd7`),
+        /// reverse `fldxl5Ez0Btgi8uoR`. Wave 6: a chakra-level act names its
+        /// chakra here, by the Map record id the bake carries.
+        static let linkToMap     = "Link to The Map"
     }
 
     // MARK: Activity Type options
@@ -120,6 +124,13 @@ enum ActivityLedger {
         static let portraitDrawn    = "Portrait Drawn"
         /// A watch for her answered: "watch for her today… did she appear?"
         static let wagerResolved    = "Wager Resolved"
+
+        /// Wave 6 · the 33 alive. One practice walked in a chakra's room — its
+        /// gate, or a held movement or breath — linked to its chakra in `Link
+        /// to The Map` (and to her seat or its ring in `Link to Mandala` when it
+        /// has one). Born on first write by `typecast: true`. His words, when
+        /// he gives any, ride in `Notes`; nothing here composes them.
+        static let chakraPracticed  = "Chakra Practiced"
     }
 
     // MARK: - The two once-ever milestones
@@ -381,6 +392,57 @@ enum ActivityLedger {
             moonPhase: LunarPhaseService.phaseName(at: at),
             durationSec: max(0, seconds)
         )
+    }
+
+    // MARK: - Wave 6 · the 33 alive
+
+    /// A `Chakra Practiced` row: one practice walked in a chakra's room.
+    ///
+    /// `mapRecordId` is the chakra's own Map record — it fills `Link to The
+    /// Map`, which is how the ledger knows *which* of the 33 (and is the dedup
+    /// key when nothing in the Mandala table stands for it: the two
+    /// thresholds). `mandalaLink` is her Shakti row for a seated chakra or the
+    /// Avaraṇa row for a ring-level one, or empty. `practice` is the practice's
+    /// own name ("the gate", "Ham · Het · Hum" …). `words` are his — the
+    /// offering, or the memory he chose to keep — and go to `Notes` untouched.
+    static func chakraPracticed(mapRecordId: String,
+                                chakraName: String,
+                                practice: String,
+                                mandalaLink: String,
+                                words: String?,
+                                seconds: Double?,
+                                at: Date) -> PendingActivity {
+        let name = chakraName.isEmpty ? "A chakra" : chakraName
+        let what = practice.isEmpty ? "practiced in its room" : practice
+        var row = PendingActivity(
+            type: ActivityType.chakraPracticed,
+            linkRecordId: mandalaLink,
+            name: "\(name) — practiced",
+            detail: "\(what) · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.mandala,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            durationSec: seconds.map { max(0, $0) },
+            notes: words
+        )
+        row.linkToMap = mapRecordId.isEmpty ? nil : [mapRecordId]
+        return row
+    }
+
+    /// The ledger columns the Map-keyed dedup reads: the Map link and the
+    /// instant — the same shape as `RecognitionDedup.readFields`, which four
+    /// other call sites share and so is deliberately not widened.
+    static let mapDedupFields = [Field.linkToMap, Field.feltAt]
+
+    /// True only when the row links `mapRecordId` in `Link to The Map` *and*
+    /// carries `feltAt` to the second — the key the create wrote, which a
+    /// queued retry repeats and a genuine second practice never can.
+    static func mapRowMatches(_ row: Row, mapRecordId: String, feltAt: Date) -> Bool {
+        RecognitionDedup.rowMatches(links: row.fields.linkToMap,
+                                    feltAt: row.fields.feltAt,
+                                    linkRecordId: mapRecordId,
+                                    feltAt: feltAt)
     }
 
     // MARK: - The margin
@@ -662,6 +724,10 @@ enum ActivityLedger {
         if let n = item.notes?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty {
             f[Field.notes] = n
         }
+        // Wave 6 · a multipleRecordLinks field takes an array of record ids.
+        if let map = item.linkToMap?.filter({ !$0.isEmpty }), !map.isEmpty {
+            f[Field.linkToMap] = map
+        }
         return f
     }
 
@@ -760,6 +826,8 @@ enum ActivityLedger {
             var moonPhase: String? = nil
             var descentRing: Int? = nil
             var durationSec: Double? = nil
+            /// Wave 6 · `Link to The Map` — read only by the Map-keyed dedup.
+            var linkToMap: [String]? = nil
 
             enum CodingKeys: String, CodingKey {
                 case activityType  = "Activity Type"
@@ -774,6 +842,7 @@ enum ActivityLedger {
                 case moonPhase     = "Moon Phase"
                 case descentRing   = "Descent Ring"
                 case durationSec   = "Duration (sec)"
+                case linkToMap     = "Link to The Map"
             }
         }
     }
@@ -983,4 +1052,8 @@ struct PendingActivity: Codable, PendingQueueItem, Equatable {
     var durationSec: Double? = nil
     /// The practitioner's words, written to `Notes` only when non-blank.
     var notes: String? = nil
+    /// Wave 6 · `Link to The Map` — the chakra's Map record id(s). Optional
+    /// with a `nil` default like every member after `failCount`, so a queue
+    /// written before Wave 6 still decodes and drains, and is never dropped.
+    var linkToMap: [String]? = nil
 }
