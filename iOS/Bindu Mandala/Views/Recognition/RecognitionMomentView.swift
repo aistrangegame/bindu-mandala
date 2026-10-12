@@ -4,10 +4,19 @@ import SwiftData
 /// The Recognition Moment — full-screen takeover after "I feel her".
 /// Two acts, separated by a thin gold hairline:
 ///   Act 1: "she was felt here · [time]"      (muted, sans, uppercase)
-///   Act 2: "and she felt you back · [time+3s]" (italic Cormorant, gold)
+///   Act 2: "and she felt you back · [time]"  (italic Cormorant, her bright accent)
 ///
-/// On dismiss, posts `didSettleNotification` — RootView listens and
-/// navigates to the Portrait, where the newly-lit point glows briefly.
+/// The ceremony answers in **her nature** (`RecognitionNature`, from her
+/// element): fire flares, water pools, air disperses, ether blooms once and
+/// holds, earth settles, light radiates. Her ring's geometry and her bīja move
+/// in that manner, her nature's own light stands in the air around them
+/// (`RecognitionLight`), and at Act 2 the light answers once — in the hand as a
+/// haptic and in the ear as her bīja.
+///
+/// On close the practice data is committed first (the note, the ledger write),
+/// then the ceremony gathers into her point, a brief after-glow of her light
+/// stays there and falls away, and `didSettleNotification` is posted —
+/// RootView listens and navigates to the Portrait, where the newly-lit point glows.
 struct RecognitionMomentView: View {
     static let didSettleNotification = Notification.Name("RecognitionMomentDidSettle")
 
@@ -27,14 +36,19 @@ struct RecognitionMomentView: View {
     @State private var act2Time: Date? = nil   // captured when Act 2 actually appears
     @State private var note: String = ""
     @State private var hasLogged = false
-    @State private var respPhase: CGFloat = 0   // her element's slow response pulse
-    @State private var closing = false          // collapse-into-the-point on exit
+    @State private var respPhase: CGFloat = 0   // her geometry's response, rest → peak
+    @State private var bijaPhase: CGFloat = 0   // her bīja's response, 1.3× slower
+    @State private var answered = false         // Act 2 has landed — her light stands full
+    @State private var closing = false          // gathering into the point
+    @State private var afterGlowing = false     // what stays of her light
+    @State private var noteCommitted = false
 
     /// Her atmosphere — the ceremony is lit by the same day-palette as everywhere else.
     private var atmo: Atmosphere {
         Atmosphere.derive(from: shakti, at: LunarPhaseService.currentTimeVariant())
     }
-    private var recog: RecogElement { RecogElement.forElement(atmo.element) }
+    /// Her nature — how the ceremony moves when she is felt back.
+    private var nature: RecognitionNature { RecognitionNature.of(atmo.element) }
 
     /// The bare bīja syllable (before any " — description") — `Shakti.bijaSyllable`.
     private var bijaSyllable: String { shakti.bijaSyllable ?? "" }
@@ -49,25 +63,34 @@ struct RecognitionMomentView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let focal = CGPoint(x: geo.size.width * 0.5, y: geo.size.height * recog.focalY)
-            let scale = min(geo.size.width, geo.size.height) / 390
+            let size = geo.size
+            let focal = CGPoint(x: size.width * 0.5, y: size.height * CGFloat(nature.focalY))
+            let scale = min(size.width, size.height) / 390
             ZStack {
-                // Her light pools where her element lives, over a deepening ground.
-                atmosphereBackground(focalUnit: UnitPoint(x: 0.5, y: recog.focalY))
+                // Her light pools where her nature lives, over a deepening ground.
+                RecognitionBackdrop(atmosphere: atmo, nature: nature)
 
-                // Her ring's geometry + ghost bīja + ripples, all at the focal,
-                // responding in the manner of her element.
-                focalLayer(focal: focal, scale: scale)
-
-                DustMotesView(count: recog.motes, element: atmo.element, accent: atmo.accentBright)
-                    .allowsHitTesting(false)
+                // Everything that is her light in the air — gathered into the
+                // point on close.
+                ceremonyLight(focal: focal, scale: scale, size: size)
+                    .scaleEffect(closing && !reduceMotion ? 0.86 : 1,
+                                 anchor: UnitPoint(x: 0.5, y: CGFloat(nature.focalY)))
+                    .opacity(closing ? 0 : 1)
 
                 ceremonyText
                     .opacity(closing ? 0 : 1)
-                    .scaleEffect(closing ? 0.84 : 1)
-                    .animation(.easeIn(duration: 0.6), value: closing)
+                    .scaleEffect(closing && !reduceMotion ? 0.84 : 1)
+                    .allowsHitTesting(!closing)
 
-                if closing { collapseCircle(at: focal) }
+                if closing && !reduceMotion && !afterGlowing {
+                    collapseCircle(at: focal)
+                }
+
+                if afterGlowing {
+                    RecognitionAfterGlow(atmosphere: atmo, focal: focal, scale: scale,
+                                         reduceMotion: reduceMotion)
+                        .transition(.identity)
+                }
 
                 // §4.4. The whole screen is the way out, which gives a sighted
                 // walker a target the size of the glass and a VoiceOver walker
@@ -86,7 +109,7 @@ struct RecognitionMomentView: View {
             }
             .ignoresSafeArea()
         }
-        .background(Color(red: 5/255, green: 2/255, blue: 3/255).ignoresSafeArea())
+        .background(RecognitionBackdrop.night.ignoresSafeArea())
         // The idiomatic dismissal as well as the named one: a two-finger scrub
         // leaves the moment, the way it leaves any other screen in iOS.
         .accessibilityAction(.escape) { if nameVisible { beginClose() } }
@@ -103,58 +126,77 @@ struct RecognitionMomentView: View {
         .statusBarHidden()
     }
 
-    // MARK: - Atmosphere layers
+    // MARK: - Her light in the air
 
-    private func atmosphereBackground(focalUnit: UnitPoint) -> some View {
-        ZStack {
-            LinearGradient(colors: [atmo.groundDeep, Color(red: 5/255, green: 2/255, blue: 3/255)],
-                           startPoint: .top, endPoint: .bottom)
-            RadialGradient(gradient: Gradient(colors: [atmo.glow, .clear]),
-                           center: focalUnit, startRadius: 0, endRadius: 520)
-        }
-        .allowsHitTesting(false)
-    }
-
-    /// Sigil + ghost bīja + element ripples, gathered at the focal. All breathe
-    /// with `respPhase` in the amplitude/tempo of her element.
-    private func focalLayer(focal: CGPoint, scale: CGFloat) -> some View {
-        let respScale = 1 + (recog.respScale - 1) * Double(respPhase)
+    /// Her nature's standing light, the ripples of recognition, her ring's
+    /// geometry and the ghost of her bīja — all at the focal, all moving in
+    /// her manner — and the motes of the temple air.
+    private func ceremonyLight(focal: CGPoint, scale: CGFloat, size: CGSize) -> some View {
+        let pose = reduceMotion ? stillPose : nature.pose(at: Double(respPhase))
+        let bijaPose = reduceMotion ? stillPose : nature.pose(at: Double(bijaPhase))
         return ZStack {
-            // Element ripples of recognition, emanating from the focal.
-            ForEach(0..<recog.rippleN, id: \.self) { i in
-                FocalRipple(color: atmo.accentSoft,
-                            duration: recog.rippleDur,
-                            delay: Double(i) * recog.rippleDur / Double(recog.rippleN),
-                            wide: atmo.element == .air,
-                            reduceMotion: reduceMotion)
-                    .position(focal)
+            RecognitionNatureLight(atmosphere: atmo, nature: nature, pose: pose,
+                                   focal: focal, scale: scale, size: size,
+                                   answered: answered)
+                .opacity(nameVisible ? 1 : 0)
+
+            // Ripples of recognition, travelling as her element travels.
+            if !reduceMotion {
+                ForEach(0..<nature.rippleCount, id: \.self) { i in
+                    RecognitionRipple(color: atmo.accentSoft, nature: nature, index: i,
+                                      scale: scale, reduceMotion: reduceMotion)
+                        .position(focal)
+                }
             }
 
-            // Her ring's geometry, spinning, at the focal.
+            // Her ring's geometry, turning, answering in her manner. Its
+            // strokes give off light rather than only sitting on the ground.
             RiteSigil(atmosphere: atmo, ring: shakti.ringNumber ?? 2,
                       size: 480 * scale, spin: sigilSpin)
-                .opacity(0.55 * (nameVisible ? 1 : 0))
-                .scaleEffect(respScale)
+                .shadow(color: atmo.accentSoft, radius: 9 * scale)
+                .scaleEffect(CGFloat(pose.scale))
+                .offset(x: CGFloat(pose.dx) * scale, y: CGFloat(pose.dy) * scale)
+                .opacity(0.55 * pose.opacity)
+                .opacity(nameVisible ? 1 : 0)
                 .position(focal)
+                .accessibilityHidden(true)
 
             // Ghost bīja — enormous, faint, staged in with the phrase.
             if !bijaSyllable.isEmpty {
                 Text(bijaSyllable)
                     .font(.custom(AppFont.cormorant, size: 300 * scale))
                     .foregroundStyle(atmo.accentFaint)
-                    .opacity(0.5 * (phraseVisible ? 1 : 0))
-                    .scaleEffect(respScale)
+                    .opacity(bijaPose.opacity)
+                    .opacity(phraseVisible ? 1 : 0)
+                    .scaleEffect(CGFloat(bijaPose.scale))
+                    .offset(x: CGFloat(bijaPose.dx) * scale, y: CGFloat(bijaPose.dy) * scale)
                     .position(focal)
+                    .accessibilityHidden(true)
             }
+
+            // The answer at Act 2 — once, in her nature.
+            if answered && !reduceMotion {
+                RecognitionAnswer(atmosphere: atmo, nature: nature, focal: focal,
+                                  scale: scale, size: size)
+                    .transition(.identity)
+            }
+
+            DustMotesView(count: nature.motes, element: atmo.element, accent: atmo.accentBright)
         }
         .allowsHitTesting(false)
+    }
+
+    /// Under reduce motion each nature is its still light: the bloom already
+    /// open, every other nature held halfway to its height.
+    private var stillPose: RecognitionNature.Pose {
+        nature.pose(at: nature.repeats ? 0.5 : 1)
     }
 
     private var sigilSpin: Double {
         (shakti.khadgamalaPosition ?? shakti.position) % 2 == 0 ? 1 : -1
     }
 
-    /// The collapse — the ceremony gathers into the point, handing to the Portrait.
+    /// The collapse — the ceremony gathers into the point (`lrCollapse`).
     private func collapseCircle(at focal: CGPoint) -> some View {
         Circle()
             .fill(RadialGradient(
@@ -163,8 +205,16 @@ struct RecognitionMomentView: View {
             .frame(width: 300, height: 300)
             .scaleEffect(closing ? 0.14 : 1.5)
             .opacity(closing ? 0 : 0.6)
+            .blendMode(.plusLighter)
             .position(focal)
             .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    /// How far a line still has to rise before it has arrived (Design's `vis(n, dy)`).
+    /// Under reduce motion the words arrive by fading alone.
+    private func rise(_ arrived: Bool, _ dy: Double) -> CGFloat {
+        arrived || reduceMotion ? 0 : CGFloat(dy)
     }
 
     // MARK: - Text (name + phrase + two acts)
@@ -183,6 +233,7 @@ struct RecognitionMomentView: View {
                     .shadow(color: atmo.glow, radius: 50)
                     .minimumScaleFactor(0.6)
                     .opacity(nameVisible ? 1 : 0)
+                    .offset(y: rise(nameVisible, RecognitionTimeline.nameRise))
                     .padding(.horizontal, 44)
                     .padding(.bottom, 28)
 
@@ -205,6 +256,7 @@ struct RecognitionMomentView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 44)
                         .opacity(phraseVisible ? 1 : 0)
+                        .offset(y: rise(phraseVisible, RecognitionTimeline.nameRise))
                 }
 
                 Spacer()
@@ -221,6 +273,7 @@ struct RecognitionMomentView: View {
                     .foregroundStyle(Color.cream.opacity(0.6))
                     .padding(.bottom, 10)
                     .opacity(act1Visible ? 1 : 0)
+                    .offset(y: rise(act1Visible, RecognitionTimeline.lineRise))
 
                 // Hairline divider between acts
                 Rectangle()
@@ -236,8 +289,10 @@ struct RecognitionMomentView: View {
                     .font(AppFont.voice(15))
                     .foregroundStyle(atmo.accentBright)
                     .tracking(0.7)
+                    .shadow(color: atmo.glow, radius: 14)
                     .padding(.bottom, 22)
                     .opacity(act2Visible ? 1 : 0)
+                    .offset(y: rise(act2Visible, RecognitionTimeline.lineRise))
 
                 // Optional note card
                 if noteCardVisible {
@@ -251,22 +306,21 @@ struct RecognitionMomentView: View {
                     .font(AppFont.label(11))
                     .tracking(2)
                     .foregroundStyle(Color.cream.opacity(0.50))
+                    .opacity(noteCardVisible ? 1 : 0)
                     .padding(.bottom, 36)
             }
         }
     }
+
+    // MARK: - The ceremony's timeline
 
     private func stage() {
         guard !hasLogged else { return }
         hasLogged = true
         act1Time = .now
 
-        // Debug: `RECOGNIZE_AUTOCLOSE` closes the ceremony on its own after it lands,
-        // so the live close → didSettle → Portrait handoff can be exercised headlessly.
-        if ProcessInfo.processInfo.arguments.contains("RECOGNIZE_AUTOCLOSE") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) { beginClose() }
-        }
-
+        // Practice data first: the recognition is written before a single
+        // light moves, so nothing the ceremony does can cost the record.
         let store = RecognitionLogStore(context: context)
         store.record(
             khadgamalaPosition: shakti.khadgamalaPositionOrFallback,
@@ -276,48 +330,82 @@ struct RecognitionMomentView: View {
         // The rite is complete — silence the evening summons. Never twice.
         DailySummons.markRiteCompleted(at: act1Time)
 
-        if reduceMotion {
-            nameVisible = true; phraseVisible = true
-            act1Visible = true; act2Visible = true; act2Time = .now
-            noteCardVisible = true
-            respPhase = 0.5
-            return
+        // Debug: `RECOGNIZE_AUTOCLOSE` closes the ceremony on its own after it lands,
+        // so the live close → didSettle → Portrait handoff can be exercised headlessly.
+        if ProcessInfo.processInfo.arguments.contains("RECOGNIZE_AUTOCLOSE") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + RecognitionTimeline.autoClose) { beginClose() }
         }
 
-        // Her element's response — a slow breath at her element's tempo/amplitude.
-        withAnimation(.easeInOut(duration: recog.respDur).repeatForever(autoreverses: true)) {
-            respPhase = 1
+        // Her nature's response begins with her name: her geometry first,
+        // her bīja with her phrase. Under reduce motion each nature is its
+        // still light, and only the words' arrival moves (by fading).
+        if !reduceMotion {
+            let swing = nature.swing
+            let bijaSwing = nature.bijaSwing
+            let repeats = nature.repeats
+            DispatchQueue.main.asyncAfter(deadline: .now() + RecognitionTimeline.name) {
+                let curve = Animation.easeInOut(duration: swing)
+                withAnimation(repeats ? curve.repeatForever(autoreverses: true) : curve) { respPhase = 1 }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + RecognitionTimeline.phrase) {
+                let curve = Animation.easeInOut(duration: bijaSwing)
+                withAnimation(repeats ? curve.repeatForever(autoreverses: true) : curve) { bijaPhase = 1 }
+            }
         }
 
-        withAnimation(.easeInOut(duration: 1.8).delay(0.3)) { nameVisible = true }
-        withAnimation(.easeInOut(duration: 1.8).delay(0.9)) { phraseVisible = true }
-        withAnimation(.easeOut(duration: 1.0).delay(2.6))  { act1Visible = true }
+        let arrive = Animation.easeInOut(duration: RecognitionTimeline.arrive)
+        withAnimation(arrive.delay(RecognitionTimeline.name))   { nameVisible = true }
+        withAnimation(arrive.delay(RecognitionTimeline.phrase)) { phraseVisible = true }
+        withAnimation(arrive.delay(RecognitionTimeline.act1))   { act1Visible = true }
 
         // Act 2 — capture timestamp at the moment it actually appears so the
         // "she felt you back · h:mm:ss" reflects the practitioner's real time,
         // not a pre-computed Act1 + 3s offset.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.1) {
-            act2Time = .now
-            withAnimation(.easeInOut(duration: 1.4)) { act2Visible = true }
-        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + RecognitionTimeline.act2) { feltBack() }
 
-        // Note card lands one second after reciprocity, alone — never
-        // simultaneously, so "and she felt you back" gets to land in stillness.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.1) {
-            withAnimation(.easeInOut(duration: 1.4)) { noteCardVisible = true }
+        // Note card lands after reciprocity, alone — never simultaneously, so
+        // "and she felt you back" gets to land in stillness.
+        DispatchQueue.main.asyncAfter(deadline: .now() + RecognitionTimeline.note) {
+            withAnimation(arrive) { noteCardVisible = true }
         }
     }
 
-    /// The ceremony gathers into the point, then hands off to the Portrait. The
-    /// record was already written in `stage()`; this is purely the closing rite.
+    /// "and she felt you back" — the words, her light answering once, her
+    /// pulse in the hand and her bīja in the ear. Her tone keeps its own
+    /// pitch, sounded the way every bīja in the instrument is sounded.
+    private func feltBack() {
+        guard !closing else { return }
+        act2Time = .now
+        withAnimation(.easeInOut(duration: RecognitionTimeline.arrive)) { act2Visible = true }
+        withAnimation(.easeInOut(duration: RecognitionTimeline.answerLift)) { answered = true }
+        RecognitionHaptic.play(nature.pulse)
+        BijaSoundService.shared.playBija(shakti.bija, seed: shakti.khadgamalaPosition ?? shakti.position)
+    }
+
+    /// The close: his words and the ledger write are committed first, then the
+    /// ceremony gathers into the point, her after-glow stays a moment and
+    /// falls away, and only then does she settle into the Portrait.
     private func beginClose() {
         guard !closing else { return }
-        if reduceMotion { finishClose(); return }
-        withAnimation(.easeIn(duration: 0.62)) { closing = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.62) { finishClose() }
+        commitClose()
+        let whole = RecognitionTimeline.closeDuration(reduceMotion: reduceMotion)
+        if reduceMotion {
+            withAnimation(.easeOut(duration: 0.4)) { closing = true }
+            afterGlowing = true
+        } else {
+            withAnimation(.easeIn(duration: RecognitionTimeline.collapse)) { closing = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + RecognitionTimeline.collapse) {
+                afterGlowing = true
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + whole) { settle() }
     }
 
-    private func finishClose() {
+    /// Practice data, before any light moves: the note onto his local moment,
+    /// then the ledger write with where she was felt from. Once only.
+    private func commitClose() {
+        guard !noteCommitted else { return }
+        noteCommitted = true
         // Persist note locally if user wrote anything.
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
@@ -340,6 +428,10 @@ struct RecognitionMomentView: View {
                 shakti: s, note: noteToSend, source: src, context: ctx
             )
         }
+    }
+
+    /// The after-glow has fallen away: hand off.
+    private func settle() {
         isPresented = false
         // She settles into the Portrait — the practitioner sees the newly-lit
         // point in the field of their attention. RootView listens for this.
@@ -347,6 +439,7 @@ struct RecognitionMomentView: View {
         // the Rite settles into the Portrait. From the Mandala, the Field or
         // a room he stays where he is (Wave 0 · B4); the Portrait still lights
         // her point the next time it opens.
+        let src = source
         NotificationCenter.default.post(name: Self.didSettleNotification, object: src.rawValue)
     }
 
@@ -405,55 +498,5 @@ private extension Shakti {
     /// covers any edge case where a Shakti exists pre-sync).
     var khadgamalaPositionOrFallback: Int {
         khadgamalaPosition ?? (position + 28)
-    }
-}
-
-/// Per-element recognition physics — where her light pools, how many motes and
-/// ripples move, and the amplitude/tempo of her response when she is felt back.
-/// Ported from the prototype's `LR_RECOG` + its response keyframes.
-private struct RecogElement {
-    let focalY: Double     // vertical focal (x is always centred)
-    let motes: Int
-    let rippleN: Int
-    let rippleDur: Double
-    let respScale: Double  // peak of the response breath
-    let respDur: Double    // one breath's period
-
-    static func forElement(_ e: Element) -> RecogElement {
-        switch e {
-        case .fire:  return .init(focalY: 0.60, motes: 12, rippleN: 4, rippleDur: 4.6, respScale: 1.06,  respDur: 5.5)
-        case .water: return .init(focalY: 0.50, motes: 10, rippleN: 4, rippleDur: 6.4, respScale: 1.07,  respDur: 6.5)
-        case .air:   return .init(focalY: 0.44, motes: 14, rippleN: 5, rippleDur: 4.0, respScale: 1.04,  respDur: 6.0)
-        case .ether: return .init(focalY: 0.45, motes: 10, rippleN: 3, rippleDur: 5.6, respScale: 1.16,  respDur: 4.8)
-        case .earth: return .init(focalY: 0.54, motes: 6,  rippleN: 2, rippleDur: 7.6, respScale: 1.015, respDur: 7.5)
-        case .light: return .init(focalY: 0.44, motes: 12, rippleN: 5, rippleDur: 3.6, respScale: 1.05,  respDur: 3.8)
-        }
-    }
-}
-
-/// A single ripple of recognition, expanding forever from a point at her
-/// element's tempo. `wide` disperses horizontally more than vertically — air's way.
-private struct FocalRipple: View {
-    let color: Color
-    let duration: Double
-    let delay: Double
-    var wide: Bool = false
-    let reduceMotion: Bool
-    @State private var animating = false
-
-    var body: some View {
-        Circle()
-            .stroke(color, lineWidth: 0.8)
-            .frame(width: 12, height: 12)
-            .scaleEffect(x: animating ? (wide ? 52 : 30) : 0.6,
-                         y: animating ? (wide ? 20 : 30) : 0.6)
-            .opacity(animating ? 0 : 0.5)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeOut(duration: duration).repeatForever(autoreverses: false).delay(delay)) {
-                    animating = true
-                }
-            }
-            .allowsHitTesting(false)
     }
 }
