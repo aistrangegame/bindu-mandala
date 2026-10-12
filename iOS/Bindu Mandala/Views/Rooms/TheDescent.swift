@@ -21,8 +21,13 @@ import Foundation
 // back up into the room, because the khaḍgamālā is a circle and so is this.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// THE WAY DOWN IS EARNED, AND HE IS NEVER TOLD THAT IT WAS
+// THE WAY DOWN IS ALWAYS OFFERED, AND DWELLING MAKES IT DEEPER (Wave 2)
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// Charter II lifted the gate below to its first principle: the way down is
+// offered from the first moment, and before her room has adapted the shaft
+// reaches the first three stations; once it has, all five (``DescentReach``).
+// What follows is the Phase 3.9 reading, kept for its history.
 //
 // **The descent is not offered until her room has adapted.** Not a timer and not
 // a gate: the first adaptation is the moment the room shows its second layer
@@ -67,22 +72,27 @@ struct TheDescent: Equatable {
     /// Which of her fields is at the station he has reached.
     var station: DescentStation? { HomeDescent.station(atTravel: travel) }
 
-    /// Whether the way down is open at this moment of the stay — see the header.
+    /// Whether the way down is open at this moment of the stay.
     ///
-    /// It asks the **chamber clock**, which is the clock the room's own layers
-    /// are drawn by and the clock a returning walker's head start opens. Real
-    /// dwell would make a relationship count for nothing here.
+    /// **Wave 2: always.** The 62-second gate is reshaped to its first
+    /// principle (padakarshini law 5 — *staying opens things; nothing new is
+    /// locked*): the way down is offered the moment he is in her room, and what
+    /// dwelling does is make it **deeper** — see ``DescentReach``. The function
+    /// keeps its name and its question so every caller still asks it.
     static func isOffered(atChamberTime t: TimeInterval) -> Bool {
-        HomeMemory.adaptation(atChamberTime: t) >= 1
+        _ = t
+        return true
     }
 
-    /// A touch, once he is inside her room and the way down is open.
+    /// A touch, once he is inside her room.
     ///
-    /// The next station, or back up into the room from the floor. Answers where
-    /// he is now going, so the caller has one thing to move him to.
+    /// The next station, or back up into the room from the floor of the shaft
+    /// as far as it reaches now (``DescentReach``). Answers where he is now
+    /// going, so the caller has one thing to move him to.
     @discardableResult
-    mutating func onward() -> Double {
-        reached = reached >= Self.stations ? 0 : reached + 1
+    mutating func onward(reach: Int = TheDescent.stations) -> Double {
+        let floor = max(1, min(Self.stations, reach))
+        reached = reached >= floor ? 0 : reached + 1
         leftFrom = nil
         return travel
     }

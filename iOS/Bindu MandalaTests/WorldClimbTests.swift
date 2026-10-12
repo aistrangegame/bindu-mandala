@@ -716,23 +716,49 @@ final class WorldClimbTests: XCTestCase {
     /// Design's third depth layer is her mechanism, and on the axis there is no
     /// her — so the climb has two layers and nothing in it may stand in space.
     /// What it holds is the ground the walker is on and the air he is in.
+    ///
+    /// **Wave 2 · rewritten to the surviving principle.** The binding condition
+    /// (*nothing lit standing in the space*) was lifted by Charter II to its
+    /// first principle — **no figural depiction of a Śakti** — and Design's Axis
+    /// puts the 102 on the climb as breathing points of light. So the climb has
+    /// a third layer now, and what this holds is what survives: the building is
+    /// still one ground and the world one air, and **every** mesh in the third
+    /// layer is light (``RoomScene/lightBodyCategory``) named as light — a halo,
+    /// a core, a crown, the moving light — never a body.
     func testTheClimbHoldsNothingStandingInTheAir() {
         let scene = WorldClimbScene()
         XCTAssertEqual(scene.layerName(.ground), "ground")
         XCTAssertEqual(scene.layerName(.world), "world")
-        XCTAssertEqual(WorldClimbScene.Layer.allCases.count, 2,
-                       "a third layer appeared on the axis — there is no Śakti here to have one")
+        XCTAssertEqual(scene.layerName(.presences), "presences")
+        XCTAssertEqual(WorldClimbScene.Layer.allCases.count, 3)
 
         XCTAssertEqual(scene.solids(in: .ground), 1,
                        "the building is one ground; \(scene.solids(in: .ground)) meshes were found")
         XCTAssertEqual(scene.solids(in: .world), 1, "the world's only mesh is the air itself")
-        XCTAssertEqual(scene.solidsInTheClimb, 2,
-                       """
-                       the climb holds \(scene.solidsInTheClimb) meshes. It may hold the ground the \
-                       walker stands on and the air he stands in, and nothing else: a lit solid \
-                       standing in the space is exactly what the renderer ruling's binding condition \
-                       exists to prevent, and on the axis there is not even a Śakti for it to belong to.
-                       """)
+
+        scene.hold(seats: ClimbLights.bareGarland, met: [3, 40], today: 61)
+        XCTAssertEqual(scene.presenceCount, KhadgamalaMap.total, "the climb does not hold all 102")
+        XCTAssertTrue(scene.everyPresenceIsLight,
+                      "a mesh on the climb's third layer is not light — a lit body standing in the "
+                      + "space is the one shape a figure could take")
+        XCTAssertEqual(scene.solidsInTheClimb,
+                       2 + scene.solids(in: .presences),
+                       "something stands in the climb outside its three layers")
+        // Halos, two cores, one crown, and the follow light — nothing else.
+        XCTAssertEqual(scene.solids(in: .presences), KhadgamalaMap.total + 2 + 1 + 1)
+    }
+
+    /// **She was expecting you; the day is hers.** The core lights are exactly
+    /// the Śaktis he has met, the crown is exactly today's, and both move when
+    /// the marks move — a state, never a count.
+    func testTheCoresAreHisMetAndTheCrownIsTodays() {
+        let scene = WorldClimbScene()
+        scene.hold(seats: ClimbLights.bareGarland, met: [1, 29, 102], today: 45)
+        XCTAssertEqual(scene.cored, [1, 29, 102])
+        XCTAssertEqual(scene.crowned, [45])
+        scene.hold(seats: [], met: [1, 29, 102, 7], today: 46)
+        XCTAssertEqual(scene.cored, [1, 7, 29, 102])
+        XCTAssertEqual(scene.crowned, [46], "the crown did not pass to the next day's Śakti")
     }
 
     /// **The ground is the blend, and the morph is how it is drawn.**

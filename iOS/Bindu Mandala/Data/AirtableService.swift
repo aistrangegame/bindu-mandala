@@ -299,6 +299,8 @@ final class AirtableService {
         let timeCycle: String?
         let avaranaBeeja: String?
         let bodyRegion: String?
+        // Wave 2 · the ring's Siddhi, for the Gates of Release.
+        let siddhi: String?
 
         // CodingKeys are Airtable field IDs (verified May 31 2026 via Airtable Omni;
         // the five ring fields verified 12 Oct 2026).
@@ -308,6 +310,7 @@ final class AirtableService {
             case timeCycle          = "fldZLBoLGegod2xfy"
             case avaranaBeeja       = "fldixnYtJ30lZEDJM"
             case bodyRegion         = "fld6Ucmi8YqeAbOXU"
+            case siddhi             = "fldx9jXyTVWxp19o1"   // verified 12 Oct 2026 (Wave 2)
             case sanskritName       = "fldJOatnYrw9l6tff"
             case subtitle           = "fldXTUBJTDlkKEzEV"
             case presidingForm      = "fldgHVP1LqoVJsYu8"
@@ -583,7 +586,8 @@ final class AirtableService {
             RingFactsCache.store(ring: ring, facts: RingFactsCache.Facts(
                 gem: row.fields.gem, dhatu: row.fields.dhatu,
                 timeCycle: row.fields.timeCycle, beeja: row.fields.avaranaBeeja,
-                bodyRegion: row.fields.bodyRegion))
+                bodyRegion: row.fields.bodyRegion,
+                siddhi: row.fields.siddhi))
         }
         try context.save()
     }

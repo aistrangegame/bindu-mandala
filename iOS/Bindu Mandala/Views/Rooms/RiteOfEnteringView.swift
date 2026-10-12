@@ -113,6 +113,13 @@ struct RiteOfEnteringView: View {
     /// displayed* and law 2's *no count* held by the shape of the type rather
     /// than by care.
     let dwelling: HomeDwelling?
+    /// Wave 2 · her corridor: the seat before her and the seat after her in
+    /// the garland, by position. `nil` for a preview or a capture.
+    let neighbours: NeighbourDoors?
+    /// Wave 2 · he walked through a neighbour door. The stay here has been
+    /// handed over exactly as the way out hands it over; the surface that
+    /// presented this room opens the next one, through its own rite.
+    let onNeighbour: ((Int) -> Void)?
     /// Forced on for tests and captures; otherwise the environment decides.
     let forceReduceMotion: Bool
 
@@ -170,6 +177,9 @@ struct RiteOfEnteringView: View {
     /// render loop to hang one on), and on a return it is already true when he
     /// arrives, because his own dwell opened the room past the adaptation.
     @State private var wayDownIsOpen = false
+    /// Wave 2 · how far the shaft reaches now. The way down is offered from
+    /// the first moment; dwelling makes it deeper (``DescentReach``).
+    @State private var descentReach = DescentReach.shallow
     @State private var adapting: Task<Void, Never>?
 
     // MARK: · Type, which is the only thing this file chooses
@@ -209,11 +219,15 @@ struct RiteOfEnteringView: View {
          compression: Double,
          headStart: TimeInterval = 0,
          dwelling: HomeDwelling? = nil,
+         neighbours: NeighbourDoors? = nil,
          forceReduceMotion: Bool = false,
          onEntered: (() -> Void)? = nil,
          onLeft: (() -> Void)? = nil,
+         onNeighbour: ((Int) -> Void)? = nil,
          recording: ((TimeInterval) -> Void)? = nil) {
         self.room = room
+        self.neighbours = neighbours
+        self.onNeighbour = onNeighbour
         self.words = words
         self.syllable = syllable
         self.descentWords = descentWords
@@ -263,6 +277,15 @@ struct RiteOfEnteringView: View {
             } else if wayDownIsOpen {
                 goingDeeper
             }
+
+            // Wave 2 · her corridor. The two neighbour doors stand at the
+            // room's edges once he is in, and step back while he is in her
+            // mark (Design: `showDoors = mode === 'room' && !descent`).
+            if !rite.isCeremonial, descent.station == nil, let neighbours {
+                NeighbourDoorsView(doors: neighbours,
+                                   reduceMotion: reduceMotion,
+                                   onWalk: { walk(to: $0) })
+            }
         }
         .background(Color.ground)
         .contentShape(Rectangle())
@@ -275,6 +298,9 @@ struct RiteOfEnteringView: View {
                    onBegan: { seconds in unwind(over: seconds) },
                    onLetGo: { holdOn() },
                    onOut: { out() })
+        // Wave 2 · the equal way out: a swipe in from the edge, through the
+        // same door as the hold.
+        .theEdgeWayOut(shown: !rite.isCeremonial, onOut: { out() })
         .onAppear { open() }
         .onChange(of: environmentReduceMotion) { _, _ in adoptMotion() }
         .onDisappear {
@@ -541,7 +567,10 @@ struct RiteOfEnteringView: View {
             // nothing at all and the overlap could not be felt. The stay knows
             // when he has begun to cross out, and that is the fact to ask.
             guard wayDownIsOpen, stay.endedAt == nil else { return }
-            descend(to: descent.onward(), over: descentMotion)
+            let from = descent.reached
+            descend(to: descent.onward(reach: descentReach), over: descentMotion)
+            // Wave 2 · the descent sounds: a glide from station to station.
+            voice?.descends(from: from, to: descent.reached)
             return
         }
         guard case .beat = rite.stage else { return }
@@ -592,12 +621,16 @@ struct RiteOfEnteringView: View {
     /// render loop to notice it on. A room that opened past the adaptation on
     /// arrival — which is what a head start earned by accumulated dwell *is* —
     /// answers immediately and sleeps not at all.
+    ///
+    /// **Wave 2:** the way down is offered at once — ``TheDescent/isOffered(atChamberTime:)``
+    /// answers yes from the first moment — and what the wake waits for now is
+    /// the deepening: the shaft reaches three stations until her room has
+    /// adapted, and all five from then (``DescentReach``).
     private func watchForTheWayDown() {
         adapting?.cancel()
-        if TheDescent.isOffered(atChamberTime: clock.chamberTime()) {
-            wayDownIsOpen = true
-            return
-        }
+        wayDownIsOpen = TheDescent.isOffered(atChamberTime: clock.chamberTime())
+        descentReach = DescentReach.stations(atChamberTime: clock.chamberTime())
+        guard descentReach < TheDescent.stations else { return }
         let wait = HomeMemory.firstAdaptation - clock.chamberTime()
         adapting = Task { @MainActor in
             if wait > 0 {
@@ -605,6 +638,7 @@ struct RiteOfEnteringView: View {
             }
             guard !Task.isCancelled else { return }
             wayDownIsOpen = true
+            descentReach = TheDescent.stations
         }
     }
 
@@ -701,6 +735,27 @@ struct RiteOfEnteringView: View {
         onLeft?()
     }
 
+    /// Wave 2 · he walked through a neighbour door. Everything the way out
+    /// does, and then the corridor rather than the surface: the next room
+    /// opens through its own rite of entering (the passage that presented this
+    /// one rebuilds the threshold for her neighbour). Leaving this room by the
+    /// corridor costs exactly what leaving it by the hold costs — nothing.
+    private func walk(to next: Int) {
+        guard !rite.isCeremonial, stay.endedAt == nil else { return }
+        Haptics.light()
+        crossing?.cancel()
+        withdrawal?.cancel()
+        withdrawal = nil
+        adapting?.cancel()
+        dwelling?.end()
+        voice?.closes()
+        handOverTheStay()
+        // No after-effect here: Design's `walkTo` releases her room straight
+        // into the next crossing, and the lingering siddhi is the axis's, not
+        // the corridor's.
+        onNeighbour?(next)
+    }
+
     /// What the stay was worth, handed over exactly once.
     ///
     /// A room he never entered has nothing to hand over — the clock is still
@@ -733,8 +788,10 @@ extension RiteOfEnteringView {
                          mechanism: RoomSurfaceMechanism? = nil,
                          sounding: Bool = true,
                          forceReduceMotion: Bool = false,
+                         neighbours: NeighbourDoors? = nil,
                          onEntered: (() -> Void)? = nil,
-                         onLeft: (() -> Void)? = nil) -> RiteOfEnteringView? {
+                         onLeft: (() -> Void)? = nil,
+                         onNeighbour: ((Int) -> Void)? = nil) -> RiteOfEnteringView? {
         guard let room = HomeRooms.resolve(shakti), let position = shakti.khadgamalaPosition else {
             return nil
         }
@@ -767,9 +824,11 @@ extension RiteOfEnteringView {
                                   dwelling: HomeDwelling(
                                     memory: store.memory(for: position),
                                     marks: HomeDwelling.forRoom(shakti, context: store.context)),
+                                  neighbours: neighbours,
                                   forceReduceMotion: forceReduceMotion,
                                   onEntered: onEntered,
                                   onLeft: onLeft,
+                                  onNeighbour: onNeighbour,
                                   // The only write a stay makes to what her room
                                   // remembers, and the one that was missing: the
                                   // ceremony has been able to compress since

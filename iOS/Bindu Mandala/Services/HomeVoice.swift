@@ -83,6 +83,10 @@ final class HomeVoice {
         var carrier: @MainActor (_ ring: Int, _ amount: Double, _ syllable: String?) -> Void
         var room: @MainActor (_ a: Double, _ b: Double, _ ring: Int, _ syllable: String?) -> Void
         var end: @MainActor () -> Void
+        /// Wave 2 · the descent's glissando: one glide, from one pitch to
+        /// another. Defaulted, so every instrument a suite builds by hand is
+        /// still silent here unless it asks.
+        var glide: @MainActor (_ fromHz: Double, _ toHz: Double) -> Void = { _, _ in }
 
         /// The real one.
         @MainActor static var real: Instrument {
@@ -107,7 +111,11 @@ final class HomeVoice {
                 room: { a, b, ring, syllable in
                     HomeSoundService.shared.setRoom(a: a, b: b, ring: ring, syllable: syllable)
                 },
-                end: { HomeSoundService.shared.stopAll() })
+                end: { HomeSoundService.shared.stopAll() },
+                glide: { from, to in
+                    RingAudioService.shared.glide(fromHz: from, toHz: to,
+                                                  seconds: Glissando.seconds)
+                })
         }
 
         /// The voice, doing nothing. For a preview, a capture, and for the
@@ -207,6 +215,18 @@ final class HomeVoice {
                 self.standing(atChamberTime: clock.chamberTime())
             }
         }
+    }
+
+    /// Wave 2 · he moved in the shaft, from one station to another. The
+    /// descent is sounded as a glide from her carrier downward (``Glissando``):
+    /// falling into her mark is heard as falling, and coming back up rises.
+    /// Like everything here it tells nothing back — the descent is decided by
+    /// the touch and the geometry, and is identical with the sound off.
+    func descends(from: Int, to: Int) {
+        guard sounding, from != to else { return }
+        let carrier = HomeCarrier.carrierFor(ring: ring, syllable: syllable)
+        let pitches = Glissando.glide(carrier: carrier, from: from, to: to)
+        instrument.glide(pitches.from, pitches.to)
     }
 
     /// He has left. Everything stops — and it stops **here**, in the one place

@@ -26,6 +26,8 @@ struct DailyRiteView: View {
     @State private var showRecognition = ProcessInfo.processInfo.arguments.contains("AUTO_RECOGNIZE")
     @State private var nityaDetailFor: NityaSlot?
     @State private var detailFor: Shakti?
+    /// Wave 2 · today's room, opened from her seat in the foot.
+    @State private var roomKp: Int?
 
     // MARK: - Today's energy (all 102, 6am boundary — unchanged)
 
@@ -73,6 +75,7 @@ struct DailyRiteView: View {
         .fullScreenCover(item: $detailFor) { shakti in
             NavigationStack { ShaktiDetailView(shakti: shakti, backLabel: "today", source: .today) }
         }
+        .herRoom($roomKp)
         .sheet(item: $nityaDetailFor) { slot in
             NityaDetailView(slot: slot)
                 .presentationDetents([.medium, .large])
@@ -320,10 +323,21 @@ struct DailyRiteView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("I feel her — record recognition of \(content.spokenName)")
 
-            Text("\(content.kp) of 102" + (content.bija.map { " · bīja \($0)" } ?? ""))
-                .font(AppFont.label(11))
-                .tracking(1.6)
-                .foregroundStyle(Color.cream.opacity(0.55))
+            // Wave 2 · her seat is a door: the position is her identity, and
+            // it opens her room, through her rite (``HerRoomDoor``).
+            Button {
+                Haptics.medium()
+                roomKp = content.kp
+            } label: {
+                Text("\(content.kp) of 102" + (content.bija.map { " · bīja \($0)" } ?? ""))
+                    .font(AppFont.label(11))
+                    .tracking(1.6)
+                    .foregroundStyle(Color.cream.opacity(0.55))
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Her seat — enter her room"))
         }
         .padding(.horizontal, 26)
         .padding(.bottom, 20)

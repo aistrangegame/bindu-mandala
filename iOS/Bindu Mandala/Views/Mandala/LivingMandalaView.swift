@@ -33,7 +33,11 @@ struct LivingMandalaView: View {
     @State private var focus: MandalaWorld.Seat?
     @State private var descent = false
     @State private var detailFor: Shakti?
-    @State private var soundOn = UserDefaults.standard.bool(forKey: "lr_sound")   // toggleSound() writes it; read it back so the choice survives relaunch
+    // Wave 2: on by default (the silent switch is honoured); toggleSound()
+    // writes his choice and it is read back so it survives relaunch.
+    @State private var soundOn = (UserDefaults.standard.object(forKey: "lr_sound") as? Bool) ?? true
+    /// Wave 2 · her room, from her seat (``HerRoomDoor``).
+    @State private var roomFor: Int?
     @State private var moved = false
     @State private var animating = false
     @State private var enteredRing = 0
@@ -113,6 +117,11 @@ struct LivingMandalaView: View {
                         .accessibilityHidden(descent || veilOpen)
                 }
                 gestureCatcher
+                // Wave 2 · the centre (Mauna, the bloom, the fall) and the
+                // Gates of Release — see TheCentre.swift, GatesOfReleaseLayer.swift.
+                TheCentre(point: camera.binduScreen(), active: ready && !descent && focus == nil && !veilOpen,
+                          seats: seats, soundOn: soundOn, onFallThrough: { openDescent() })
+                GatesOfReleaseLayer(ring: enteredRing, active: !descent && focus == nil && !veilOpen)
                 header
                 // Controls are always reachable — the sound toggle governs the ring
                 // chimes that fire during unfocused navigation, so it can't be
@@ -162,6 +171,9 @@ struct LivingMandalaView: View {
         .fullScreenCover(item: $detailFor) { s in
             NavigationStack { ShaktiDetailView(shakti: s) }
         }
+        // Wave 2 · one building, and the Mandala's voice.
+        .herRoom($roomFor)
+        .mandalaFieldVoice(ring: enteredRing, on: soundOn, descent: descent, stillSeconds: stillSeconds)
     }
 
     // MARK: Layers
@@ -238,7 +250,8 @@ struct LivingMandalaView: View {
                 familyCount: familyKp.count, familyLabel: familyLabel(for: seat),
                 onSound: { Haptics.soft(); BijaSoundService.shared.playBija(seat.shakti.bija, seed: seat.shakti.khadgamalaPosition ?? seat.shakti.position) },
                 onOpenDetail: { Haptics.medium(); detailFor = seat.shakti },
-                onClose: { closeFocus() })
+                onClose: { closeFocus() },
+                onEnterRoom: { Haptics.medium(); roomFor = kp(seat) })
             .padding(.horizontal, 12)
             .padding(.bottom, 14)
             .transition(.move(edge: .bottom).combined(with: .opacity))

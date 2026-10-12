@@ -65,16 +65,34 @@ final class WorldClimbScene {
 
     // MARK: - Design's depth layers, as named node roots
 
-    /// Which layer is being asked about. Two, not three — see the header.
+    /// Which layer is being asked about.
+    ///
+    /// **Wave 2: three.** Design's Axis holds the 102 on the climb, each a
+    /// breathing point of light at her own altitude. The binding condition
+    /// that kept the axis to two meshes was lifted to its first principle —
+    /// *no figural depiction of a Śakti* — and a point of light is not a figure.
+    /// Every node in the third layer is light (``RoomScene/lightBodyCategory``).
     enum Layer: String, CaseIterable, Equatable {
         /// The ground: the stone of the world the walker is standing in.
         case ground
         /// The world: the air, and the light it arrives by.
         case world
+        /// The 102, as breathing points of light (Wave 2).
+        case presences
     }
 
     private let building = SCNNode()
     private let weather = SCNNode()
+    /// Wave 2 · the 102 as light.
+    private let presences = SCNNode()
+    /// Each Śakti's light, by position.
+    private var lights: [Int: ClimbLightNodes] = [:]
+    /// Ring 6's light that follows the finger.
+    private var followLight: SCNNode?
+    /// What the walker's hand is doing to the climb this frame — turning,
+    /// flying into her light, scattering Ring 3, uniting Ring 8, carrying
+    /// Ring 6's light. Set by the driver before each ``stand(atFraction:at:)``.
+    var gestures = ClimbGestures()
     private let cameraNode = SCNNode()
 
     private let scene = SCNScene()
@@ -175,10 +193,12 @@ final class WorldClimbScene {
 
         building.name = "ground"
         weather.name = "world"
+        presences.name = "presences"
 
         buildGround()
         buildAir()
         buildLight()
+        buildFollowLight()
 
         let camera = SCNCamera()
         camera.fieldOfView = CGFloat(RoomUnits.fieldOfView)
@@ -198,6 +218,7 @@ final class WorldClimbScene {
 
         scene.rootNode.addChildNode(building)
         scene.rootNode.addChildNode(weather)
+        scene.rootNode.addChildNode(presences)
         scene.rootNode.addChildNode(cameraNode)
         scene.fogDensityExponent = 2
 
@@ -357,6 +378,10 @@ final class WorldClimbScene {
             groundStone?.emission.contents = bandLight[nearest - 1]
         }
         groundStone?.emission.intensity = CGFloat(Self.glowCeiling * now.glowFromWithin * whole)
+
+        // ── Wave 2 · turning, flying into her light, and the 102 ────────────
+        standTheWalker(atFraction: here, entering: now)
+        standPresences(atFraction: here, at: seconds)
     }
 
     /// How brightly a band's own light can show. Design's §4.4 reading, carried
@@ -408,6 +433,7 @@ final class WorldClimbScene {
         switch layer {
         case .ground: return building
         case .world: return weather
+        case .presences: return presences
         }
     }
 
@@ -707,4 +733,211 @@ final class WorldClimbScene {
         }
     }
 
+}
+
+// MARK: - Wave 2 · the 102 on the climb, turning, and flying into her light
+
+/// What the walker's hand is doing to the climb, as numbers.
+struct ClimbGestures: Equatable {
+    /// Design's drag-to-turn, in radians about the vertical.
+    var yaw: Double = 0
+    /// Flying into a light: whose, and how far along, 0…1.
+    var flight: Flight?
+    /// Ring 3's scatter, 0 still … 1 chased.
+    var agitation: Double = 0
+    /// Ring 8's three gliding into one, 0 … 1.
+    var union: Double = 0
+    /// Ring 6's light, where the finger has carried it, in scene units.
+    var follow: SIMD3<Double>?
+
+    struct Flight: Equatable {
+        let kp: Int
+        let progress: Double
+    }
+}
+
+/// One Śakti's light on the climb: a halo, and — if he has stood with her — a
+/// core, and — if the day is hers — a crown.
+final class ClimbLightNodes {
+    let kp: Int
+    let root: SCNNode
+    let halo: SCNNode
+    var core: SCNNode?
+    var crown: SCNNode?
+    var breath: ClimbLights.Breath
+
+    init(kp: Int, root: SCNNode, halo: SCNNode, breath: ClimbLights.Breath) {
+        self.kp = kp
+        self.root = root
+        self.halo = halo
+        self.breath = breath
+    }
+}
+
+extension WorldClimbScene {
+
+    /// The light a Śakti carries on the climb: her ring's gem, lifted.
+    static func lightColour(kp: Int) -> SIMD3<Double> {
+        let ring = KhadgamalaMap.ringNumber(forKhadgamala: kp)
+        let rgb = HomeGem.gemFor(ring: max(1, ring), khadgamalaPosition: kp).bright.rgb
+        return SIMD3(rgb.r, rgb.g, rgb.b)
+    }
+
+    /// Design's crown and core are white light; a little warm, so they sit in
+    /// the instrument's own palette rather than a screen's.
+    static let whiteLight = SIMD3<Double>(1.0, 0.96, 0.88)
+
+    /// Put the 102 on the climb — once — and mark who he has stood with and
+    /// whose day it is. Called again later, it only moves the marks: the core a
+    /// Śakti carries once he has stood with her, and the crown that passes to
+    /// the next day's Śakti.
+    func hold(seats: [ClimbLights.Seat], met: Set<Int>, today: Int?) {
+        SCNTransaction.begin()
+        SCNTransaction.disableActions = true
+        if lights.isEmpty {
+            for seat in seats where (1...KhadgamalaMap.total).contains(seat.kp) {
+                let breath = ClimbLights.breath(isAuthored: seat.isAuthored, met: met.contains(seat.kp))
+                let root = SCNNode()
+                root.name = "presence.\(seat.kp)"
+                let halo = RoomAir.glow("halo.\(seat.kp)", colour: Self.lightColour(kp: seat.kp),
+                                        size: breath.size * ClimbLights.unit,
+                                        alpha: breath.opacity, hot: 0.5)
+                root.addChildNode(halo)
+                let p = ClimbLights.position(kp: seat.kp)
+                root.position = SCNVector3(Float(p.x), Float(p.y), Float(p.z))
+                RoomScene.markAsLight(root)
+                presences.addChildNode(root)
+                lights[seat.kp] = ClimbLightNodes(kp: seat.kp, root: root, halo: halo, breath: breath)
+            }
+        }
+        for (kp, l) in lights {
+            let isMet = met.contains(kp)
+            l.breath = ClimbLights.breath(isAuthored: HomeRooms.authoredMechanism(atPosition: kp) != nil,
+                                          met: isMet)
+            if isMet, l.core == nil {
+                let core = RoomAir.glow("core.\(kp)", colour: Self.whiteLight,
+                                        size: ClimbLights.coreSize * ClimbLights.unit,
+                                        alpha: ClimbLights.coreOpacity, hot: 1)
+                l.root.addChildNode(core)
+                l.core = core
+            } else if !isMet, let core = l.core {
+                core.removeFromParentNode()
+                l.core = nil
+            }
+            let presides = kp == today
+            if presides, l.crown == nil {
+                let crown = RoomAir.glow("crown.\(kp)", colour: Self.whiteLight,
+                                         size: ClimbLights.crownSize * ClimbLights.unit,
+                                         alpha: 0.85, hot: 0.35)
+                l.root.addChildNode(crown)
+                l.crown = crown
+            } else if !presides, let crown = l.crown {
+                crown.removeFromParentNode()
+                l.crown = nil
+            }
+        }
+        SCNTransaction.commit()
+    }
+
+    /// How many lights stand on the climb.
+    var presenceCount: Int { lights.count }
+
+    /// Whether every light on the climb is light — the surviving principle
+    /// (no figural depiction of a Śakti), asked of the whole third layer.
+    var everyPresenceIsLight: Bool {
+        var allLight = true
+        func walk(_ node: SCNNode) {
+            if node.geometry != nil, !RoomScene.isLight(node) { allLight = false }
+            node.childNodes.forEach(walk)
+        }
+        walk(presences)
+        return allLight
+    }
+
+    /// Which lights carry a crown — the day's Śakti, and only she.
+    var crowned: [Int] { lights.filter { $0.value.crown != nil }.map { $0.key }.sorted() }
+
+    /// Which lights carry a core — the Śaktis he has stood with.
+    var cored: Set<Int> { Set(lights.filter { $0.value.core != nil }.map { $0.key }) }
+
+    /// Where each light near this height stands this frame, for a touch to be
+    /// read against.
+    func lightPoints(nearFraction f: Double) -> [(kp: Int, position: SIMD3<Double>)] {
+        lights.keys.sorted().compactMap { kp -> (kp: Int, position: SIMD3<Double>)? in
+            guard ClimbLights.isNear(kp: kp, atFraction: f) else { return nil }
+            return (kp: kp, position: Self.placed(kp: kp, gestures: gestures))
+        }
+    }
+
+    /// Her light's place with the ring mechanisms acting on it.
+    static func placed(kp: Int, gestures: ClimbGestures) -> SIMD3<Double> {
+        ClimbLights.position(kp: kp)
+            + ClimbLights.scatter(kp: kp, agitation: gestures.agitation)
+            + ClimbLights.gather(kp: kp, union: gestures.union)
+    }
+
+    /// Ring 6's moving light — a soft glow, not a figure.
+    func buildFollowLight() {
+        let colour = SIMD3<Double>(154.0 / 255, 134.0 / 255, 196.0 / 255)
+        let node = RoomAir.glow("follow", colour: colour, size: 2.4 * ClimbLights.unit,
+                                alpha: 0.85, hot: 0.6)
+        node.isHidden = true
+        presences.addChildNode(node)
+        followLight = node
+    }
+
+    /// The eye, turned by the hand, or flying into her light.
+    func standTheWalker(atFraction f: Double, entering weather: WorldWeather) {
+        guard let flight = gestures.flight else {
+            cameraNode.eulerAngles = SCNVector3(Float(Self.gaze), Float(gestures.yaw), 0)
+            return
+        }
+        let axis = SIMD3(Double(cameraNode.position.x),
+                         Double(cameraNode.position.y),
+                         Double(cameraNode.position.z))
+        let light = Self.placed(kp: flight.kp, gestures: gestures)
+        let p = ClimbLights.clamp01(flight.progress)
+        let eye = ClimbFlight.eye(from: axis, to: light, progress: p)
+        cameraNode.position = SCNVector3(Float(eye.x), Float(eye.y), Float(eye.z))
+        cameraNode.look(at: SCNVector3(Float(light.x), Float(light.y),
+                                       Float(light.z - ClimbLights.unit)))
+        // Design: *"entering thickens the air until the world is swallowed and
+        // only she is left"* — the same law the rite's crossing uses.
+        let band = RoomLightRig.fogBand(density: WorldClimb.fogDensity(atFraction: f, entering: p))
+        scene.fogStartDistance = CGFloat(band.start)
+        scene.fogEndDistance = CGFloat(band.end)
+        _ = weather
+    }
+
+    /// Every light near this height, breathing — Design's `presences.forEach`.
+    func standPresences(atFraction f: Double, at t: TimeInterval) {
+        let swallow = gestures.flight?.progress ?? 0
+        let fade = ClimbLights.visibility(swallow: swallow)
+        let unit = ClimbLights.unit
+        for (kp, l) in lights {
+            let near = fade > 0 && ClimbLights.isNear(kp: kp, atFraction: f)
+            l.root.isHidden = !near
+            guard near else { continue }
+            let p = Self.placed(kp: kp, gestures: gestures)
+            l.root.position = SCNVector3(Float(p.x), Float(p.y), Float(p.z))
+            let pulse = ClimbLights.pulse(l.breath, kp: kp, at: t)
+            l.halo.scale = RoomAir.uniform(l.breath.size * unit * pulse * fade)
+            RoomAir.set(l.halo, "uAlpha", l.breath.opacity * fade)
+            if let core = l.core {
+                core.scale = RoomAir.uniform(ClimbLights.coreSize * unit * pulse * fade)
+                RoomAir.set(core, "uAlpha", ClimbLights.coreOpacity * fade)
+            }
+            if let crown = l.crown {
+                crown.scale = RoomAir.uniform(ClimbLights.crownSize * unit
+                                              * ClimbLights.crownBreath(at: t) * fade)
+                RoomAir.set(crown, "uAlpha", 0.85 * fade)
+            }
+        }
+        if let follow = gestures.follow, fade > 0 {
+            followLight?.isHidden = false
+            followLight?.position = SCNVector3(Float(follow.x), Float(follow.y), Float(follow.z))
+        } else {
+            followLight?.isHidden = true
+        }
+    }
 }

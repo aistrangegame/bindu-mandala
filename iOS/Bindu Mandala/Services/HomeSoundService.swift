@@ -729,9 +729,17 @@ final class HomeSoundService {
             wakeMaster()
             return
         }
-        guard configureSession() else { return }
+        // Wave 2: the graph is built **before** the session is configured.
+        // `build()` lets go of a graph still fading out from `stopAll`, and that
+        // teardown gives `.playback` back — so configuring first and building
+        // second left a room (or the climb) opened straight after another on
+        // `.playback`, sounding through the silent switch it had asked for.
         build()
         guard isBuilt, let engine else { return }
+        guard configureSession() else {
+            teardown()
+            return
+        }
         do {
             try engine.start()
         } catch {

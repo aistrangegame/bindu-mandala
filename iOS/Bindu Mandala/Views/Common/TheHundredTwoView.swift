@@ -18,6 +18,11 @@ struct TheHundredTwoView: View {
     @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
     @Query private var recognitions: [RecognitionEntry]
+    /// What each room remembers — read only as a state (has he stood here),
+    /// for the climb's core lights.
+    @Query private var rooms: [HomeMemory]
+    /// Wave 2 · the room a seat's doorway opened. See ``HerRoomDoor``.
+    @State private var roomKp: Int?
 
     @State private var detailFor: Shakti?
     @State private var thresholdFor: Avarana?
@@ -59,10 +64,33 @@ struct TheHundredTwoView: View {
         }
         .fullScreenCover(isPresented: $showClimb) {
             WorldClimbView(live: liveWorlds,
+                           seats: climbSeats,
+                           met: metKp,
+                           todayKp: todayPos,
                            startingAtRing: effectiveOpen ?? todayRing,
                            forceReduceMotion: AppRuntime.forcesReduceMotion,
                            onLeft: { showClimb = false })
         }
+        // Wave 2 · one building: a seat's doorway opens her room, through
+        // her rite, from the Field.
+        .herRoom($roomKp)
+    }
+
+    /// The 102 for the climb, with the names and qualities the base gives them.
+    private var climbSeats: [ClimbLights.Seat] {
+        var byKp: [Int: Shakti] = [:]
+        for s in shaktis { if let kp = s.khadgamalaPosition { byKp[kp] = s } }
+        return (1...KhadgamalaMap.total).map { kp in
+            ClimbLights.Seat(kp: kp, name: byKp[kp]?.name ?? "", quality: byKp[kp]?.quality ?? "")
+        }
+    }
+
+    /// The Śaktis he has stood with or felt — a state, never a count: they
+    /// carry Design's core light on the climb (*she was expecting you*).
+    private var metKp: Set<Int> {
+        let felt = Set(countByKp.filter { $0.value > 0 }.map { $0.key })
+        let stood = Set(rooms.filter { $0.known }.map { $0.khadgamalaPosition })
+        return felt.union(stood)
     }
 
     /// **The way onto the axis, and the argument for it standing here.**
@@ -153,6 +181,7 @@ struct TheHundredTwoView: View {
                                             }
                                         },
                                         onOpenShakti: { Haptics.light(); detailFor = $0 },
+                                        onEnterRoom: { kp in Haptics.medium(); roomKp = kp },
                                         onOpenThreshold: {
                                             if let av = avaranas.first(where: { $0.ringNumber == ring }) {
                                                 Haptics.light(); thresholdFor = av
@@ -277,6 +306,8 @@ private struct FieldRing: View {
     let open: Bool
     let onToggle: () -> Void
     let onOpenShakti: (Shakti) -> Void
+    /// Wave 2 · her doorway: her room, through her rite.
+    let onEnterRoom: (Int) -> Void
     let onOpenThreshold: () -> Void
 
     private var holdsToday: Bool { todayRing == ring }
@@ -395,7 +426,31 @@ private struct FieldRing: View {
         let count = countByKp[kp] ?? 0
         let felt = count > 0
         let sAtmo = Atmosphere.derive(from: seat)
-        return Button {
+        return HStack(spacing: 0) {
+            seatButton(seat, isToday: isToday, felt: felt, sAtmo: sAtmo)
+            // Wave 2 · her doorway — a small arch of her light. The row opens
+            // what is known of her; the arch opens her room, through her rite.
+            Button {
+                onEnterRoom(kp)
+            } label: {
+                DoorwayArch(colour: sAtmo.accentBright)
+                    .frame(width: 14, height: 18)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 10)
+            .accessibilityLabel(Text("Enter the room of \(spokenName(seat))"))
+        }
+        .background(
+            isToday
+            ? LinearGradient(colors: [sAtmo.accentFaint, .clear], startPoint: .leading, endPoint: .trailing)
+            : LinearGradient(colors: [.clear, .clear], startPoint: .leading, endPoint: .trailing)
+        )
+    }
+
+    private func seatButton(_ seat: Shakti, isToday: Bool, felt: Bool, sAtmo: Atmosphere) -> some View {
+        Button {
             onOpenShakti(seat)
         } label: {
             HStack(spacing: 14) {
@@ -421,11 +476,6 @@ private struct FieldRing: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 11)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                isToday
-                ? LinearGradient(colors: [sAtmo.accentFaint, .clear], startPoint: .leading, endPoint: .trailing)
-                : LinearGradient(colors: [.clear, .clear], startPoint: .leading, endPoint: .trailing)
-            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -512,5 +562,31 @@ private struct RingRoomGeometry: View {
         }
         .clipped()
         .allowsHitTesting(false)
+    }
+}
+
+/// Wave 2 · a seat's doorway: the Seven Gates' arch, drawn in her light — a
+/// threshold, not a figure.
+private struct DoorwayArch: View {
+    let colour: Color
+
+    var body: some View {
+        ArchShape()
+            .stroke(colour, lineWidth: 1.1)
+            .shadow(color: colour, radius: 4)
+            .accessibilityHidden(true)
+    }
+}
+
+private struct ArchShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let r = rect.width / 2
+        p.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        p.addLine(to: CGPoint(x: rect.minX, y: rect.minY + r))
+        p.addArc(center: CGPoint(x: rect.midX, y: rect.minY + r), radius: r,
+                 startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+        p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        return p
     }
 }

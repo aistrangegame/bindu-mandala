@@ -27,8 +27,9 @@ struct ShaktiDetailView: View {
     @State private var momentsExpanded: Bool = false
     @State private var goDeeperExpanded: Bool = false
     @State private var showRecognition = false
-    /// Phase 3.7 — the way in. See ``herDoor``.
-    @State private var showHerRoom = false
+    /// Phase 3.7 — the way in. See ``herDoor``. Wave 2: a position, handed to
+    /// ``HerRoomDoor``, which is where every way into a room passes the rite.
+    @State private var herRoomKp: Int?
 
     /// Ruling 7 / R3: cluster is a Ring-2-only taxonomy. The 86 carry `.inner`
     /// as `clusterRaw`'s default — never surface it as a color or a family label.
@@ -98,28 +99,10 @@ struct ShaktiDetailView: View {
                                   isPresented: $showRecognition,
                                   source: source)
         }
-        .fullScreenCover(isPresented: $showHerRoom) {
-            // `entering(_:remembering:)` builds the whole threshold from her own
-            // row and what her room remembers, and it is the **only** way a room
-            // is ever constructed in the shell. There is no call anywhere that
-            // reaches a `RoomView` without the rite in front of it, which is what
-            // makes "no room without the rite" a fact about the tree rather than
-            // a rule somebody has to keep.
-            //
-            // `nil` is impossible for a row the walker is looking at — she is on
-            // this screen, so she has a position and a ring — and the door below
-            // asks the same question before it draws, so this branch is the
-            // compiler's rather than the walker's.
-            if let rite = RiteOfEnteringView.entering(shakti,
-                                                      remembering: HomeMemoryStore(context: context),
-                                                      forceReduceMotion: AppRuntime.forcesReduceMotion,
-                                                      onLeft: { showHerRoom = false }) {
-                rite
-            } else {
-                Color.ground.ignoresSafeArea()
-                    .onAppear { showHerRoom = false }
-            }
-        }
+        // Wave 2 · one building. Her room opens through ``HerRoomDoor`` — the
+        // one place that calls the rite of entering — and from inside it the
+        // corridor walks to her neighbours, each through their own rite.
+        .herRoom($herRoomKp)
     }
 
     /// **The way into her room, and the one place in the shell it is opened.**
@@ -156,7 +139,7 @@ struct ShaktiDetailView: View {
         if HomeRooms.resolve(shakti) != nil {
             Button {
                 Haptics.medium()
-                showHerRoom = true
+                herRoomKp = shakti.khadgamalaPosition
             } label: {
                 Text("be with her ›")
                     .font(AppFont.voice(16))

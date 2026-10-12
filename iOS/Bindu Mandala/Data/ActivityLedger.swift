@@ -93,6 +93,13 @@ enum ActivityLedger {
         /// Bindu instrument that shares this ledger. "Left" is his own verb:
         /// *"go into the settings and leave a note."*
         static let noteLeft         = "Note Left"
+        /// Wave 2 · the Gates of Release. Going inward through an āvaraṇa he
+        /// sets down its Mental State — the act is the row, the words are the
+        /// ring's own. Born on first write by `typecast: true`.
+        static let stateSetDown     = "State Set Down"
+        /// Wave 2 · coming out through an āvaraṇa he receives its Siddhi.
+        /// Born on first write by `typecast: true`.
+        static let siddhiReceived   = "Siddhi Received"
     }
 
     // MARK: - The two once-ever milestones
@@ -259,6 +266,67 @@ enum ActivityLedger {
             linkRecordId: shaktiRecordId,
             name: "\(name) — silence held",
             detail: "Dwelt past the first adaptation · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.silence,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            durationSec: durationSec
+        )
+    }
+
+    // MARK: - Wave 2 · the Gates of Release, and Mauna
+
+    /// A `State Set Down` row: going inward, he held and set down this
+    /// āvaraṇa's Mental State. Linked to the Avaraṇa row; the words are the
+    /// ring's own (`Mental State`), never his and never generated. No Notes.
+    static func stateSetDown(ring: Int, state: String, at: Date) -> PendingActivity {
+        let words = state.trimmingCharacters(in: .whitespacesAndNewlines)
+        let said = words.isEmpty ? "Set down at the gate" : "Set down · \(words)"
+        return PendingActivity(
+            type: ActivityType.stateSetDown,
+            linkRecordId: AirtableService.avaranaRecordId(forRing: ring) ?? "",
+            name: "\(ordinal(ring)) Āvaraṇa — set down",
+            detail: "\(said) · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.mandala,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            descentRing: ring
+        )
+    }
+
+    /// A `Siddhi Received` row: coming out, he received this āvaraṇa's
+    /// Siddhi. Linked to the Avaraṇa row; the words are the ring's own.
+    static func siddhiReceived(ring: Int, siddhi: String, at: Date) -> PendingActivity {
+        let words = siddhi.trimmingCharacters(in: .whitespacesAndNewlines)
+        let said = words.isEmpty ? "Received on the way out" : "Received · \(words)"
+        return PendingActivity(
+            type: ActivityType.siddhiReceived,
+            linkRecordId: AirtableService.avaranaRecordId(forRing: ring) ?? "",
+            name: "\(ordinal(ring)) Āvaraṇa — received",
+            detail: "\(said) · \(LunarPhaseService.phaseName(at: at))",
+            at: at,
+            gestureSource: GestureSource.mandala,
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at),
+            descentRing: ring
+        )
+    }
+
+    /// Mauna — the silence held at the point. Its own `Silence Held` row,
+    /// linked to the Śakti who sits at the point (Lalitā, kp 102), and never a
+    /// recognition: a silence is not "felt" (Wave 0 · B3). `Duration (sec)` is
+    /// the archive's record of how long it was held, and is never shown.
+    static func mauna(shaktiRecordId: String,
+                      name shaktiName: String,
+                      durationSec: Double,
+                      at: Date) -> PendingActivity {
+        let name = shaktiName.isEmpty ? "The point" : shaktiName
+        return PendingActivity(
+            type: ActivityType.silenceHeld,
+            linkRecordId: shaktiRecordId,
+            name: "\(name) — mauna, the silence at the point",
+            detail: "Held at the centre · \(LunarPhaseService.phaseName(at: at))",
             at: at,
             gestureSource: GestureSource.silence,
             lunarDay: LunarPhaseService.currentDay(at: at),
