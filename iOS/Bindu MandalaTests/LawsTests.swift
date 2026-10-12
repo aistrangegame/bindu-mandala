@@ -611,7 +611,8 @@ enum NeverMeasure {
         "avarana.shaktiCount",          // how many seats this āvaraṇa holds — 28, 16, 8, …
         "seats.count",                  // the same number, counted from the ring's own roster
         "familyCount",                  // how many sisters share her family
-        "ShaktiStatus.allCases.count",  // the four stages of embodiment
+        // Wave 6 (C-1338): "ShaktiStatus.allCases.count" — the four stages of
+        // embodiment — left the screen with the spoken "level ⟨n⟩ of four".
     ]
 
     // MARK: The one legitimate digit — a seat in the garland
@@ -708,9 +709,15 @@ enum NeverMeasure {
     /// rule forbids in the other direction. The restrained option is not the
     /// quiet one here; it is the one that does not make the instrument say two
     /// different things to two different walkers.
-    static let pinnedNonIdentityDigits: Set<String> = [
-        "Views/Common/ShaktiDetailView.swift · Embodiment: ⟨shakti.status.label⟩, level ⟨level + 1⟩ of ⟨ShaktiStatus.allCases.count⟩",
-    ]
+    ///
+    /// **Wave 6 · removed** (C-1338, *"the mark is in the architecture, not in
+    /// the claiming of it"*; C-1284). The upholding above weighed screen and
+    /// voice and kept the words. His Codex weighs the claim itself: a rung read
+    /// out — "level four of four" — is a claim, whichever walker hears it. The
+    /// spoken line is gone and the track is hidden from VoiceOver, while the
+    /// status pill still names her stage in words for every walker alike. The
+    /// set is empty now, and a digit that is not her seat fails again.
+    static let pinnedNonIdentityDigits: Set<String> = []
 }
 
 // MARK: - Law 3 · the two Recognition lines
@@ -912,6 +919,8 @@ enum LedgerIsTheRecord {
         "Played",
         // Wave 5 · memory and words — held to the same rule.
         "Letter Sealed", "Letter Opened", "Portrait Drawn", "Wager Resolved",
+        // Wave 6 · modes, rites and his laws — held to the same rule.
+        "Witness Written", "Garland Recited", "Day Offered",
         "Activity Type",
     ]
 

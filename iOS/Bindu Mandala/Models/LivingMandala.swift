@@ -77,8 +77,8 @@ enum LivingMandala {
     // MARK: The year, accreting
 
     /// The days he practised in `year`, as the start of each local day, oldest
-    /// first — one bead each. A day he did not practise has **no slot at all**:
-    /// the ring is always whole, and it grows denser, never emptier.
+    /// first — one bead each. A day he did not practise has **no bead and no
+    /// slot**: on the rim it is simply space (Wave 6, C-1348).
     static func practiceDays(_ instants: [Date], inYearOf reference: Date,
                              calendar: Calendar = .current) -> [Date] {
         let year = calendar.component(.year, from: reference)
@@ -89,8 +89,21 @@ enum LivingMandala {
         return days.sorted()
     }
 
+    /// **Wave 6 · the year keeps its lived gaps** (C-1348, *"gaps and spaces
+    /// aren't meant to be filled but fully inhabited"*). A day's bead sits at
+    /// that day's own place on the year's circle — 1 January at 12 o'clock,
+    /// clockwise — so a day he did not come is simply space on the rim, never
+    /// filled and never marked. Nothing on the rim is a slot or a missing bead:
+    /// the circle is the year, and the light is where he was.
+    static func dayAngle(_ day: Date, calendar: Calendar = .current) -> Double {
+        let ordinal = Double((calendar.ordinality(of: .day, in: .year, for: day) ?? 1) - 1)
+        let length = Double(calendar.range(of: .day, in: .year, for: day)?.count ?? 365)
+        return 2 * Double.pi * ordinal / max(1, length) - Double.pi / 2
+    }
+
     /// Bead `index` of `total` sits at this angle (radians, 12 o'clock = −π/2,
-    /// clockwise) — evenly round the whole circle, so there is never a gap.
+    /// clockwise) — evenly round the whole circle. Wave 5's placement, kept for
+    /// the record; the year ring now places by ``dayAngle(_:calendar:)``.
     static func beadAngle(index: Int, total: Int) -> Double {
         guard total > 0 else { return -Double.pi / 2 }
         return 2 * Double.pi * Double(index) / Double(total) - Double.pi / 2

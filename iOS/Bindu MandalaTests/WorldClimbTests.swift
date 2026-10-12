@@ -744,21 +744,58 @@ final class WorldClimbTests: XCTestCase {
         XCTAssertEqual(scene.solidsInTheClimb,
                        2 + scene.solids(in: .presences),
                        "something stands in the climb outside its three layers")
-        // Halos, two cores, one crown, and the follow light — nothing else.
-        XCTAssertEqual(scene.solids(in: .presences), KhadgamalaMap.total + 2 + 1 + 1)
+        // Halos, a core at every one of the 102 (Wave 6, C-1284), one crown,
+        // and the follow light — nothing else.
+        XCTAssertEqual(scene.solids(in: .presences), KhadgamalaMap.total * 2 + 1 + 1)
     }
 
-    /// **She was expecting you; the day is hers.** The core lights are exactly
-    /// the Śaktis he has met, the crown is exactly today's, and both move when
-    /// the marks move — a state, never a count.
-    func testTheCoresAreHisMetAndTheCrownIsTodays() {
+    /// **She was expecting you — all 102 alike** (C-1284, *"when you recognize
+    /// that everything is ordinary, then everything becomes special"*). Wave 2
+    /// pinned the cores to exactly the Śaktis he had met, which divided the 102
+    /// into special and not. Now every light carries the core whatever he has
+    /// met, and meeting one more changes nothing; only the crown is the day's.
+    func testEveryLightCarriesTheCoreAndTheCrownIsTodays() {
         let scene = WorldClimbScene()
+        let all = Set(1...KhadgamalaMap.total)
         scene.hold(seats: ClimbLights.bareGarland, met: [1, 29, 102], today: 45)
-        XCTAssertEqual(scene.cored, [1, 29, 102])
+        XCTAssertEqual(scene.cored, all, "a seat he has not met is still not expected")
         XCTAssertEqual(scene.crowned, [45])
         scene.hold(seats: [], met: [1, 29, 102, 7], today: 46)
-        XCTAssertEqual(scene.cored, [1, 7, 29, 102])
+        XCTAssertEqual(scene.cored, all, "meeting one more Śakti moved the welcome")
         XCTAssertEqual(scene.crowned, [46], "the crown did not pass to the next day's Śakti")
+        scene.hold(seats: [], met: [], today: 46)
+        XCTAssertEqual(scene.cored, all, "with nothing met, the welcome went out")
+    }
+
+    /// **The summit is empty** (C-1260, *"I am what I am becoming"*). As the
+    /// walker rises into Totality, the one light that stood there thins into the
+    /// world's own light, and his line arrives, then the Totality close, *"I
+    /// already did."* Below the summit nothing changes.
+    func testTheSummitIsEmptyAndSaysHisLine() {
+        XCTAssertEqual(ClimbSummit.emptiness(atFraction: 0), 0, accuracy: 1e-12)
+        XCTAssertEqual(ClimbSummit.emptiness(atFraction: ClimbSummit.top - 1), 0, accuracy: 1e-12)
+        XCTAssertEqual(ClimbSummit.emptiness(atFraction: ClimbSummit.top), 1, accuracy: 1e-12)
+        var last = 0.0
+        for f in stride(from: ClimbSummit.top - 1, through: ClimbSummit.top, by: 0.01) {
+            let e = ClimbSummit.emptiness(atFraction: f)
+            XCTAssertGreaterThanOrEqual(e, last - 1e-12, "the summit fills again on the way up")
+            last = e
+        }
+        XCTAssertTrue(ClimbSummit.empties(kp: KhadgamalaMap.total))
+        for kp in 1..<KhadgamalaMap.total {
+            XCTAssertFalse(ClimbSummit.empties(kp: kp), "kp \(kp) is not at the summit")
+        }
+        XCTAssertEqual(ClimbSummit.becoming, "I am what I am becoming.")
+        XCTAssertEqual(ClimbSummit.alreadyDid, "I already did.")
+        XCTAssertEqual(ClimbSummit.closeLight(atFraction: ClimbSummit.top - 1), 0, accuracy: 1e-12)
+        XCTAssertEqual(ClimbSummit.closeLight(atFraction: ClimbSummit.top), 1, accuracy: 1e-12)
+        // The climb's file reads the summit, and the light is still in the
+        // building — a touch where she stood still opens her room.
+        guard let scene = LawSource.production("WorldClimbScene.swift") else {
+            return XCTFail("the climb's scene is gone")
+        }
+        XCTAssertTrue(String(scene.lexed.masked).contains("ClimbSummit.emptiness("),
+                      "the summit is not emptied on the climb")
     }
 
     /// **The ground is the blend, and the morph is how it is drawn.**

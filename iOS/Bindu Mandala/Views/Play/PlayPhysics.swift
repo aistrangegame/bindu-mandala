@@ -7,7 +7,8 @@ import CoreGraphics
 // screen, a touch or a speaker. The laws they keep (charter §3 law 7):
 //
 //  · **Failure is present-tense physics.** A hurried step makes the walls press
-//    in; a flame starved of fuel gutters; a door pressed too hard dims. Nothing
+//    in; a flame starved of fuel gutters; a door pressed too hard simply does
+//    not open (Wave 6, C-1357 — it no longer dims at him). Nothing
 //    here ever subtracts what was already reached, resets a counter, or
 //    returns a verdict.
 //  · **Force is absorbed, never punished** (Bindu Feed's TouchSense): pressure
@@ -382,12 +383,19 @@ struct ShakeClear {
 
 struct DoorHold {
     static let seconds: Double = 2.8
-    /// Above this pressure the door dims rather than opens: she is entered
-    /// lightly. The force is absorbed — it pauses the opening; it takes
-    /// nothing back.
+    /// Above this pressure the door does not open: she is entered lightly.
+    ///
+    /// **Wave 6 · force is absorbed, never corrected** (C-1357, the wound of
+    /// *"you are doing something wrong"*). Wave 4 dimmed the door under a hard
+    /// press — a reaction aimed at him, a correction. Now a hard press simply
+    /// does not open it: the door stays exactly as it was, neither brighter nor
+    /// dimmer, and the force goes nowhere. It pauses the opening; it takes
+    /// nothing back and says nothing.
     static let gentle: Double = 0.62
 
     private(set) var opened: Double = 0   // never falls
+    /// The door resting while no finger is on it — the waiting of a door, never
+    /// an answer to how he pressed.
     private(set) var dim: Double = 0
 
     var isOpen: Bool { opened >= 1 - 1e-9 }
@@ -398,7 +406,7 @@ struct DoorHold {
             opened = min(1, opened + h / Self.seconds)
             dim = max(0, dim - h * 2)
         } else if holding {
-            dim = min(1, dim + h * 1.5)
+            // Absorbed: nothing changes under a hard press.
         } else {
             dim = min(0.6, dim + h * 0.4)
         }

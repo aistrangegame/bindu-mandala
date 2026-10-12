@@ -77,9 +77,9 @@ final class CorridorModel: PlayModel {
 //
 // The threshold verb. The door is small; he must become small to pass. A
 // light hold opens it, and as it opens the world grows around him — he is the
-// one getting smaller. Pressing hard does not force it: the door dims and
-// waits, and the force is absorbed. Lifting the finger leaves it as open as it
-// was.
+// one getting smaller. Pressing hard does not force it: the door simply stays
+// as it is, and the force is absorbed (Wave 6, C-1357 — it no longer dims, which
+// was a correction aimed at him). Lifting the finger leaves it as open as it was.
 
 final class DoorModel: PlayModel {
     private var hold = DoorHold()

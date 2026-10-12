@@ -10,8 +10,9 @@ import SwiftData
 ///     process; after that, his hand held still on her seal calls her back. His
 ///     hand, never hers: nothing here draws a figure — a ring of light fills
 ///     under his touch, and her own Appreciation Phrase arrives.
-///   • **The Wager** (A12) — "watch for her today… did she appear?" Both answers
-///     close it; neither is a verdict.
+///   • **The Wager** (A12), reshaped in Wave 6 by C-1195 — "she might appear
+///     today", noticed in passing if he wishes; nothing watched for, nothing
+///     asked.
 ///
 /// It stands in the scroll between her appreciation and her embodiment, above
 /// the library, and is the same height whether or not she has ever been felt.
@@ -143,35 +144,33 @@ struct HerDoorwaysSection: View {
 
     // MARK: The wager
 
+    /// **Wave 6 · she might appear today** (C-1195). The Wager was an act of
+    /// watching, and his Codex says energy recedes when it is watched — even in
+    /// anticipation. So nothing here is placed and nothing asks: one line says
+    /// she might appear today, and if he noticed her in passing he may say so,
+    /// at any hour. No question waits for an answer, and there is no other
+    /// answer to give.
     @ViewBuilder
     private var wagerBlock: some View {
         if let kp = kp {
-            let open = wagers.openWager(for: kp)
+            let noticed = wagers.noticedToday(for: kp) != nil
             VStack(alignment: .leading, spacing: 10) {
-                Text("THE WAGER")
+                Text("SHE MIGHT APPEAR TODAY")
                     .font(AppFont.label(11))
                     .tracking(2.6)
                     .foregroundStyle(atmo.accentBright)
-                if let open {
-                    if WagerStore.canResolve(open, at: .now) {
-                        Text("You watched for her. Did she appear?")
-                            .font(AppFont.voice(17))
-                            .foregroundStyle(Color.cream.opacity(0.82))
-                        HStack(spacing: 14) {
-                            wagerButton("she appeared") { resolve(open, appeared: true) }
-                            wagerButton("not this time") { resolve(open, appeared: false) }
-                        }
-                    } else {
-                        Text("You are watching for her today. In the evening, say whether she came.")
-                            .font(AppFont.voice(17))
-                            .foregroundStyle(Color.cream.opacity(0.75))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                if noticed {
+                    Text("You noticed her today.")
+                        .font(AppFont.voice(17))
+                        .foregroundStyle(Color.cream.opacity(0.75))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity)
                 } else {
-                    wagerButton("watch for her today") {
-                        Haptics.light()
-                        wagers.place(for: kp)
-                    }
+                    Text("Not to be watched for — only, perhaps, noticed in passing.")
+                        .font(AppFont.voice(17))
+                        .foregroundStyle(Color.cream.opacity(0.75))
+                        .fixedSize(horizontal: false, vertical: true)
+                    wagerButton("I noticed her") { notice(kp) }
                 }
             }
         }
@@ -191,9 +190,11 @@ struct HerDoorwaysSection: View {
         .buttonStyle(.plain)
     }
 
-    private func resolve(_ wager: Wager, appeared: Bool) {
-        Haptics.medium()
-        wagers.resolve(wager.id, appeared: appeared)
+    private func notice(_ kp: Int) {
+        Haptics.soft()
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.8)) {
+            _ = wagers.notice(for: kp)
+        }
         let ctx = context
         Task { await PracticeLedger.flush(context: ctx) }
     }

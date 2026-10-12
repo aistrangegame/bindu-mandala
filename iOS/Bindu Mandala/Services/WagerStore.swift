@@ -74,6 +74,40 @@ final class WagerStore {
         return archive.wagers[i]
     }
 
+    // MARK: Wave 6 · she might appear today (C-1195)
+
+    /// **Energy recedes when it is watched** (C-1195: *"energy recedes when
+    /// told, even in anticipation of telling, and returns unobserved"*). The
+    /// Wager asked him to watch for her and then, in the evening, pressed a
+    /// question for an answer. Now nothing is placed and nothing asks: her
+    /// screen says only that she might appear today, and if — in passing — he
+    /// noticed her, he may say so, at any hour. That is the one act; there is no
+    /// "not this time", because nothing was owed.
+    ///
+    /// An open watch from before (Wave 5) is answered by this same noticing, so
+    /// no record is orphaned and none is lost. Noticing twice in one day is
+    /// one noticing.
+    @discardableResult
+    func notice(for kp: Int, at now: Date = .now, calendar: Calendar = .current) -> Wager {
+        if let open = openWager(for: kp), let answered = resolve(open.id, appeared: true, at: now) {
+            return answered
+        }
+        if let today = noticedToday(for: kp, at: now, calendar: calendar) { return today }
+        let w = Wager(id: UUID(), khadgamalaPosition: kp, placedAt: now,
+                      resolvedAt: now, appeared: true, ledgeredAt: nil)
+        archive.wagers.append(w)
+        persist()
+        return w
+    }
+
+    /// The noticing of her today, if he has said so.
+    func noticedToday(for kp: Int, at now: Date = .now, calendar: Calendar = .current) -> Wager? {
+        archive.wagers.last {
+            $0.khadgamalaPosition == kp && $0.appeared == true
+                && $0.resolvedAt.map { calendar.isDate($0, inSameDayAs: now) } == true
+        }
+    }
+
     func unledgered() -> [Wager] {
         archive.wagers.filter { $0.resolvedAt != nil && $0.ledgeredAt == nil }
     }

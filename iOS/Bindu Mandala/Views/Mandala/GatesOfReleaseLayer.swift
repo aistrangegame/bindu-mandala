@@ -9,6 +9,12 @@ import SwiftData
 // inward he sets down each ring's Mental State; coming out he receives its
 // Siddhi.**
 //
+// **Wave 6 · an offering, not a giving-up** (C-1230, C-1232). His Codex warns
+// that giving something up creates a separateness that spreads; *"it has to be
+// something to get."* So the inward gate says *hold to offer it*, the words rise
+// into the light instead of falling, and what is left is named as his: the space
+// it leaves. Coming out he receives the Siddhi, as before. Both ways are gains.
+//
 // What changed in the crossing, and why:
 //   • **The words are the ring's own rows** (`Mental State`, `Siddhi`, read
 //     live, the base's strings standing offline) — never typed by him into a
@@ -62,7 +68,8 @@ struct GatesOfReleaseLayer: View {
             let now = tl.date
             let held = pressedAt.map { min(1, now.timeIntervalSince($0) / TheGates.holdSeconds) } ?? 0
             let after = answeredAt.map { now.timeIntervalSince($0) / TheGates.putDownSeconds } ?? 0
-            let motion = gate.way == .inward ? TheGates.putDown(after) : TheGates.receive(after)
+            // Wave 6 · the inward gate is an offering: the words rise (C-1230).
+            let motion = gate.way == .inward ? TheGates.offer(after) : TheGates.receive(after)
             let colour = Atmosphere.derive(ring: gate.ring, cluster: gate.ring == 2 ? .inner : nil,
                                            khadgamala: KhadgamalaMap.ringStartOffset(gate.ring) + 1,
                                            element: Element.forRing(gate.ring)).accentBright
@@ -110,6 +117,18 @@ struct GatesOfReleaseLayer: View {
                     .accessibilityLabel(Text("\(gate.instruction): \(gate.words)"))
                     .accessibilityAddTraits(.isButton)
                     .accessibilityAction { answer(gate) }
+                } else {
+                    // What he is given: the space the offering leaves, or the
+                    // Siddhi received.
+                    Text(gate.answered)
+                        .font(AppFont.voice(15))
+                        .tracking(0.6)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(colour)
+                        .opacity(min(1, after * 1.4))
+                        .padding(.horizontal, 44)
+                        .frame(minHeight: 76)
+                        .allowsHitTesting(false)
                 }
             }
             .padding(.bottom, 112)

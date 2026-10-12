@@ -28,6 +28,19 @@ struct DailyRiteView: View {
     @State private var detailFor: Shakti?
     /// Wave 2 · today's room, opened from her seat in the foot.
     @State private var roomKp: Int?
+    /// Wave 6 · the Rite's opening (Arrival): the hour's call, "Stop. Breathe.
+    /// Remember.", the Sacred Pause. Set while it stands; the nine beats wait.
+    @State private var opening: RiteOpening.Kind?
+    /// Wave 6 · Offering and Carry, after she has been felt.
+    @State private var closing = false
+    /// Wave 6 · the low-state door.
+    @State private var lowOpen = false
+
+    /// UI tests and captures read the Rite as Wave 1 composed it: no opening
+    /// in front of it and no close over it.
+    private static let openingsSkipped: Bool = AppRuntime.isUnitTesting
+        || ProcessInfo.processInfo.arguments.contains("SKIP_HOMECOMING")
+        || ProcessInfo.processInfo.arguments.contains("SKIP_OPENING")
 
     // MARK: - Today's energy (all 102, 6am boundary — unchanged)
 
@@ -58,10 +71,37 @@ struct DailyRiteView: View {
             if let s = today {
                 rite(for: s)
                     .onAppear(perform: beginArrival)
+                // Wave 6 · Offering and Carry close the Rite once she is felt.
+                if closing {
+                    let words = RiteStation.closing(
+                        appreciation: s.appreciationPhrase, recognition: s.recognitionPhrase,
+                        somaticLine: SensoryDoorway.line(somaticSignature: s.somaticPoetry,
+                                                         somaticPrompt: s.somatic))
+                    RiteClosingStations(offering: words.offering, carry: words.carry, still: still,
+                                        onDone: { withAnimation(.easeInOut(duration: 0.6)) { closing = false } })
+                        .transition(.opacity)
+                        .zIndex(5)
+                }
+                // Wave 6 · Arrival: the opening stands before the nine beats.
+                if let kind = opening {
+                    RiteOpeningView(kind: kind,
+                                    yearLight: RiteOpening.yearLight(practiceDay: DailyEnergyService.practiceDayIndex()),
+                                    still: still,
+                                    onDone: { finishOpening() })
+                        .transition(.opacity)
+                        .zIndex(10)
+                }
             } else {
                 Color.ground.ignoresSafeArea()
                 ProgressView().tint(Color.gold)
             }
+        }
+        // Wave 6 · when the ceremony closes, the Rite's last two stations.
+        .onChange(of: showRecognition) { was, now in
+            if was && !now { beginClosing() }
+        }
+        .fullScreenCover(isPresented: $lowOpen) {
+            LowStateDoorView(onClose: { lowOpen = false })
         }
         .onAppear {
             // Debug: `OPEN_NITYA` opens today's Nityā sheet directly.
@@ -87,12 +127,43 @@ struct DailyRiteView: View {
     /// prototype's 60 ms), so the first frame is the empty ground and every
     /// beat after it is seen rising. Under reduce motion she is simply there.
     private func beginArrival() {
-        guard !arrived else { return }
+        guard !arrived, opening == nil else { return }
+        // Wave 6 · Arrival comes first: once in the light half of a practice
+        // day and once in the dark half, the opening stands before the beats.
+        let hour = Calendar.current.component(.hour, from: Date())
+        let day = DailyEnergyService.practiceDayIndex()
+        if !Self.openingsSkipped,
+           RiteOpening.opens(lastKey: UserDefaults.standard.string(forKey: RiteOpening.lastOpeningKey),
+                             practiceDay: day, hour: hour) {
+            UserDefaults.standard.set(RiteOpening.key(practiceDay: day, hour: hour),
+                                      forKey: RiteOpening.lastOpeningKey)
+            opening = RiteOpening.kind(hour: hour)
+            return
+        }
         if still {
             arrived = true
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + StagedArrival.lead) { arrived = true }
+    }
+
+    /// The opening has passed: the nine beats begin.
+    private func finishOpening() {
+        withAnimation(.easeInOut(duration: still ? 0.01 : 1.2)) { opening = nil }
+        beginArrival()
+    }
+
+    /// Offering and Carry, once a practice day — a same-day return continues
+    /// rather than repeats (expansion #24).
+    private func beginClosing() {
+        guard !Self.openingsSkipped else { return }
+        let day = DailyEnergyService.practiceDayIndex()
+        guard UserDefaults.standard.object(forKey: RiteStation.closedDayKey) == nil
+                || UserDefaults.standard.integer(forKey: RiteStation.closedDayKey) != day else { return }
+        UserDefaults.standard.set(day, forKey: RiteStation.closedDayKey)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(.easeInOut(duration: still ? 0.01 : 1.2)) { closing = true }
+        }
     }
 
     // MARK: - The composed rite
@@ -122,6 +193,14 @@ struct DailyRiteView: View {
             DepthOverlay()
 
             column(s: s, content: content, atmo: atmo, plan: plan, comp: comp)
+
+            // Wave 6 · the low-state door (C-1002, C-1120): his own words come
+            // back. In the top corner the hamburger leaves free, outside the
+            // column, so the composed Rite does not move for it.
+            LowStateDoorButton(action: { lowOpen = true })
+                .padding(.leading, 6)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .arrives(arrived, after: ArrivalBeat.foot.delay, still: still)
         }
     }
 

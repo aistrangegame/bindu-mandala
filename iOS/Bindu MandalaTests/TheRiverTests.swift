@@ -142,25 +142,52 @@ final class TheRiverTests: XCTestCase {
 
     // MARK: The Wager
 
-    func testAWatchIsAnsweredFromTheEvening() throws {
+    /// **C-1195 — energy recedes when watched, even in anticipation.** Wave 5
+    /// pinned a watch placed in the morning and a question answered from the
+    /// evening ("did she appear?"). Now nothing is placed and nothing asks: she
+    /// might appear today, and if he noticed her in passing he may say so at
+    /// any hour. There is only one thing to say, so there is no wrong answer.
+    func testSheMightAppearAndIsNoticedOnlyIfHeWishes() throws {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = try XCTUnwrap(TimeZone(identifier: "America/New_York"))
         func local(_ d: Int, _ h: Int) -> Date {
             cal.date(from: DateComponents(year: 2026, month: 10, day: d, hour: h))!
         }
         let store = WagerStore(directory: freshDirectory())
-        let w = store.place(for: 33, at: local(12, 8))
-        XCTAssertEqual(store.place(for: 33, at: local(12, 9)).id, w.id, "one open watch for her")
-        XCTAssertFalse(WagerStore.canResolve(w, at: local(12, 12), calendar: cal), "not at noon")
-        XCTAssertTrue(WagerStore.canResolve(w, at: local(12, 18), calendar: cal), "the evening")
-        XCTAssertTrue(WagerStore.canResolve(w, at: local(13, 7), calendar: cal), "or any later day")
+        XCTAssertNil(store.noticedToday(for: 33, at: local(12, 8), calendar: cal),
+                     "something was placed before he noticed anything")
+        XCTAssertNil(store.openWager(for: 33), "a watch is open that he never set")
 
-        let resolved = try XCTUnwrap(store.resolve(w.id, appeared: false, at: local(12, 19)))
-        XCTAssertEqual(resolved.appeared, false)
-        XCTAssertNil(store.openWager(for: 33))
-        XCTAssertNil(store.resolve(w.id, appeared: true), "answered once")
-        XCTAssertEqual(store.unledgered().map(\.id), [w.id])
-        XCTAssertNotEqual(store.place(for: 33, at: local(13, 8)).id, w.id, "a new day, a new watch")
+        // Noticed at mid-morning — no evening gate.
+        let n = store.notice(for: 33, at: local(12, 10), calendar: cal)
+        XCTAssertEqual(n.appeared, true)
+        XCTAssertNotNil(n.resolvedAt)
+        XCTAssertEqual(store.noticedToday(for: 33, at: local(12, 15), calendar: cal)?.id, n.id)
+        XCTAssertEqual(store.notice(for: 33, at: local(12, 16), calendar: cal).id, n.id,
+                       "noticing twice in a day is one noticing")
+        XCTAssertNil(store.noticedToday(for: 33, at: local(13, 9), calendar: cal), "a new day is open")
+        XCTAssertEqual(store.unledgered().map(\.id), [n.id])
+
+        // A watch left open from Wave 5 is answered by the same noticing —
+        // never orphaned, never lost.
+        let old = store.place(for: 50, at: local(10, 8))
+        let answered = store.notice(for: 50, at: local(12, 11), calendar: cal)
+        XCTAssertEqual(answered.id, old.id)
+        XCTAssertNil(store.openWager(for: 50))
+
+        // The ledger row says she was noticed in passing — never "watched for".
+        let row = ActivityLedger.wagerResolved(shaktiRecordId: "recS", name: "Smṛti",
+                                               appeared: true, at: local(12, 10))
+        XCTAssertFalse(row.name.contains("watched"), row.name)
+
+        // And her screen asks nothing: no question waits for an answer.
+        guard let section = LawSource.production("HerDoorwaysSection.swift") else {
+            return XCTFail("her doorways are gone")
+        }
+        let words = section.literals.map(\.text).joined(separator: " | ")
+        XCTAssertFalse(words.contains("?"), "her screen presses a question: \(words)")
+        XCTAssertFalse(words.contains("watch for her"), "her screen still asks him to watch")
+        XCTAssertFalse(words.contains("not this time"), "a second answer implies a wrong one")
     }
 
     func testTheWagerSurvivesARelaunch() {
