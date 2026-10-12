@@ -126,7 +126,7 @@ final class StillAjnaModel: PlayModel {
         if dark.dark < 0.35 {
             let a = (0.35 - dark.dark) / 0.35
             ctx.draw(PlayInk.text(Self.lines[0], size: 26, alpha: 0.85 * a, sanskrit: true), at: CGPoint(x: c.x, y: c.y - 30))
-            ctx.draw(PlayInk.text(Self.lines[1], size: 17, alpha: 0.45 * a), at: CGPoint(x: c.x, y: c.y + 50))
+            ctx.draw(PlayInk.text(Self.lines[1], size: 17, alpha: 0.6 * a), at: CGPoint(x: c.x, y: c.y + 50))
         }
         // The dark over everything.
         ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color.black.opacity(0.92 * dark.dark)))

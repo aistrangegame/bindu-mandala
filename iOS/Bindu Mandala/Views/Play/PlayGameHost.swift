@@ -255,7 +255,7 @@ struct PlayGameHost: View {
     private var wordField: some View {
         VStack(spacing: 14) {
             Spacer()
-            TextField("", text: $word, prompt: Text(session.askingFor).foregroundColor(Color.cream.opacity(0.3)))
+            TextField("", text: $word, prompt: Text(session.askingFor).foregroundColor(Color.cream.opacity(0.55)))
                 .font(AppFont.sanskrit(30))
                 .foregroundStyle(Color.cream.opacity(0.9))
                 .multilineTextAlignment(.center)

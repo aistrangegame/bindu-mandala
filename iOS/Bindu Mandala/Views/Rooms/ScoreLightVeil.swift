@@ -18,7 +18,7 @@ struct ScoreLightVeil: View {
         Group {
             if let s = score, let hue = s.light.hue {
                 let glow = s.light.glow ?? 0.5
-                let period = BreathClock.period(grammar: Self.grammarBreath, score: s.tempo)
+                let period = BreathClock.period(grammar: Self.grammarBreath, score: s.breathing)
                 TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { tl in
                     let b = reduceMotion ? 0.5 : BreathClock.phase(at: BreathClock.seconds(at: tl.date),
                                                                     period: period)

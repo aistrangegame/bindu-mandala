@@ -7,13 +7,19 @@ import SwiftUI
 /// draws, so the type is the same everywhere and nothing reaches the glass
 /// but the string handed in.
 enum PlayInk {
+    ///
+    /// The alpha is the caller's, held to 0…1. Every caller names its own: a
+    /// settled line stands at 0.55 or more (FIDELITY rule 4); anything lower is
+    /// a line still fading in or out on its way to that.
     static func text(_ s: String, size: CGFloat, alpha: Double, sanskrit: Bool = false) -> Text {
         let font = sanskrit ? AppFont.sanskrit(size) : AppFont.voice(size)
-        return Text(s).font(font).foregroundColor(Color.cream.opacity(min(max(alpha, 0), 1)))
+        let held = min(max(alpha, 0), 1)
+        return Text(s).font(font).foregroundColor(Color.cream.opacity(held))
     }
 
     static func tinted(_ s: String, size: CGFloat, colour: Color, alpha: Double) -> Text {
-        Text(s).font(AppFont.sanskrit(size)).foregroundColor(colour.opacity(min(max(alpha, 0), 1)))
+        let held = min(max(alpha, 0), 1)
+        return Text(s).font(AppFont.sanskrit(size)).foregroundColor(colour.opacity(held))
     }
 }
 

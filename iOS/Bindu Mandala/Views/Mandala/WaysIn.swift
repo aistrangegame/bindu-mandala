@@ -153,13 +153,13 @@ struct WaysInRingView: View {
                         Text(way.glyph)
                             .font(AppFont.label(17))
                             .foregroundStyle(active(way) ? Color.gold : Color.cream.opacity(0.8))
-                            .frame(width: 46, height: 46)
+                            .frame(minWidth: 46, minHeight: 46)
                             .background(Circle().fill(Color.black.opacity(0.4)))
                             .overlay(Circle().stroke(active(way) ? Color.gold : Color.cream.opacity(0.3),
                                                      lineWidth: 1))
                         Text(way.word)
-                            .font(AppFont.label(10.5))
-                            .tracking(1.4)
+                            .font(AppFont.label(11))
+                            .tracking(1.3)
                             .foregroundStyle(Color.cream.opacity(0.62))
                             .fixedSize()
                     }

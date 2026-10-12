@@ -123,7 +123,7 @@ struct ShaktiScore: Equatable {
     }
 
     var light = Light()
-    var tempo = Tempo()
+    var breathing = Tempo()
     var sound = Sound()
 
     var isEmpty: Bool { self == ShaktiScore() }
@@ -145,9 +145,9 @@ struct ShaktiScore: Equatable {
         }
         if let t = section(root, "tempo") {
             if let b = number(t, ["breath", "breath_s", "breathSeconds", "period"]), b > 0 {
-                s.tempo.breath = clamp(b, 2, 60)
+                s.breathing.breath = clamp(b, 2, 60)
             }
-            if let r = number(t, ["rate", "multiplier", "pace"]), r > 0 { s.tempo.rate = clamp(r, 0.25, 4) }
+            if let r = number(t, ["rate", "multiplier", "pace"]), r > 0 { s.breathing.rate = clamp(r, 0.25, 4) }
         }
         if let so = section(root, "sound") {
             if let hz = number(so, ["carrier_hz", "carrierHz", "carrier", "hz"]), hz > 20, hz < 2000 {

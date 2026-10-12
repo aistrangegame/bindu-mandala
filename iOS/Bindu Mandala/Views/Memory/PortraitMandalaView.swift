@@ -44,17 +44,14 @@ struct PortraitMandalaView: View {
         ZStack {
             background
 
-            VStack(spacing: 0) {
-                header.opacity(fieldP)
-                Spacer(minLength: 16)
-                mandala
-                    .overlay { livingOverlay }
-                Spacer(minLength: 16)
-                whisper.opacity(fieldP)
-                doors
-                    .opacity(fieldP)
-                    .padding(.top, 10)
-                Spacer(minLength: 20)
+            // Wave 6 added a third row of doors (the book, the month). On a small
+            // screen at the largest type the column no longer fits the glass, so
+            // there — and only there — it scrolls; everywhere else it stands
+            // still, as it always has. While he draws, the page holds still.
+            ViewThatFits(in: .vertical) {
+                column
+                ScrollView(.vertical, showsIndicators: false) { column }
+                    .scrollDisabled(drawingNow)
             }
         }
         .preferredColorScheme(.dark)
@@ -128,6 +125,21 @@ struct PortraitMandalaView: View {
             .allowsHitTesting(false)
             DustMotesView(count: variant.motes, element: day.element, accent: day.accentBright)
                 .allowsHitTesting(false)
+        }
+    }
+
+    private var column: some View {
+        VStack(spacing: 0) {
+            header.opacity(fieldP)
+            Spacer(minLength: 16)
+            mandala
+                .overlay { livingOverlay }
+            Spacer(minLength: 16)
+            whisper.opacity(fieldP)
+            doors
+                .opacity(fieldP)
+                .padding(.top, 10)
+            Spacer(minLength: 20)
         }
     }
 

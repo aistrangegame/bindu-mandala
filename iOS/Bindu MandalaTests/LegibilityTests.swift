@@ -400,6 +400,17 @@ enum LegibilityExemptions {
         "Views/Common/AvaranaThresholdView.swift:avarana.sanskritName":
             "the threshold's enclosure name — `nameSize(_:)` tapers it 46 → 42 → 37 pt by "
             + "length, never under 37, drawn at full cream",
+        // Wave 6 · the one door every game's drawn line goes through. The size
+        // is the caller's; every caller passes a literal of 12 pt or more
+        // (PlayGames*.swift), the smallest being the Body Map's labels at 12–13.
+        "Views/Play/PlayGamesGrowth.swift:s":
+            "PlayInk — the games' drawn words; each call site names its own size, 12 pt at the "
+            + "smallest (the Body Map's labels), most 15–56",
+        // Wave 6 · Panel 9's closing lines: `line(_:size:)` is called at 19, 20
+        // and 26 pt, nothing else.
+        "Views/Mandala/TheEightDissolutions.swift:words":
+            "the dissolutions' closing lines — `line(_:size:)` is only ever called at 19, 20 "
+            + "and 26 pt, in full ink",
     ]
 
     static func reason(for site: TypeSite) -> String? {
