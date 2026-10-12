@@ -457,6 +457,20 @@ final class WorldClimbSource: @unchecked Sendable {
 
     private(set) var travel: WorldClimbTravel
 
+    // MARK: Wave 2 · what the hand is doing, read by the driver each frame
+
+    /// Design's drag-to-turn target, `tYaw`, in radians. The driver settles
+    /// toward it at Design's `0.06` per frame.
+    var yawTarget: Double = 0
+    /// Whether a finger is on the glass, and whether it has moved — Ring 3
+    /// scatters while it moves, Ring 8 unites while it is down.
+    var touching = false
+    var moving = false
+    /// Ring 6's light, where the finger has carried it, in scene units.
+    var follow: SIMD3<Double>?
+    /// The flight into a light: whose, and the instant it began.
+    var flight: (kp: Int, since: TimeInterval)?
+
     init(_ travel: WorldClimbTravel = .atTheFeet) { self.travel = travel }
 
     func set(_ travel: WorldClimbTravel) { self.travel = travel }

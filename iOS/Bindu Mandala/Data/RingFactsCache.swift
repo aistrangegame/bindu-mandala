@@ -22,6 +22,10 @@ enum RingFactsCache {
         var timeCycle: String?
         var beeja: String?
         var bodyRegion: String?
+        /// Wave 2 · the ring's Siddhi (`fldx9jXyTVWxp19o1`), received on the
+        /// way out of the Gates of Release. Optional, so a cache written
+        /// before Wave 2 still decodes.
+        var siddhi: String? = nil
     }
 
     static let defaultsKey = "ringFacts.v1"

@@ -12,6 +12,8 @@ struct SignificanceCard: View {
     var onSound: () -> Void
     var onOpenDetail: () -> Void
     var onClose: () -> Void
+    /// Wave 2 · one building: her room, through her rite, from her seat.
+    var onEnterRoom: (() -> Void)? = nil
 
     private var phonetic: String? {
         let p = shakti.phonetic.trimmingCharacters(in: .whitespaces)
@@ -103,6 +105,21 @@ struct SignificanceCard: View {
             }
             .buttonStyle(.plain)
             .padding(.top, 14)
+
+            if let onEnterRoom {
+                Button(action: onEnterRoom) {
+                    Text("be with her ›")
+                        .font(AppFont.voice(16))
+                        .tracking(1.4)
+                        .foregroundStyle(Color.gold.opacity(0.82))
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+                .accessibilityLabel(Text("Be with her — enter her room"))
+            }
         }
         .padding(EdgeInsets(top: 18, leading: 20, bottom: 16, trailing: 20))
         .background(

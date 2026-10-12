@@ -3,49 +3,53 @@ import SceneKit
 
 // MARK: - The climb, on screen
 //
-// The nine āvaraṇas as one space. Design's Axis hints at it in four words —
-// *"scroll to climb · drag to turn"* — and the climb is the half this file
-// draws: the walker rises by his own hand, and the world changes around him.
+// The nine āvaraṇas as one space, and — Wave 2 — Design's Axis whole: the 102
+// Śaktis standing in it as breathing points of light at their own altitude.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// WHAT IS NOT DRAWN HERE, AND WILL NOT BE
+// WHAT THIS SURFACE HOLDS NOW (Wave 2 · One building)
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// **No rail.** Design's Axis puts nine ticks down the right edge with the
-// current one lit and the ones already met dimmed. That is a progress readout
-// of a practice, and Phase 3.1 already ruled its twin: the rite's three beat
-// pips were dropped because *"a lit dot, two dim ones, and a counter is exactly
-// what the brief names in the same breath as a visit number."* Nine ticks with
-// the met ones dimmed is the same thing over a whole instrument, and it would
-// also be the one place in the climb that told the walker something was keeping
-// track of him.
+//   • **The 102 lights** (``ClimbLights``), each in her own world, breathing on
+//     her own clock; a Śakti he has stood with carries Design's core light —
+//     *she was expecting you* — and today's Śakti carries the crown light
+//     *you did not choose her*.
+//   • **Fly into her light.** A touch on a light flies the eye into it while the
+//     air thickens, and her rite of entering begins from inside the light
+//     (``HerRoomDoor`` — the one threshold every way in passes through).
+//   • **The rail of nine** down the right edge — region words, the one he
+//     stands in lit, a gold tick on a world he has stood in. Place, never
+//     progress (§4.6): the same rail on the first day and the ten-thousandth,
+//     save for where he has stood, which he may always be shown.
+//   • **The weather sentences** — Design's `writeWorld`: the form, the ordinal
+//     and the region; the name; the gem on the dhātu and the clock; and the one
+//     line of what the air does.
+//   • **Drag to turn** — Design's `tYaw -= dx · 0.0024`, beside drag to rise.
+//   • **The four Ring Worlds' mechanisms, reborn in their worlds**: Ring 3's
+//     lights scatter under the moving finger and gather in stillness; Ring 6's
+//     light follows the finger and the name it reaches whispers; a touch on the
+//     empty air of Ring 7 strikes the twelve-voice chord; holding in Ring 8
+//     glides its three tones (and its three lights) into one.
+//   • **Sound** — every world has its voice (``RingFieldVoice``, and
+//     ``HomeSoundService``'s nine grounds crossfading on the climb's own
+//     weights). The silent switch is honoured.
 //
-// What replaces it is what it was describing, and it is the whole point of this
-// phase: **he knows where he is because the weather tells him.** The air is
-// thicker, the light comes from somewhere else, the clock runs at a different
-// rate. A rail would make all of that decoration.
-//
-// **No number, of anything.** There is nowhere in this file to put one:
-// everything drawn comes out of ``WorldWeather``, which has no field that
-// counts, and the one string is an āvaraṇa's own name.
-//
-// ─────────────────────────────────────────────────────────────────────────────
-// THE ĀVARAṆA'S NAME IS NAMED, AND THAT IS NOT A MEASURE
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// `Trailokyamohana` is the name of an enclosure, the way a room's own label is
-// the name of a room. It carries no count and says nothing about the walking.
-// It is read off the base where the base has been reached (law 1) and falls
-// back to Design's table where it has not, and it fades with the crossing so it
-// reads as the air changing rather than as a header standing over the world.
+// The rule the Phase 3.2 header wrote here — *no rail, no number* — was lifted
+// by Charter II to its first principle: nothing grades him. The rail says
+// where; nothing on this surface counts.
 
-/// The nine worlds as one climb.
+/// The nine worlds as one climb, and the 102 standing in it.
+@MainActor
 struct WorldClimbView: View {
 
     /// The live āvaraṇa rows, keyed by ring, where the base has been reached.
-    /// Airtable's name wins over Design's table; where it is silent, Design's
-    /// stands rather than a blank (FIDELITY §6).
     let live: [Int: HomeWorlds.LiveFacts]
+    /// The 102, with the names the base gives them.
+    let seats: [ClimbLights.Seat]
+    /// The Śaktis he has stood with or felt — they carry a core light.
+    let met: Set<Int>
+    /// Today's Śakti — she carries the crown light.
+    let todayKp: Int?
 
     /// Forced on for tests and captures; otherwise the environment decides.
     let forceReduceMotion: Bool
@@ -57,27 +61,40 @@ struct WorldClimbView: View {
     @Environment(\.accessibilityReduceMotion) private var environmentReduceMotion
 
     @State private var climb: WorldClimbSource
-    /// Where the walker stood when the current drag began.
+    /// Reaches the driver, for the questions only the renderer can answer
+    /// (which light is under a finger).
+    @State private var box = ClimbDriverBox()
+    /// Where the walker stood when the current drag began, and how he was
+    /// turned.
     @State private var dragFrom: Double = 0
+    @State private var yawFrom: Double = 0
     @State private var dragging = false
+    @State private var moved = false
     /// Redrawn on a step, so the still path has something to change on.
     @State private var steps = 0
     /// Whether the walker has moved on the axis yet, this time he is on it.
-    ///
-    /// The one thing the hint below is allowed to know. It is not written down,
-    /// not read back, and does not outlive the surface: the axis has no idea
-    /// whether he has ever climbed before, and an instruction that went away
-    /// because it had been *followed once, ever* would be the instrument keeping
-    /// a record of him. It goes away because he is already doing the thing.
+    /// Not written down, not read back — see the Phase 3.7 note in git history.
     @State private var risen = false
     /// How far out of the world he has been carried by the hold, 0 … 1.
     @State private var withdrawn: Double = 0
+    /// The Śakti whose room is open — through ``HerRoomDoor``.
+    @State private var roomKp: Int?
+    /// The light nearest the eye, for Design's `low` line.
+    @State private var nearKp: Int?
+    /// Ring 6's whisper: whose name the moving light reached, and when.
+    @State private var whisper: ClimbWhisper?
 
     init(live: [Int: HomeWorlds.LiveFacts] = [:],
+         seats: [ClimbLights.Seat] = ClimbLights.bareGarland,
+         met: Set<Int> = [],
+         todayKp: Int? = nil,
          startingAtRing ring: Int = 1,
          forceReduceMotion: Bool = false,
          onLeft: (() -> Void)? = nil) {
         self.live = live
+        self.seats = seats
+        self.met = met
+        self.todayKp = todayKp
         self.forceReduceMotion = forceReduceMotion
         self.onLeft = onLeft
         _climb = State(initialValue: WorldClimbSource(
@@ -88,10 +105,13 @@ struct WorldClimbView: View {
 
     var body: some View {
         ZStack {
-            WorldClimbLayer(climb: climb, reduceMotion: reduceMotion, steps: steps)
+            WorldClimbLayer(climb: climb, box: box, seats: seats, met: met, todayKp: todayKp,
+                            reduceMotion: reduceMotion, steps: steps)
                 .allowsHitTesting(false)
-            name
+            words
             hint
+            whisperLine
+            rail
             // The world going out from under him as he withdraws from it. See
             // ``withdrawing``.
             Color.ground
@@ -101,16 +121,15 @@ struct WorldClimbView: View {
         }
         .background(Color.ground)
         .contentShape(Rectangle())
-        .gesture(rising)
+        .gesture(handOnTheClimb)
         // The same way out of the axis as out of a room, drawn by the same file
-        // and held for the same length of crossing. One way out of the Homes
-        // layer, learned once — and the hold has something travelling through
-        // it here as it does in a room, which is the condition ``TheWayOut``'s
-        // own header sets for asking for a hold at all.
+        // and held for the same length of crossing.
         .theWayOut(reduceMotion: reduceMotion,
                    onBegan: { seconds in withdrawing(over: seconds) },
                    onLetGo: { stayOn() },
-                   onOut: { onLeft?() })
+                   onOut: { leaveTheClimb() })
+        // Wave 2 · and the equal way out, from the edge.
+        .theEdgeWayOut(onOut: { leaveTheClimb() })
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(worldName(atFraction: climb.value())))
         .accessibilityAdjustableAction { direction in
@@ -121,31 +140,67 @@ struct WorldClimbView: View {
             }
         }
         .ignoresSafeArea()
+        // Wave 2 · her room, through her rite, from inside her light.
+        .herRoom($roomKp, onLeft: { landed() })
+        // Wave 2 · the climb sounds, world by world. Paused while her room is
+        // open (the room's own voice takes the instrument), resumed on return.
+        .task(id: roomKp == nil) { await soundTheClimb() }
+        // Design's `low` line: the light nearest the eye, asked four times a
+        // second and written only when it changes, so a still climb is still.
+        .task { await watchTheNearestLight() }
+        .onDisappear {
+            guard roomKp == nil, !AppRuntime.isUnitTesting else { return }
+            RingFieldVoice.shared.silence()
+            HomeSoundService.shared.stopAll()
+        }
     }
 
-    // MARK: - Rising
+    // MARK: - The hand on the climb
 
-    /// The walker rises by his own hand. A drag up is a climb — one screen
-    /// height is one band, so the whole climb is eight of them and a world is
-    /// never more than a gesture away.
-    ///
-    /// When he lets go, Design's own settle closes on where he left it
-    /// (`climb += (target - climb) * 0.06`), written as the exponential it is,
-    /// so a dropped frame cannot change where he ends up.
-    private var rising: some Gesture {
-        DragGesture(minimumDistance: 6)
+    /// One gesture for the whole climb, as the Mandala has one: a drag up is a
+    /// rise (one screen height to a band), a drag across turns (Design's
+    /// `0.0024` rad a point), a touch that does not move chooses — a light, or
+    /// in Ring 7 the empty air's chord. While the finger is down the ring
+    /// mechanisms answer it.
+    private var handOnTheClimb: some Gesture {
+        DragGesture(minimumDistance: 0)
             .onChanged { value in
-                guard !reduceMotion else { return }
                 if !dragging {
                     dragging = true
+                    moved = false
                     dragFrom = climb.value()
+                    yawFrom = climb.yawTarget
+                    climb.touching = true
+                    if hereRing == 8 { RingFieldVoice.shared.unite(1) }
                 }
+                let distance = abs(value.translation.width) + abs(value.translation.height)
+                if distance > 8 { moved = true; climb.moving = true }
+                guard moved, !reduceMotion else { return }
                 risen = true
                 let bands = -value.translation.height / Self.pointsPerBand
                 climb.set(.standing(atFraction: dragFrom + bands))
+                climb.yawTarget = max(-Self.maxYaw, min(Self.maxYaw,
+                                       yawFrom - Double(value.translation.width) * Self.yawPerPoint))
+                // Ring 6: the light follows the finger, and whispers.
+                if hereRing == 6 {
+                    box.driver?.follow(at: value.location)
+                    if let kp = box.driver?.whispered(at: value.location), kp != whisper?.kp {
+                        whisper = ClimbWhisper(kp: kp, at: Date())
+                    }
+                } else {
+                    climb.follow = nil
+                }
             }
             .onEnded { value in
                 dragging = false
+                climb.touching = false
+                climb.moving = false
+                climb.follow = nil
+                if hereRing == 8 { RingFieldVoice.shared.unite(0) }
+                guard moved else {
+                    touch(at: value.location)
+                    return
+                }
                 guard !reduceMotion else {
                     step(by: value.translation.height < 0 ? 1 : -1)
                     return
@@ -157,18 +212,57 @@ struct WorldClimbView: View {
             }
     }
 
-    /// How far the walker's hand carries him. One screen height to a band: the
-    /// climb is the body, and a band is a body.
+    /// How far the walker's hand carries him. One screen height to a band.
     static let pointsPerBand: Double = 640
+    /// Design's `tYaw -= (dx) * 0.0024`.
+    static let yawPerPoint: Double = 0.0024
+    /// How far he may turn either way — far enough to face any of her sisters.
+    static let maxYaw: Double = .pi
 
-    /// One band, by the station rather than by the hand — a flick, or
-    /// VoiceOver's own adjustment.
-    ///
-    /// With motion on it is still **travel**: he rises to the next station at
-    /// Design's own pace, because invariant 3 allows nothing else. With reduce
-    /// motion on he steps there and stands, which is invariant 4's *quantized,
-    /// never disabled* — every band is still passed through, and what is
-    /// dropped is the frame loop between them rather than a world.
+    /// A touch that did not move: a light, or the empty air.
+    private func touch(at point: CGPoint) {
+        if let kp = box.driver?.pick(at: point) {
+            flyInto(kp)
+            return
+        }
+        // Ring 7: the empty air strikes the twelve-voice chord.
+        if hereRing == 7 {
+            Haptics.soft()
+            RingFieldVoice.shared.chord()
+        }
+    }
+
+    /// **Fly into her light** — Design's `beginEnter`. The eye leaves the axis
+    /// and flies into her point while the air thickens, and her rite begins
+    /// inside the light. Under reduced motion he steps in: no flight, the same
+    /// rite.
+    private func flyInto(_ kp: Int) {
+        guard roomKp == nil, climb.flight == nil else { return }
+        Haptics.medium()
+        risen = true
+        if reduceMotion {
+            roomKp = kp
+            return
+        }
+        climb.flight = (kp: kp, since: Date().timeIntervalSinceReferenceDate)
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(ClimbFlight.seconds))
+            roomKp = kp
+        }
+    }
+
+    /// He has come out of her room (or out of the corridor). The eye returns to
+    /// the axis through the ground he came in by, and the lights are marked
+    /// again — a Śakti he has now stood with carries her core.
+    private func landed() {
+        climb.flight = nil
+        withdrawn = 1
+        steps &+= 1
+        withAnimation(.easeOut(duration: reduceMotion ? 0.01 : 0.9)) { withdrawn = 0 }
+    }
+
+    /// One band, by the station rather than by the hand — a flick, the rail,
+    /// or VoiceOver's own adjustment.
     private func step(by bands: Int) {
         let here = climb.value()
         if reduceMotion {
@@ -181,25 +275,30 @@ struct WorldClimbView: View {
         risen = true
     }
 
+    /// To a world, from the rail.
+    private func rise(toRing ring: Int) {
+        let here = climb.value().rounded()
+        let bands = Int(Double(ring - 1) - here)
+        guard bands != 0 else { return }
+        Haptics.light()
+        step(by: bands)
+    }
+
+    private func leaveTheClimb() {
+        if !AppRuntime.isUnitTesting {
+            RingFieldVoice.shared.silence()
+            HomeSoundService.shared.stopAll()
+        }
+        onLeft?()
+    }
+
+    /// The world he is standing in, now.
+    private var hereRing: Int { WorldClimb.nearestRing(atFraction: climb.value()) }
+
     // MARK: - Withdrawing from the axis
 
-    /// **What travels through the hold here.**
-    ///
-    /// ``TheWayOut`` asks for a hold rather than a touch because leaving is a
-    /// crossing, and its own header sets the condition: *a hold is only legible
-    /// while something is travelling through it.* In her room the eye stands
-    /// away from her through the āvaraṇa's air for the whole of it. The axis had
-    /// no approach to unwind — it has a height, not a distance — so it stood the
-    /// same two and a fifth seconds with nothing moving at all, which is exactly
-    /// the stopped clock the still path was given a step to avoid.
-    ///
-    /// So the world itself goes: the enclosure's air, its light and its name
-    /// recede into the ground he came in through, over precisely the length of
-    /// the hold. Letting go brings it back at the same rate, because a walker
-    /// who thought about leaving and did not has not left.
-    ///
-    /// Untouched on the still path, where the way out is a touch and this is
-    /// never called.
+    /// What travels through the hold here: the world itself goes, over exactly
+    /// the length of the hold, and comes back at the station rate if he lets go.
     private func withdrawing(over seconds: TimeInterval) {
         withAnimation(.linear(duration: max(0, seconds))) { withdrawn = 1 }
     }
@@ -208,74 +307,95 @@ struct WorldClimbView: View {
         withAnimation(.linear(duration: WorldClimbView.returningSeconds)) { withdrawn = 0 }
     }
 
-    /// How fast the world comes back when he lets go — the station rate a room
-    /// closes on him at, so the two ways out breathe alike.
+    /// How fast the world comes back when he lets go.
     static let returningSeconds: TimeInterval = 0.45
 
-    // MARK: - The name of where he is
+    // MARK: - The words of where he is (Design's `writeWorld`)
 
     @ViewBuilder
-    private var name: some View {
+    private var words: some View {
         if reduceMotion {
-            label(atFraction: climb.value())
+            wordsBlock(atFraction: climb.value())
         } else {
-            TimelineView(.animation) { _ in
-                label(atFraction: climb.value())
+            TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { _ in
+                wordsBlock(atFraction: climb.value())
             }
         }
     }
 
-    private func label(atFraction f: Double) -> some View {
-        // Clearest at a station and faintest between two, so the name belongs
-        // to the world rather than standing over the climb. Its floor is
-        // FIDELITY §4's legibility floor for meaningful text, never below it.
-        let k = WorldClimbTravel.clamp(f) - WorldClimbTravel.clamp(f).rounded(.down)
-        let settled = 1 - abs(k - 0.5) * 2
-        return VStack {
+    private func wordsBlock(atFraction f: Double) -> some View {
+        // Clearest at a station and faintest between two, so the words belong
+        // to the world rather than standing over the climb — never below
+        // FIDELITY §4's floor.
+        let clamped = WorldClimbTravel.clamp(f)
+        let k = clamped - clamped.rounded(.down)
+        let between = 1 - abs(k - 0.5) * 2
+        let alpha = Self.nameFloor + (1 - Self.nameFloor) * (1 - between)
+        let ring = WorldClimb.nearestRing(atFraction: f)
+        let world = HomeWorlds.world(ring: ring, live: live[ring])
+        let presides = todayKp.map { KhadgamalaMap.ringNumber(forKhadgamala: $0) == ring } ?? false
+        let near = nearKp.flatMap { kp in seats.first { $0.kp == kp } }
+        return VStack(spacing: 0) {
+            VStack(spacing: 6) {
+                Text(world.map { ClimbWords.kicker($0) } ?? "")
+                    .font(AppFont.label(11))
+                    .tracking(2.4)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.gold)
+                    .multilineTextAlignment(.center)
+                Text(world?.name ?? "")
+                    .font(AppFont.sanskrit(28))
+                    .tracking(0.6)
+                    .foregroundStyle(Color.cream)
+                    .shadow(color: .black.opacity(0.9), radius: 18)
+                Text(world.map { ClimbWords.material($0) } ?? "")
+                    .font(AppFont.voice(14))
+                    .foregroundStyle(Color.cream)
+                    .opacity(0.7)
+            }
+            .padding(.horizontal, 64)
+            .padding(.top, 52)
+            .opacity(alpha)
             Spacer()
-            Text(worldName(atFraction: f))
-                .font(AppFont.sanskrit(Self.nameSize))
-                .tracking(1.6)
-                .foregroundStyle(Color.cream)
-                .opacity(Self.nameFloor + (1 - Self.nameFloor) * (1 - settled))
-                // Clear of ``TheWayOut``'s own line, which stands at the foot of
-                // the frame here exactly as it does in a room. The instruction
-                // is the lowest thing on any Homes surface and the world's own
-                // name stands above it, because the name belongs to the world
-                // and the instruction belongs to the walker.
-                .padding(.bottom, 124)
+            VStack(spacing: 10) {
+                Text(world?.weather ?? "")
+                    .font(AppFont.voice(18))
+                    .lineSpacing(5)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.cream)
+                    .opacity(0.92)
+                    .shadow(color: .black.opacity(0.95), radius: 20)
+                    .fixedSize(horizontal: false, vertical: true)
+                if presides {
+                    Text(ClimbWords.presides)
+                        .font(AppFont.label(11))
+                        .tracking(2.6)
+                        .textCase(.uppercase)
+                        .foregroundStyle(Color.gold)
+                }
+                if let near {
+                    Text(ClimbWords.near(near, isToday: near.kp == todayKp))
+                        .font(AppFont.label(11))
+                        .tracking(1.8)
+                        .textCase(.uppercase)
+                        .foregroundStyle(Color.cream)
+                        .opacity(0.6)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(.horizontal, 64)
+            .opacity(alpha)
+            // Clear of ``TheWayOut``'s own line at the foot of the frame.
+            .padding(.bottom, 124)
         }
         .allowsHitTesting(false)
     }
 
-    // MARK: - That the space can be climbed at all
+    // MARK: - That the space can be climbed, turned, and entered
 
-    /// **The axis used to arrive mute.**
-    ///
-    /// Two lines stood on it: the āvaraṇa's name, and the way out. A walker who
-    /// arrived, waited and saw nothing change was told only how to leave the
-    /// thing he had just opened — the whole instruction budget of the surface
-    /// spent on the exit, with no word that the space rises. The climb is the
-    /// payload of this phase's second door, and it was invisible.
-    ///
-    /// Design's own Axis carries four words for it: *"scroll to climb · drag to
-    /// turn"*. Half of that is this file's gesture, so half of it is what is
-    /// said — in the rite's own prompt type, in the rite's own voice, at the top
-    /// of the frame where nothing else stands.
-    ///
-    /// **It is not a measure and it cannot become one.** It says what the hand
-    /// may do, which is the same register as *"hold to withdraw"* two inches
-    /// below it, and it knows one thing: whether he has moved yet, *on this
-    /// visit to the axis*. Nothing is written down, nothing is read back, and
-    /// the next time he rises it is there again. An instruction that vanished
-    /// for good the first time it was obeyed would be the instrument
-    /// remembering him, which is the one thing it may never do.
     @ViewBuilder
     private var hint: some View {
         VStack {
-            // Taken out of the tree rather than faded to nothing, so a line that
-            // has been answered is not still there to be read by a finger or by
-            // a voice.
             if !risen {
                 Text(Self.hintWords)
                     .font(AppFont.label(Self.hintSize))
@@ -283,34 +403,145 @@ struct WorldClimbView: View {
                     .tracking(Self.hintSize * 0.3)
                     .foregroundStyle(Color.cream)
                     .opacity(RiteOfEntering.promptAlpha)
-                    .padding(.top, 72)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+                    .padding(.top, 160)
                     .frame(minHeight: 44)
                     .transition(.opacity)
             }
             Spacer()
         }
-        // Quantized, never disabled: on the still path the line is simply gone
-        // once he has moved, with no fade to watch.
         .animation(reduceMotion ? nil : .easeOut(duration: 0.6), value: risen)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(false)
     }
 
-    /// The gesture this file actually offers, in the rite's own words. The way
-    /// out says *"hold to withdraw"*; this says what the other hand may do.
-    static let hintWords = "drag to rise"
+    /// The gestures this surface offers, in the rite's own words.
+    static let hintWords = ClimbWords.hint
     /// The rite's own prompt size and alpha, which clear FIDELITY §4's floor.
     static let hintSize: CGFloat = 11
+
+    // MARK: - Ring 6's whisper
+
+    @ViewBuilder
+    private var whisperLine: some View {
+        if let whisper, let seat = seats.first(where: { $0.kp == whisper.kp }) {
+            TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion)) { tl in
+                let age = tl.date.timeIntervalSince(whisper.at)
+                let fade = max(0, 1 - age / ClimbLights.whisperSeconds)
+                VStack(spacing: 4) {
+                    Text(seat.name)
+                        .font(AppFont.voice(17))
+                        .foregroundStyle(Color.cream)
+                        .opacity(fade)
+                    if let gloss = ClimbLights.whisperGloss(kp: seat.kp) {
+                        Text(gloss)
+                            .font(AppFont.voice(13))
+                            .foregroundStyle(Color.cream)
+                            .opacity(fade)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.bottom, 120)
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    // MARK: - The rail of nine
+
+    private var rail: some View {
+        HStack {
+            Spacer()
+            VStack(alignment: .trailing, spacing: 0) {
+                ForEach(railEntries) { entry in
+                    Button {
+                        rise(toRing: entry.ring)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text(entry.region)
+                                .font(AppFont.label(11))
+                                .tracking(1.4)
+                                .textCase(.uppercase)
+                                .foregroundStyle(Color.cream)
+                                .opacity(entry.isHere ? 1 : Self.railRest)
+                            Rectangle()
+                                .fill(entry.isMet ? Color.gold : Color.cream)
+                                .frame(width: entry.isHere ? 24 : 14, height: entry.isHere ? 2 : 1)
+                                .opacity(entry.isHere || entry.isMet ? 1 : Self.railRest)
+                        }
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(entry.region))
+                    .accessibilityAddTraits(entry.isHere ? .isSelected : [])
+                }
+            }
+            .padding(.trailing, 18)
+        }
+        .frame(maxHeight: .infinity)
+    }
+
+    /// The rail at rest: present, and quieter than where he stands. Design
+    /// drew it at 0.32; FIDELITY's floor for a word is 0.5.
+    static let railRest: Double = 0.55
+
+    private var railEntries: [ClimbRail.Entry] {
+        _ = steps
+        return ClimbRail.entries(here: hereRing, metRings: ClimbRail.metRings(met), live: live)
+    }
+
+    // MARK: - The sound of the climb
+
+    /// Every world has its voice. Ten times a second, the worlds he is between
+    /// are sounded at the climb's own weights — HomeSoundService's nine grounds
+    /// (Design's climb voice) and the ring voices (``RingFieldVoice``).
+    private func soundTheClimb() async {
+        guard roomKp == nil, !AppRuntime.isUnitTesting else { return }
+        HomeSoundService.shared.respectsSilentSwitch = true
+        HomeSoundService.shared.start()
+        while !Task.isCancelled {
+            let f = climb.value()
+            RingFieldVoice.shared.sound(RingFieldVoice.want(climbFraction: f))
+            let near = WorldClimb.weights(atFraction: f)
+            let i0 = (near.first?.ring ?? 1) - 1
+            let i1 = (near.count > 1 ? near[1].ring : near.first?.ring ?? 1) - 1
+            let k = near.count > 1 ? near[1].weight : 0
+            HomeSoundService.shared.setGround(index: i0, next: i1, blend: k)
+            try? await Task.sleep(for: .seconds(0.1))
+        }
+        RingFieldVoice.shared.silence()
+    }
+
+    private func watchTheNearestLight() async {
+        while !Task.isCancelled {
+            // On the still path the climb only moves on a touch, so the question
+            // is asked slowly; the answer is written only when it changes.
+            try? await Task.sleep(for: .seconds(reduceMotion ? 1 : 0.25))
+            let found = box.driver?.nearest()
+            if found != nearKp { nearKp = found }
+        }
+    }
 
     private func worldName(atFraction f: Double) -> String {
         let ring = WorldClimb.nearestRing(atFraction: f)
         return HomeWorlds.world(ring: ring, live: live[ring])?.name ?? ""
     }
 
-    /// FIDELITY §4: meaningful text at ≥ 11 pt and ≥ ~0.5 cream alpha. The name
-    /// of an enclosure is meaningful, so it never falls below the floor.
-    static let nameSize: CGFloat = 15
+    /// FIDELITY §4: meaningful text at ≥ 11 pt and ≥ ~0.5 cream alpha.
     static let nameFloor: Double = 0.52
+}
+
+/// Ring 6's whisper.
+struct ClimbWhisper: Equatable {
+    let kp: Int
+    let at: Date
+}
+
+/// A reference the view keeps to its renderer's driver.
+final class ClimbDriverBox {
+    weak var driver: WorldClimbDriver?
 }
 
 // MARK: - The SceneKit layer
@@ -318,12 +549,19 @@ struct WorldClimbView: View {
 struct WorldClimbLayer: UIViewRepresentable {
 
     let climb: WorldClimbSource
+    let box: ClimbDriverBox
+    let seats: [ClimbLights.Seat]
+    let met: Set<Int>
+    let todayKp: Int?
     let reduceMotion: Bool
     /// Bumped on each quantized step, so the still path is asked for a frame.
     let steps: Int
 
     func makeCoordinator() -> WorldClimbDriver {
-        WorldClimbDriver(climb: climb, reduceMotion: reduceMotion)
+        let driver = WorldClimbDriver(climb: climb, reduceMotion: reduceMotion)
+        driver.scene.hold(seats: seats, met: met, today: todayKp)
+        driver.marked = (met, todayKp)
+        return driver
     }
 
     func makeUIView(context: Context) -> SCNView {
@@ -332,11 +570,14 @@ struct WorldClimbLayer: UIViewRepresentable {
         view.preferredFramesPerSecond = 60
         view.delegate = context.coordinator
         context.coordinator.attach(to: view)
+        box.driver = context.coordinator
         return view
     }
 
     func updateUIView(_ view: SCNView, context: Context) {
-        context.coordinator.setReduceMotion(reduceMotion, on: view)
+        box.driver = context.coordinator
+        context.coordinator.remark(met: met, today: todayKp)
+        context.coordinator.update(reduceMotion: reduceMotion, steps: steps, on: view)
     }
 
     static func dismantleUIView(_ view: SCNView, coordinator: WorldClimbDriver) {
@@ -345,39 +586,27 @@ struct WorldClimbLayer: UIViewRepresentable {
 }
 
 /// Stands the walker on the climb. `SCNSceneRendererDelegate` runs on
-/// SceneKit's own thread, which is where standing belongs: it is the only place
-/// a frame can be prepared without racing the frame being drawn.
+/// SceneKit's own thread, which is where standing belongs.
 final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
 
     let scene = WorldClimbScene()
     private let climb: WorldClimbSource
     private var reduceMotion: Bool
+    private weak var view: SCNView?
 
-    /// How many times the walker has been stood somewhere.
-    ///
-    /// The reduce-motion proof, as a number rather than an intention: on that
-    /// path it rises once per touch and not once per frame, however long the
-    /// view is left on screen. The same register ``RoomDriver/posesApplied``
-    /// keeps for a room.
+    /// How many times the walker has been stood somewhere — the reduce-motion
+    /// proof, as a number: on that path it rises once per touch, never per frame.
     private(set) var standsApplied = 0
 
-    /// The instant the climb opened, and the only reference-date number in this
-    /// file that reaches the scene.
-    ///
-    /// The climb is the one place in the Homes layer that had no clock of its
-    /// own: a room has ``RoomClock``, whose `elapsed` is seconds since the stay
-    /// began, and the axis was handing the scene raw reference-date time
-    /// instead. That is roughly 8.1 × 10⁸ today, and the air is driven through a
-    /// shader `float` whose ulp at that magnitude is **sixty-four seconds** — so
-    /// the motes held one offset for a minute and then jumped, which is the
-    /// āvaraṇa's dust standing perfectly still all over again, one phase later.
-    /// Design's own axis never has this shape: its `t` starts at zero and
-    /// accumulates `dt`.
-    ///
-    /// The travel keeps absolute time — ``RoomApproach`` is anchored to the
-    /// instant the drag or the rise began — so only the world's own seconds are
-    /// counted from here.
+    /// The instant the climb opened; the world's own seconds count from here.
     private let epoch = Date().timeIntervalSinceReferenceDate
+
+    /// The marks last handed to the lights, so they are moved only on change.
+    var marked: (met: Set<Int>, today: Int?) = ([], nil)
+
+    /// The hand's state, integrated frame to frame.
+    private var gestures = ClimbGestures()
+    private var lastStand: TimeInterval?
 
     init(climb: WorldClimbSource, reduceMotion: Bool) {
         self.climb = climb
@@ -385,7 +614,10 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
         super.init()
     }
 
-    func attach(to view: SCNView) { setReduceMotion(reduceMotion, on: view) }
+    func attach(to view: SCNView) {
+        self.view = view
+        setReduceMotion(reduceMotion, on: view)
+    }
 
     func detach(from view: SCNView) {
         view.delegate = nil
@@ -393,10 +625,31 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
         view.rendersContinuously = false
     }
 
-    /// The still path, and the whole reason it is real: no `CADisplayLink`, no
-    /// `TimelineView`, no continuous rendering, no per-frame work of any kind.
-    /// The climb is stood once and drawn once, and then nothing happens until a
-    /// touch moves him.
+    /// The marks on the lights moved — a Śakti newly stood with, or the day
+    /// turned. Only on change.
+    func remark(met: Set<Int>, today: Int?) {
+        guard met != marked.met || today != marked.today else { return }
+        marked = (met, today)
+        scene.hold(seats: [], met: met, today: today)
+        view?.setNeedsDisplay()
+    }
+
+    /// The step token the still path was last stood for.
+    private var lastSteps: Int?
+
+    /// SwiftUI asked the layer to update. The walker is stood again only when
+    /// something that moves him changed — the motion setting, or a step — so a
+    /// line of words changing above the climb never re-stands a still climb
+    /// (the still path's proof is that it is stood once per touch).
+    func update(reduceMotion on: Bool, steps: Int, on view: SCNView) {
+        let changed = on != reduceMotion || steps != lastSteps
+        lastSteps = steps
+        guard changed || standsApplied == 0 else { return }
+        setReduceMotion(on, on: view)
+    }
+
+    /// The still path: stood once and drawn once, and then nothing happens
+    /// until a touch moves him.
     func setReduceMotion(_ on: Bool, on view: SCNView) {
         reduceMotion = on
         if on {
@@ -407,11 +660,6 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
             view.setNeedsDisplay()
         } else {
             view.scene?.isPaused = false
-            // Once, and only before the loop has ever run. This is the main
-            // thread; `renderer(_:updateAtTime:)` is SceneKit's, and standing
-            // the walker from both would be two threads writing one scene while
-            // a frame is drawn out of it. See ``RoomDriver/setReduceMotion(_:on:)``,
-            // which carries the whole argument.
             if standsApplied == 0 { stand() }
             view.isPlaying = true
             view.rendersContinuously = true
@@ -420,12 +668,84 @@ final class WorldClimbDriver: NSObject, SCNSceneRendererDelegate {
 
     func stand() {
         let now = Date().timeIntervalSinceReferenceDate
-        scene.stand(atFraction: climb.value(at: now), at: now - epoch)
+        let dt = lastStand.map { max(0, min(0.1, now - $0)) } ?? 0
+        lastStand = now
+        let f = climb.value(at: now)
+        let ring = WorldClimb.nearestRing(atFraction: f)
+
+        // Design's turn: `yaw += (tYaw - yaw) * 0.06`, as the exponential it is.
+        let settle = RoomApproach.tau(ratePerFrame: RoomApproach.climbRatePerFrame)
+        gestures.yaw = reduceMotion ? climb.yawTarget
+            : ClimbLights.follow(gestures.yaw, toward: climb.yawTarget, dt: dt, tau: settle)
+        // Ring 3 scatters under the moving finger and gathers in stillness.
+        let chased = climb.touching && climb.moving && ring == 3
+        gestures.agitation = ClimbLights.follow(
+            gestures.agitation, toward: chased ? 1 : 0, dt: dt,
+            tau: chased ? ClimbLights.scatterRise : ClimbLights.scatterSettle)
+        // Ring 8's three glide into one while he holds.
+        let holding = climb.touching && ring == 8
+        gestures.union = ClimbLights.follow(
+            gestures.union, toward: holding ? 1 : 0, dt: dt,
+            tau: holding ? ClimbLights.unionRise : ClimbLights.unionSettle)
+        gestures.follow = climb.follow
+        if let flight = climb.flight {
+            gestures.flight = .init(kp: flight.kp,
+                                    progress: reduceMotion ? 1
+                                        : ClimbFlight.progress(since: flight.since, now: now))
+        } else {
+            gestures.flight = nil
+        }
+
+        scene.gestures = gestures
+        scene.stand(atFraction: f, at: now - epoch)
         standsApplied += 1
     }
 
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         guard !reduceMotion else { return }
         stand()
+    }
+
+    // MARK: - Questions only the renderer can answer (main thread)
+
+    /// The lights near where he stands, as screen points.
+    private func projected() -> [(kp: Int, x: Double, y: Double, depth: Double)] {
+        guard let view else { return [] }
+        let f = climb.value()
+        return scene.lightPoints(nearFraction: f).map { entry in
+            let p = view.projectPoint(SCNVector3(Float(entry.position.x),
+                                                 Float(entry.position.y),
+                                                 Float(entry.position.z)))
+            return (kp: entry.kp, x: Double(p.x), y: Double(p.y), depth: Double(p.z))
+        }
+    }
+
+    /// The light under a finger, if any.
+    func pick(at point: CGPoint) -> Int? {
+        ClimbLights.picked(from: projected(), atX: Double(point.x), y: Double(point.y))
+    }
+
+    /// The light nearest the middle of the glass, within reach of it.
+    func nearest() -> Int? {
+        guard let view else { return nil }
+        let cx = Double(view.bounds.midX), cy = Double(view.bounds.midY)
+        let reach = Double(min(view.bounds.width, view.bounds.height)) * 0.35
+        return ClimbLights.picked(from: projected(), atX: cx, y: cy, reach: reach)
+    }
+
+    /// Ring 6: carry the moving light to where the finger is, at the depth of
+    /// her ring.
+    func follow(at point: CGPoint) {
+        guard let view else { return }
+        let centre = ClimbLights.position(kp: KhadgamalaMap.ringStartOffset(6) + 1)
+        let anchor = view.projectPoint(SCNVector3(0, Float(centre.y), Float(ClimbLights.ringCentreZ)))
+        let w = view.unprojectPoint(SCNVector3(Float(point.x), Float(point.y), anchor.z))
+        climb.follow = SIMD3(Double(w.x), Double(w.y), Double(w.z))
+    }
+
+    /// Ring 6: the name the moving light has reached.
+    func whispered(at point: CGPoint) -> Int? {
+        let points = projected().map { (kp: $0.kp, x: $0.x, y: $0.y) }
+        return ClimbLights.whispered(from: points, lightX: Double(point.x), lightY: Double(point.y))
     }
 }
