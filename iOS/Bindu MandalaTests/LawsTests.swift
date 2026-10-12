@@ -926,6 +926,10 @@ enum LedgerIsTheRecord {
         // in the ledger's file, referred to everywhere else as
         // `ActivityLedger.ActivityType.leelaDrop` / `.lightEntered`.
         "Leela Drop", "Light Entered",
+        // Wave 6 · the 33 alive: one practice walked in a chakra's room. Held
+        // to the same rule — named in the ledger's file, referred to everywhere
+        // else as `ActivityLedger.ActivityType.chakraPracticed`.
+        "Chakra Practiced",
         "Activity Type",
     ]
 

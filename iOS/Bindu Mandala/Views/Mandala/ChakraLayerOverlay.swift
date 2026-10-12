@@ -83,11 +83,16 @@ struct ChakraLayerOverlay: View {
         ChakraRoad.stops(ChakraConstellation.all, seats: seatPoints, in: size)
     }
 
+    /// Wave 6 · the room of the chakra whose light was touched (its Road position).
+    @State private var openRoad: Int? = nil
+
     var body: some View {
         ZStack {
             if state.constellationOn && !state.walking && !hidden {
+                // Wave 6 · every light is a door into its chakra's room.
                 ChakraConstellationVoices(chakras: ChakraConstellation.all, seats: seats,
-                                          camera: camera, size: size)
+                                          camera: camera, size: size,
+                                          onOpen: { openRoad = $0 })
             }
             if state.walking {
                 roadCatcher
@@ -102,6 +107,7 @@ struct ChakraLayerOverlay: View {
             }
             if !hidden && !ChakraConstellation.all.isEmpty { switches }
         }
+        .chakraRoom($openRoad)
     }
 
     // MARK: The two switches
@@ -160,7 +166,15 @@ struct ChakraLayerOverlay: View {
         let all = stops
         if state.roadIndex < all.count {
             let c = all[state.roadIndex].chakra
+            let station = ChakraTeaching.station(c)
             VStack(spacing: 6) {
+                if let station {
+                    Text(station.kicker)
+                        .font(AppFont.label(11.5))
+                        .tracking(3)
+                        .textCase(.uppercase)
+                        .foregroundStyle(ChakraConstellationDrawing.tone(c).opacity(0.95))
+                }
                 Text(c.name)
                     .font(AppFont.sanskrit(28))
                     .tracking(1.2)
@@ -177,6 +191,42 @@ struct ChakraLayerOverlay: View {
                         .tracking(3.2)
                         .foregroundStyle(ChakraConstellationDrawing.tone(c).opacity(0.9))
                 }
+                // Wave 6 · the one line at each place on the Road: its Core
+                // Question; and at the two stations, the Map's story thread.
+                if let q = c.coreQuestion {
+                    Text(q)
+                        .font(AppFont.voice(17))
+                        .foregroundStyle(Color.cream.opacity(0.82))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 6)
+                }
+                if station != nil, let thread = c.storyThread {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        Text(thread)
+                            .font(AppFont.voice(15))
+                            .lineSpacing(4)
+                            .foregroundStyle(Color.cream.opacity(0.75))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxHeight: 190)
+                    .padding(.top, 8)
+                }
+                Button {
+                    Haptics.medium()
+                    openRoad = c.road
+                } label: {
+                    Text("enter its room")
+                        .font(AppFont.label(11.5))
+                        .tracking(1.6)
+                        .foregroundStyle(Color.gold)
+                        .padding(.horizontal, 18)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens this chakra's room. The road waits.")
                 Button(action: endRoad) {
                     Text("leave the road")
                         .font(AppFont.label(11.5))
@@ -234,6 +284,10 @@ struct ChakraLayerOverlay: View {
         let rest = ChakraRoad.dwell(at: here) + ChakraRoad.travel(
             from: state.roadIndex > 0 ? all[state.roadIndex - 1] : nil, to: here)
         try? await Task.sleep(for: .seconds(rest))
+        // Wave 6 · while a room opened from the Road is open, the Road waits.
+        while openRoad != nil && !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(0.5))
+        }
         guard !Task.isCancelled, state.walking else { return }
         advance()
     }

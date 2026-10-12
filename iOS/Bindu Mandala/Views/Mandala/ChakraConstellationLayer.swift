@@ -303,23 +303,43 @@ struct ChakraConstellationVoices: View {
     let seats: [MandalaWorld.Seat]
     let camera: MandalaCamera
     let size: CGSize
+    /// Wave 6 · the 33 alive: when set, every light is a 44 pt door into its
+    /// chakra's room (the Road position is handed back). Unset, the layer
+    /// draws nothing and catches nothing, as Wave 3 built it.
+    var onOpen: ((Int) -> Void)? = nil
 
     var body: some View {
         let entries = Self.entries(chakras: chakras, seats: seats, camera: camera, size: size)
         ZStack(alignment: .topLeading) {
             ForEach(entries, id: \.road) { e in
-                Color.clear
-                    .frame(width: MandalaAccessibilityLayer.target, height: MandalaAccessibilityLayer.target)
-                    .accessibilityElement()
+                if let onOpen {
+                    Button {
+                        Haptics.medium()
+                        onOpen(e.road)
+                    } label: {
+                        Color.clear
+                            .frame(width: MandalaAccessibilityLayer.target, height: MandalaAccessibilityLayer.target)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
                     .accessibilityLabel(e.label)
+                    .accessibilityHint("Opens its room.")
                     .accessibilitySortPriority(Double(-e.road))
                     .position(e.point)
+                } else {
+                    Color.clear
+                        .frame(width: MandalaAccessibilityLayer.target, height: MandalaAccessibilityLayer.target)
+                        .accessibilityElement()
+                        .accessibilityLabel(e.label)
+                        .accessibilitySortPriority(Double(-e.road))
+                        .position(e.point)
+                }
             }
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .accessibilityElement(children: .contain)
         .accessibilitySortPriority(-1_000)
-        .allowsHitTesting(false)
+        .allowsHitTesting(onOpen != nil)
     }
 
     struct Entry {

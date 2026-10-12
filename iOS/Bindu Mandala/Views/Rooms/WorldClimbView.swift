@@ -120,6 +120,8 @@ struct WorldClimbView: View {
             // summit — each one line, once a day; and the Om's floor follows
             // the world he stands in.
             ClimbGuide(ring: hereRing, roomOpen: roomKp != nil)
+            // Wave 6 · the ten body chakras, touchable at their own heights.
+            ClimbBodyChakras(source: climb, reduceMotion: reduceMotion)
             rail
             // The world going out from under him as he withdraws from it. See
             // ``withdrawing``.

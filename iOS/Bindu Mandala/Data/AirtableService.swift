@@ -1548,6 +1548,15 @@ extension AirtableService {
                                             feltAt: item.at) {
                 log.notice("\(item.type, privacy: .public) row already on server — skipping create")
                 return true
+            } else if item.linkRecordId.isEmpty,
+                      let map = item.linkToMap?.first, !map.isEmpty,
+                      await mapActivityExistsOnServer(token: token, type: item.type,
+                                                      mapRecordId: map, feltAt: item.at) {
+                // Wave 6 · a chakra with no Mandala row behind it (the two
+                // thresholds) is keyed by its Map link instead, so a retry
+                // after a lost response still writes one row.
+                log.notice("\(item.type, privacy: .public) row already on server — skipping create")
+                return true
             }
             try await createActivityRow(token: token, item: item)
             return true
@@ -1600,6 +1609,31 @@ extension AirtableService {
             }
         } catch {
             log.error("Ledger dedup check (\(type, privacy: .public)) failed — proceeding with create: \(Self.describe(error), privacy: .public)")
+            return false
+        }
+    }
+
+    /// Wave 6 · the Map-keyed twin of ``activityExistsOnServer``: rows of
+    /// `type` within ±60 s of `feltAt` that link `mapRecordId` in `Link to The
+    /// Map` at this second. Fail-open, like its twin.
+    private func mapActivityExistsOnServer(token: String,
+                                           type: String,
+                                           mapRecordId: String,
+                                           feltAt: Date) async -> Bool {
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.dedup(type: type, around: feltAt),
+                sort: [],
+                fields: ActivityLedger.mapDedupFields,
+                byFieldId: false
+            )
+            return rows.contains {
+                ActivityLedger.mapRowMatches($0, mapRecordId: mapRecordId, feltAt: feltAt)
+            }
+        } catch {
+            log.error("Ledger map dedup check failed — proceeding with create: \(Self.describe(error), privacy: .public)")
             return false
         }
     }
