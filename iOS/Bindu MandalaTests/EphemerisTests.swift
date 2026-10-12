@@ -187,7 +187,11 @@ final class EphemerisTests: XCTestCase {
         XCTAssertEqual(r.tithi, 16)
         XCTAssertEqual(r.tithiWords, "Kṛṣṇa Pratipadā")
         XCTAssertEqual(r.nakshatraWords, "Aśvinī")
-        XCTAssertEqual(r.rtu, .sharad)
+        // The ṛtu is reckoned by the tropical Sun (Drik ṛtu, as `Panchanga.rtu`
+        // documents above): on 26 Oct the Sun is at ≈213°, past the 210° turn,
+        // so Hemanta has begun (≈23 Oct). The sidereal (Vedic) ṛtu would
+        // still say Śarad; the clock follows the one rule the app uses.
+        XCTAssertEqual(r.rtu, .hemanta)
         XCTAssertEqual(r.hourFraction, 4.0 / 24, accuracy: 1e-9, "04:00 EDT")
         XCTAssertTrue(r.sunWords.hasSuffix("Dakṣiṇāyana"))
     }

@@ -236,7 +236,10 @@ final class HomeDwellingTests: XCTestCase {
 
         let rite = try XCTUnwrap(LawSource.production("RiteOfEnteringView.swift"))
         let uses = rite.text.components(separatedBy: "dwelling?.").dropFirst()
-        XCTAssertEqual(uses.count, 5,
+        // Wave 2 added a sixth: the corridor to a neighbour hands the stay
+        // over (`end()` as he steps through a neighbour door), and it is
+        // still lifecycle — the loop below holds it to begin/end only.
+        XCTAssertEqual(uses.count, 6,
                        """
                        the rite reaches for the dwelling \(uses.count) times, not five. The five \
                        are the stay's own moments: it opens on arrival and again if he lets go of \

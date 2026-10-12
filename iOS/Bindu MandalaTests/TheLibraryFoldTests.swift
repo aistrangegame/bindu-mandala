@@ -157,18 +157,17 @@ final class TheLibraryFoldTests: XCTestCase {
                            + "screen may survive his leaving it.")
         }
 
-        // The one store this screen touches, and it neither reads nor writes
-        // it: `HomeMemoryStore` is handed straight to the rite, which is what
-        // compresses a return. Phase 3.7 owns that line; what is held here is
-        // that there is exactly one of it and it is inside the threshold.
-        let uses = Rx.all(#"HomeMemoryStore\("#, code)
-        XCTAssertEqual(uses.count, 1, "her screen builds \(uses.count) memory stores")
-        let cover = try XCTUnwrap(
-            Rx.first(#"fullScreenCover\(isPresented: \$showHerRoom\)[\s\S]*?\n        \}"#, code),
-            "the threshold is no longer where this check reads it")
-        XCTAssertTrue(cover.contains("HomeMemoryStore("),
-                      "what a room remembers is reached from somewhere on her screen that is not "
-                      + "the threshold")
+        // Wave 2 · one building: her screen no longer builds a room. Its door
+        // hands her position to ``HerRoomDoor``, the one place the rite of
+        // entering is built, and that is where what a room remembers is
+        // reached. So her screen builds no memory store at all, and the door
+        // builds exactly one.
+        XCTAssertEqual(Rx.all(#"HomeMemoryStore\("#, code).count, 0,
+                       "her screen builds a memory store of its own again")
+        let door = try XCTUnwrap(LawSource.production("HerRoomDoor.swift"),
+                                 "the one door into a room is gone")
+        XCTAssertEqual(Rx.all(#"HomeMemoryStore\("#, String(door.lexed.masked)).count, 1,
+                       "the door into a room builds more than one memory store")
     }
 
     // MARK: - 4 · The shelves are unconditional, and they never change with him
