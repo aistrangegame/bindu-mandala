@@ -387,8 +387,11 @@ final class TheWayInUITests: XCTestCase {
                 let place = label.replacingOccurrences(
                     of: #"\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth) (āvaraṇa|enclosure)"#,
                     with: "", options: [.regularExpression, .caseInsensitive])
+                // Whole words only: "Totality" (the ninth world's body region)
+                // is not "total".
                 return TheWayInUITests.wordsThatMeasure.contains { word in
-                    place.range(of: word, options: [.caseInsensitive]) != nil
+                    place.range(of: "\\b" + NSRegularExpression.escapedPattern(for: word) + "\\b",
+                                options: [.caseInsensitive, .regularExpression]) != nil
                 }
             }
             XCTAssertTrue(measuring.isEmpty,
