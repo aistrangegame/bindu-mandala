@@ -14,6 +14,8 @@ struct RiteOpeningView: View {
     let yearLight: Double
     let still: Bool
     let onDone: () -> Void
+    /// Wave 6.1 · a way the hour offers (``RiteOpening/ways(_:)``), taken.
+    var onWay: ((RiteOpening.HourWay) -> Void)? = nil
 
     private enum Step: Equatable { case call, stop, breath(Int), leaving }
 
@@ -55,6 +57,30 @@ struct RiteOpeningView: View {
                     .id(words)
                     .transition(.opacity)
                 Spacer()
+                // Wave 6.1 · a mode at its hour: the dawn's dream, the dusk's
+                // offering, the junction's Sandhyā — found here, at the hour.
+                if onWay != nil, !RiteOpening.ways(kind).isEmpty {
+                    HStack(spacing: 20) {
+                        ForEach(RiteOpening.ways(kind)) { way in
+                            Button {
+                                Haptics.light()
+                                finish()
+                                onWay?(way)
+                            } label: {
+                                Text(way.word)
+                                    .font(AppFont.voice(15))
+                                    .tracking(1.1)
+                                    .foregroundStyle(Color.gold.opacity(0.72))
+                                    .padding(.horizontal, 10)
+                                    .frame(minHeight: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(way.spoken)
+                        }
+                    }
+                    .opacity(shown ? 1 : 0)
+                }
                 Text("a touch passes")
                     .font(AppFont.label(11))
                     .tracking(2)
@@ -66,7 +92,7 @@ struct RiteOpeningView: View {
         .ignoresSafeArea()
         .contentShape(Rectangle())
         .onTapGesture { finish() }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityAction(named: Text("Pass")) { finish() }
         .task { await walk() }
     }

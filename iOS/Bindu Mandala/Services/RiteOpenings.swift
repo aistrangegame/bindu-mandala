@@ -122,6 +122,48 @@ enum RiteOpening {
 
     static let lastOpeningKey = "rite_opening_last"
 
+    // MARK: Wave 6.1 · a mode at its hour
+
+    /// What the hour itself offers — found where it lives (gameplan §1), not
+    /// on a list: at first light the night's dream (Svapna), at dusk the day's
+    /// offering (Pūjā), and at both junctions of the day the Sandhyā.
+    enum HourWay: Equatable, Identifiable {
+        case mode(TheModes.Mode)
+        case game(PlayGame)
+
+        var id: String {
+            switch self {
+            case .mode(let m): return "mode." + m.rawValue
+            case .game(let g): return "game." + g.rawValue
+            }
+        }
+
+        /// The one quiet word the opening writes at its foot.
+        var word: String {
+            switch self {
+            case .mode(.svapna): return "the night's dream"
+            case .mode(.puja):   return "offer the day"
+            case .mode(let m):   return m.title
+            case .game(let g):   return g.verb
+            }
+        }
+
+        var spoken: String {
+            switch self {
+            case .mode(let m): return "\(m.title) — \(m.gloss)"
+            case .game(let g): return "\(g.title) — \(g.verb)"
+            }
+        }
+    }
+
+    static func ways(_ kind: Kind) -> [HourWay] {
+        switch kind {
+        case .dawn: return [.mode(.svapna), .game(.sandhya)]
+        case .dusk: return [.mode(.puja), .game(.sandhya)]
+        case .day, .night: return []
+        }
+    }
+
     /// Whether the opening comes now: not if it already came in this half of
     /// this practice day.
     static func opens(lastKey: String?, practiceDay: Int, hour: Int) -> Bool {

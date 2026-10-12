@@ -91,6 +91,27 @@ struct ModesDoorView: View {
     }
 }
 
+/// Wave 6.1 · one mode, opened where it lives (the Rite's opening offers the
+/// hour's own) rather than from the door's list. Returns when the mode ends.
+struct ModeHost: View {
+    let mode: TheModes.Mode
+    let onClose: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color(red: 4 / 255, green: 1 / 255, blue: 4 / 255).ignoresSafeArea()
+            switch mode {
+            case .darshana: DarshanaView(onEnd: onClose)
+            case .sadhana:  SadhanaView(onEnd: onClose)
+            case .smriti:   SmritiView(onEnd: onClose)
+            case .svapna:   SvapnaView(onEnd: onClose)
+            case .puja:     PujaView(onEnd: onClose)
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
 /// The door's order by the hour — a lean, never a lock.
 enum ModesDoor {
     static func order(hour: Int) -> [TheModes.Mode] {

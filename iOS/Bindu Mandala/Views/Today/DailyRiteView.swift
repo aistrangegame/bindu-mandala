@@ -35,6 +35,8 @@ struct DailyRiteView: View {
     @State private var closing = false
     /// Wave 6 · the low-state door.
     @State private var lowOpen = false
+    /// Wave 6.1 · the mode the hour offered, taken from the opening.
+    @State private var hourMode: TheModes.Mode?
 
     /// UI tests and captures read the Rite as Wave 1 composed it: no opening
     /// in front of it and no close over it.
@@ -87,7 +89,8 @@ struct DailyRiteView: View {
                     RiteOpeningView(kind: kind,
                                     yearLight: RiteOpening.yearLight(practiceDay: DailyEnergyService.practiceDayIndex()),
                                     still: still,
-                                    onDone: { finishOpening() })
+                                    onDone: { finishOpening() },
+                                    onWay: { takeHourWay($0) })
                         .transition(.opacity)
                         .zIndex(10)
                 }
@@ -102,6 +105,10 @@ struct DailyRiteView: View {
         }
         .fullScreenCover(isPresented: $lowOpen) {
             LowStateDoorView(onClose: { lowOpen = false })
+        }
+        // Wave 6.1 · a mode at its hour, offered by the opening.
+        .fullScreenCover(item: $hourMode) { m in
+            ModeHost(mode: m, onClose: { hourMode = nil })
         }
         .onAppear {
             // Debug: `OPEN_NITYA` opens today's Nityā sheet directly.
@@ -147,6 +154,17 @@ struct DailyRiteView: View {
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + StagedArrival.lead) { arrived = true }
+    }
+
+    /// Wave 6.1 · the hour's way, taken: its mode here, or its game through
+    /// the shell's one door into play.
+    private func takeHourWay(_ way: RiteOpening.HourWay) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            switch way {
+            case .mode(let m): hourMode = m
+            case .game(let g): PlayField.open(g)
+            }
+        }
     }
 
     /// The opening has passed: the nine beats begin.

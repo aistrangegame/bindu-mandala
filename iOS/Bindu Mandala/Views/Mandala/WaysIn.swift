@@ -47,7 +47,7 @@ enum WayIn: String, CaseIterable, Identifiable, Equatable {
     /// The one quiet word under the glyph.
     var word: String {
         switch self {
-        case .constellation: return "the 33"
+        case .constellation: return "the chakras"
         case .road:          return "the road"
         case .modes:         return "the modes"
         case .field:         return "her field"
