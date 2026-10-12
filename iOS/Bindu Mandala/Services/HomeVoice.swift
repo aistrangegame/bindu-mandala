@@ -87,6 +87,10 @@ final class HomeVoice {
         /// another. Defaulted, so every instrument a suite builds by hand is
         /// still silent here unless it asks.
         var glide: @MainActor (_ fromHz: Double, _ toHz: Double) -> Void = { _, _ in }
+        /// Wave 6 · her live Score's sound, handed over as the stay opens and
+        /// taken back (`nil`) as it closes. Defaulted, so a hand-built
+        /// instrument ignores it.
+        var score: @MainActor (_ sound: ShaktiScore.Sound?) -> Void = { _ in }
 
         /// The real one.
         @MainActor static var real: Instrument {
@@ -111,11 +115,15 @@ final class HomeVoice {
                 room: { a, b, ring, syllable in
                     HomeSoundService.shared.setRoom(a: a, b: b, ring: ring, syllable: syllable)
                 },
-                end: { HomeSoundService.shared.stopAll() },
+                end: {
+                    HomeSoundService.shared.stopAll()
+                    HomeSoundService.shared.score = nil
+                },
                 glide: { from, to in
                     RingAudioService.shared.glide(fromHz: from, toHz: to,
                                                   seconds: Glissando.seconds)
-                })
+                },
+                score: { sound in HomeSoundService.shared.score = sound })
         }
 
         /// The voice, doing nothing. For a preview, a capture, and for the
@@ -137,6 +145,8 @@ final class HomeVoice {
     /// withheld against. Read once, at the top of the stay, exactly as the head
     /// start and the compression are.
     let accumulatedDwell: TimeInterval
+    /// Wave 6 · her live Score's sound, or nil (the grammar's own voice).
+    let sound: ShaktiScore.Sound?
 
     private let instrument: Instrument
     private var cadenceTask: Task<Void, Never>?
@@ -150,11 +160,13 @@ final class HomeVoice {
     init(ring: Int,
          syllable: String?,
          accumulatedDwell: TimeInterval = 0,
-         instrument: Instrument = .silent) {
+         instrument: Instrument = .silent,
+         sound: ShaktiScore.Sound? = nil) {
         self.ring = ring
         self.syllable = syllable
         self.accumulatedDwell = max(0, accumulatedDwell)
         self.instrument = instrument
+        self.sound = sound
     }
 
     deinit { cadenceTask?.cancel() }
@@ -166,6 +178,7 @@ final class HomeVoice {
     func opens() {
         guard !sounding else { return }
         sounding = true
+        instrument.score(sound)
         instrument.begin()
         instrument.ground(ring)
     }
@@ -254,10 +267,12 @@ extension HomeVoice {
     static func forRoom(ring: Int,
                         syllable: String?,
                         accumulatedDwell: TimeInterval,
-                        sounding: Bool = true) -> HomeVoice {
+                        sounding: Bool = true,
+                        position: Int? = nil) -> HomeVoice {
         HomeVoice(ring: ring,
                   syllable: syllable,
                   accumulatedDwell: accumulatedDwell,
-                  instrument: sounding ? .real : .silent)
+                  instrument: sounding ? .real : .silent,
+                  sound: position.flatMap { ShaktiFactsCache.score($0)?.sound })
     }
 }

@@ -66,6 +66,15 @@ struct MandalaThresholdMoment: View {
                     .tracking(3.2)
                     .foregroundStyle(Color.cream.opacity(0.6))
             }
+            // Wave 6 · these thresholds are the phase boundaries: Shadow opens
+            // Sthiti, Armin opens Saṃhāra — named from the rings' own rows.
+            if let phase = RingFactsCache.phaseWords(
+                RingFactsCache.facts(ring: chakra.kind == .shadow ? 4 : 7)?.phase) {
+                Text("into \(phase)")
+                    .font(AppFont.voice(14))
+                    .italic()
+                    .foregroundStyle(Color.cream.opacity(0.5))
+            }
         }
         .padding(.bottom, 132)
     }

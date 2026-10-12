@@ -264,6 +264,9 @@ struct RiteOfEnteringView: View {
                      moves: moves)
                 .allowsHitTesting(false)
 
+            // Wave 6 · her live Score's light and tempo over the grammar's room.
+            ScoreLightVeil(position: room.position, reduceMotion: reduceMotion)
+
             // The room's own words, arriving with the stay (Wave 1).
             if !rite.isCeremonial {
                 RoomWordsView(words: roomWords,
@@ -813,7 +816,8 @@ extension RiteOfEnteringView {
                                     ring: room.ring,
                                     syllable: shakti.bijaSyllable,
                                     accumulatedDwell: store.accumulatedDwell(for: position),
-                                    sounding: sounding),
+                                    sounding: sounding,
+                                    position: position),
                                   mechanism: mechanism,
                                   compression: store.compression(for: position),
                                   headStart: store.headStart(for: position),

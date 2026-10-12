@@ -286,6 +286,9 @@ struct PlayGameHost: View {
                                  seconds: PlayClock.now - session.startedAt,
                                  at: .now)
         PlayLedger.write(row)
+        // Wave 6 · the same act, kept on the phone for the Portrait's layers.
+        PlayTraceStore.shared.note(game: game.rawValue, position: s?.khadgamalaPosition ?? session.handTo,
+                                   ring: ring, at: row.at)
     }
 }
 

@@ -79,6 +79,8 @@ struct ShaktiDetailView: View {
                             appreciationPhraseSection
                             // Wave 5 · the doorway, the seal, the wager.
                             HerDoorwaysSection(shakti: shakti)
+                            // Wave 6 · her seed, and one more layer each return.
+                            HerDeepeningSection(shakti: shakti)
                             embodimentSection
                             if shakti.hasFieldConnection { fieldConnectionSection }
                             // The library — the record, then the reference.

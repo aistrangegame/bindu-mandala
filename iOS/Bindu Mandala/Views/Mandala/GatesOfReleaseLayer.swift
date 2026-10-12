@@ -80,6 +80,19 @@ struct GatesOfReleaseLayer: View {
                     .padding(.horizontal, 44)
                     .fixedSize(horizontal: false, vertical: true)
                     .allowsHitTesting(false)
+                // Wave 6 · the ring's own seal, read live — words, never a hand drawn.
+                if let mudra = RingFactsCache.facts(ring: gate.ring)?.mudra?
+                    .trimmingCharacters(in: .whitespacesAndNewlines), !mudra.isEmpty {
+                    Text(mudra)
+                        .font(AppFont.label(11))
+                        .tracking(1.8)
+                        .textCase(.uppercase)
+                        .foregroundStyle(colour)
+                        .opacity(0.75 * motion.opacity)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 44)
+                        .allowsHitTesting(false)
+                }
                 if answeredAt == nil {
                     ZStack {
                         Circle()

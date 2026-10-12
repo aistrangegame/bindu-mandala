@@ -120,7 +120,12 @@ struct HerRoomPassage: View {
         func name(_ p: Int) -> String {
             rows.first { $0.khadgamalaPosition == p }?.name ?? ""
         }
+        // Wave 6 · the third door — her namesake sister across the rings.
+        let sister = ShaktiFactsCache.sister(of: kp)
+            .flatMap { (p: Int) -> Int? in (p != pair.before && p != pair.after) ? p : nil }
+            .map { NeighbourDoors.Door(kp: $0, name: name($0)) }
         return NeighbourDoors(before: .init(kp: pair.before, name: name(pair.before)),
-                              after: .init(kp: pair.after, name: name(pair.after)))
+                              after: .init(kp: pair.after, name: name(pair.after)),
+                              sister: sister)
     }
 }

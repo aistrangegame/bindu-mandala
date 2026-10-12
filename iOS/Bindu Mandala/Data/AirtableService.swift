@@ -159,7 +159,10 @@ final class AirtableService {
             // device has none — the path home after a reinstall/recovery.
             await restoreRecognitionsIfLocalEmpty(context: context)
             await restoreDescentIfLocalEmpty(context: context)
-            log.notice("Sync: \(sk.count) Śaktis · \(av.count) Āvaraṇas · \(nt.count) Nityās")
+            // Wave 6 · river letters, lights sent back and the kept name come
+            // home from the ledger — merged on identity, so it runs every sync.
+            await restoreRiverFromLedger(context: context)
+            log.notice("Sync:\(sk.count) Śaktis · \(av.count) Āvaraṇas · \(nt.count) Nityās")
         } catch {
             log.error("Sync failed: \(Self.describe(error), privacy: .public)")
         }
@@ -254,6 +257,12 @@ final class AirtableService {
         let lastFelt: String?
         let recognitionCount: Int?
         let letter: String?
+        // Wave 6 · her extras, held beside the store (`ShaktiFactsCache`).
+        let scoreJSON: String?
+        let phonetic: String?
+        let seedVerb: String?
+        let relatedShaktis: [String]?
+        let relatedFrom: [String]?
 
         // CodingKeys are Airtable field IDs (verified May 31 2026 via Airtable Omni).
         // Read with `returnFieldsByFieldId=true` so the response is keyed by ID.
@@ -279,6 +288,12 @@ final class AirtableService {
             case lastFelt           = "fldWT0dGqdUQrdRGT"
             case recognitionCount   = "flddp0tLpf8iuxyt4"
             case letter             = "fldgASyV031Hr4sHp"
+            // Wave 6 · verified 12 Oct 2026 (read-only schema read).
+            case scoreJSON          = "fldz1vCCMpXiw8s1n"   // multilineText
+            case phonetic           = "fldadDCi4OJYEaAFX"   // singleLineText
+            case seedVerb           = "fldVgkRZmbc7STB7S"   // singleLineText
+            case relatedShaktis     = "fldQNnFoom72Nr6vh"   // link → Mandala rows
+            case relatedFrom        = "fldtAau1NIP4QDZrk"   // its reverse
         }
     }
 
@@ -301,6 +316,10 @@ final class AirtableService {
         let bodyRegion: String?
         // Wave 2 · the ring's Siddhi, for the Gates of Release.
         let siddhi: String?
+        // Wave 6 · the ring's mudrā, phase and prose.
+        let mudra: String?
+        let phase: String?
+        let notes: String?
 
         // CodingKeys are Airtable field IDs (verified May 31 2026 via Airtable Omni;
         // the five ring fields verified 12 Oct 2026).
@@ -311,6 +330,9 @@ final class AirtableService {
             case avaranaBeeja       = "fldixnYtJ30lZEDJM"
             case bodyRegion         = "fld6Ucmi8YqeAbOXU"
             case siddhi             = "fldx9jXyTVWxp19o1"   // verified 12 Oct 2026 (Wave 2)
+            case mudra              = "fld1C14f4MsVIrA9F"   // Wave 6 · singleLineText
+            case phase              = "fldKWGAI16XjdqoI3"   // Wave 6 · singleSelect
+            case notes              = "fld1HR38cQAtEicFc"   // Wave 6 · multilineText
             case sanskritName       = "fldJOatnYrw9l6tff"
             case subtitle           = "fldXTUBJTDlkKEzEV"
             case presidingForm      = "fldgHVP1LqoVJsYu8"
@@ -435,7 +457,34 @@ final class AirtableService {
             }
 
             shakti.lastSyncedAt = .now
+
+            // Wave 6 · her live phonetic, when the base has one, is preferred
+            // over the bundled one (an existing column — no schema change).
+            if let v = row.fields.phonetic?.trimmingCharacters(in: .whitespacesAndNewlines), !v.isEmpty {
+                shakti.phonetic = v
+            }
         }
+        // Wave 6 · her extras beside the store. Related Śaktis arrive as record
+        // links, both directions, and are resolved here to positions — the only
+        // key — using this very page of rows.
+        var kpByRecord: [String: Int] = [:]
+        for row in rows {
+            if let kp = row.fields.khadgamalaPosition, (1...102).contains(kp) { kpByRecord[row.id] = kp }
+        }
+        var extras: [Int: ShaktiFactsCache.Facts] = [:]
+        for row in rows {
+            guard let kp = row.fields.khadgamalaPosition, (1...102).contains(kp) else { continue }
+            let links = (row.fields.relatedShaktis ?? []) + (row.fields.relatedFrom ?? [])
+            var related: [Int] = []
+            for id in links {
+                if let p = kpByRecord[id], p != kp, !related.contains(p) { related.append(p) }
+            }
+            extras[kp] = ShaktiFactsCache.Facts(scoreJSON: row.fields.scoreJSON,
+                                                phonetic: row.fields.phonetic,
+                                                seedVerb: row.fields.seedVerb,
+                                                related: related.isEmpty ? nil : related)
+        }
+        ShaktiFactsCache.storeAll(extras)
         try context.save()
     }
 
@@ -587,7 +636,10 @@ final class AirtableService {
                 gem: row.fields.gem, dhatu: row.fields.dhatu,
                 timeCycle: row.fields.timeCycle, beeja: row.fields.avaranaBeeja,
                 bodyRegion: row.fields.bodyRegion,
-                siddhi: row.fields.siddhi))
+                siddhi: row.fields.siddhi,
+                mudra: row.fields.mudra,
+                phase: row.fields.phase,
+                notes: row.fields.notes))
         }
         try context.save()
     }
@@ -794,6 +846,8 @@ extension AirtableService {
         await flushPendingLetters()
         await flushPendingActivities()
         await flushPendingCrossings()
+        // Wave 6 · his words sent to the Codex.
+        await flushPendingCodexNotes()
         // The margin's own queue is the notes themselves, not UserDefaults —
         // `recordNote` says why.
         await flushUnledgeredNotes(context: context)
@@ -2158,4 +2212,152 @@ extension AirtableService {
             return []
         }
     }
+}
+
+// MARK: - Wave 6 · the raw Codex write (his note, not an event)
+
+/// The Mandala's second create, and the only one outside the ledger: his own
+/// spoken or typed word, sent to the **Codex** when he asks for it to become
+/// Codex ("leave my own word"). Shape and dedup are `CodexWrite` (pure). It
+/// rides its own UserDefaults queue under `PendingQueuePolicy`, so it is never
+/// dropped; a retry first asks the Codex whether the same words already stand
+/// there on that day (fail-open, as every check here is).
+extension AirtableService {
+
+    private static let pendingCodexKey = "pendingCodexNotes"
+
+    /// Write one note to the Codex. Fire-and-forget; on failure it is queued.
+    func writeCodexNote(_ note: PendingCodexNote) async {
+        if syncIsDisabled() { return }
+        if await processCodexNote(note) == false {
+            var queue = loadPendingCodexNotes()
+            queue.append(note)
+            savePendingCodexNotes(queue)
+            log.notice("Codex note queued (queue size: \(queue.count))")
+        }
+    }
+
+    private func processCodexNote(_ note: PendingCodexNote) async -> Bool {
+        guard let token = pat else { return false }
+        do {
+            if await codexNoteExists(token: token, note: note) {
+                log.notice("Codex note already in the Codex — skipping create")
+                return true
+            }
+            let body: [String: Any] = ["fields": CodexWrite.fields(for: note), "typecast": true]
+            let data = try JSONSerialization.data(withJSONObject: body)
+            var req = URLRequest(url: URL(string: "https://api.airtable.com/v0/\(Self.baseId)/\(CodexWrite.tableId)")!)
+            req.httpMethod = "POST"
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = data
+            let (respData, response) = try await session.data(for: req)
+            try Self.checkHTTP(response, data: respData)
+            return true
+        } catch {
+            log.error("Codex write failed: \(Self.describe(error), privacy: .public)")
+            return false
+        }
+    }
+
+    private func codexNoteExists(token: String, note: PendingCodexNote) async -> Bool {
+        do {
+            let rows: [CodexWrite.Row] = try await fetch(
+                token: token,
+                table: CodexWrite.tableId,
+                filter: CodexWrite.dedupFormula(for: note),
+                sort: [],
+                fields: [CodexWrite.FieldID.rawMemo],
+                byFieldId: true
+            )
+            return rows.contains { CodexWrite.rowMatches($0, body: note.body) }
+        } catch {
+            log.error("Codex dedup check failed — proceeding with create: \(Self.describe(error), privacy: .public)")
+            return false
+        }
+    }
+
+    fileprivate func flushPendingCodexNotes() async {
+        let queue = loadPendingCodexNotes()
+        guard !queue.isEmpty else { return }
+        guard pat != nil else {
+            log.notice("Codex queue: \(queue.count) waiting for a token")
+            return
+        }
+        var succeeded: [Bool] = []
+        for item in queue {
+            succeeded.append(await processCodexNote(item))
+        }
+        let update = PendingQueuePolicy.update(queue, hasToken: true, succeeded: succeeded)
+        let remaining = PendingQueuePolicy.merge(remaining: update.remaining, drained: queue,
+                                                 stored: loadPendingCodexNotes())
+        savePendingCodexNotes(remaining)
+    }
+
+    private func loadPendingCodexNotes() -> [PendingCodexNote] {
+        guard let data = UserDefaults.standard.data(forKey: Self.pendingCodexKey) else { return [] }
+        let (queue, stamped): ([PendingCodexNote], Bool) = PendingQueueStorage.decode(data)
+        if stamped { savePendingCodexNotes(queue) }
+        return queue
+    }
+
+    private func savePendingCodexNotes(_ queue: [PendingCodexNote]) {
+        if queue.isEmpty {
+            UserDefaults.standard.removeObject(forKey: Self.pendingCodexKey)
+            return
+        }
+        if let data = try? JSONEncoder().encode(queue) {
+            UserDefaults.standard.set(data, forKey: Self.pendingCodexKey)
+        }
+    }
+}
+
+// MARK: - Wave 6 · the river, home from the ledger
+
+extension AirtableService {
+
+    /// Bring back every river letter, light sent back and kept name the ledger
+    /// holds and this phone does not — Wave 5's follow-up. Merged on identity
+    /// (`ActivityLedger.riverLettersMissingLocally`), so it is idempotent and
+    /// runs on every sync; restored items arrive already ledgered, because they
+    /// came *from* the ledger. Silent on any failure.
+    func restoreRiverFromLedger(context: ModelContext) async {
+        if syncIsDisabled() { return }
+        guard let token = pat else { return }
+        let shaktis = (try? context.fetch(FetchDescriptor<Shakti>())) ?? []
+        var byRecord: [String: Int] = [:]
+        for s in shaktis {
+            if let rec = s.airtableRecordId, let kp = s.khadgamalaPosition { byRecord[rec] = kp }
+        }
+        guard !byRecord.isEmpty else { return }
+        do {
+            let rows: [ActivityLedger.Row] = try await fetch(
+                token: token,
+                table: ActivityLedger.tableId,
+                filter: ActivityLedger.restoreRiver,
+                sort: [],
+                fields: Self.restoreRiverFields,
+                byFieldId: false
+            )
+            let river = CorrespondenceStore.shared
+            river.mergeRestored(letters: ActivityLedger.riverLetters(from: rows, byRecord: byRecord))
+            river.mergeRestored(lights: ActivityLedger.lightsSentBack(from: rows, byRecord: byRecord))
+            if let kept = ActivityLedger.latestNameKept(from: rows) {
+                BinduMemory.shared.restore(name: kept.name, keptAt: kept.at)
+            }
+        } catch {
+            log.error("River restore failed: \(Self.describe(error), privacy: .public)")
+        }
+    }
+
+    /// The ledger columns the river's restore reads (`fields[]`, by name).
+    private static let restoreRiverFields = [
+        ActivityLedger.Field.activityType,
+        ActivityLedger.Field.activityName,
+        ActivityLedger.Field.detail,
+        ActivityLedger.Field.activityDate,
+        ActivityLedger.Field.feltAt,
+        ActivityLedger.Field.notes,
+        ActivityLedger.Field.linkToMandala,
+    ]
 }

@@ -53,6 +53,10 @@
 	</array>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>To keep the image of your Portrait in your photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>To keep your own voice when you speak a letter, a note or a word — kept on this phone, in your words.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>To set down the words you speak as text, on this phone, so a spoken letter can be read as well as heard.</string>
 	<key>AIRTABLE_PAT</key>
 	<string>$(AIRTABLE_PAT)</string>
 </dict>

@@ -78,9 +78,10 @@ enum FieldBreath {
     }
 
     /// 0 → 1 → 0 across one period, eased like CSS `ease-in-out` breath.
+    /// Wave 6 · read off the one ``BreathClock`` — every ring's period is a
+    /// whole number of its beats, on its single epoch.
     static func phase(at t: TimeInterval, period: Double) -> Double {
-        guard period > 0 else { return 0 }
-        return (1 - cos(2 * .pi * t / period)) / 2
+        BreathClock.phase(at: t, period: period)
     }
 }
 

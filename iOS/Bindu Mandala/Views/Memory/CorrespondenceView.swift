@@ -20,6 +20,9 @@ struct CorrespondenceView: View {
     @State private var composing = false
     @State private var reading: RiverLetter?
     @State private var revealAnimated = false
+    // Wave 6 · light sent back, and the name kept in Bindu memory.
+    @State private var sendingLight = false
+    @State private var keepingName = false
 
     private var store: CorrespondenceStore { CorrespondenceStore.shared }
 
@@ -85,6 +88,12 @@ struct CorrespondenceView: View {
                                 .buttonStyle(.plain)
                             }
                         }
+                        if !store.lights.isEmpty {
+                            section("light sent back")
+                            ForEach(store.lights.sorted { $0.moment > $1.moment }) { light in
+                                LightSentBackCard(light: light, shakti: people[light.khadgamalaPosition])
+                            }
+                        }
                         if letters.isEmpty {
                             Text("Write to her at a moment that has passed, or seal a letter forward to her day. It waits, unopened, until the moon brings it round.")
                                 .font(AppFont.voice(17))
@@ -103,10 +112,18 @@ struct CorrespondenceView: View {
         .sheet(isPresented: $composing) {
             RiverComposer(shaktis: shaktis)
         }
+        .sheet(isPresented: $sendingLight) {
+            SendLightBackView(shaktis: shaktis)
+        }
+        .sheet(isPresented: $keepingName) {
+            HigherSelfNameView()
+        }
         .fullScreenCover(item: $reading) { letter in
             let s = people[letter.khadgamalaPosition]
             LetterRevealView(letter: letter,
-                             name: s?.name ?? "her",
+                             name: (letter.recipient == nil || letter.recipient?.kind == .her)
+                                ? (s?.name ?? "her")
+                                : String(RiverWords.heading(letter, herName: s?.name).dropFirst(3)),
                              accent: s.map { SeatLighting.accentBright(for: $0) } ?? Color.gold,
                              animated: revealAnimated)
         }
@@ -140,6 +157,31 @@ struct CorrespondenceView: View {
                 .foregroundStyle(Color.cream.opacity(0.55))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
+            // Wave 6 · light, not words, sent back; and the name he keeps.
+            HStack(spacing: 18) {
+                Button {
+                    Haptics.light()
+                    sendingLight = true
+                } label: {
+                    Text("send light back ›")
+                        .font(AppFont.voice(15))
+                        .foregroundStyle(Color.gold.opacity(0.85))
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Button {
+                    Haptics.light()
+                    keepingName = true
+                } label: {
+                    Text(BinduMemory.shared.higherSelfName == nil ? "a name, kept ›" : "the name you keep ›")
+                        .font(AppFont.voice(15))
+                        .foregroundStyle(Color.gold.opacity(0.85))
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.bottom, 14)
     }
@@ -196,7 +238,7 @@ struct CorrespondenceView: View {
         let patina = letter.patina(at: now)
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(shakti?.name ?? "A Śakti")
+                Text(RiverWords.heading(letter, herName: shakti?.name))
                     .font(AppFont.sanskrit(18))
                     .foregroundStyle(Color.cream)
                 Spacer()
@@ -229,7 +271,7 @@ struct CorrespondenceView: View {
             Haptics.medium()
             composing = true
         } label: {
-            Text("write to her")
+            Text("write a letter")
                 .font(AppFont.sanskrit(20))
                 .tracking(1.6)
                 .foregroundStyle(Color.cream)
@@ -255,6 +297,13 @@ enum RiverWords {
     static func opens(_ letter: RiverLetter) -> String {
         let when = letter.opening?.words ?? "her day"
         return "Sealed · opens on \(when), \(day(letter.addressedTo))"
+    }
+
+    /// Wave 6 · whom a page is to: her name, or "to myself at nine", "to a
+    /// memory", "to my later self".
+    static func heading(_ letter: RiverLetter, herName: String?) -> String {
+        guard let r = letter.recipient, r.kind != .her else { return herName ?? "A Śakti" }
+        return r.heading(herName: herName ?? "her")
     }
 
     static func whereItWent(_ letter: RiverLetter) -> String {
@@ -311,6 +360,25 @@ struct RiverComposer: View {
     @State private var loaded = false
     @State private var saveTask: Task<Void, Never>?
     @FocusState private var focused: Bool
+    // Wave 6 · who it is to, and his voice.
+    @State private var recipientKind: RiverRecipient.Kind = .her
+    @State private var age: Int = 9
+    @State private var voiceFile: String?
+    @StateObject private var capture = SpeechCapture()
+
+    private var recipient: RiverRecipient {
+        recipientKind == .age ? RiverRecipient(kind: .age, age: age) : RiverRecipient(kind: recipientKind)
+    }
+
+    private var placeholder: String {
+        switch recipientKind {
+        case .her:       return "Speak to her directly. She is listening."
+        case .age:       return "Speak to yourself at that age."
+        case .memory:    return "Name the memory in your first line, then speak to it."
+        case .pastSelf:  return "Speak to the one you were."
+        case .laterSelf: return "Speak to the one you are becoming."
+        }
+    }
 
     private var store: CorrespondenceStore { CorrespondenceStore.shared }
 
@@ -318,7 +386,7 @@ struct RiverComposer: View {
         RiverWords.day(RiverLetter.openingInstant(opening, khadgamalaPosition: kp, after: .now))
     }
 
-    private var canSet: Bool { !words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var canSet: Bool { CorrespondenceStore.hasSomething(body: words, voiceFile: voiceFile) }
 
     var body: some View {
         NavigationStack {
@@ -332,8 +400,31 @@ struct RiverComposer: View {
                         }
                         .pickerStyle(.segmented)
 
+                        // Wave 6 · her, or himself at an age, a memory, a self.
                         HStack {
                             Text("to")
+                                .font(AppFont.voice(16))
+                                .foregroundStyle(Color.cream.opacity(0.7))
+                            Picker("To whom", selection: $recipientKind) {
+                                ForEach(RiverRecipient.Kind.allCases.filter { $0.allows(direction) }) { k in
+                                    Text(k.words).tag(k)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .tint(Color.gold)
+                            Spacer(minLength: 0)
+                        }
+                        if recipientKind == .age {
+                            Stepper(value: $age, in: 0...120) {
+                                Text("myself at \(ActivityLedger.spelled(age))")
+                                    .font(AppFont.voice(16))
+                                    .foregroundStyle(Color.cream.opacity(0.8))
+                            }
+                            .tint(Color.gold)
+                        }
+
+                        HStack {
+                            Text(recipientKind == .her ? "her" : "in the river of")
                                 .font(AppFont.voice(16))
                                 .foregroundStyle(Color.cream.opacity(0.7))
                             Picker("To her", selection: $kp) {
@@ -371,7 +462,7 @@ struct RiverComposer: View {
 
                         ZStack(alignment: .topLeading) {
                             if words.isEmpty {
-                                Text("Speak to her directly. She is listening.")
+                                Text(placeholder)
                                     .font(AppFont.voice(19))
                                     .foregroundStyle(Color.cream.opacity(0.5))
                                     .padding(.horizontal, 6)
@@ -388,6 +479,22 @@ struct RiverComposer: View {
                         }
                         .padding(8)
                         .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.04)))
+
+                        // Wave 6 · a voice letter: his voice kept, his words
+                        // laid on the page to read and correct.
+                        HStack {
+                            VoiceWordButton(capture: capture) { file, heard in
+                                voiceFile = file
+                                let h = heard.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if !h.isEmpty {
+                                    words = words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                        ? h : words + "\n" + h
+                                }
+                                scheduleDraftSave()
+                            }
+                            Spacer(minLength: 0)
+                            if let f = voiceFile { VoicePlayButton(file: f) }
+                        }
 
                         Button(action: setDown) {
                             Text(direction == .forward ? "seal it forward" : "send it back")
@@ -426,12 +533,20 @@ struct RiverComposer: View {
         .onAppear(perform: load)
         .onChange(of: words) { _, _ in scheduleDraftSave() }
         .onChange(of: kp) { _, _ in scheduleDraftSave() }
-        .onChange(of: direction) { _, _ in scheduleDraftSave() }
+        .onChange(of: direction) { _, d in
+            if !recipientKind.allows(d) { recipientKind = .her }
+            scheduleDraftSave()
+        }
+        .onChange(of: recipientKind) { _, _ in scheduleDraftSave() }
+        .onChange(of: age) { _, _ in scheduleDraftSave() }
         .onChange(of: opening) { _, _ in scheduleDraftSave() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { saveDraftNow() }
         }
-        .onDisappear(perform: saveDraftNow)
+        .onDisappear {
+            capture.abandon()
+            saveDraftNow()
+        }
     }
 
     private func load() {
@@ -443,6 +558,11 @@ struct RiverComposer: View {
             opening = d.opening
             moment = min(d.addressedTo, Date())
             words = d.body
+            if let r = d.recipient {
+                recipientKind = r.kind
+                if let a = r.age { age = a }
+            }
+            voiceFile = d.voiceFile
         }
     }
 
@@ -459,11 +579,12 @@ struct RiverComposer: View {
     private func saveDraftNow() {
         saveTask?.cancel()
         guard loaded else { return }
-        if words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if !CorrespondenceStore.hasSomething(body: words, voiceFile: voiceFile) {
             store.saveDraft(nil)
         } else {
             store.saveDraft(RiverDraft(khadgamalaPosition: kp, direction: direction,
-                                       body: words, opening: opening, addressedTo: moment))
+                                       body: words, opening: opening, addressedTo: moment,
+                                       recipient: recipient, voiceFile: voiceFile))
         }
     }
 
@@ -473,11 +594,14 @@ struct RiverComposer: View {
         Haptics.medium()
         let set: RiverLetter?
         switch direction {
-        case .forward: set = store.seal(body: words, to: kp, opening: opening)
-        case .back:    set = store.sendBack(body: words, to: kp, moment: moment)
+        case .forward: set = store.seal(body: words, to: kp, opening: opening,
+                                        recipient: recipient, voiceFile: voiceFile)
+        case .back:    set = store.sendBack(body: words, to: kp, moment: moment,
+                                            recipient: recipient, voiceFile: voiceFile)
         }
         guard set != nil else { return }
         words = ""
+        voiceFile = nil
         let ctx = context
         Task { await PracticeLedger.flush(context: ctx) }
         dismiss()
@@ -529,6 +653,10 @@ struct LetterRevealView: View {
                         Text("to \(name)")
                             .font(AppFont.sanskrit(24))
                             .foregroundStyle(accent)
+                        // Wave 6 · a voice letter: his own voice, heard again.
+                        if let f = letter.voiceFile, SpeechCapture.exists(f) {
+                            VoicePlayButton(file: f)
+                        }
                         Text(revealed)
                             .font(AppFont.sanskrit(20))
                             .foregroundStyle(Color.cream.opacity(0.92))

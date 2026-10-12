@@ -321,6 +321,16 @@ struct MandalaVeilSheet: View {
                         .opacity(light.subAlpha)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
+                    // Wave 6 · where he stands, the ring's own paragraph.
+                    if ring == here, let notes = RingFactsCache.facts(ring: ring)?.notes?
+                        .trimmingCharacters(in: .whitespacesAndNewlines), !notes.isEmpty {
+                        Text(notes)
+                            .font(AppFont.voice(12.5))
+                            .foregroundStyle(Color.cream.opacity(0.6))
+                            .lineLimit(4)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 3)
+                    }
                 }
                 Spacer(minLength: 0)
                 Text(MandalaVeil.roman[ring])
