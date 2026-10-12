@@ -711,6 +711,22 @@ final class HomeSoundService {
 
     private init() {}
 
+    // MARK: Wave 6 · one sound at a time
+
+    /// How loud the room may stand, `0…1`, as ``SoundConductor`` decides. A
+    /// room is a bed: it steps back to nothing while a game is in front of it,
+    /// and under a struck bīja for as long as it rings — the graph stays up, so
+    /// it returns on the same breath it left on.
+    var conductorGain: Double = 1 {
+        didSet {
+            guard oldValue != conductorGain, isBuilt, !isPaused, !isQuiet, let state else { return }
+            state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.master))
+            state.masterTarget = Float(HomeCarrier.wakeLevel * conductorGain)
+        }
+    }
+    /// `quiet()` was asked for: the conductor does not wake what was quieted.
+    private var isQuiet = false
+
     /// True while the instrument is actually sounding.
     var isSounding: Bool {
         guard isBuilt, let state else { return false }
@@ -725,6 +741,7 @@ final class HomeSoundService {
     /// but silent calls `start()` then `quiet()`.
     func start() {
         if isBuilt {
+            SoundConductor.shared.claim(.room)
             resume()
             wakeMaster()
             return
@@ -736,6 +753,8 @@ final class HomeSoundService {
         // `.playback`, sounding through the silent switch it had asked for.
         build()
         guard isBuilt, let engine else { return }
+        // Ask before sounding (C-1350): the room is a bed.
+        SoundConductor.shared.claim(.room)
         guard configureSession() else {
             teardown()
             return
@@ -754,13 +773,15 @@ final class HomeSoundService {
 
     private func wakeMaster() {
         guard let state else { return }
+        isQuiet = false
         state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.master))
-        state.masterTarget = Float(HomeCarrier.wakeLevel)
+        state.masterTarget = Float(HomeCarrier.wakeLevel * conductorGain)
     }
 
     /// Fade to silence but keep the graph — Design's `stop()`.
     func quiet() {
         guard isBuilt, let state else { return }
+        isQuiet = true
         state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.masterOut))
         state.masterTarget = 0
     }
@@ -769,6 +790,7 @@ final class HomeSoundService {
     /// ever started: the whole graph is lazy, so a service that never sounded
     /// holds no engine to stop.
     func stopAll() {
+        SoundConductor.shared.release(.room)
         for task in scheduled { task.cancel() }
         scheduled.removeAll()
         removeObservers()
@@ -793,6 +815,8 @@ final class HomeSoundService {
     }
 
     private func teardown() {
+        // Wave 6 · a graph that is gone is not asking to sound.
+        SoundConductor.shared.release(.room)
         if let engine {
             if engine.isRunning { engine.stop() }
             if let sourceNode {
@@ -920,7 +944,7 @@ final class HomeSoundService {
             do { try engine.start() } catch { return }
         }
         state.masterCoef = Float(state.coefficient(tau: HomeCarrier.Tau.master))
-        state.masterTarget = Float(HomeCarrier.wakeLevel)
+        state.masterTarget = Float(HomeCarrier.wakeLevel * conductorGain)
     }
 
     // MARK: The graph

@@ -337,6 +337,45 @@ final class RingAudioService {
         point = nil
     }
 
+    // MARK: - Wave 6 · the Om at 136.1, always underneath
+
+    /// Panel 9's Om (`tree-of-life`): 136.1 Hz with its octave at 30 % and its
+    /// sub-octave at 15 %, breathing on a very slow swell. It is never "turned
+    /// on" as an event — ``SoundConductor`` raises it from the first place he
+    /// stands in and only ever moves its level, so the crescendo is the rest
+    /// of the instrument falling away. Its own voice, so ``stopAll(givingBackTheSession:)``
+    /// — which the field calls every time it falls quiet — does not take it.
+    private var om: ContinuousVoice?
+
+    func omStart(gain: Float) {
+        guard om == nil else { omGain(gain); return }
+        do { try configureIfNeeded() } catch { return }
+        let voice = ContinuousVoice(
+            engine: engine,
+            sampleRate: sampleRate,
+            spec: .init(
+                fundamental: TreeOfLife.omHz,
+                harmonics: TreeOfLife.omPartials,
+                lfoRate: 0.05,
+                lfoDepth: 0.001,
+                targetGain: max(0, gain),
+                fadeIn: 3.0
+            )
+        )
+        voice.start()
+        om = voice
+        startEngineIfNeeded()
+    }
+
+    func omGain(_ value: Float) { om?.setGain(max(0, value)) }
+
+    var omIsSounding: Bool { om != nil }
+
+    func omStop() {
+        om?.stop()
+        om = nil
+    }
+
     // MARK: - Wave 2 · Ring 7 · the twelve-voice chord
 
     /// Design's `VAK_FREQS` (`ring-worlds.jsx`) — the twelve Vāgdevatās'
@@ -532,28 +571,41 @@ final class ContinuousVoice {
     // Hold reference to render-block state so it isn't deinited.
     private let voiceState: VoiceState
 
+    /// Wave 6 · the level last asked for. A long fade-in rises toward *this*,
+    /// not toward the spec's starting level, so a voice that is asked to stand
+    /// quieter while it is still fading in (``SoundConductor`` holding it under
+    /// a room) does not climb back over what it was told.
+    private var requestedGain: Float = 0
+    private var rampingIn = false
+
     func start() {
         // Bring up over `fadeIn`. The render block reads `targetGain` via state.
+        requestedGain = spec.targetGain
         voiceState.targetGain = spec.targetGain
         // The smoothing constant in the render block effects a soft fade.
         // For long fade-ins (Ring 1's 2.2s), nudge target gradually via a Task.
         if spec.fadeIn > 0.5 {
-            let target = spec.targetGain
             let steps = 32
             let delay = spec.fadeIn / Double(steps)
             voiceState.targetGain = 0
+            rampingIn = true
             Task { @MainActor in
                 for i in 1...steps {
                     try? await Task.sleep(for: .seconds(delay))
-                    self.voiceState.targetGain = target * Float(i) / Float(steps)
+                    self.voiceState.targetGain = self.requestedGain * Float(i) / Float(steps)
                 }
+                self.rampingIn = false
             }
         }
     }
 
-    func setGain(_ value: Float) { voiceState.targetGain = value }
+    func setGain(_ value: Float) {
+        requestedGain = value
+        if !rampingIn { voiceState.targetGain = value }
+    }
 
     func stop() {
+        requestedGain = 0
         voiceState.targetGain = 0
         // Detach after the gain has had time to settle to silence.
         Task { @MainActor [weak self] in

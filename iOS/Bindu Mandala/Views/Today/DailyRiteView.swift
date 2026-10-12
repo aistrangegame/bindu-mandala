@@ -87,6 +87,8 @@ struct DailyRiteView: View {
     /// prototype's 60 ms), so the first frame is the empty ground and every
     /// beat after it is seen rising. Under reduce motion she is simply there.
     private func beginArrival() {
+        // Wave 6 · B · the day's opening bell (once a practice day).
+        TheBells.riteOpened()
         guard !arrived else { return }
         if still {
             arrived = true

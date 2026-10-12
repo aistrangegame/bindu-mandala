@@ -147,6 +147,8 @@ private struct AppRoot: View {
                 // the foreground; every drone, triad and descent stops here.
                 RingAudioService.shared.stopAll()
                 HomeSoundService.shared.stopAll()
+                // Wave 6 · and the Om, which the field's stop leaves standing.
+                SoundConductor.shared.letGo()
             default:
                 break
             }

@@ -23,6 +23,8 @@ final class BijaSoundService {
     private init() {}
 
     func play(forPosition position: Int, duration: TimeInterval = 1.6) {
+        // Wave 6 · a struck sound: the bed steps back while it rings (C-1350).
+        SoundConductor.shared.strike(.bija, seconds: duration)
         // Prefer a recorded voice file when one is bundled. Naming convention:
         // bija_01 … bija_102 (zero-padded to two digits, keyed by khaḍgamālā
         // position; mp3 / m4a / wav). If the file is absent or playback fails,
@@ -104,6 +106,8 @@ final class BijaSoundService {
     /// tone is seeded off `seed` (her khaḍgamālā position) so it is still unique
     /// per Śakti — never the old per-ring collision.
     func playBija(_ bija: String, seed: Int, duration: TimeInterval = 3.2) {
+        // Wave 6 · a struck sound: the bed steps back while it rings (C-1350).
+        SoundConductor.shared.strike(.bija, seconds: duration)
         // A bundled human-voice sample (by unique position) still wins if present.
         if playVoiceFile(forPosition: seed) { return }
         let syllable = bija.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -204,6 +208,8 @@ final class BijaSoundService {
                       volume: Double = 0.06,
                       stagger: TimeInterval = 0.06) {
         guard !frequencies.isEmpty else { return }
+        // Wave 6 · a struck chord: the bed steps back while it rings.
+        SoundConductor.shared.strike(.bija, seconds: stagger * Double(frequencies.count - 1) + duration)
         do {
             try configureIfNeeded()
             let sampleRate: Double = 44_100
@@ -246,6 +252,52 @@ final class BijaSoundService {
             player.play()
         } catch {
             // silent
+        }
+    }
+
+    // MARK: - Wave 6 · the two bells
+
+    /// A struck bowl: the Rite's opening bell and its closing bell.
+    ///
+    /// A singing bowl's own partials (1 · 2.76 · 5.4 · 8.93, each decaying
+    /// faster than the one below it), on the Om's family — the world's and the
+    /// point's 136.1 (charter §3 law 5). It rides this engine and so this
+    /// engine's ruling on the silent switch, as a struck bīja does; the bell's
+    /// haptic carries it when the phone is silent.
+    func playBell(frequency: Double, duration: TimeInterval = 5.5, volume: Double = 0.2) {
+        SoundConductor.shared.strike(.bell, seconds: duration)
+        do {
+            try configureIfNeeded()
+            let sampleRate: Double = 44_100
+            let frameCount = AVAudioFrameCount(sampleRate * duration)
+            let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return }
+            buffer.frameLength = frameCount
+            let channel = buffer.floatChannelData![0]
+            let twoPi = 2.0 * Double.pi
+            let partials: [(ratio: Double, amp: Double, decay: Double)] =
+                [(1.0, 1.0, 0.9), (2.76, 0.42, 1.6), (5.4, 0.2, 2.6), (8.93, 0.08, 4.0)]
+            let total = Int(frameCount)
+            let attack = Int(sampleRate * 0.004)
+            let release = Int(sampleRate * 0.25)
+            for i in 0..<total {
+                let t = Double(i) / sampleRate
+                var sample = 0.0
+                for p in partials {
+                    // A slow beat on the fundamental, as a real bowl wavers.
+                    let waver = p.ratio == 1.0 ? 1 + 0.08 * sin(twoPi * 1.3 * t) : 1
+                    sample += p.amp * exp(-t * p.decay) * waver * sin(twoPi * frequency * p.ratio * t)
+                }
+                if i < attack { sample *= Double(i) / Double(attack) }
+                if i > total - release { sample *= Double(total - i) / Double(release) }
+                channel[i] = Float(sample / 1.7 * volume)
+            }
+            if player.isPlaying { player.stop() }
+            player.scheduleBuffer(buffer, at: nil, options: [.interrupts])
+            if !engine.isRunning { try engine.start() }
+            player.play()
+        } catch {
+            // silent — the haptic carries the bell
         }
     }
 

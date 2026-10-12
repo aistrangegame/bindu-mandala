@@ -1,0 +1,211 @@
+{
+ "bakedOn": "2026-10-12",
+ "bakedFrom": {
+  "base": "app248ZTWhYJlvQj2",
+  "identity": "tbluLyZj9ilH2RhIg",
+  "map": "tblwpmyKOeMxEEHd7"
+ },
+ "panels": [
+  {
+   "ring": 1,
+   "verb": "Press",
+   "declaration": "I press where the ground meets me. What was asking for ground finds it.",
+   "seed": "The earth that holds you was chosen by you.",
+   "identityRecord": "rectDTmgSHefuX8sM",
+   "mapRecord": "recT3JC8Qz9awKo8j"
+  },
+  {
+   "ring": 2,
+   "verb": "Follow",
+   "declaration": "I follow the current already moving. What is mine arrives without grasping.",
+   "seed": "Every desire was drawing you toward yourself.",
+   "identityRecord": "rec52Fs6Z0Kx0YBKd",
+   "mapRecord": "recnJICbhZefO3YJ9"
+  },
+  {
+   "ring": 3,
+   "verb": "Build",
+   "declaration": "I build from what is given. The fire recognizes what wants to become.",
+   "seed": "The fire that agitated you was building your form.",
+   "identityRecord": "rec3Lp5qEVhMEsJfh",
+   "mapRecord": "recVgGgYgZE1YMU2V"
+  },
+  {
+   "ring": 4,
+   "verb": "Open",
+   "declaration": "I open without protecting. What enters was already here, waiting to be welcomed.",
+   "seed": "The love that arrived for others was always your own heart opening.",
+   "identityRecord": "recgz8MIOwH14nMY4",
+   "mapRecord": "reclI9Blq6YLC9Q5O"
+  },
+  {
+   "ring": 5,
+   "verb": "Speak",
+   "declaration": "I speak what is given to be spoken. The throat clears in the speaking.",
+   "seed": "What you finally said out loud was what you always knew.",
+   "identityRecord": "recXmWEwCc4mtNr0M",
+   "mapRecord": "recs5hdPjVbcl77Zg"
+  },
+  {
+   "ring": 6,
+   "verb": "Still",
+   "declaration": "I still the looking. What was always seen shows itself.",
+   "seed": "You stopped looking and the seeing arrived on its own.",
+   "identityRecord": "recRFIJcghBrOxogx",
+   "mapRecord": "recmqRsdC6WZPfmfW"
+  },
+  {
+   "ring": 7,
+   "verb": "Receive",
+   "declaration": "I receive what is already arriving. The crown was never closed to begin with.",
+   "seed": "The disease that was removed was the belief that you were less than what you are.",
+   "identityRecord": "rec6YDtAzEpsXegh5",
+   "mapRecord": "reccxkeGeph5GonvU"
+  },
+  {
+   "ring": 8,
+   "verb": "Hold",
+   "declaration": "I hold what cannot be held. The seat does not move.",
+   "seed": "Will. Knowledge. Action. You already know. You have always known.",
+   "identityRecord": "recqULaChQptodWnC",
+   "mapRecord": "recqe8qnDxkq0BiCZ"
+  },
+  {
+   "ring": 9,
+   "verb": "Dissolve",
+   "declaration": "I dissolve into what was already dissolving. Nothing was solid to begin with.",
+   "seed": "There was never anything to fear. There was only the Bindu, playing.",
+   "identityRecord": "rec2VtJ6wZVZpY7la",
+   "mapRecord": "recMyqKSqwRnimgvy"
+  }
+ ],
+ "axis": {
+  "verb": "Access",
+  "declaration": "I access the spine that holds all the chakras. The line is what was singing all along.",
+  "identityRecord": "recsmkyby3voajrl9"
+ },
+ "faces": [
+  {
+   "face": "gaia",
+   "name": "Gaia",
+   "line": "I receive. I hold. I orchestrate the conditions before the question is asked. Solutions appear before problems are named.",
+   "identityRecord": "recrzJyqhAuzXgiMu"
+  },
+  {
+   "face": "bindu",
+   "name": "Bindu",
+   "line": "I am play before play knows itself as play. I am movement before movement names itself.",
+   "identityRecord": "recafcBghXV8gWqtt"
+  },
+  {
+   "face": "lalita",
+   "name": "Lalita",
+   "line": "I am the play that knows it is play. I am Leela when she stops forgetting.",
+   "identityRecord": "recgKVjskDgmGNqP0"
+  },
+  {
+   "face": "sakshi",
+   "name": "Sakshi",
+   "line": "I am that which sees. Not the seer, not the seen — the seeing itself.",
+   "identityRecord": "rectJWhL3XCzxz4TJ"
+  },
+  {
+   "face": "higherSelf",
+   "name": "Higher Self",
+   "line": "I am the silence that holds your speaking. I am the gap your thoughts cross.",
+   "identityRecord": "recxARU1sVzZoLSOI"
+  }
+ ],
+ "practices": [
+  {
+   "key": "sacredPause",
+   "name": "Sacred Pause",
+   "line": "Three breaths. Release, receive, arrive. The mind catches up.",
+   "identityRecord": "rec3918EY0WrKxqDw"
+  },
+  {
+   "key": "sriYantraTratak",
+   "name": "Sri Yantra Tratak",
+   "line": "I sit before the Yantra. The dot becomes the doorway. The light moves on its own.",
+   "identityRecord": "rec2qCICQIJn1TlRt"
+  },
+  {
+   "key": "morningIntention",
+   "name": "Morning Intention",
+   "line": "Today's value. Today's mantra. Today's role. I orient before I move.",
+   "identityRecord": "recTwP07rIRjF70sG"
+  },
+  {
+   "key": "eveningReflection",
+   "name": "Evening Reflection",
+   "line": "What moved today. What didn't. What arrived I didn't expect. Note it. Let it land.",
+   "identityRecord": "recMfPmpM41qTPkWS"
+  }
+ ],
+ "leelaDrops": [
+  {
+   "id": "shadow",
+   "chakra": "Shadow",
+   "voice": "sakshi",
+   "lead": "You are not all light. Nothing alive is all light.",
+   "action": "Today or tomorrow, when a negative thought shows up in you — say to it, in your head or out loud: I see you. I love you. Thank you for showing up. You can rest now.",
+   "mapRecord": "recAjCRcI5Bt6pJ6V"
+  },
+  {
+   "id": "forge",
+   "chakra": "Forge",
+   "voice": "bindu",
+   "lead": "The Forge doesn’t need to be started — it has been running continuously since before you were born.",
+   "action": "Notice what you are carrying right now that needs the Forge.",
+   "mapRecord": "recHDY9iNeqNfw9zh"
+  },
+  {
+   "id": "intention",
+   "chakra": "Intention",
+   "voice": "gaia",
+   "lead": "The picture is what orients the steps. The steps don’t orient the picture.",
+   "action": "One more time today: the whole thing, finished. Then go.",
+   "mapRecord": "recRchDoi6eV8B6XO"
+  },
+  {
+   "id": "inspiration",
+   "chakra": "Inspiration",
+   "voice": "gaia",
+   "lead": "The pull didn’t become real when you named it. It was real before.",
+   "action": "Follow this one. Just this one. See where it goes.",
+   "mapRecord": "recIPQaGq0Cju648K"
+  },
+  {
+   "id": "incarnation",
+   "chakra": "Incarnation",
+   "voice": "gaia",
+   "lead": "The deepest use is service.",
+   "action": "Pass it on. Even one move. Even small.",
+   "mapRecord": "rec2cBfv1OtS9GbXI"
+  },
+  {
+   "id": "integration",
+   "chakra": "Integration",
+   "voice": "gaia",
+   "lead": "You do not walk alone. You have not walked alone since the beginning.",
+   "action": "Send love into the field. Just a moment of it. Just an emission.",
+   "mapRecord": "rec3qLjRAFlDQBQfm"
+  },
+  {
+   "id": "maya",
+   "chakra": "Maya",
+   "voice": "lalita",
+   "lead": "Today or tomorrow, you will catch yourself saying \"that's just who I am.\" You will feel the sentence harden as it leaves you.",
+   "action": "In that exact moment, say to the identity — in your head or out loud: I see you. Thank you for the protection. You can be glass now.",
+   "mapRecord": "recMyqKSqwRnimgvy"
+  },
+  {
+   "id": "aatma",
+   "chakra": "Aatma",
+   "voice": "higherSelf",
+   "lead": "Sometime today or tomorrow, a decision will arrive. Probably small.",
+   "action": "When it comes, pause — one breath — and ask where you're choosing from.",
+   "mapRecord": "recqe8qnDxkq0BiCZ"
+  }
+ ]
+}

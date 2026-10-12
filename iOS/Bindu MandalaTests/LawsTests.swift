@@ -912,6 +912,11 @@ enum LedgerIsTheRecord {
         "Played",
         // Wave 5 · memory and words — held to the same rule.
         "Letter Sealed", "Letter Opened", "Portrait Drawn", "Wager Resolved",
+        // Wave 6 · B · the game's own structure: a Leela drop answered, and the
+        // activation cycle closed in her room. Held to the same rule — named
+        // in the ledger's file, referred to everywhere else as
+        // `ActivityLedger.ActivityType.leelaDrop` / `.lightEntered`.
+        "Leela Drop", "Light Entered",
         "Activity Type",
     ]
 

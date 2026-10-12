@@ -41,6 +41,8 @@ struct LivingMandalaView: View {
     @State private var moved = false
     @State private var animating = false
     @State private var enteredRing = 0
+    /// Wave 6 · B · when a hold in the open ring last completed.
+    @State private var ringHeldAt: Date?
     @State private var flash: MandalaCanvasLayer.RingFlash?
     @State private var constellation: Double = 0
     @State private var constellationStart: TimeInterval?   // clock for the per-thread stagger
@@ -127,6 +129,10 @@ struct LivingMandalaView: View {
                 TheCentre(point: camera.binduScreen(), active: ready && !descent && focus == nil && !veilOpen,
                           seats: seats, soundOn: soundOn, onFallThrough: { openDescent() })
                 GatesOfReleaseLayer(ring: enteredRing, active: !descent && focus == nil && !veilOpen)
+                // Wave 6 · B · the Tree of Life through the nine rings.
+                TreeOfLifeRingLayer(ring: enteredRing, active: !descent && focus == nil && !veilOpen,
+                                    camera: camera, seats: seats, stillSeconds: stillSeconds,
+                                    heldAt: ringHeldAt, soundOn: soundOn)
                 header
                 // Controls are always reachable — the sound toggle governs the ring
                 // chimes that fire during unfocused navigation, so it can't be
@@ -204,6 +210,11 @@ struct LivingMandalaView: View {
             .gesture(dragGesture)
             .simultaneousGesture(magnifyGesture)
             .simultaneousGesture(doubleTapGesture)
+            // Wave 6 · B · a hold anywhere in the ring answers its verb.
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: TreeOfLife.holdSeconds(ring: enteredRing),
+                                 maximumDistance: 14)
+                    .onEnded { _ in ringHeldAt = Date() })
     }
 
     /// Double-tap empty space to zoom in (1.7×) at that point — the prototype's

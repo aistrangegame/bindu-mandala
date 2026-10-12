@@ -396,7 +396,11 @@ struct SakshiCloseView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .onAppear { withAnimation(.easeInOut(duration: 2.4).delay(0.6)) { shown = true } }
+        .onAppear {
+            // Wave 6 · B · the closing bell.
+            TheBells.riteClosed()
+            withAnimation(.easeInOut(duration: 2.4).delay(0.6)) { shown = true }
+        }
     }
 
     private var sentence: String {
