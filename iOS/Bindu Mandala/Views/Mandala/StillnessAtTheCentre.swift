@@ -23,9 +23,9 @@ import CoreGraphics
 /// When the silence arrives at the point.
 enum CentreArrival {
 
-    /// One breath untouched — Mauna's own bindu breath is six seconds; one
-    /// slow breath in and out is a little more.
-    static let oneBreath: TimeInterval = 8
+    /// One breath untouched — Wave 6.1: the one breath clock's own breath
+    /// (``BreathClock/breath``), not a second clock of the centre's own.
+    static let oneBreath: TimeInterval = BreathClock.breath
 
     /// How far in the glass must have fallen: the inner triangles and closer.
     static let innermostRing = 7

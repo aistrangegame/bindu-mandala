@@ -126,13 +126,20 @@ final class ChakraRoomTests: XCTestCase {
     }
 
     func testEachRoomOffersTheGameWaveFourPlacedThere() throws {
-        XCTAssertEqual(ChakraTeaching.games(try chakra(9)), [.corridor])
+        // Wave 6.1 · Slice E's games stand at the same addresses: the Scrolls
+        // beside the Corridor at Shadow, Tat Tvam Asi at Armin.
+        XCTAssertEqual(ChakraTeaching.games(try chakra(9)), [.corridor, .shadowScrolls])
         XCTAssertEqual(ChakraTeaching.games(try chakra(14)), [.pulse, .coherence])
         XCTAssertEqual(ChakraTeaching.games(try chakra(2)), [.rootSystem])
         XCTAssertEqual(ChakraTeaching.games(try chakra(3)), [.waterLevel])
         XCTAssertEqual(ChakraTeaching.games(try chakra(18)), [.spineWalk])
         XCTAssertEqual(ChakraTeaching.games(try chakra(28)), [.door])
-        XCTAssertTrue(ChakraTeaching.games(try chakra(20)).isEmpty)
+        XCTAssertEqual(ChakraTeaching.games(try chakra(20)), [.tatTvamAsi])
+        // A chakra that is a whole ring offers that ring's games — Integration,
+        // the whole seventh: Mandala Completion and the Twelve.
+        XCTAssertEqual(ChakraTeaching.games(try chakra(29)), [.mandalaCompletion, .twelve])
+        // Rām japa beside the Higher Self, at Ātmākarṣiṇī (his decision, 12 Oct).
+        XCTAssertTrue(ChakraTeaching.games(try chakra(5)).contains(.ramJapa))
     }
 
     // MARK: The thresholds, in the Map's own words

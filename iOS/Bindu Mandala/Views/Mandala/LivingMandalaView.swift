@@ -54,6 +54,10 @@ struct LivingMandalaView: View {
     @State private var chakraLayer = ChakraLayerState()
     /// Wave 6 · the mode door is open.
     @State private var modesOpen = false
+    /// Wave 6.1 · the ring of ways round the one "ways in" mark is open.
+    @State private var waysOpen = false
+    /// Wave 6.1 · the Climb, reached from the ways in.
+    @State private var climbOpen = false
 
     // Gesture bases (incremental deltas so pan + pinch compose)
     @State private var lastDrag: CGSize = .zero
@@ -154,6 +158,8 @@ struct LivingMandalaView: View {
                 }
                 if let seat = focus { card(for: seat) }
                 if ready && !descent { veil(in: geo.size) }
+                // Wave 6.1 · the ring of ways round the one mark.
+                waysRing(in: geo.size)
                 if descent { lalita }
             }
             .onAppear { configure(size: geo.size) }
@@ -199,6 +205,15 @@ struct LivingMandalaView: View {
         // Wave 6 · the modes, through one door.
         .fullScreenCover(isPresented: $modesOpen) {
             ModesDoorView(onClose: { modesOpen = false })
+        }
+        // Wave 6.1 · the Climb, from the ways in — rising from the enclosure
+        // he has fallen into, or from today's.
+        .fullScreenCover(isPresented: $climbOpen) {
+            ChakraRingClimb(ring: max(1, enteredRing > 0 ? enteredRing : veilHere),
+                            onLeft: { climbOpen = false })
+        }
+        .onReceive(NotificationCenter.default.publisher(for: MandalaWays.notification)) { _ in
+            takeAskedWay()
         }
         // Wave 2 · one building, and the Mandala's voice.
         .herRoom($roomFor)
@@ -292,19 +307,83 @@ struct LivingMandalaView: View {
         }
     }
 
+    /// Wave 6.1 · **three quiet controls** (gameplan §1): sound, the Veil's
+    /// handle at the foot, and one "ways in" mark. The zoom column, Wave 3's ✦
+    /// and ☉ and Wave 6's ◌ are folded into the mark's ring (``WaysInRing``);
+    /// pinch and double-tap still fall and rise, and a voice has them as the
+    /// mark's own named actions.
     private var controls: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Self.controlSpacing) {
             controlButton(soundOn ? "♪" : "♪̸", active: soundOn) { toggleSound() }
-            controlButton("+", active: false) { zoomButton(1.4) }
-            controlButton("−", active: false) { zoomButton(1 / 1.4) }
-            controlButton("⤢", active: false) { fitCamera() }
-            // Wave 6 · the mode door: Darśana, Sādhana, Smṛti, Svapna, Pūjā.
-            controlButton("◌", active: modesOpen) { Haptics.soft(); modesOpen = true }
-                .accessibilityLabel(Text(TheModes.doorLabel))
+            controlButton(WaysInRing.markGlyph, active: waysOpen) {
+                Haptics.soft()
+                waysOpen.toggle()
+            }
+            .accessibilityLabel(Text(waysOpen ? "Close the ways in" : WaysInRing.markLabel))
+            .accessibilityHint(Text("The constellation, the Road, the modes, Lalitā's field and the Climb."))
+            .accessibilityAction(named: Text("Fall in")) { zoomButton(1.4) }
+            .accessibilityAction(named: Text("Rise out")) { zoomButton(1 / 1.4) }
+            .accessibilityAction(named: Text("The whole yantra")) { fitCamera() }
         }
-        .padding(.trailing, 16)
-        .padding(.top, 70)
+        .padding(.trailing, Self.controlTrailing)
+        .padding(.top, Self.controlTop)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+    }
+
+    private static let controlSpacing: CGFloat = 10
+    private static let controlTrailing: CGFloat = 16
+    private static let controlTop: CGFloat = 70
+    private static let controlSide: CGFloat = 46
+
+    /// Where the ways-in mark's centre stands in the Mandala's own frame — the
+    /// second disc of the column — so its ring opens round it.
+    private func waysCentre(in size: CGSize) -> CGPoint {
+        CGPoint(x: size.width - Self.controlTrailing - Self.controlSide / 2,
+                y: Self.controlTop + Self.controlSide + Self.controlSpacing + Self.controlSide / 2)
+    }
+
+    /// The ring of ways, while the mark is open.
+    @ViewBuilder
+    private func waysRing(in size: CGSize) -> some View {
+        if waysOpen && !descent {
+            WaysInRingView(centre: waysCentre(in: size),
+                           constellationOn: chakraLayer.constellationOn,
+                           walking: chakraLayer.walking,
+                           reduceMotion: reduceMotion,
+                           onChoose: { take($0) },
+                           onClose: { waysOpen = false })
+            .zIndex(30)
+            .transition(.opacity)
+        }
+    }
+
+    /// A way, taken. Each leads to the place it names; nothing here is a list
+    /// of that place's contents.
+    private func take(_ way: WayIn) {
+        waysOpen = false
+        switch way {
+        case .constellation:
+            chakraLayer.toggleConstellation()
+        case .road:
+            if chakraLayer.walking { chakraLayer.leaveRoadAsked = true } else { chakraLayer.roadAsked = true }
+        case .modes:
+            modesOpen = true
+        case .field:
+            // Lalitā's field, where every game is gathered (`PlayFieldPresenter`).
+            PlayField.open()
+        case .climb:
+            climbOpen = true
+        case .whole:
+            closeFocus()
+        }
+    }
+
+    /// Wave 6.1 · a way asked for elsewhere (Lalitā's field's way to the Road):
+    /// rise out of the source if he is in it, then take it.
+    private func takeAskedWay() {
+        guard ready, let way = MandalaWays.take() else { return }
+        if descent { ascend() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { take(way) }
     }
 
     private func controlButton(_ label: String, active: Bool, _ action: @escaping () -> Void) -> some View {
@@ -625,6 +704,7 @@ struct LivingMandalaView: View {
             camera = .fitted(in: newSize)
             ready = true
             applyLaunchArgs()
+            takeAskedWay()
         }
     }
 

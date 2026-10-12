@@ -40,27 +40,41 @@ enum SoundVoice: String, CaseIterable, Equatable {
     case room
     /// A game's synth (`PlaySound`).
     case play
+    /// Wave 6.1 · the heart register's drone and call (`HeartRegisterEngine`).
+    case heart
     /// A struck bīja (`BijaSoundService`).
     case bija
     /// The Rite's two bells.
     case bell
+    /// Wave 6.1 · his own kept voice played back (a letter, a note): while it
+    /// speaks, the bed steps back and the Om goes silent, as for a struck tone.
+    case voice
 
     enum Role: Equatable { case floor, bed, accent }
 
     var role: Role {
         switch self {
         case .om: return .floor
-        case .field, .room, .play: return .bed
-        case .bija, .bell: return .accent
+        case .field, .room, .play, .heart: return .bed
+        case .bija, .bell, .voice: return .accent
         }
     }
 
     /// Which bed stands in front when more than one is asking.
-    var priority: Int {
+    var priority: Int { priority(climbing: false) }
+
+    /// Wave 6.1 · his decision (gameplan §4.6): **on the Climb the ring voices
+    /// stand in front** and the room's drone waits for the room. While he is
+    /// on the axis with no room open, the field outranks the climb's grounds;
+    /// the instant her room opens (the climb lets the field go), the room's
+    /// carrier is alone in front again. The Om stays beneath either way. The
+    /// heart register, which he chose to sing into, stands before everything.
+    func priority(climbing: Bool) -> Int {
         switch self {
+        case .heart: return 4
         case .play: return 3
-        case .room: return 2
-        case .field: return 1
+        case .room: return climbing ? 1 : 2
+        case .field: return climbing ? 2 : 1
         default: return 0
         }
     }
@@ -76,12 +90,14 @@ enum SoundArbiter {
     static let bedUnderAccent = 0.3
 
     /// The bed in front, if any.
-    static func holder(of beds: Set<SoundVoice>) -> SoundVoice? {
-        beds.filter { $0.role == .bed }.max { $0.priority < $1.priority }
+    static func holder(of beds: Set<SoundVoice>, climbing: Bool = false) -> SoundVoice? {
+        beds.filter { $0.role == .bed }
+            .max { $0.priority(climbing: climbing) < $1.priority(climbing: climbing) }
     }
 
-    static func gains(beds: Set<SoundVoice>, accenting: Bool) -> [SoundVoice: Double] {
-        let front = holder(of: beds)
+    static func gains(beds: Set<SoundVoice>, accenting: Bool,
+                      climbing: Bool = false) -> [SoundVoice: Double] {
+        let front = holder(of: beds, climbing: climbing)
         var out: [SoundVoice: Double] = [:]
         for v in SoundVoice.allCases {
             switch v.role {
@@ -115,6 +131,11 @@ final class SoundConductor {
 
     private(set) var beds: Set<SoundVoice> = []
     private(set) var depth = 0
+    /// Wave 6.1 · he is on the Climb's axis with no room open over it.
+    private(set) var climbing = false
+    /// Wave 6.1 · the heart register, while it sounds — told its level like
+    /// every other bed. Weak: the view that owns the engine owns its life.
+    weak var heart: HeartRegisterEngine?
     private var accentUntil: Date?
     private var swell: Double?
     private var applied: [SoundVoice: Double] = [:]
@@ -132,6 +153,15 @@ final class SoundConductor {
     func claim(_ voice: SoundVoice) {
         guard voice.role == .bed else { return }
         if beds.insert(voice).inserted { apply() }
+    }
+
+    /// Wave 6.1 · the heart register asks to sound: from now on it is told
+    /// its level like every other bed, and it stands in front.
+    func adopt(heart engine: HeartRegisterEngine) {
+        heart = engine
+        applied[.heart] = nil
+        beds.insert(.heart)
+        apply()
     }
 
     /// A bed has let go.
@@ -164,6 +194,15 @@ final class SoundConductor {
         apply()
     }
 
+    /// Wave 6.1 · the Climb stands (or no longer stands) in front of him.
+    /// Called by the climb's own sounding loop, which stops while her room is
+    /// open — so the room's voice is in front exactly while the room is.
+    func setClimbing(_ on: Bool) {
+        guard on != climbing else { return }
+        climbing = on
+        apply()
+    }
+
     /// Panel 9: the Om rises on its own (`0…1`), or `nil` to give it back to
     /// its floor.
     func swellOm(_ e: Double?) {
@@ -174,6 +213,7 @@ final class SoundConductor {
     /// The app has left the foreground: let the Om go with everything else.
     func letGo() {
         beds.removeAll()
+        climbing = false
         swell = nil
         accentUntil = nil
         accentEnd?.cancel()
@@ -192,10 +232,11 @@ final class SoundConductor {
     private var inPlace: Bool { beds.contains(.field) || beds.contains(.room) || swell != nil }
 
     private func apply() {
-        let g = SoundArbiter.gains(beds: beds, accenting: accenting)
+        let g = SoundArbiter.gains(beds: beds, accenting: accenting, climbing: climbing)
         set(.field, g[.field] ?? 1) { RingFieldVoice.shared.conductorGain = $0 }
         set(.room, g[.room] ?? 1) { HomeSoundService.shared.conductorGain = $0 }
         set(.play, g[.play] ?? 1) { PlaySound.shared.setConductorGain($0) }
+        set(.heart, g[.heart] ?? 1) { self.heart?.setConductorGain($0) }
         applyOm(multiplier: g[.om] ?? 1)
     }
 

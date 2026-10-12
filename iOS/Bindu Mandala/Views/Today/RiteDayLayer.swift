@@ -59,7 +59,7 @@ struct RiteGraceLine: View {
         guard GraceChannel.lastSurfaced().map({ Date().timeIntervalSince($0) > 3600 * 24 }) ?? true
         else { return }
         let rows = await AirtableService.shared.graceRows()
-        guard !rows.isEmpty, !Task.isCancelled else { return }
+        guard !Task.isCancelled else { return }
 
         let ring = shakti.ringNumber ?? KhadgamalaMap.ringNumber(forKhadgamala: shakti.khadgamalaPosition ?? 0)
         var names: [String: String] = [:]
@@ -69,14 +69,20 @@ struct RiteGraceLine: View {
             names[rec] = s.name
             if (s.ringNumber ?? 0) == ring, rec != shakti.airtableRecordId { sisters.insert(rec) }
         }
-        guard let chosen = GraceChannel.choose(rows: rows,
-                                               herRecordId: shakti.airtableRecordId,
-                                               sisterRecordIds: sisters,
-                                               names: names,
-                                               now: Date(),
-                                               lastSurfaced: GraceChannel.lastSurfaced(),
-                                               surfaced: GraceChannel.surfaced())
-        else { return }
+        let fromLedger = GraceChannel.choose(rows: rows,
+                                             herRecordId: shakti.airtableRecordId,
+                                             sisterRecordIds: sisters,
+                                             names: names,
+                                             now: Date(),
+                                             lastSurfaced: GraceChannel.lastSurfaced(),
+                                             surfaced: GraceChannel.surfaced())
+        // Wave 6.1 · on a day the ledger has nothing to return, grace may —
+        // rarely — return one of his own gratitude lines (``GratitudeGrace``).
+        var picked = fromLedger
+        if picked == nil, GraceChannel.lastSurfaced().map({ Date().timeIntervalSince($0) > 3600 * 24 * Double(GraceChannel.restDays) }) ?? true {
+            picked = await gratitudeLine()
+        }
+        guard let chosen = picked, !Task.isCancelled else { return }
         // Once: the moment it is chosen to be shown, it is spent.
         GraceChannel.markSurfaced(chosen)
         line = chosen
@@ -86,6 +92,22 @@ struct RiteGraceLine: View {
             try? await Task.sleep(for: .seconds(2.6))
             withAnimation(.easeInOut(duration: 2.2)) { shown = true }
         }
+    }
+
+    /// His own gratitude, read only, room-matched where it can be — or nil.
+    /// Never counted, never dated: the line alone.
+    private func gratitudeLine() async -> GraceChannel.Line? {
+        let day = DailyEnergyService.practiceDayIndex()
+        guard GratitudeGrace.maySpeak(practiceDay: day) else { return nil }
+        let rows = await AirtableService.shared.gratitudeRows()
+        guard !rows.isEmpty else { return nil }
+        let room = GratitudeGrace.roomWords(name: shakti.name, shortName: shakti.shortName,
+                                            bodilyLocation: shakti.bodilyLocation,
+                                            tattva: shakti.tattva, quality: shakti.quality)
+        guard let mine = GratitudeGrace.choose(rows: rows, roomWords: room, practiceDay: day,
+                                               surfaced: GraceChannel.surfaced()) else { return nil }
+        // His words, as his — in quotation, with nothing beside them.
+        return GraceChannel.Line(rowId: mine.rowId, text: "“\(mine.text)”")
     }
 }
 

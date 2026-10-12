@@ -249,11 +249,13 @@ final class TatTvamAsiModel: PlayModel {
     }
 }
 
-// MARK: Rām japa — his own name, at the point (ring 9)
+// MARK: Rām japa — his own name, at Ātmākarṣiṇī (kp 42)
 //
 // Codex C-1222: japa "Ram Ram". The name is his higher self's (C-1262,
-// C-1325) — his alone, not a Śakti's — so the mālā hands to stillness, never
-// to a seat. A mālā of a hundred and eight beads hangs in light; one bead
+// C-1325) — his alone, not a Śakti's. Wave 6.1, his decision (12 Oct): it
+// stands at Ātmākarṣiṇī, beside the Higher Self in the Trinity; and because
+// the name is his and not hers, the mālā still hands to stillness, never to
+// her Recognition. A mālā of a hundred and eight beads hangs in light; one bead
 // moves on a whole breath: held as the breath comes in, let go as it leaves.
 // A flick is not a breath, and moves nothing. The meru is the point; a whole
 // round, home again, and the name goes quiet.

@@ -6,7 +6,7 @@ import SwiftUI
 // `LivingMandalaView` — one `@State` value and one overlay — plus one call in
 // the canvas and one line in `updateEntered()`. The rest lives here:
 //
-//   · the **constellation** switch (✦) — the 33 drawn as light at their
+//   · the **constellation** (✦) — the 33 drawn as light at their
 //     addresses, and spoken where they stand;
 //   · **walk the road** (☉) — the 33 in their order as one camera path over
 //     the same yantra, centre → perimeter → spiralling home; a touch on the
@@ -14,8 +14,12 @@ import SwiftUI
 //   · the **thresholds** — Shadow at the 3→4 crossing, Armin at the 6→7 —
 //     which any fall through those crossings passes through.
 //
-// The switch remembers itself on this phone only (a per-viewer convenience,
-// never a record). Nothing here writes to the ledger: walking the Road moves a
+// Wave 6.1 · the two switches no longer stand on the glass: they are two of
+// the ways in the Mandala's one "ways in" mark (``WaysInRing``), which asks
+// through `toggleConstellation()`, `roadAsked` and `leaveRoadAsked`.
+//
+// The constellation remembers itself on this phone only (a per-viewer
+// convenience, never a record). Nothing here writes to the ledger: walking the Road moves a
 // camera; it does not log a crossing.
 
 /// The layer's state, held by the Mandala as one `@State` value.
@@ -32,6 +36,10 @@ struct ChakraLayerState: Equatable {
     var thresholds: [Chakra33] = []
     /// The chakra the Road is standing at (its Road position), for the canvas.
     var focusRoad: Int?
+    /// Wave 6.1 · the ways-in ring asked for the Road to begin, or to end. The
+    /// overlay owns the walk and answers on its next change.
+    var roadAsked = false
+    var leaveRoadAsked = false
 
     /// The chakras the canvas draws right now: all 33 while the switch is on
     /// or the Road is being walked, none otherwise.
@@ -55,9 +63,9 @@ struct ChakraLayerState: Equatable {
     }
 }
 
-/// The overlay the Mandala lays over its canvas: two quiet switches at the top
-/// leading edge, the Road's words at the foot while walking, the threshold
-/// moments, and the constellation's spoken layer.
+/// The overlay the Mandala lays over its canvas: the Road's words at the foot
+/// while walking, the threshold moments, and the constellation's spoken layer
+/// (its two switches are ways in the Mandala's one mark since Wave 6.1).
 struct ChakraLayerOverlay: View {
     @Binding var state: ChakraLayerState
     @Binding var camera: MandalaCamera
@@ -105,50 +113,19 @@ struct ChakraLayerOverlay: View {
                 .id(next.road)
                 .transition(.opacity)
             }
-            if !hidden && !ChakraConstellation.all.isEmpty { switches }
         }
         .chakraRoom($openRoad)
-    }
-
-    // MARK: The two switches
-
-    private var switches: some View {
-        VStack(spacing: 10) {
-            switchButton("✦", active: state.constellationOn,
-                         label: state.constellationOn ? "Hide the thirty-three chakras"
-                                                      : "Show the thirty-three chakras",
-                         hint: "Draws the chakras as light at their places in the yantra.") {
-                Haptics.light()
-                state.toggleConstellation()
-            }
-            switchButton("☉", active: state.walking,
-                         label: state.walking ? "Leave the road" : "Walk the road",
-                         hint: "The thirty-three in their order, from the centre out and home again.") {
-                if state.walking { endRoad() } else { beginRoad() }
-            }
+        // Wave 6.1 · the ways-in ring asks; the walk stays the overlay's own.
+        .onChange(of: state.roadAsked) { _, asked in
+            guard asked else { return }
+            state.roadAsked = false
+            if !state.walking { beginRoad() }
         }
-        .padding(.leading, 16)
-        .padding(.top, 70)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private func switchButton(_ glyph: String, active: Bool, label: String, hint: String,
-                              _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Circle()
-                .fill(Color.black.opacity(0.35))
-                .overlay(Circle().stroke(active ? Color.gold : Color.cream.opacity(0.3), lineWidth: 1))
-                .overlay(
-                    Text(glyph)
-                        .font(AppFont.label(17))
-                        .foregroundStyle(active ? Color.gold : Color.cream.opacity(0.7))
-                )
-                .frame(width: 46, height: 46)
-                .contentShape(Circle())
+        .onChange(of: state.leaveRoadAsked) { _, asked in
+            guard asked else { return }
+            state.leaveRoadAsked = false
+            if state.walking { endRoad() }
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
-        .accessibilityHint(hint)
     }
 
     // MARK: The Road

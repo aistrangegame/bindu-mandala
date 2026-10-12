@@ -199,7 +199,8 @@ struct TreeOfLifeRingLayer: View {
     }
 
     /// How long the ring's one shared breath takes.
-    static let breathSeconds: Double = 2.8
+    /// Wave 6.1 · three beats of the one breath clock (``BreathClock/beat``).
+    static let breathSeconds: Double = BreathClock.period(beats: 3)
 
     @ViewBuilder
     private var collectiveBreath: some View {

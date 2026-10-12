@@ -539,6 +539,11 @@ struct WorldClimbView: View {
     /// (Design's climb voice) and the ring voices (``RingFieldVoice``).
     private func soundTheClimb() async {
         guard roomKp == nil, !AppRuntime.isUnitTesting else { return }
+        // Wave 6.1 · his ruling: on the Climb the ring voices stand in front,
+        // and the grounds wait for the room. The loop stops while her room is
+        // open, which hands the front back to the room's own voice.
+        SoundConductor.shared.setClimbing(true)
+        defer { SoundConductor.shared.setClimbing(false) }
         HomeSoundService.shared.respectsSilentSwitch = true
         HomeSoundService.shared.start()
         while !Task.isCancelled {

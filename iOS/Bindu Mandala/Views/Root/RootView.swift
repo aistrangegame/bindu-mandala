@@ -122,6 +122,11 @@ struct RootView: View {
             await EnergyGift.reschedule()       // Wave 5 · the random gift
             landOnGift()
         }
+        // Wave 6.1 · a way into the Mandala asked from elsewhere (Lalitā's
+        // field's way to the Road): turn to the Mandala, which takes it.
+        .onReceive(NotificationCenter.default.publisher(for: MandalaWays.notification)) { _ in
+            if destination != .mandala { destination = .mandala }
+        }
         // Wave 5 · a gift opened lands on her screen.
         .onReceive(NotificationCenter.default.publisher(for: GiftRouter.openNotification)) { _ in
             landOnGift()

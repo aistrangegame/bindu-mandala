@@ -200,6 +200,8 @@ final class VoicePlayback: ObservableObject {
             guard p.play() else { return }
             player = p
             playing = true
+            // Wave 6.1 · one sound at a time: his voice is in front while it speaks.
+            SoundConductor.shared.strike(.voice, seconds: p.duration)
             watch = Task { @MainActor [weak self] in
                 while let strong = self, let p = strong.player, p.isPlaying, !Task.isCancelled {
                     try? await Task.sleep(for: .milliseconds(250))

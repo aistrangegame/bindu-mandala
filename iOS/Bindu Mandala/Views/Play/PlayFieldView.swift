@@ -115,6 +115,8 @@ struct PlayFieldView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var playing: PlayGame? = nil
     @State private var arrived = false
+    /// Wave 6.1 · the modes, reached from the field.
+    @State private var modesOpen = false
     /// The season the field is opened in (Wave 6 · the seasonal yantra).
     let season = Panchanga.rtu(at: Date())
 
@@ -169,6 +171,18 @@ struct PlayFieldView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
                     Spacer()
+                    // Wave 6.1 · Lalitā's field is the one place everything is
+                    // gathered: every game above, and at its foot a quiet way to
+                    // the modes and to the Road.
+                    HStack(spacing: 22) {
+                        fieldWay("the modes", label: TheModes.doorLabel) { modesOpen = true }
+                        fieldWay("the road", label: "Walk the road") {
+                            onClose()
+                            MandalaWays.ask(.road)
+                        }
+                    }
+                    .opacity(arrived ? 1 : 0)
+                    .padding(.bottom, 18)
                 }
                 .padding(.top, 8)
             }
@@ -179,8 +193,29 @@ struct PlayFieldView: View {
         .fullScreenCover(item: $playing) { game in
             PlayGameHost(game: game, onClose: { playing = nil })
         }
+        .fullScreenCover(isPresented: $modesOpen) {
+            ModesDoorView(onClose: { modesOpen = false })
+        }
         .preferredColorScheme(.dark)
         .statusBarHidden()
+    }
+
+    /// One quiet word at the field's foot — a way, not a list.
+    private func fieldWay(_ word: String, label: String, _ action: @escaping () -> Void) -> some View {
+        Button {
+            PlayHaptics.tap(0.3)
+            action()
+        } label: {
+            Text(word)
+                .font(AppFont.voice(15))
+                .tracking(1.2)
+                .foregroundStyle(Color.cream.opacity(0.55))
+                .padding(.horizontal, 12)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     private func lightButton(_ game: PlayGame) -> some View {

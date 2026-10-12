@@ -47,6 +47,8 @@ final class PlayAddressTests: XCTestCase {
         .join:             (92,  "Jayinī", 7),                    // The Map: Invention — "the third thing"
         .shadowTranslator: (101, "Bhagamālinī", 8),               // The Map: Ego Reveal
         .leela:            (102, "Mahātripurasundarī", 9),        // The Map: Lalitā — the play
+        // Wave 6.1 · his decision (gameplan §4.12): beside the Higher Self.
+        .ramJapa:          (42,  "Ātmākarṣiṇī", 2),
     ]
 
     func testEverySeatedGameIsAtTheSeatTheRowsName() {
@@ -72,7 +74,10 @@ final class PlayAddressTests: XCTestCase {
         XCTAssertEqual(PlayGame.twelve.address, .ring(7), "the Vāk ring")
         XCTAssertEqual(PlayGame.turn.address, .ring(8), "the three made one")
         XCTAssertEqual(PlayGame.worldInABox.address, .ring(9))
-        XCTAssertEqual(PlayGame.ramJapa.address, .ring(9), "his own name: the point, never a Śakti's seat")
+        // Wave 6.1 · Rām japa moved to Ātmākarṣiṇī (kp 42), beside the Higher
+        // Self (his decision, 12 Oct). The name is his own, so wherever it
+        // stands it still ends in stillness, never in her Recognition.
+        XCTAssertEqual(PlayGame.ramJapa.address, .seat(TrinityOfGuidance.higherSelfSeat))
         XCTAssertEqual(PlayGame.ramJapa.handoff, .stillness)
         XCTAssertEqual(PlayGame.sandhya.address, .ring(2), "the lotus that follows the sun")
         XCTAssertEqual(PlayGame.greatWheel.address, .ring(1))

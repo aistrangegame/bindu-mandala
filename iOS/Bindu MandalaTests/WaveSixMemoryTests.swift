@@ -264,7 +264,7 @@ final class WaveSixMemoryTests: XCTestCase {
         XCTAssertEqual(s.sound.fifth, .ground)
         XCTAssertEqual(s.sound.ground, 0.5)
 
-        let hex = try XCTUnwrap(ShaktiScore.decode(#"{"light":{"color":"#00FF00"}}"#))
+        let hex = try XCTUnwrap(ShaktiScore.decode(##"{"light":{"color":"#00FF00"}}"##))
         XCTAssertEqual(hex.light.hue ?? -1, 120, accuracy: 1e-9)
         XCTAssertTrue(try XCTUnwrap(ShaktiScore.decode("{}")).isEmpty, "an empty Score leaves the grammar whole")
         XCTAssertNil(ShaktiScore.decode("not json"), "a broken Score is no Score — the grammar stands")

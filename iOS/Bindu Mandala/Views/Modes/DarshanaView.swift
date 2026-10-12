@@ -82,7 +82,7 @@ struct DarshanaView: View {
     /// The outward radiance of the entered state — Design's `darsanaRadiance`.
     private func radiance(_ d: DarshanaDepth, t: TimeInterval) -> some View {
         let entered = max(0, (d.depth - 0.85) / 0.15)
-        let breath = reduceMotion ? 1 : 0.85 + 0.15 * sin(t * 2 * .pi / 6)
+        let breath = reduceMotion ? 1 : 0.85 + 0.15 * sin(t * 2 * .pi / BreathClock.breath)   // Wave 6.1 · the one clock
         return Circle()
             .fill(RadialGradient(colors: [Color.gold.opacity(0.22 * entered * breath),
                                           Color.accentRed.opacity(0.10 * entered), .clear],

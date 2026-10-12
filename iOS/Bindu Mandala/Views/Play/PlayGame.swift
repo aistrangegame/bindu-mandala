@@ -270,7 +270,10 @@ enum PlayGame: String, CaseIterable, Identifiable, Hashable {
         case .leela:             return .seat(102)               // Lalitā — the game knowing itself
         case .turn:              return .ring(8)                 // the three made one
         case .join:              return .seat(92)                // Invention · Jayinī — the third thing
-        case .ramJapa:           return .ring(9)                 // his own name — the point, not a Śakti
+        // Wave 6.1 · his decision (12 Oct): at Ātmākarṣiṇī, beside the Higher
+        // Self in the Trinity. The name is his, never hers: it still ends in
+        // stillness (`handoff`), never in her Recognition.
+        case .ramJapa:           return .seat(42)                // Ātmākarṣiṇī — the Higher Self's seat
         case .bhakti:            return .seat(24)                // Maṇipūra · Sarva-Mahāṅkuśā, navel hook
         case .sandhya:           return .ring(2)                 // the lotus that follows the sun
         case .greatWheel:        return .ring(1)                 // the year, the outermost ground of time

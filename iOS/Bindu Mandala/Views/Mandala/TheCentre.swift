@@ -12,6 +12,8 @@ import SwiftData
 //     point notices him and the silence comes (``CentreArrival``). His Codex,
 //     C-1307: *"What is above creation cannot be attained by action."* A voice
 //     reaches it by the point's own accessibility action — resting there.
+//     **Wave 6.1, his decision (12 Oct):** stillness stays the main way, and a
+//     gentle tap at the point also opens it, when he wants it now.
 //     Design's captions at 7, 14 and 21 seconds are gone (C-1355, *"the system
 //     holds the door open and never the watch"*): nothing in the silence follows
 //     a clock. The threshold says only his own line, *"Who is saying that?"*,
@@ -72,11 +74,16 @@ struct TheCentre: View {
                     .frame(width: 64, height: 64)
                     .contentShape(Circle())
                     .position(point)
+                    // Wave 6.1 · his decision (gameplan §4.1): stillness is the
+                    // main way, and a gentle tap at the point also opens the
+                    // silence, when he wants it now.
+                    .onTapGesture { arrive() }
                     .onLongPressGesture(minimumDuration: 0.6, maximumDistance: 30,
                                         perform: { },
                                         onPressingChanged: { pressing in hold(pressing) })
                     .accessibilityElement()
                     .accessibilityLabel(Text("The point — be still here, and the silence arrives"))
+                    .accessibilityHint(Text("Or touch it gently to enter the silence now."))
                     .accessibilityAddTraits(.isButton)
                     .accessibilityAction { arrive() }
             }

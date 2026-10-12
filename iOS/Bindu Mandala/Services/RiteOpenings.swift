@@ -25,13 +25,16 @@ import Foundation
 //     words come back — never a prompt to reflect.
 
 /// Where the Rite's bells (and anything else that marks its edges) may hang.
-/// Slice B's two bells ring here; this slice only calls them.
+/// Wave 6.1 · the two drafts meet here: Slice B's two bells (``TheBells``)
+/// are what these hooks ring. The opening bell is once a practice day however
+/// often it is asked (the Rite's own arrival asks too); the closing bell rings
+/// as the day is offered in Pūjā, as it does when the Sakshi close opens.
+@MainActor
 enum RiteHooks {
-    /// The Rite's opening has begun (the first bell's moment). Set and called
-    /// on the main thread only.
-    static var openingBegan: () -> Void = {}
+    /// The Rite's opening has begun (the first bell's moment).
+    static var openingBegan: @MainActor () -> Void = { TheBells.riteOpened() }
     /// The day has been offered and closed (the closing bell's moment).
-    static var dayClosed: () -> Void = {}
+    static var dayClosed: @MainActor () -> Void = { TheBells.riteClosed() }
 }
 
 enum RiteOpening {
@@ -66,8 +69,10 @@ enum RiteOpening {
         "Let the answer open through the body.",
     ]
 
-    /// How long one breath of the pause takes — in and out.
-    static let breathSeconds: TimeInterval = 7
+    /// How long one breath of the pause takes — in and out. Wave 6.1: the
+    /// one breath clock's breath (``BreathClock/breath``), so the Rite's pause
+    /// breathes with every other screen.
+    static let breathSeconds: TimeInterval = BreathClock.breath
 
     /// The hour's own call before the pause, where the hour has one. Dawn is
     /// Design's Prātaḥ; dusk is the Saṃhāra of the day, as an offering

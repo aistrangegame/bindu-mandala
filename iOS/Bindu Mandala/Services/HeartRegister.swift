@@ -18,10 +18,11 @@ private let heartLog = Logger(subsystem: "com.ashrey.bindu-mandala", category: "
 // the common grammar every bhajan stands on rather than any one song. Nothing
 // is claimed for any tone (truth floor).
 //
-// **Self-contained, on purpose.** Slice B's `SoundConductor` (one sound at a
-// time across the app) is being built in parallel and was not in this tree;
-// this engine owns its own graph and stops whatever it started. When the
-// conductor lands, `HeartRegisterEngine.start` is the one place to ask it.
+// **It asks the conductor (Wave 6.1).** The engine owns its own graph and
+// stops whatever it started, and, like every voice in the app, it asks
+// `SoundConductor` before it sounds (C-1350): `start` adopts it as the bed in
+// front — he chose to sing — so a field, room or game behind it is held at
+// nothing while it sounds and a struck bīja ducks it; `stop` lets it go.
 //
 // The session is `.ambient` (which mixes by nature): the silent switch is honoured.
 
@@ -86,6 +87,9 @@ final class HeartRenderState {
     var callFreqTarget: Double
     var callGain: Double = 0
     var callGainTarget: Double = 0
+    /// Wave 6.1 · how loud the conductor lets it stand, `0…1`.
+    var conductor: Double = 1
+    private var conductorLevel: Double = 1
 
     private var dronePhases: [[Double]]
     private var callPhase: Double = 0
@@ -111,6 +115,7 @@ final class HeartRenderState {
         let down = 1 / up
         let harmonics = HeartRegister.harmonics
         for i in 0..<frameCount {
+            conductorLevel += (conductor - conductorLevel) * gainCoef
             droneLevel += (droneTarget - droneLevel) * levelCoef
             callGain += (callGainTarget - callGain) * gainCoef
             callFreq += (callFreqTarget - callFreq) * glideCoef
@@ -150,7 +155,7 @@ final class HeartRenderState {
                 call = (sin(p) + 0.35 * sin(2 * p) + 0.12 * sin(3 * p)) * callGain
             }
 
-            let out = drone * droneLevel * bellows * 0.06 + call * 0.12
+            let out = (drone * droneLevel * bellows * 0.06 + call * 0.12) * conductorLevel
             samples[i] = Float(max(-1, min(1, out)))
         }
     }
@@ -206,7 +211,14 @@ final class HeartRegisterEngine {
         self.state = state
         state.droneTarget = 1
         sounding = true
+        SoundConductor.shared.adopt(heart: self)
         if calling { beginCalling(sa: saHz) }
+    }
+
+    /// Wave 6.1 · the conductor's level for the register, `0…1`.
+    @MainActor
+    func setConductorGain(_ g: Double) {
+        state?.conductor = max(0, min(1, g))
     }
 
     @MainActor
@@ -253,9 +265,11 @@ final class HeartRegisterEngine {
     func stop() {
         schedule?.cancel()
         schedule = nil
+        let wasSounding = engine != nil
         engine?.stop()
         engine = nil
         state = nil
         sounding = false
+        if wasSounding { SoundConductor.shared.release(.heart) }
     }
 }

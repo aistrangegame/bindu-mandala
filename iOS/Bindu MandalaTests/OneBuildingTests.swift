@@ -326,17 +326,22 @@ final class OneBuildingTests: XCTestCase {
                                              size: size, restedSinceLastMove: true),
                        "it arrived twice in one stillness")
 
-        // And the point itself carries no tap that opens it: the source of the
-        // centre has no `onTapGesture`, only the bloom's hold and a voice's
-        // accessibility action.
+        // Stillness stays the main way (C-1307): the point still notices him.
+        // Wave 6.1 · and, by his own decision (gameplan §4.1, 12 Oct), a gentle
+        // tap at the point also opens the silence when he wants it now — one
+        // tap, which arrives exactly as the stillness does (`arrive()`), and
+        // nothing else on the point opens it.
         guard let centre = LawSource.production("TheCentre.swift") else {
             return XCTFail("TheCentre.swift is gone")
         }
         let code = String(centre.lexed.masked)
         let theCentre = Rx.first(#"struct TheCentre: View \{[\s\S]*?\n\}"#, code) ?? ""
         XCTAssertFalse(theCentre.isEmpty, "the centre's own view could not be read")
-        XCTAssertFalse(theCentre.contains("onTapGesture"), "a tap opens the centre again (C-1307)")
         XCTAssertTrue(theCentre.contains("CentreArrival.arrives("), "the centre no longer notices stillness")
+        XCTAssertTrue(theCentre.contains("onTapGesture { arrive() }"),
+                      "his gentle tap at the point no longer opens the silence (his decision, 12 Oct)")
+        XCTAssertEqual(theCentre.components(separatedBy: "onTapGesture").count - 1, 1,
+                       "the point has grown a second tap")
         XCTAssertTrue(theCentre.contains("accessibilityAction"), "a voice can no longer reach the silence")
     }
 

@@ -273,6 +273,22 @@ final class GameStructureTests: XCTestCase {
         }
     }
 
+    /// Wave 6.1 · his decision (gameplan §4.6): on the Climb the ring voices
+    /// stand in front; the room's drone waits for the room. The Om stays beneath.
+    func testOnTheClimbTheRingVoicesStandInFront() {
+        let climb = SoundArbiter.gains(beds: [.field, .room], accenting: false, climbing: true)
+        XCTAssertEqual(climb[.field], 1, "the ring voices in front on the climb")
+        XCTAssertEqual(climb[.room], 0, "the grounds wait for the room")
+        XCTAssertEqual(climb[.om], SoundArbiter.omUnderBed, "the Om beneath")
+
+        let room = SoundArbiter.gains(beds: [.room], accenting: false, climbing: false)
+        XCTAssertEqual(room[.room], 1, "in her room, her room's voice")
+
+        let heart = SoundArbiter.gains(beds: [.field, .room, .play, .heart], accenting: false)
+        XCTAssertEqual(heart[.heart], 1, "the heart register he chose stands in front")
+        XCTAssertEqual(heart[.play], 0)
+    }
+
     func testTheOmFollowsDepthAndPanelNinesSwell() {
         XCTAssertEqual(SoundArbiter.omLevel(depth: 3, multiplier: 1, swell: nil),
                        TreeOfLife.omFloor(depth: 3), accuracy: 1e-9)

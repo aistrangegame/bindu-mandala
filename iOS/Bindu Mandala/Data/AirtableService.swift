@@ -2246,6 +2246,28 @@ extension AirtableService {
             return []
         }
     }
+
+    /// Wave 6.1 · his own gratitude lines (``GratitudeGrace``): one column of
+    /// the Gratitude table, read only, by field id. Empty when sync is off, the
+    /// token is missing, the token cannot read the table, or the network is not
+    /// there — grace is then simply silent.
+    func gratitudeRows() async -> [GratitudeGrace.Row] {
+        guard !syncIsDisabled(), let token = pat else { return [] }
+        do {
+            let rows: [GratitudeGrace.Row] = try await fetch(
+                token: token,
+                table: GratitudeGrace.tableId,
+                filter: GratitudeGrace.formula,
+                sort: [],
+                fields: [GratitudeGrace.wordsFieldId],
+                byFieldId: true
+            )
+            return rows
+        } catch {
+            log.error("Gratitude read failed: \(Self.describe(error), privacy: .public)")
+            return []
+        }
+    }
 }
 
 // MARK: - Wave 6 · the raw Codex write (his note, not an event)

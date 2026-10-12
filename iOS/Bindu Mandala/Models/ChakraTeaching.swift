@@ -227,8 +227,11 @@ enum ChakraTeaching {
 
     // MARK: Its game
 
-    /// The games Wave 4 placed at this chakra's address: at one of its seats,
-    /// or at its threshold crossing. In the walk's own order.
+    /// The games placed at this chakra's address (Waves 4 and 6): at one of its
+    /// seats, or at its threshold crossing — and, Wave 6.1, for a chakra that
+    /// *is* a whole ring (Integration, the whole seventh) or the point, the
+    /// games whose address is that ring. A game is found where it lives. In
+    /// the walk's own order.
     static func games(_ c: Chakra33) -> [PlayGame] {
         if c.address == .threshold {
             guard let pair = c.crossing, pair.count == 2 else { return [] }
@@ -236,9 +239,17 @@ enum ChakraTeaching {
             return PlayGame.allCases.filter { $0.address == here }
         }
         let seats = Set(c.kp)
+        // A ring-chakra with no seats of its own stands for the whole ring; the
+        // point stands for the ninth.
+        let wholeRing: Int? = {
+            if c.address == .centre { return 9 }
+            if c.address == .ring, c.kp.isEmpty { return c.avarana }
+            return nil
+        }()
         return PlayGame.allCases.filter { g in
-            guard let p = g.address.position else { return false }
-            return seats.contains(p)
+            if let p = g.address.position { return seats.contains(p) }
+            if let r = wholeRing, g.address == .ring(r) { return true }
+            return false
         }
     }
 

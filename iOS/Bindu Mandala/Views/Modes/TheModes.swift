@@ -54,7 +54,9 @@ enum TheModes {
     }
 
     /// The door's word for the one mode it does not open.
-    static let maunaGloss = "Mauna is not opened. Fall to the centre and be still — it arrives."
+    /// Wave 6.1 · stillness stays the main way; a gentle touch at the point is
+    /// his other (his decision, 12 Oct). The door still does not open it.
+    static let maunaGloss = "Mauna is not opened here. Fall to the centre and be still — it arrives; or touch the point gently."
 
     /// What the door is called on the Mandala.
     static let doorLabel = "The modes"
