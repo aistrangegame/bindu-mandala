@@ -100,6 +100,7 @@ struct RootView: View {
         .onChange(of: destination, initial: true) { _, new in
             lastDestinationRaw = new.rawValue
             lastDestinationDay = DailyEnergyService.practiceDayIndex()
+            WalkTrace.mark("destination.\(new.rawValue)")   // U0 · WALK_TRACE=1 (DEBUG)
         }
         .onReceive(NotificationCenter.default.publisher(
             for: RecognitionMomentView.didSettleNotification)) { note in
