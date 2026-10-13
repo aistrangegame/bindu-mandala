@@ -20,7 +20,9 @@ struct RootView: View {
         let args = ProcessInfo.processInfo.arguments
         // U0 · the walk: `OPEN_WORLD=<id>` (DEBUG only) opens the closest
         // existing screen to that world (`WorldID.u0Destination`).
-        if let world = WorldID.fromLaunchArguments(args),
+        // U1 · A: read through the Router's launch address, which also takes
+        // `OPEN_PLACE=world:kp:ch:day` (`DeepLink.launchAddress`).
+        if let world = DeepLink.launchAddress(arguments: args)?.world,
            let d = Destination(rawValue: world.u0Destination) { return d }
         if args.contains("START_TAB=mandala") { return .mandala }
         if args.contains("START_TAB=rite")    { return .rite }

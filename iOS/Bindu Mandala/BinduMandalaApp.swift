@@ -122,7 +122,9 @@ private struct AppRoot: View {
 
     var body: some View {
         ZStack {
-            RootView()
+            // U1 · A: `SPINE=1` (DEBUG) mounts the Router's fifteen worlds in
+            // place of the five rooms, so the walk can reach every world.
+            if SpineLaunch.isRequested { SpineRoot() } else { RootView() }
             if showHomecoming {
                 HomecomingView(isPresented: $showHomecoming)
                     .transition(.opacity)
