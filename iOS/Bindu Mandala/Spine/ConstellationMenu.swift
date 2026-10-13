@@ -107,8 +107,7 @@ struct ConstellationMenu: View {
                             ConstellationField(here: router.state.current.world, openedAt: openedAt,
                                                size: ConstellationLayout.fieldSize(in: CGSize(
                                                    width: geo.size.width,
-                                                   height: max(320, geo.size.height - Self.headAndFoot
-                                                               - geo.safeAreaInsets.top - geo.safeAreaInsets.bottom))),
+                                                   height: max(320, geo.size.height - Self.headAndFoot))),
                                                cross: cross)
                                 .frame(maxWidth: .infinity)
                         case .list:
@@ -122,11 +121,12 @@ struct ConstellationMenu: View {
                     Spacer(minLength: 0)
                     foot
                 }
-                .padding(.top, geo.safeAreaInsets.top + SpineChrome.inset)
-                .padding(.bottom, max(geo.safeAreaInsets.bottom, 16))
+                // The reader keeps the safe area (only the ground runs under
+                // the island and the home bar), so the head clears the island.
+                .padding(.top, SpineChrome.inset)
+                .padding(.bottom, 16)
             }
         }
-        .ignoresSafeArea()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("spine.menu")
         .onAppear { openedAt = Date() }

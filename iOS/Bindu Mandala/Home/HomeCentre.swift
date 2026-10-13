@@ -257,6 +257,9 @@ struct HomeCentre: View {
                 HomeFigure.five(ctx, centre: c, chosen: five)
                 HomeFigure.stillnessRing(ctx, centre: c, still: stillNow / HomeStillness.full)
             }
+            // Flattened on the GPU: Home redraws thirty times a second, and the
+            // layered CPU raster kept the hand waiting (U2 walk on the Mac).
+            .drawingGroup()
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -280,7 +283,11 @@ struct HomeCentre: View {
                 .font(AppFont.label(11))
                 .tracking(1.4)
                 .foregroundStyle(Color.cream.opacity(chosen ? 0.9 : 0.5))
-                .fixedSize()
+                .multilineTextAlignment(.center)
+                // A long name takes two lines rather than run into its
+                // neighbour (the Relationship Field beside Her Presence at 12).
+                .frame(maxWidth: 136)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.top, 16)
         .frame(minWidth: Hit.min, minHeight: Hit.min)
