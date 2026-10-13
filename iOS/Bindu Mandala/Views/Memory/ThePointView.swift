@@ -16,6 +16,9 @@ struct ThePointView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var stillness = StillnessSensor()
+    /// U2 · C · in Time (its own world) "‹ back" is `router.back()`; `nil`:
+    /// dismiss, as when it was presented from the Portrait.
+    var onBack: (() -> Void)? = nil
 
     var body: some View {
         TimelineView(.animation(minimumInterval: reduceMotion ? 1 : nil, paused: false)) { timeline in
@@ -35,7 +38,7 @@ struct ThePointView: View {
 
                 VStack(spacing: 0) {
                     HStack {
-                        Button(action: { dismiss() }) {
+                        Button(action: { if let onBack { onBack() } else { dismiss() } }) {
                             Text("‹ back")
                                 .font(AppFont.voice(16))
                                 .foregroundStyle(Color.gold)

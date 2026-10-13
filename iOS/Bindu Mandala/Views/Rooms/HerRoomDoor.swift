@@ -70,14 +70,19 @@ extension View {
 struct HerRoomPassage: View {
     let context: ModelContext
     let onLeft: () -> Void
+    /// U2 · C · the room's library door: her text page, Her Presence, for the
+    /// position he is standing in. `nil`: no door (the room as it was).
+    let onPresence: ((Int) -> Void)?
 
     @State private var kp: Int
     /// Wave 6 · B · the position whose rite has ended — he is inside.
     @State private var enteredKp: Int?
 
-    init(startingAt kp: Int, context: ModelContext, onLeft: @escaping () -> Void) {
+    init(startingAt kp: Int, context: ModelContext, onLeft: @escaping () -> Void,
+         onPresence: ((Int) -> Void)? = nil) {
         self.context = context
         self.onLeft = onLeft
+        self.onPresence = onPresence
         _kp = State(initialValue: kp)
     }
 
@@ -93,8 +98,40 @@ struct HerRoomPassage: View {
                 RoomGameLayer(shakti: shakti, entered: enteredKp == kp)
                     .id(kp)
             }
+            // U2 · C · once he is inside (never during the rite — a threshold
+            // has no cancel on it), the room's library door: her presence.
+            if let onPresence, enteredKp == kp {
+                presenceDoor(onPresence)
+                    .transition(.opacity)
+            }
         }
         .animation(.easeInOut(duration: 0.7), value: kp)
+        .animation(.easeInOut(duration: 0.7), value: enteredKp)
+    }
+
+    /// Her text page, from inside her room — a quiet line at the top of the
+    /// glass, clear of the spine's point and menu.
+    private func presenceDoor(_ open: @escaping (Int) -> Void) -> some View {
+        VStack {
+            Button {
+                Haptics.light()
+                open(kp)
+            } label: {
+                Text("enter her presence ›")
+                    .font(AppFont.voice(15))
+                    .tracking(1.0)
+                    .foregroundStyle(Color.cream.opacity(0.62))
+                    .padding(.horizontal, 18)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Enter her presence"))
+            .accessibilityHint(Text("Opens her page."))
+            .accessibilityIdentifier("herHome.presence")
+            Spacer()
+        }
+        .padding(.top, 58)
     }
 
     @ViewBuilder

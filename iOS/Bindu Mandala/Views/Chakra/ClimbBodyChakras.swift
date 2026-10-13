@@ -90,6 +90,8 @@ struct ClimbBodyChakras: View {
             }
         }
         .ignoresSafeArea()
-        .chakraRoom($openRoad)
+        // U2 · C · a body chakra's room is in the 33 — crossed to, never
+        // raised over the Climb.
+        .crossesToChakraRoom($openRoad)
     }
 }

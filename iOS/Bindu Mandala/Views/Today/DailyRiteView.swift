@@ -18,6 +18,9 @@ struct DailyRiteView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// U2 · C · the doors out of the Rite cross through the Router: her room
+    /// (Her Home), the low-state door (Beneath), a mode (the Modes).
+    @Environment(Router.self) private var envRouter: Router?
     @Query(sort: \Shakti.position) private var shaktis: [Shakti]
     @Query(sort: \NityaDevi.tithiPosition) private var nityas: [NityaDevi]
     @Query(sort: \Avarana.ringNumber) private var avaranas: [Avarana]
@@ -106,12 +109,19 @@ struct DailyRiteView: View {
         .onChange(of: showRecognition) { was, now in
             if was && !now { beginClosing() }
         }
-        .fullScreenCover(isPresented: $lowOpen) {
-            LowStateDoorView(onClose: { lowOpen = false })
+        // U2 · C · the low-state door lives Beneath — crossed to, never
+        // raised over Today.
+        .onChange(of: lowOpen) { _, open in
+            guard open else { return }
+            lowOpen = false
+            WorldDoors.beneath(WorldSub.low, router: envRouter)
         }
-        // Wave 6.1 · a mode at its hour, offered by the opening.
-        .fullScreenCover(item: $hourMode) { m in
-            ModeHost(mode: m, onClose: { hourMode = nil })
+        // Wave 6.1 · a mode at its hour, offered by the opening — in the
+        // Modes, its own world (U2 · C).
+        .onChange(of: hourMode) { _, mode in
+            guard let mode else { return }
+            hourMode = nil
+            WorldDoors.modes(mode, router: envRouter)
         }
         .onAppear {
             // Debug: `OPEN_NITYA` opens today's Nityā sheet directly.
@@ -122,10 +132,10 @@ struct DailyRiteView: View {
         .fullScreenCover(isPresented: $showRecognition) {
             if let s = today { RecognitionMomentView(shakti: s, isPresented: $showRecognition) }
         }
-        .fullScreenCover(item: $detailFor) { shakti in
-            NavigationStack { ShaktiDetailView(shakti: shakti, backLabel: "today", source: .today) }
-        }
-        .herRoom($roomKp)
+        // U2 · C · room first: touching her opens her room, through her rite,
+        // in Her Home; her text page is Her Presence, the room's own door.
+        .crossesToHerHome(shakti: $detailFor)
+        .crossesToHerHome($roomKp)
         .sheet(item: $nityaDetailFor) { slot in
             NityaDetailView(slot: slot)
                 .presentationDetents([.medium, .large])

@@ -14,6 +14,9 @@ import SwiftData
 /// live where they always have; the river runs beside them.
 struct CorrespondenceView: View {
     @Environment(\.dismiss) private var dismiss
+    /// U2 · C · Beneath hosts the river in its own space: there "‹ back" is
+    /// `router.back()`; `nil`: dismiss, as when it is presented.
+    var onBack: (() -> Void)? = nil
     @Environment(\.modelContext) private var context
     @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
 
@@ -136,7 +139,7 @@ struct CorrespondenceView: View {
     private var header: some View {
         VStack(spacing: 6) {
             HStack {
-                Button(action: { dismiss() }) {
+                Button(action: { if let onBack { onBack() } else { dismiss() } }) {
                     Text("‹ back")
                         .font(AppFont.voice(16))
                         .foregroundStyle(Color.gold)

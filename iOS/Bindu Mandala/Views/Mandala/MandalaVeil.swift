@@ -28,10 +28,10 @@ import SwiftUI
 // screen on the first day and the ten-thousandth.
 //
 // **And nothing is gated.** Every row — ahead and veiled included — is a door:
-// tap it and the camera falls to that āvaraṇa through the same continuous
-// space; tap the Bindu and the descent opens. The layer is optional, closes
-// with a tap on the dimmed yantra, a swipe down, or the handle, and is never
-// in front of anything the Mandala needs.
+// tap it and he crosses into that āvaraṇa's own world, the nine rings (U2 —
+// never a camera moved several rings at once); the Bindu's footer crosses to
+// the ninth. The sheet closes with a tap on the dimmed yantra, a drag down, or
+// a tap on its edge, and is never in front of anything the Mandala needs.
 
 /// One āvaraṇa's luminosity in the Veil.
 enum VeilLight: String, CaseIterable, Equatable {
@@ -151,72 +151,95 @@ enum MandalaVeil {
     }
 }
 
-// MARK: - The handle, at rest
+// MARK: - U2 · C · the Veil at Design's numbers
+//
+// `mandala-and-rings.md` §1A "The Veil" (M15, M16) and `spine-and-home.md` §2
+// D #42; register 19 §B3 "The Veil" (which measured the Wave 1 build against
+// Design and found it wrong on five counts). The sheet is **720 pt** high and
+// is always there: at rest only its top **108** shows — the peek *is* the
+// sheet's edge (closed offset 612). Drag the handle (or the peek) and the
+// sheet follows the finger, clamped 0…612, never animating under it. Let go:
+// under **6 pt** of travel it is a tap and toggles; otherwise it snaps open if
+// it is past 42 hundredths of its travel (offset < 257.04), else closed — in
+// **0.52 s, cubic-bezier(.22, 1, .36, 1)**. The yantra behind dims live with
+// it to **0.5 + 0.5 × offset / 612** — never hidden. A row crosses to that
+// ring in **the nine rings** world (through the Router); the Bindu's footer
+// crosses to the ninth. Nothing moves the camera several rings at once.
+//
+// On a glass shorter than the sheet, the sheet keeps its peek and stands as
+// tall as the glass allows; every number above is taken in proportion.
 
-/// The peek: a single breathing chevron and the Veil's name, low on the glass —
-/// *"there is more below"*. Tap it, or swipe it up, and the Veil rises.
-struct MandalaVeilPeek: View {
-    let reduceMotion: Bool
-    let onOpen: () -> Void
-    @State private var lifted = false
-
-    var body: some View {
-        Button(action: onOpen) {
-            VStack(spacing: 7) {
-                VeilChevron()
-                    .stroke(Color.gold.opacity(0.62), style: StrokeStyle(lineWidth: 1, lineCap: .round))
-                    .frame(width: 22, height: 9)
-                    .shadow(color: Color.gold.opacity(0.5), radius: 4)
-                    .offset(y: lifted ? -3 : 0)
-                Text("THE NINE ĀVARAṆAS")
-                    .font(AppFont.label(11.5))
-                    .tracking(2.6)
-                    .foregroundStyle(Color.gold.opacity(0.62))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            .padding(.horizontal, 28)
-            .padding(.vertical, 8)
-            .frame(minHeight: 48)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("The nine āvaraṇas")
-        .accessibilityHint("Raises the veil: the nine āvaraṇas as light, from the ground to the Bindu.")
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 12)
-                .onEnded { v in if v.translation.height < -24 { onOpen() } })
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) { lifted = true }
-        }
-    }
-}
-
-/// Design's peek chevron: `M2,7 L11,2 L20,7` in a 22 × 9 box.
-struct VeilChevron: Shape {
-    func path(in rect: CGRect) -> Path {
-        let sx = rect.width / 22, sy = rect.height / 9
-        var p = Path()
-        p.move(to: CGPoint(x: rect.minX + 2 * sx, y: rect.minY + 7 * sy))
-        p.addLine(to: CGPoint(x: rect.minX + 11 * sx, y: rect.minY + 2 * sy))
-        p.addLine(to: CGPoint(x: rect.minX + 20 * sx, y: rect.minY + 7 * sy))
-        return p
-    }
-}
-
-// MARK: - The Veil, risen
-
-/// The sheet itself: the nine as a descending column of light, Ring I at the
-/// top, the Bindu as its footer.
-struct MandalaVeilSheet: View {
+/// The Veil — the nine āvaraṇas as light, drawn up over the held yantra.
+struct MandalaVeilDrawer: View {
     /// Where the walker stands (1…9) — see ``MandalaVeil/here(entered:todayRing:)``.
     let here: Int
-    let height: CGFloat
+    /// The glass the sheet stands on.
+    let size: CGSize
     let reduceMotion: Bool
-    let onRing: (Int) -> Void
-    let onBindu: () -> Void
-    let onClose: () -> Void
+    /// 0 = fully risen; ``closedOffset(in:)`` = resting at its peek.
+    @Binding var offset: CGFloat
+    /// A row, and where it was touched (the crossing blooms from there).
+    let onRing: (Int, CGPoint?) -> Void
+    /// The Bindu's footer.
+    let onBindu: (CGPoint?) -> Void
+
+    @State private var dragFrom: CGFloat?
+
+    // MARK: Design's numbers
+
+    /// The sheet's height (Design 720).
+    static let designHeight: CGFloat = 720
+    /// How much of the sheet shows at rest (Design 108 — closed translateY 612).
+    static let peek: CGFloat = 108
+    /// Movement under this is a tap (Design `< 6`).
+    static let tapSlop: CGFloat = 6
+    /// Released above this fraction of its travel it opens (Design 257.04 / 612).
+    static let snapFraction: CGFloat = 0.42
+    /// Design's sheet duration.
+    static let seconds: Double = 0.52
+    /// What lies behind dims to this when the sheet has fully risen.
+    static let dimFloor: Double = 0.5
+    /// Design's radius.
+    static let radius: CGFloat = 22
+
+    /// The sheet's height on this glass: 720, or the glass less a margin when
+    /// the glass is shorter.
+    static func height(in size: CGSize) -> CGFloat {
+        guard size.height > 0 else { return designHeight }
+        return max(peek + 120, min(designHeight, size.height - 24))
+    }
+
+    /// Resting offset: the sheet's height less its peek (612 on Design's glass).
+    static func closedOffset(in size: CGSize) -> CGFloat {
+        height(in: size) - peek
+    }
+
+    /// Where a release leaves the sheet: a tap (under 6 pt) toggles from where
+    /// it began; a drag snaps open past 0.42 of the travel, else closed.
+    static func settle(offset: CGFloat, travelled: CGFloat, from start: CGFloat, closed: CGFloat) -> CGFloat {
+        if abs(travelled) < tapSlop {
+            return start < closed / 2 ? closed : 0
+        }
+        return offset < closed * snapFraction ? 0 : closed
+    }
+
+    /// The yantra's light behind the sheet: 0.5 + 0.5 × offset / closed.
+    static func dim(offset: CGFloat, closed: CGFloat) -> Double {
+        guard closed > 0 else { return 1 }
+        let k = Double(min(max(offset / closed, 0), 1))
+        return dimFloor + (1 - dimFloor) * k
+    }
+
+    /// `cubic-bezier(.22, 1, .36, 1)` over 0.52 s; a short fade under reduce motion.
+    static func animation(reduceMotion: Bool) -> Animation {
+        reduceMotion ? Animation.easeOut(duration: 0.2)
+                     : Animation.timingCurve(0.22, 1, 0.36, 1, duration: seconds)
+    }
+
+    private var closed: CGFloat { Self.closedOffset(in: size) }
+    private var sheetHeight: CGFloat { Self.height(in: size) }
+    /// 0 at rest, 1 fully risen.
+    private var risen: Double { closed > 0 ? Double(1 - min(max(offset / closed, 0), 1)) : 0 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -224,39 +247,40 @@ struct MandalaVeilSheet: View {
             ScrollView {
                 VStack(spacing: 2) {
                     ForEach(1...8, id: \.self) { ring in
-                        row(ring)
+                        VeilRingRow(ring: ring, here: here, onRing: onRing)
                     }
-                    binduFooter
+                    VeilBinduFooter(here: here, reduceMotion: reduceMotion, onBindu: onBindu)
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 4)
                 .padding(.bottom, 36)
             }
             .scrollIndicators(.hidden)
+            .accessibilityHidden(risen < 0.5)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: height)
+        .frame(height: sheetHeight, alignment: .top)
         .background(sheetGround)
-        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22))
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: Self.radius, topTrailingRadius: Self.radius))
         .overlay(alignment: .top) {
-            UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22)
+            UnevenRoundedRectangle(topLeadingRadius: Self.radius, topTrailingRadius: Self.radius)
                 .stroke(Color.gold.opacity(0.22), lineWidth: 0.5)
                 .allowsHitTesting(false)
         }
         .shadow(color: Color.black.opacity(0.7), radius: 30, y: -10)
         .shadow(color: Color.gold.opacity(0.10), radius: 15, y: -1)
-        .gesture(
-            DragGesture(minimumDistance: 16)
-                .onEnded { v in if v.translation.height > 60 { onClose() } })
+        .offset(y: offset)
+        // Only the visible part of the sheet takes touches.
+        .frame(height: sheetHeight - offset, alignment: .bottom)
+        .clipped()
     }
 
     /// Design's veil: dark ground rising, near-opaque at the foot, a little
-    /// translucent at the lip — and, beyond Design, a faint warmth standing
-    /// where the walker is, so the sheet itself carries the light of *here*.
+    /// translucent at the lip — rgba(13,4,9,.92) → (11,3,7,.985) → (8,2,6,.995).
     private var sheetGround: some View {
         ZStack {
             LinearGradient(stops: [
-                               .init(color: Color(red: 13/255, green: 4/255, blue: 9/255).opacity(0.93), location: 0),
+                               .init(color: Color(red: 13/255, green: 4/255, blue: 9/255).opacity(0.92), location: 0),
                                .init(color: Color(red: 11/255, green: 3/255, blue: 7/255).opacity(0.985), location: 0.3),
                                .init(color: Color(red: 8/255, green: 2/255, blue: 6/255).opacity(0.995), location: 1),
                            ],
@@ -267,12 +291,23 @@ struct MandalaVeilSheet: View {
         }
     }
 
+    /// The top 108 of the sheet: the handle, the breathing chevron and the
+    /// Veil's name at rest, its title and "DESCEND" as it rises. The whole
+    /// edge is the drag.
     private var handle: some View {
-        Button(action: onClose) {
-            VStack(spacing: 14) {
-                Capsule()
-                    .fill(Color.cream.opacity(0.30))
-                    .frame(width: 40, height: 4)
+        VStack(spacing: 10) {
+            Capsule()
+                .fill(Color.cream.opacity(0.30))
+                .frame(width: 40, height: 4)
+            VeilBreathingChevron(reduceMotion: reduceMotion, pointsDown: risen > 0.5)
+            ZStack {
+                Text("THE NINE ĀVARAṆAS")
+                    .font(AppFont.label(11.5))
+                    .tracking(2.6)
+                    .foregroundStyle(Color.gold.opacity(0.62))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .opacity(1 - risen)
                 HStack(alignment: .firstTextBaseline) {
                     Text("The Nine Āvaraṇas")
                         .font(AppFont.sanskrit(22))
@@ -288,22 +323,102 @@ struct MandalaVeilSheet: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
+                .opacity(risen)
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 14)
-            .padding(.bottom, 12)
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 24)
+        .padding(.top, 14)
+        .frame(maxWidth: .infinity, minHeight: Self.peek, maxHeight: Self.peek, alignment: .top)
+        .contentShape(Rectangle())
+        .gesture(drag)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("The nine āvaraṇas")
-        .accessibilityHint("Lowers the veil.")
+        .accessibilityHint(risen > 0.5 ? "Lowers the veil."
+                                       : "Raises the veil: the nine āvaraṇas as light, from the ground to the Bindu.")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { toggle() }
+        .accessibilityIdentifier("mandala.veil.handle")
     }
 
-    @ViewBuilder
-    private func row(_ ring: Int) -> some View {
+    /// The sheet follows the finger (no animation under it); the release
+    /// settles by Design's rule.
+    private var drag: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .onChanged { v in
+                let start = dragFrom ?? offset
+                if dragFrom == nil { dragFrom = offset }
+                var t = Transaction()
+                t.disablesAnimations = true
+                withTransaction(t) {
+                    offset = min(max(start + v.translation.height, 0), closed)
+                }
+            }
+            .onEnded { v in
+                let start = dragFrom ?? offset
+                dragFrom = nil
+                let target = Self.settle(offset: offset, travelled: v.translation.height,
+                                         from: start, closed: closed)
+                if target < closed && start >= closed - 0.5 { Haptics.soft() }
+                withAnimation(Self.animation(reduceMotion: reduceMotion)) { offset = target }
+            }
+    }
+
+    private func toggle() {
+        let target: CGFloat = offset < closed / 2 ? closed : 0
+        withAnimation(Self.animation(reduceMotion: reduceMotion)) { offset = target }
+    }
+}
+
+/// Design's peek chevron, breathing every 3.2 s; it turns over once the sheet
+/// has risen. Still under reduce motion.
+private struct VeilBreathingChevron: View {
+    let reduceMotion: Bool
+    let pointsDown: Bool
+
+    static let breathSeconds: Double = 3.2
+
+    var body: some View {
+        TimelineView(.animation(paused: reduceMotion)) { tl in
+            let t = tl.date.timeIntervalSinceReferenceDate
+            let b = reduceMotion ? 0 : 0.5 - 0.5 * cos(2 * Double.pi * t / Self.breathSeconds)
+            VeilChevron()
+                .stroke(Color.gold.opacity(0.5 + 0.2 * b), style: StrokeStyle(lineWidth: 1, lineCap: .round))
+                .frame(width: 22, height: 9)
+                .shadow(color: Color.gold.opacity(0.5), radius: 4)
+                .rotationEffect(.degrees(pointsDown ? 180 : 0))
+                .offset(y: CGFloat(-3 * b))
+        }
+        .frame(width: 22, height: 12)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Design's peek chevron: `M2,7 L11,2 L20,7` in a 22 × 9 box.
+struct VeilChevron: Shape {
+    func path(in rect: CGRect) -> Path {
+        let sx = rect.width / 22, sy = rect.height / 9
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX + 2 * sx, y: rect.minY + 7 * sy))
+        p.addLine(to: CGPoint(x: rect.minX + 11 * sx, y: rect.minY + 2 * sy))
+        p.addLine(to: CGPoint(x: rect.minX + 20 * sx, y: rect.minY + 7 * sy))
+        return p
+    }
+}
+
+// MARK: - The column
+
+/// One āvaraṇa's row: its glyph, name, form · state, and Roman numeral, lit by
+/// where he stands. A touch crosses to that ring's own world.
+private struct VeilRingRow: View {
+    let ring: Int
+    let here: Int
+    let onRing: (Int, CGPoint?) -> Void
+
+    @State private var frame: CGRect = .zero
+
+    var body: some View {
         let light = MandalaVeil.light(ring: ring, here: here)
-        Button { onRing(ring) } label: {
+        Button { onRing(ring, frame == .zero ? nil : CGPoint(x: frame.midX, y: frame.midY)) } label: {
             HStack(spacing: 16) {
                 RingGlyph(ring: ring, color: light.accent, size: 36)
                     .opacity(light.glyph)
@@ -349,10 +464,16 @@ struct MandalaVeilSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .background(GeometryReader { g in
+            Color.clear
+                .onAppear { frame = g.frame(in: .global) }
+                .onChange(of: g.frame(in: .global)) { _, f in frame = f }
+        })
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(MandalaVeil.spokenRow(ring: ring, here: here))
-        .accessibilityHint("Falls to this āvaraṇa.")
+        .accessibilityHint("Crosses into this āvaraṇa.")
         .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("mandala.veil.ring.\(ring)")
     }
 
     @ViewBuilder
@@ -369,7 +490,7 @@ struct MandalaVeilSheet: View {
     }
 
     /// The threshold under each row: solid where the light already stands,
-    /// dashed where this fall has not yet crossed.
+    /// dashed where he has not yet crossed.
     private func thresholdLine(_ light: VeilLight) -> some View {
         Rectangle()
             .fill(Color.clear)
@@ -382,11 +503,19 @@ struct MandalaVeilSheet: View {
             .padding(.horizontal, 10)
             .allowsHitTesting(false)
     }
+}
 
-    /// Ring IX — the Bindu as the column's destination, not a row.
-    private var binduFooter: some View {
+/// Ring IX — the Bindu as the column's destination, not a row.
+private struct VeilBinduFooter: View {
+    let here: Int
+    let reduceMotion: Bool
+    let onBindu: (CGPoint?) -> Void
+
+    @State private var frame: CGRect = .zero
+
+    var body: some View {
         let light = MandalaVeil.light(ring: 9, here: here)
-        return Button(action: onBindu) {
+        Button { onBindu(frame == .zero ? nil : CGPoint(x: frame.midX, y: frame.midY)) } label: {
             VStack(spacing: 0) {
                 LinearGradient(colors: [Color.gold.opacity(0), Color.gold.opacity(0.45), Color.gold.opacity(0)],
                                startPoint: .leading, endPoint: .trailing)
@@ -422,9 +551,14 @@ struct MandalaVeilSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .background(GeometryReader { g in
+            Color.clear
+                .onAppear { frame = g.frame(in: .global) }
+                .onChange(of: g.frame(in: .global)) { _, f in frame = f }
+        })
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Ninth āvaraṇa, the Bindu. \(light.spoken)")
-        .accessibilityHint("Opens the source.")
+        .accessibilityHint("Crosses into the ninth āvaraṇa.")
         .accessibilityAddTraits(.isButton)
     }
 }

@@ -11,6 +11,9 @@ struct ShaktiDetailView: View {
     /// ledger with this origin, not always "Mandala" (Wave 0 · B6), and only a
     /// recognition from the Rite settles into the Portrait (B4).
     var source: AirtableService.RecognitionSource = .mandala
+    /// U2 · C · in Her Presence (a world, not a presented screen) her back
+    /// word is `router.back()`; `nil`: dismiss, as when she is pushed.
+    var onBack: (() -> Void)? = nil
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -114,7 +117,9 @@ struct ShaktiDetailView: View {
         // Wave 2 · one building. Her room opens through ``HerRoomDoor`` — the
         // one place that calls the rite of entering — and from inside it the
         // corridor walks to her neighbours, each through their own rite.
-        .herRoom($herRoomKp)
+        // U2 · C · her room is Her Home — a world of its own, crossed to
+        // (and back returns here), never raised over Her Presence.
+        .crossesToHerHome($herRoomKp)
         .fullScreenCover(isPresented: $showPlay) {
             PlayField.host(PlayAddressBook.door(forPosition: shakti.playPosition),
                            atPosition: shakti.playPosition,
@@ -255,7 +260,7 @@ struct ShaktiDetailView: View {
 
     private var navBar: some View {
         HStack {
-            Button(action: { dismiss() }) {
+            Button(action: { if let onBack { onBack() } else { dismiss() } }) {
                 HStack(spacing: 6) {
                     Text("‹").font(.system(size: 22, weight: .light))
                     Text(backLabel)

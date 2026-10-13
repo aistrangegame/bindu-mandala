@@ -190,11 +190,22 @@ final class TheWayInTests: XCTestCase {
 
         // …and the doors that use it stand where the charter says one building
         // is entered: her seat in the Mandala, the Rite, the Field, the climb,
-        // and her Detail.
+        // and her Detail. U2 · C: her room is Her Home, a world of its own, so
+        // a door is now a crossing to it (`.crossesToHerHome(` /
+        // `WorldDoors.herHome(`) — and Her Home builds its room through the
+        // one passage, `HerRoomPassage`, beside the one threshold.
         var doors: Set<String> = []
-        for f in LawSource.production where String(f.lexed.masked).contains(".herRoom(") {
-            doors.insert(f.path)
+        for f in LawSource.production {
+            let code = String(f.lexed.masked)
+            if code.contains(".herRoom(") || code.contains(".crossesToHerHome(")
+                || code.contains("WorldDoors.herHome(") {
+                doors.insert(f.path)
+            }
         }
+        let herHome = try XCTUnwrap(LawSource.production.first { $0.path == "Worlds/HerWorlds.swift" },
+                                    "Her Home's world is gone")
+        XCTAssertTrue(String(herHome.lexed.masked).contains("HerRoomPassage("),
+                      "Her Home no longer builds her room through the one passage")
         for expected in ["Views/Common/ShaktiDetailView.swift",
                          "Views/Mandala/LivingMandalaView.swift",
                          "Views/Today/DailyRiteView.swift",
@@ -510,12 +521,17 @@ final class TheWayInTests: XCTestCase {
         for f in LawSource.production {
             if !Rx.all(#"WorldClimbView\("#, String(f.lexed.masked)).isEmpty { doors.insert(f.path) }
         }
-        XCTAssertTrue(doors.contains("Views/Common/TheHundredTwoView.swift"),
-                      "the climb can no longer be reached from the Field: \(doors.sorted())")
+        // U2 · C · the Climb is its own world: it is built in `ClimbWorld`, and
+        // the Field crosses there (`WorldDoors.climb(`).
+        XCTAssertTrue(doors.contains("Worlds/HostedWorldViews.swift"),
+                      "the Climb is no longer hosted as a world: \(doors.sorted())")
+        let field = try XCTUnwrap(LawSource.production("TheHundredTwoView.swift"))
+        XCTAssertTrue(String(field.lexed.masked).contains("WorldDoors.climb("),
+                      "the climb can no longer be reached from the Field")
 
         let climb = try XCTUnwrap(LawSource.production("WorldClimbView.swift"))
         let code = String(climb.lexed.masked)
-        XCTAssertTrue(code.contains(".herRoom($roomKp"),
+        XCTAssertTrue(code.contains(".crossesToHerHome($roomKp"),
                       "the climb's lights no longer open her room through the one threshold")
         XCTAssertFalse(code.contains("RoomView("), "the climb draws a room without the rite")
     }
@@ -525,7 +541,7 @@ final class TheWayInTests: XCTestCase {
     func testTheClimbOpensAtTheRingHeIsStandingIn() throws {
         let field = try XCTUnwrap(LawSource.production("TheHundredTwoView.swift"))
         let code = String(field.lexed.masked)
-        XCTAssertTrue(code.contains("startingAtRing: effectiveOpen ?? todayRing"),
+        XCTAssertTrue(code.contains("WorldDoors.climb(ring: effectiveOpen ?? todayRing"),
                       "the climb no longer opens at the āvaraṇa the walker has open")
         // And every ring the Field can have open is a ring the climb can stand at.
         for ring in 1...9 {
@@ -551,7 +567,7 @@ final class TheWayInTests: XCTestCase {
             let code = String(f.lexed.masked)
             // Wave 2: every screen that cuts a door into a room uses `.herRoom(`.
             if code.contains("RiteOfEnteringView.entering(") || code.contains("WorldClimbView(")
-                || code.contains(".herRoom(") {
+                || code.contains(".herRoom(") || code.contains(".crossesToHerHome(") {
                 surfaces.insert(f.path)
             }
         }

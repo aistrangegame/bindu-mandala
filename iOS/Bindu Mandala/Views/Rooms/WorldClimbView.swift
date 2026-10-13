@@ -151,7 +151,9 @@ struct WorldClimbView: View {
         }
         .ignoresSafeArea()
         // Wave 2 · her room, through her rite, from inside her light.
-        .herRoom($roomKp, onLeft: { landed() })
+        // U2 · C · her room is Her Home, its own world: the Climb crosses
+        // there (back returns him to the axis) and lands its eye at once.
+        .crossesToHerHome($roomKp, then: { landed() })
         // Wave 2 · the climb sounds, world by world. Paused while her room is
         // open (the room's own voice takes the instrument), resumed on return.
         .task(id: roomKp == nil) { await soundTheClimb() }

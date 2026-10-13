@@ -50,6 +50,9 @@ struct ChakraRoomView: View {
     let onLeave: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// U2 · C · the doors into her room and onto the Climb cross through the
+    /// Router (another world is never raised over the 33).
+    @Environment(Router.self) private var envRouter: Router?
     @Query private var shaktis: [Shakti]
 
     @State private var arrived = false
@@ -578,9 +581,11 @@ struct ChakraRoomView: View {
                 heading("the doors")
                 if let home {
                     doorButton(homeWords(home), hint: "Opens the Home whose practice this is.") {
+                        // U2 · C · her room is Her Home, the climb is the
+                        // Climb: each its own world, crossed to.
                         switch home {
-                        case .seat(let kp): exit = .her(kp)
-                        case .ring(let r):  exit = .ring(r)
+                        case .seat(let kp): WorldDoors.herHome(kp, router: envRouter)
+                        case .ring(let r):  WorldDoors.climb(ring: r, router: envRouter)
                         }
                     }
                 }
