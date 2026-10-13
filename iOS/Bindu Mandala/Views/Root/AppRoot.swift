@@ -25,15 +25,10 @@ struct AppRoot: View {
     @AppStorage("daily_summons_enabled") private var summonsEnabled = true
     @AppStorage("daily_summons_hour")    private var summonsHour: Int = DailySummons.defaultHour
 
-    @State private var showHomecoming: Bool = {
-        let args = ProcessInfo.processInfo.arguments
-        if args.contains("FORCE_HOMECOMING") { return true }
-        if args.contains("SKIP_HOMECOMING")  { return false }
-        // Wave 3: the Homecoming greets every launch. The first is the whole
-        // Origin; every return after it compresses to one breath (HomecomingView).
-        // The XCTest host stays quiet, as it does for sync and the summons.
-        return !AppRuntime.isUnitTesting
-    }()
+    /// U2 merge: Home owns the arrival (the Waking, then the Homecoming — Part A's
+    /// `HomeWorld`), so the shell no longer plays a second one over it. This
+    /// overlay now only answers Settings → "Re-enter the Homecoming".
+    @State private var showHomecoming: Bool = false
 
     private var router: Router { Router.shared }
 

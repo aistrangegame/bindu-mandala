@@ -75,9 +75,7 @@ struct WorldThreadDoorsSlot: View {
         if standsOnAThread {
             VStack {
                 Spacer()
-                // U2-MERGE · ThreadDoors (Part B): replace the next line with
-                // `ThreadDoors(address: address)` once Part B's view is merged.
-                EmptyView()
+                ThreadDoors(address: address)
             }
             .padding(.bottom, 8)
         }
