@@ -65,11 +65,6 @@ struct LalitaSourceView: View {
             hues = h
             withAnimation(.easeOut(duration: 1.4)) { appeared = true }
         }
-        .fullScreenCover(isPresented: $playing) {
-            // Wave 6 · B · Panel 9's eight dissolutions, and "Now go play.",
-            // before her field (``TheEightDissolutions`` opens it).
-            TheEightDissolutions(onClose: { playing = false })
-        }
     }
 
     // MARK: The ground — `radial-gradient(ellipse 90% 70% at 50% 42%, #2a0a12, #12060b 55%, #060205)`
@@ -328,7 +323,9 @@ struct LalitaSourceView: View {
             emerge(delay: 3.22) {
                 Button {
                     Haptics.soft()
-                    playing = true
+                    // U2: A Strange Game is its own world — cross there (its entrance
+                    // is the Eight Dissolutions), never a cover over Home.
+                    _ = Router.shared.go(to: Address(.game))
                 } label: {
                     Text("play in her field")
                         .font(AppFont.voice(17))
