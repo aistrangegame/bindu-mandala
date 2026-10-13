@@ -180,8 +180,11 @@ struct Luminance: Equatable {
         if let crop, let cropped = cg.cropping(to: crop.integral) { cg = cropped }
         let n = grid
         var buffer = [UInt8](repeating: 0, count: n * n * 4)
+        // Measure the stored values, as Design's measurement did: draw in the
+        // image's own RGB space so an embedded display profile is not converted.
+        let space: CGColorSpace = (cg.colorSpace?.model == .rgb) ? cg.colorSpace! : CGColorSpaceCreateDeviceRGB()
         guard let ctx = CGContext(data: &buffer, width: n, height: n, bitsPerComponent: 8,
-                                  bytesPerRow: n * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                  bytesPerRow: n * 4, space: space,
                                   bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
         ctx.interpolationQuality = .high
         ctx.draw(cg, in: CGRect(x: 0, y: 0, width: n, height: n))
