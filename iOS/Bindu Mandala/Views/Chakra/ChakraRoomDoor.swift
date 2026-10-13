@@ -49,6 +49,35 @@ struct ChakraRoomHost: View {
     }
 }
 
+// MARK: - Ruling 2 · the sealed room's held threshold
+
+/// A closed ring with one point of light breathing behind it, slowly (a 12 s
+/// breath). Nothing opens; nothing is counted. Under reduce motion, still.
+struct SealedThresholdMark: View {
+    let tone: Color
+    let reduceMotion: Bool
+
+    static let breathSeconds: Double = 12
+
+    var body: some View {
+        TimelineView(.animation(paused: reduceMotion)) { tl in
+            let t = reduceMotion ? 0 : tl.date.timeIntervalSinceReferenceDate
+            Canvas { ctx, size in
+                let b = 0.5 - 0.5 * cos(2 * .pi * t / Self.breathSeconds)
+                let c = CGPoint(x: size.width / 2, y: size.height / 2)
+                let r = min(size.width, size.height) * 0.42
+                var add = ctx
+                add.blendMode = .plusLighter
+                add.glow(at: c, radius: r * CGFloat(0.55 + 0.15 * b), color: tone, alpha: 0.18 + 0.12 * b)
+                add.core(at: c, radius: 2.4, color: Color.cream, alpha: 0.55 + 0.3 * b)
+                ctx.stroke(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)),
+                           with: .color(tone.opacity(0.55)), lineWidth: 1)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
 // MARK: - The room's own light
 
 /// Each room moves as what it is (charter §3.4): an energy chakra breathes on a

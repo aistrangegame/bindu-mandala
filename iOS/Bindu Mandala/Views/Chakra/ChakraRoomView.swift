@@ -86,13 +86,22 @@ struct ChakraRoomView: View {
             ChakraRoomField(chakra: chakra, reduceMotion: reduceMotion)
 
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 0) {
-                    arrival
-                    story
-                    practiceSection
-                    wakeUp
-                    gateSection
-                    doors
+                Group {
+                    if chakra.isSealed {
+                        // Ruling 2 · the Ego Reveal: its identity, and a held,
+                        // quiet threshold. No story, practice, wake-up, gate or
+                        // door — its words wait for its own walk.
+                        sealedThreshold
+                    } else {
+                        VStack(spacing: 0) {
+                            arrival
+                            story
+                            practiceSection
+                            wakeUp
+                            gateSection
+                            doors
+                        }
+                    }
                 }
                 .padding(.horizontal, 30)
                 .padding(.top, 84)
@@ -189,6 +198,46 @@ struct ChakraRoomView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 30)
             }
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: The sealed room (ruling 2)
+
+    /// Only what the room is called — its name, subtitle and verb — and a
+    /// point of light that breathes behind a closed ring, with one line.
+    private var sealedThreshold: some View {
+        VStack(spacing: 12) {
+            Text(chakra.name)
+                .font(AppFont.sanskrit(44))
+                .tracking(1.2)
+                .foregroundStyle(Color.cream)
+                .multilineTextAlignment(.center)
+                .shadow(color: tone.opacity(0.8), radius: 24)
+            if let s = chakra.subtitle {
+                Text(s)
+                    .font(AppFont.voice(19))
+                    .foregroundStyle(Color.cream.opacity(0.8))
+                    .multilineTextAlignment(.center)
+            }
+            if let v = chakra.verb {
+                Text(v)
+                    .font(AppFont.label(12))
+                    .tracking(4)
+                    .foregroundStyle(tone.opacity(0.95))
+                    .padding(.top, 4)
+            }
+            SealedThresholdMark(tone: tone, reduceMotion: reduceMotion)
+                .frame(width: 120, height: 120)
+                .padding(.top, 56)
+                .accessibilityHidden(true)
+            Text(ChakraConstellation.sealedLine)
+                .font(AppFont.voice(18))
+                .italic()
+                .foregroundStyle(Color.cream.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.top, 18)
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)

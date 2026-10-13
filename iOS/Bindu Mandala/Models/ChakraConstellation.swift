@@ -169,6 +169,19 @@ struct Chakra33: Codable, Identifiable, Equatable {
 
     var isThreshold: Bool { kind == .shadow || kind == .armin }
 
+    /// Only its public identity — name, subtitle, verb, colour, Śakti, mudrā,
+    /// Road position, record id — and where it stands. Every word of its room
+    /// is left out.
+    var sealedIdentity: Chakra33 {
+        Chakra33(road: road, recordId: recordId, name: name, subtitle: subtitle,
+                 sanskrit: nil, kind: kind, system: nil, stage: nil, sectionNumber: nil,
+                 avaranaField: nil, avarana: avarana, kp: kp, address: address,
+                 crossing: crossing, shaktiName: shaktiName, mudra: mudra,
+                 colorHex: colorHex, primaryColor: primaryColor, verb: verb,
+                 activation: nil, bija: nil, essence: nil, bodyLocation: nil,
+                 joinedBy: nil, sealed: true)
+    }
+
     /// Wave 6 · the room's address in the ledger: its own Map record. The
     /// ledger's `Link to The Map` is filled with exactly this.
     var mapRecordId: String { recordId }
@@ -201,9 +214,14 @@ enum ChakraConstellation {
     }
 
     /// Defensive decode: a malformed file yields nothing rather than a half-sky.
+    /// A sealed room (ruling 2) is reduced to its public identity here, at the
+    /// one door every surface reads through — so even a bake that still carried
+    /// its words could not show them on any route.
     static func decode(_ data: Data) -> [Chakra33] {
         guard let file = try? JSONDecoder().decode(File.self, from: data) else { return [] }
-        return file.chakras.sorted { $0.road < $1.road }
+        return file.chakras
+            .map { $0.isSealed ? $0.sealedIdentity : $0 }
+            .sorted { $0.road < $1.road }
     }
 
     // MARK: - The two thresholds
@@ -277,6 +295,8 @@ enum ChakraConstellation {
         var parts: [String] = [c.name]
         if let s = c.subtitle { parts.append(s) }
         parts.append(spokenPlace(c, seatName: seatName))
+        // Ruling 2 · a sealed room is spoken as held, and nothing more.
+        if c.isSealed { parts.append(sealedLine) }
         return parts.joined(separator: ". ")
     }
 
