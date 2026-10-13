@@ -17,8 +17,10 @@ import SwiftData
 //   · promise  · "the ceremony compresses on return but is never skipped"
 //   · promise  · "the head start comes from dwell, not from visit count"
 //   · promise  · "the second adaptation is reachable only through relationship"
-//   · promise  · "the fifth is withheld outside the ninth world"
-//   · felt     · the `MEASURING` detector, ported verbatim, over every
+//   · promise  · "the ninth world grants the fifth" (its withholding half
+//                retired in U0: lifted gating becomes an offer, VER-L-0810)
+//   · felt     · the narrow measuring floor — four of `MEASURING`'s nine,
+//                verbatim (ruling 10 lifted the rest) — over every
 //                user-facing string the instrument can compose today
 //   · coverage · "the known collisions resolve by position, not by name"
 //   · coverage · "every authored room is actually reached" — the check Design's
@@ -98,26 +100,29 @@ import SwiftData
 // deliverable files (the Axis, the method, the thread) rather than the app, and
 // belong to Design's pass, not to this suite.
 
-// MARK: - Ported verbatim: `homes-verify.js`'s MEASURING
+// MARK: - The narrow measuring floor, from `homes-verify.js`'s MEASURING
 
-/// Design's nine patterns, copied character for character out of
-/// `homes-verify.js`. `js` is the literal as that file writes it — kept beside
-/// the port so drift is visible on sight — and `pattern` is that literal's body,
-/// unaltered.
+/// **Upgrade U0 · ruling 10 (12 Oct 2026), V33.** Design's nine MEASURING
+/// patterns were a word list: "3 of 9", a percentage, "progress", "level 2",
+/// "day 11". His ruling lifts measuring-word lists — numbers, ordinals, dates,
+/// timers, seat numbers, Design's own figures and "again" are allowed. What
+/// stays is one narrow floor: **no quantity of his practice is shown, spoken or
+/// drawn.** So only the four of Design's nine that can say nothing *but* a
+/// quantity of his practice remain, still character for character as
+/// `homes-verify.js` writes them: a visit count, a streak, a score (nothing
+/// scores him), and "felt N times". The other five are retired
+/// (verification.md §2.2, VER-L-0745) and kept in `liftedPatterns` only so
+/// the lift itself is asserted.
 ///
-/// Two faithful differences, neither of them a weakening: ICU compiles `\b`
-/// against Unicode word characters where JavaScript's is ASCII-only, so a
-/// keyword pressed directly against a diacritic ("ṇscore") is a boundary to JS
-/// and not to ICU; and ICU carries no per-literal `/i`, so the flag travels in
-/// `ignoresCase` exactly as Design set it — eight of the nine carry it, and the
-/// percentage pattern has no letters to fold.
+/// ICU compiles `\b` against Unicode word characters where JavaScript's is
+/// ASCII-only, and carries no per-literal `/i`, so the flag travels in
+/// `ignoresCase` exactly as Design set it.
 ///
-/// **If a string matches, that is a Ruling-2 violation in the app, not a bug in
+/// **If a string matches, that is a floor violation in the app, not a bug in
 /// the regex.** Change the copy; never soften the pattern.
 ///
-/// Module-internal rather than file-private so every suite that composes
-/// walker-facing words runs the *same* nine patterns. A second copy would drift
-/// from this one, and a drifted detector is worse than none.
+/// Module-internal so every suite that composes walker-facing words runs the
+/// *same* floor (`NeverMeasure.measuring` in `LawsTests` is asserted equal).
 enum Measuring {
 
     struct Pattern {
@@ -132,36 +137,32 @@ enum Measuring {
     }
 
     static let patterns: [Pattern] = [
-        Pattern(js: #"/\b\d+\s*(?:of|\/)\s*\d+\b/i"#,
-                pattern: #"\b\d+\s*(?:of|\/)\s*\d+\b"#,
-                ignoresCase: true, catches: "3 of 9"),              // "3 of 9"
-        Pattern(js: #"/\b\d+\s*%/"#,
-                pattern: #"\b\d+\s*%"#,
-                ignoresCase: false, catches: "62% there"),          // a percentage
         Pattern(js: #"/\bvisit(?:s)?\s*[:=]\s*\d+/i"#,
                 pattern: #"\bvisit(?:s)?\s*[:=]\s*\d+"#,
                 ignoresCase: true, catches: "visits: 4"),           // a visit count
         Pattern(js: #"/\bstreak\b/i"#,
                 pattern: #"\bstreak\b"#,
                 ignoresCase: true, catches: "a nine-day streak"),
-        Pattern(js: #"/\bprogress\b/i"#,
-                pattern: #"\bprogress\b"#,
-                ignoresCase: true, catches: "your progress"),
-        Pattern(js: #"/\blevel\s*\d/i"#,
-                pattern: #"\blevel\s*\d"#,
-                ignoresCase: true, catches: "Level 2"),
         Pattern(js: #"/\bscore\b/i"#,
                 pattern: #"\bscore\b"#,
                 ignoresCase: true, catches: "her score"),
-        Pattern(js: #"/\bday\s*\d+\b/i"#,
-                pattern: #"\bday\s*\d+\b"#,
-                ignoresCase: true, catches: "Day 11"),
         Pattern(js: #"/\b\d+\s*(?:times|visits)\b/i"#,
                 pattern: #"\b\d+\s*(?:times|visits)\b"#,
                 ignoresCase: true, catches: "felt 7 times"),
     ]
 
-    /// The nine, compiled. A pattern that fails to compile is simply absent,
+    /// Design's five patterns that ruling 10 lifted, as `homes-verify.js`
+    /// writes them. Never run as a check — kept so the detector's own test can
+    /// assert that what they caught is now allowed.
+    static let liftedPatterns: [String] = [
+        #"/\b\d+\s*(?:of|\/)\s*\d+\b/i"#,   // "3 of 9"
+        #"/\b\d+\s*%/"#,                    // a percentage
+        #"/\bprogress\b/i"#,
+        #"/\blevel\s*\d/i"#,
+        #"/\bday\s*\d+\b/i"#,
+    ]
+
+    /// The floor, compiled. A pattern that fails to compile is simply absent,
     /// which `testTheDetectorItselfIsFaithful` turns into a loud failure rather
     /// than a crash at static-initialisation time.
     static let compiled: [(js: String, regex: NSRegularExpression)] = patterns.compactMap {
@@ -218,9 +219,12 @@ final class HomesHarnessTests: XCTestCase {
     // MARK: - The detector's own proof
 
     func testTheDetectorItselfIsFaithful() {
-        XCTAssertEqual(Measuring.patterns.count, 9, "Design's MEASURING holds nine patterns")
+        XCTAssertEqual(Measuring.patterns.count, 4,
+                       "the narrow floor holds four of Design's nine (ruling 10, V33)")
         XCTAssertEqual(Measuring.compiled.count, Measuring.patterns.count,
                        "every pattern must compile: \(Measuring.patterns.map(\.js))")
+        XCTAssertTrue(Set(Measuring.patterns.map(\.js)).isDisjoint(with: Measuring.liftedPatterns),
+                      "a lifted measuring pattern is still being run")
 
         // Each one catches the thing Design wrote it for…
         for p in Measuring.patterns {
@@ -228,14 +232,25 @@ final class HomesHarnessTests: XCTestCase {
                           "\(p.js) failed to catch \"\(p.catches)\"")
         }
 
-        // …and a measured phrase is caught wherever it sits in a sentence.
+        // …and a quantity of his practice is caught wherever it sits in a sentence.
         for measured in ["You have felt her 7 times.",
-                         "Day 4 of your practice",
-                         "3 of 9 āvaraṇas",
                          "visits = 12",
-                         "62% of the way in"] {
+                         "a three-day streak",
+                         "your score today"] {
             XCTAssertFalse(Measuring.measuresOutLoud(measured).isEmpty,
                            "\"\(measured)\" slipped past the detector")
+        }
+
+        // …while numbers, ordinals, dates, Design's figures and "again" are
+        // allowed now (ruling 10): what the five lifted patterns caught passes.
+        for allowed in ["Day 4 of the moon",
+                        "3 of 9 āvaraṇas",
+                        "62% of the way in",
+                        "Level 2",
+                        "the progress of the sun",
+                        "Kāmākarṣiṇī — felt again"] {
+            XCTAssertTrue(Measuring.measuresOutLoud(allowed).isEmpty,
+                          "a lifted measuring word is still refused: \"\(allowed)\"")
         }
 
         // …while the instrument's own vocabulary is not caught by accident.
@@ -535,14 +550,17 @@ final class HomesHarnessTests: XCTestCase {
                        "a return must reach what a first visit cannot")
     }
 
-    // MARK: - promise · the fifth is withheld outside the ninth world
+    // MARK: - promise · the ninth world grants the fifth
+    //
+    // U0 · ruling 16 / VER-L-0810: the half of this check that asserted the
+    // fifth is *withheld* ("ring 3, thirty seconds in, must grant nothing") is
+    // retired — gating is lifted and becomes an offer (U4 builds the offer).
+    // What stays: the ninth world grants it outright, and asking writes nothing.
 
-    func testTheFifthIsWithheldOutsideTheNinthWorld() throws {
+    func testTheNinthWorldGrantsTheFifth() throws {
         let store = try makeStore()
         let kp = 70
 
-        XCTAssertEqual(store.grantsFifth(for: kp, ring: 3, elapsed: 30), 0, accuracy: 1e-12,
-                       "ring 3, thirty seconds in, must grant nothing")
         XCTAssertEqual(store.grantsFifth(for: kp, ring: 9, elapsed: 30), 1, accuracy: 1e-12,
                        "the ninth world grants it outright")
 

@@ -128,7 +128,6 @@ final class WaveSixMemoryTests: XCTestCase {
                                                to: ActivityLedger.recipientWords(RiverRecipient(kind: .age, age: 9)),
                                                moment: moment)
         XCTAssertEqual(back.name, "A letter to himself at nine — sent back")
-        XCTAssertNil(back.name.rangeOfCharacter(from: .decimalDigits), "an age is spoken, never a figure")
 
         let rows = [
             row("r1", type: back.type, name: back.name, detail: back.detail, feltAt: written,
@@ -200,7 +199,6 @@ final class WaveSixMemoryTests: XCTestCase {
         let kept = ActivityLedger.nameKept(pointRecordId: "recP", name: "Ram", at: sent)
         XCTAssertEqual(kept.linkRecordId, "recP", "linked, so a retried POST stays one row")
         XCTAssertEqual(kept.notes, "Ram")
-        XCTAssertNil(kept.detail.rangeOfCharacter(from: .decimalDigits))
 
         let rows = [row("l1", type: item.type, name: item.name, detail: item.detail, feltAt: sent,
                         notes: item.notes, link: "recA"),
@@ -227,25 +225,16 @@ final class WaveSixMemoryTests: XCTestCase {
         XCTAssertFalse(RiverRecipient.Kind.memory.allows(.forward))
     }
 
-    // MARK: - One breath
+    // MARK: - Each world its own clock
+    //
+    // U0 · retired (VER-L-0741): `testOneBreathClockAndTheRingsAreItsMultiples`
+    // — "one 8 s breath clock" is lifted. What the verification world keeps is
+    // each clock in its own world: the nine metabolisms (ring 1 holds; rings
+    // 2–9 at Design's 3/8/9/11/13/15/18/4 s).
 
-    func testOneBreathClockAndTheRingsAreItsMultiples() {
-        XCTAssertEqual(BreathClock.breath, 8)
-        XCTAssertEqual(BreathClock.beat, 1)
-        for ring in 2...9 {
-            guard let p = FieldBreath.period(ring: ring) else { return XCTFail("ring \(ring) breathes") }
-            XCTAssertEqual(p.truncatingRemainder(dividingBy: BreathClock.beat), 0, accuracy: 1e-9,
-                           "ring \(ring)'s period is a whole number of beats")
-        }
-        // One epoch: the field's phase and the clock's are the same number.
-        let t: TimeInterval = 812_345.678
-        XCTAssertEqual(FieldBreath.phase(at: t, period: 9), BreathClock.phase(at: t, period: 9), accuracy: 1e-12)
-        XCTAssertEqual(BreathClock.phase(at: 0, period: 8), 0, accuracy: 1e-12)
-        XCTAssertEqual(BreathClock.phase(at: 4, period: 8), 1, accuracy: 1e-12)
-        // A Score's tempo still lands on the beat.
-        XCTAssertEqual(BreathClock.period(grammar: 8, score: ShaktiScore.Tempo(breath: 9.4, rate: nil)), 9)
-        XCTAssertEqual(BreathClock.period(grammar: 8, score: ShaktiScore.Tempo(breath: nil, rate: 2)), 4)
-        XCTAssertEqual(BreathClock.period(grammar: 8, score: nil), 8)
+    func testEachRingKeepsItsOwnMetabolism() {
+        XCTAssertNil(FieldBreath.period(ring: 1), "ring 1 holds")
+        XCTAssertEqual((2...9).compactMap { FieldBreath.period(ring: $0) }, [3, 8, 9, 11, 13, 15, 18, 4])
     }
 
     // MARK: - The live Score
@@ -368,7 +357,13 @@ final class WaveSixMemoryTests: XCTestCase {
 
     // MARK: - Her screen deepens
 
-    func testHerScreenDeepensOneLayerAReturnAndNeverCounts() {
+    /// U0 rewrite (VER-L-0812): deepening is offered, never withheld. The
+    /// assertions that each layer stays shut until enough returns
+    /// (`open(visits:available:)` as a gate) and the no-digit clause on the
+    /// titles are retired; U4 gives every layer a direct door beside the slow
+    /// one. What stays: a return is counted by her position alone, a sheet is
+    /// not a return, and the layers are her own words in order.
+    func testHerScreenKnowsAReturnByPositionAndHoldsHerLayers() {
         let suite = "wave6-deepening-\(UUID().uuidString)"
         let d = UserDefaults(suiteName: suite)!
         defer { d.removePersistentDomain(forName: suite) }
@@ -382,9 +377,8 @@ final class WaveSixMemoryTests: XCTestCase {
         let layers = HerDeepening.layers(function: "She draws.", mentalState: " ", siddhi: "Aṇimā",
                                          etymology: nil, qualities: "x", ringNotes: "The ring.")
         XCTAssertEqual(layers.map(\.title), ["what she does", "what her ring gives", "how she is known", "her enclosure"])
-        XCTAssertEqual(HerDeepening.open(visits: 2, available: layers.count), 2)
-        XCTAssertEqual(HerDeepening.open(visits: 99, available: layers.count), 4)
-        for l in layers { XCTAssertNil(l.title.rangeOfCharacter(from: .decimalDigits)) }
+        XCTAssertEqual(HerDeepening.open(visits: 99, available: layers.count), layers.count,
+                       "every layer can be open")
     }
 
     // MARK: - The month and the book
@@ -410,6 +404,9 @@ final class WaveSixMemoryTests: XCTestCase {
         XCTAssertFalse(r.letter.contains("Nāmākarṣiṇī"), "only this month's record")
         XCTAssertEqual(r.turningLine, "“to you, at last”", "the turning is his own words")
         XCTAssertEqual(r.deeper, "You wrote: “warm in the chest”")
+        // The month is composed from his record, so a digit here would be a
+        // quantity of his practice (how many days, how many met): the narrow
+        // floor keeps this clause (V33).
         for text in [r.letter, r.witness, r.turningLine ?? "", r.deeper ?? ""] {
             XCTAssertNil(text.rangeOfCharacter(from: .decimalDigits), "a number reached the month: \(text)")
             XCTAssertTrue(NeverMeasure.measuresOutLoud(text).isEmpty, text)

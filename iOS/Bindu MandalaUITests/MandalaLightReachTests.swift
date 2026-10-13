@@ -130,9 +130,8 @@ final class MandalaLightReachTests: XCTestCase {
 
         for element in field {
             let label = element.label
-            XCTAssertNil(label.first(where: \.isNumber),
-                         "the lit Mandala speaks a numeral: “\(label)”")
-            XCTAssertFalse(label.lowercased().contains("times"),
+            // U0: the no-numeral clause is retired (ruling 10); the narrow floor stays.
+            XCTAssertFalse(NarrowFloor.saysAQuantityOfHisPractice(label),
                            "the lit Mandala speaks a tally: “\(label)”")
             XCTAssertGreaterThanOrEqual(element.frame.width, 43.5,
                                         "“\(label)” is a target a finger cannot find")
@@ -149,17 +148,17 @@ final class MandalaLightReachTests: XCTestCase {
     /// they are ink — so what this reaches is the header, the tier hint, the
     /// controls and the spoken layer: everything with words that a walker can
     /// be told something by.
+    ///
+    /// U0 rewrite (VER-L-0746): the measuring-word list ("progress",
+    /// "complete", "%", "total"…) is lifted; the narrow floor — no quantity of
+    /// his practice — is what is asked.
     func testNothingOnTheLitMandalaMeasuresHim() {
         let app = litMandala()
         XCTAssertTrue(Reach.text(app, "Śrī Yantra"), "the lit Mandala never arrived")
 
-        let words = ["times", "streak", "progress", "complete", "%", "visits", "sessions", "total"]
         for element in app.staticTexts.allElementsBoundByIndex where element.exists {
-            let label = element.label.lowercased()
-            for word in words {
-                XCTAssertFalse(label.contains(word),
-                               "the lit Mandala measures: “\(element.label)”")
-            }
+            XCTAssertFalse(NarrowFloor.saysAQuantityOfHisPractice(element.label),
+                           "the lit Mandala measures: “\(element.label)”")
         }
     }
 
@@ -293,59 +292,26 @@ final class MandalaLightReachTests: XCTestCase {
     /// number escapes a drawing layer is not usually as ink — it is as the label
     /// somebody added so the drawn thing could be spoken.
     ///
-    /// Three things are refused. **A digit**, anywhere: the instrument's spoken
-    /// surface is words, and the seats say "of the one hundred and two" for
-    /// exactly this reason. **A measure word**, so a tally spelled out in
-    /// letters is caught too. And **a progress-shaped value**, because an
-    /// accessibility `value` is the one place a scale can reach a voice without
-    /// ever appearing as a label — a bar that reads "40%" to VoiceOver is a
-    /// readout whatever it looks like.
-    ///
-    /// **What is not refused, and the distinction is the whole law.** The first
-    /// version of this test refused the bare ordinals too, and went red on
-    /// twenty-one perfectly lawful labels: *"Spar Shah kar shi nee. She who
-    /// attracts Touch. Second enclosure, thirty-third of the one hundred and
-    /// two."* That ordinal is **her address** — position is identity, and where
-    /// she sits in the garland is the one number this instrument is built on. It
-    /// says nothing about him and it does not change. What the law forbids is a
-    /// number about *his practice*, and the two are told apart by whose fact it
-    /// is, not by whether a number is spoken. So the refusal below is practice
-    /// words only, and the ordinals are refused exactly where they would become
-    /// his — attached to a time, a visit or a turn.
+    /// U0 rewrite (verification.md §2.2, VER-L-0747): the digit ban, the
+    /// percentage ban and the measuring-word list are lifted (ruling 10) —
+    /// numbers, ordinals, dates, Design's figures and "again" may be spoken.
+    /// What is refused is the narrow floor: a quantity of **his practice** — a
+    /// visit count, a streak, a score, "felt N times", or an ordinal turned into
+    /// a tally of him ("your third time"). Her seat in the garland is her
+    /// address, never his measure.
     func testNothingUnderTheLightCanBeCountedEvenByAVoice() {
         let app = litMandala()
         XCTAssertTrue(Reach.text(app, "Śrī Yantra"), "the shipped Mandala never arrived")
 
-        // A tally spelled out, a scale, a legend, a standing — all of them his.
-        let measures = ["times", "streak", "progress", "complete", "completed", "percent",
-                        "visits", "visited", "sessions", "total", "count", "counted",
-                        "so far", "remaining", "left to", "score", "streaks",
-                        "you have", "you've", "your first", "your second"]
-        // And an ordinal turned into a tally of him: her seat may be the third of
-        // the hundred and two, and nothing may be his third anything.
-        let ordinals = ["first", "second", "third", "fourth", "fifth"]
-        let his = [" time", " visit", " turn", " today", " again"]
         var examined = 0
         for element in app.descendants(matching: .any).allElementsBoundByIndex where element.exists {
             let label = element.label
             let value = (element.value as? String) ?? ""
             for text in [label, value] where !text.isEmpty {
                 examined += 1
-                XCTAssertNil(text.first(where: \.isNumber),
-                             "the lit Mandala speaks a numeral: “\(text)”")
-                let lowered = text.lowercased()
-                for measure in measures {
-                    XCTAssertFalse(lowered.contains(measure),
-                                   "the lit Mandala speaks a measure (“\(measure)”): “\(text)”")
-                }
-                XCTAssertFalse(lowered.contains("%"),
-                               "the lit Mandala speaks a percentage: “\(text)”")
-                for ordinal in ordinals {
-                    for tail in his {
-                        XCTAssertFalse(lowered.contains(ordinal + tail),
-                                       "the lit Mandala counts his turns: “\(text)”")
-                    }
-                }
+                XCTAssertTrue(NarrowFloor.trips(text).isEmpty,
+                              "the lit Mandala speaks a quantity of his practice "
+                              + "(\(NarrowFloor.trips(text))): “\(text)”")
             }
         }
         XCTAssertGreaterThan(examined, 20,

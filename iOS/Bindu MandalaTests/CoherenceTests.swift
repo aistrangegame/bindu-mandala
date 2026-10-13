@@ -5,44 +5,39 @@ import CoreGraphics
 /// Wave 6.1 · Coherence — the five Wave 6 drafts as one instrument.
 ///
 /// The gameplan's answer to "the instrument becomes a menu" (§1): things are
-/// found where they live, the Mandala carries at most three quiet controls, and
-/// Lalitā's field is the one place everything is gathered. And his decisions of
-/// 12 October (§4), where the drafts differed.
+/// found where they live, and Lalitā's field is the one place everything is
+/// gathered. And his decisions of 12 October (§4), where the drafts differed.
+///
+/// U0: "no menu / three quiet controls" and "one breath clock" are lifted
+/// (ruling 10); their tests are retired and the ways-in ring is rewritten as
+/// the seed of the World Registry. Rām japa at kp 42 and gratitude, gently,
+/// are floors and stay unchanged.
 final class CoherenceTests: XCTestCase {
 
-    // MARK: Three quiet controls
+    // MARK: The ways in — the seed of the World Registry
+    //
+    // U0 (verification.md §2.2): `testTheMandalaCarriesThreeQuietControls`
+    // (VER-L-0733, "no menu / three quiet controls") is retired — the menu and
+    // every control the worlds need are allowed. The six-way ring's exact list
+    // and its no-digit clause (VER-L-0757) went with it; what stays is its
+    // rewrite as the seed of the World Registry (VER-L-0734).
 
-    /// Sound, the Veil's handle, and one "ways in" mark — nothing else stands
-    /// on the Mandala's glass at rest.
-    func testTheMandalaCarriesThreeQuietControls() throws {
-        let host = try XCTUnwrap(LawSource.production("LivingMandalaView.swift"))
-        let code = String(host.lexed.masked)
-        let controls = try XCTUnwrap(Rx.first(#"private var controls: some View \{[\s\S]*?\n    \}"#, code),
-                                     "the Mandala's control column could not be read")
-        XCTAssertEqual(controls.components(separatedBy: "controlButton(").count - 1, 2,
-                       "the column holds sound and the ways-in mark, and nothing else")
-        // The Veil's handle is the third.
-        XCTAssertTrue(code.contains("MandalaVeilPeek("), "the Veil's handle is gone")
-        // Wave 3's two switches no longer stand on the glass.
-        let overlay = try XCTUnwrap(LawSource.production("ChakraLayerOverlay.swift"))
-        let overlayCode = String(overlay.lexed.masked)
-        XCTAssertFalse(overlayCode.contains("switchButton") || overlayCode.contains("var switches"),
-                       "the constellation's own switches are back on the glass")
-    }
-
-    /// The ring holds the ways the slices had scattered across the glass.
-    func testTheWaysInRingHoldsEveryWay() {
-        XCTAssertEqual(WayIn.allCases, [.constellation, .road, .modes, .field, .climb, .whole])
-        // A voice finds the constellation and the Road by the names their own
-        // switches carried.
+    /// Every way the ring holds leads into a world of the registry, and a voice
+    /// still finds the constellation and the Road by the names their own
+    /// switches carried.
+    func testTheWaysInSeedTheWorldRegistry() {
+        for way in WayIn.allCases {
+            XCTAssertFalse(way.word.isEmpty)
+            XCTAssertTrue(WorldID.allCases.contains(WorldID.reached(by: way)), "\(way) leads nowhere")
+        }
+        XCTAssertEqual(WorldID.reached(by: .constellation), .the33)
+        XCTAssertEqual(WorldID.reached(by: .road), .the33)
+        XCTAssertEqual(WorldID.reached(by: .climb), .climb)
+        XCTAssertEqual(WorldID.reached(by: .modes), .modes)
         XCTAssertEqual(WayIn.constellation.spoken(constellationOn: false, walking: false),
                        "Show the thirty-three chakras")
         XCTAssertEqual(WayIn.road.spoken(constellationOn: false, walking: true), "Leave the road")
         XCTAssertEqual(WayIn.modes.spoken(constellationOn: false, walking: false), TheModes.doorLabel)
-        for way in WayIn.allCases {
-            XCTAssertFalse(way.word.isEmpty)
-            XCTAssertNil(way.word.rangeOfCharacter(from: .decimalDigits), "\(way) says a number")
-        }
     }
 
     /// The ring opens into the glass, never off its trailing edge, and every
@@ -94,12 +89,11 @@ final class CoherenceTests: XCTestCase {
         XCTAssertTrue(PlayAddressBook.games(atPosition: 42).contains(.ramJapa))
     }
 
-    /// One breath clock: the Rite's pause and the centre's stillness breathe
-    /// the same breath as every other screen.
-    func testThereIsOneBreath() {
-        XCTAssertEqual(RiteOpening.breathSeconds, BreathClock.breath)
-        XCTAssertEqual(CentreArrival.oneBreath, BreathClock.breath)
-    }
+    // U0 · retired (VER-L-0740): `testThereIsOneBreath` — "one 8 s breath
+    // clock" is lifted. Each world keeps its own clock: the nine metabolisms
+    // (ring 1 holds; rings 2–9 at 3/8/9/11/13/15/18/4 s), Homecoming's 4 s
+    // (`RiteDayTests.testEveryReturnIsOneBreath`), the Rite's own pause,
+    // Coherence's 8 s.
 
     // MARK: Gratitude, gently
 

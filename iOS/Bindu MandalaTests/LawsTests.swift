@@ -542,22 +542,23 @@ enum LawSource {
 /// that touches the practice record.
 enum NeverMeasure {
 
-    // MARK: Design's nine, and the proof they have not drifted
+    // MARK: The narrow floor, and the proof it has not drifted
 
-    /// `homes-verify.js`'s `MEASURING`, as `HomesHarnessTests` ports it. They are
-    /// restated here rather than shared, because the harness keeps its port
-    /// private — and `testTheNinePatternsAreTheHarnessOwn` reads the harness's
-    /// file off disk and asserts these are character-for-character the same, so
-    /// the two copies cannot drift apart unnoticed.
+    /// **U0 · ruling 10, V33.** The narrow measuring floor: the four of
+    /// `homes-verify.js`'s nine `MEASURING` patterns that can say nothing but a
+    /// quantity of his practice (a visit count, a streak, a score, "felt N
+    /// times"), as `HomesHarnessTests`' `Measuring` ports them. The other five —
+    /// "3 of 9", a percentage, "progress", "level N", "day N" — were a
+    /// measuring-word list and are lifted: numbers, ordinals, dates, timers,
+    /// seat numbers, Design's figures and "again" are allowed.
+    ///
+    /// `testTheFloorPatternsAreTheHarnessOwn` reads the harness's file off disk
+    /// and asserts these are character-for-character the same, so the two
+    /// copies cannot drift apart unnoticed.
     static let measuring: [(pattern: String, ignoresCase: Bool, catches: String)] = [
-        (#"\b\d+\s*(?:of|\/)\s*\d+\b"#,       true,  "3 of 9"),
-        (#"\b\d+\s*%"#,                        false, "62% there"),
         (#"\bvisit(?:s)?\s*[:=]\s*\d+"#,       true,  "visits: 4"),
         (#"\bstreak\b"#,                       true,  "a nine-day streak"),
-        (#"\bprogress\b"#,                     true,  "your progress"),
-        (#"\blevel\s*\d"#,                     true,  "Level 2"),
         (#"\bscore\b"#,                        true,  "her score"),
-        (#"\bday\s*\d+\b"#,                    true,  "Day 11"),
         (#"\b\d+\s*(?:times|visits)\b"#,       true,  "felt 7 times"),
     ]
 
@@ -615,109 +616,21 @@ enum NeverMeasure {
         // embodiment — left the screen with the spoken "level ⟨n⟩ of four".
     ]
 
-    // MARK: The one legitimate digit — a seat in the garland
+    // MARK: The digit — allowed (ruling 10)
+    //
+    // U0 retired "the one legitimate digit is a seat in the garland"
+    // (`testTheOnlyDigitShapeIsASeatInTheGarland`, VER-L-0743): numbers,
+    // ordinals, dates, timers, seat numbers and Design's figures may all reach
+    // the walker now. A digit that is a quantity of his practice is still
+    // refused — by the value scan (`practiceSymbols`), which never needed the
+    // digit rule. `isIdentity`, `digitShapes` and `pinnedNonIdentityDigits`
+    // went with it.
 
-    /// `102` is the size of the khaḍgamālā: fixed before the app existed and
-    /// unchanged by anything the walker does. A digit is identity, not
-    /// measurement, only when **both** halves hold — the bound is the garland,
-    /// and the value is her position in it.
-    ///
-    /// Everything else fails: "3 of 9" (a ring count), "2 of 4" (a ladder),
-    /// "⟨visits⟩ of 102" (a practice measure wearing identity's clothes), and
-    /// "⟨kp⟩ of ⟨seats.count⟩" (a bound that is not the garland). The exception
-    /// is keyed to *what the number is*, never to the shape it arrives in.
-    static func isIdentity(numerator: String, denominator: String) -> Bool {
-        let boundIsTheGarland: Bool
-        if denominator == "102" {
-            boundIsTheGarland = true
-        } else if let e = marker(denominator) {
-            boundIsTheGarland = e == "KhadgamalaMap.total"
-        } else {
-            boundIsTheGarland = false
-        }
-        guard boundIsTheGarland else { return false }
-
-        guard let value = marker(numerator) else { return false }
-        guard Rx.matches(#"\b(kp|khadgamalaPosition)\b"#, value) else { return false }
-        // A position that has been counted, averaged or totalled is no longer a
-        // position — belt and braces over `practiceSymbols`.
-        guard practiceTouched(in: value).isEmpty else { return false }
-        guard !Rx.matches(#"(?i)count|total|times|percent"#, value) else { return false }
-        return true
-    }
-
-    /// Every interpolation stood in for by a digit, so a measuring phrase that
-    /// straddles the boundary is still legible: `day ⟨n⟩` reads as "day 7", the
-    /// thing Design's pattern was written to catch. Without this the words scan
-    /// sees "day  " and the expression scan sees a bare `n`, and the phrase goes
-    /// through the gap between them.
-    ///
-    /// Deliberately pessimistic — an interpolation that could never be a number
-    /// is still probed as one. That costs nothing here, because a hit is not a
-    /// verdict: it has to be either her khaḍgamālā position or a written-down
-    /// exception before it passes.
+    /// Every interpolation stood in for by a digit, so a phrase that straddles
+    /// the boundary is still legible: `felt ⟨n⟩ times` reads as "felt 7 times".
     static func probe(_ shape: String) -> String {
         Rx.all(#"⟨[^⟩]*⟩"#, shape).reduce(shape) { $0.replacingOccurrences(of: $1, with: "7") }
     }
-
-    /// `⟨expr⟩` → `expr`; digits → nil.
-    static func marker(_ operand: String) -> String? {
-        guard operand.hasPrefix("⟨"), operand.hasSuffix("⟩") else { return nil }
-        return String(operand.dropFirst().dropLast())
-    }
-
-    /// Operand · separator · operand — "⟨kp⟩ of 102", "⟨kp⟩ · 102", "3 of 9".
-    ///
-    /// This finds candidates; it never grants anything. Only `isIdentity` does
-    /// that, and only for her seat in the garland — so a pair that is merely
-    /// shaped like a fraction ("⟨name⟩ · ⟨quality⟩") comes back here, is
-    /// refused, and is then judged by the probe like every other string. It is
-    /// deliberately not filtered down to pairs with literal digits: the day
-    /// `102` is written as `KhadgamalaMap.total`, her seat must still be
-    /// recognisable as her seat.
-    static func digitShapes(in shape: String) -> [(whole: String, numerator: String, denominator: String)] {
-        Rx.groups(#"(⟨[^⟩]*⟩|\d+)\s*(?:of|\/|·)\s*(⟨[^⟩]*⟩|\d+)"#, shape, ignoresCase: true)
-            .map { (whole: $0[0], numerator: $0[1], denominator: $0[2]) }
-    }
-
-    /// The digit shapes that are neither a khaḍgamālā position nor a practice
-    /// measure, kept with their reasoning written out, pinned by exact text.
-    ///
-    /// **`ShaktiDetailView`'s embodiment ladder.** The screen already draws four
-    /// circles with the reached ones lit; the accessibility label says the same
-    /// thing aloud. The rung is `ShaktiStatus` — mapped · exploring · active ·
-    /// embodied — which she moves by a deliberate press on the status pill
-    /// (`advanceStatus`: *"never automatic"*), and which no amount of practice
-    /// advances on its own. So the digit is bound to a choice, not to anything
-    /// felt, and deleting it would leave VoiceOver with less than the screen
-    /// gives everyone else, against FIDELITY's parity rule.
-    ///
-    /// It is the closest thing in the tree to a progress readout, and it is
-    /// written out here rather than dissolved into a broader rule, so that
-    /// whoever owns that file can overrule it on sight. Reword it, move it, or
-    /// add a second, and this suite goes red.
-    ///
-    /// **Re-examined at Phase 3.7 and upheld**, because 3.7 puts a door on that
-    /// same screen and is the first thing a human will actually touch. Two
-    /// facts decided it. The rung is not his practice: `ShaktiStatus` moves only
-    /// when he presses the status pill, and no stay, recognition, silence or
-    /// crossing advances it — so there is nothing here that totals his walking,
-    /// which is what law 2 forbids. And the screen already *draws* it: four
-    /// circles with the reached ones lit, in everyone's plain sight. Deleting
-    /// the words while leaving the circles would give a VoiceOver walker less
-    /// than the screen gives everyone else, which `iOS/FIDELITY.md`'s parity
-    /// rule forbids in the other direction. The restrained option is not the
-    /// quiet one here; it is the one that does not make the instrument say two
-    /// different things to two different walkers.
-    ///
-    /// **Wave 6 · removed** (C-1338, *"the mark is in the architecture, not in
-    /// the claiming of it"*; C-1284). The upholding above weighed screen and
-    /// voice and kept the words. His Codex weighs the claim itself: a rung read
-    /// out — "level four of four" — is a claim, whichever walker hears it. The
-    /// spoken line is gone and the track is hidden from VoiceOver, while the
-    /// status pill still names her stage in words for every walker alike. The
-    /// set is empty now, and a digit that is not her seat fails again.
-    static let pinnedNonIdentityDigits: Set<String> = []
 }
 
 // MARK: - Law 3 · the two Recognition lines
@@ -868,28 +781,23 @@ enum Aniconic {
         "svg", "usdz", "scn", "dae", "obj",
     ]
 
-    /// The only literal any drawing primitive in the shipping tree is handed —
-    /// a disclosure chevron. Pinned by exact equality: a second one has to be
-    /// written down here, where the law is, before it can be drawn.
-    static let pinnedDrawnLiterals: Set<String> = ["chevron.right"]
+    /// **U0 · the floor only (VER-L-0769…0771, VER-FL-0884).** The one-chevron
+    /// pin, the two-entry catalogue pin and the "nothing drawn from a file"
+    /// ban are retired: images may enter the app (textures, Design's renders,
+    /// chakra art). What stays is the floor — no figure of a Śakti — held two
+    /// ways: no asset, file, node or literal handed to a drawing primitive may
+    /// carry a figural name, and every image file in the shipping tree must be
+    /// on this **reviewed allow-list** (path relative to `iOS/Bindu Mandala/`).
+    /// Adding an image means adding it here, by hand, after looking at it.
+    /// (Open question for Ashrey, verification.md §7: which images beyond
+    /// textures and Design's renders belong on it.)
+    static let reviewedImageFiles: Set<String> = ["Assets.xcassets/AppIcon.appiconset/AppIcon.png"]
 
-    /// The whole asset catalogue. An app icon and a tint colour.
-    static let pinnedCatalogue: Set<String> = ["AppIcon.appiconset", "AccentColor.colorset"]
-
-    /// The only image file in the shipping tree.
-    static let pinnedImageFiles: Set<String> = ["Assets.xcassets/AppIcon.appiconset/AppIcon.png"]
-
-    /// Her fields that describe a form. They are read from Airtable and stored;
-    /// they may not be put on a screen, because putting them on a screen is
-    /// exactly the figure the law refuses — drawn in words instead of pixels.
+    /// Her fields that describe a form. U0 retired the rule that kept them off
+    /// every screen (VER-L-0793): iconography prose is not a figure (Detail
+    /// keeps it behind "go deeper"). Listed so the somatic-fields check below
+    /// still has its counterpart.
     static let iconographicFields = ["iconography", "codexPortrait"]
-
-    /// Shapes performing actions. The render path must actually be made of
-    /// these, or "no figural asset" means only "no assets".
-    static let geometricPrimitives = [
-        "Circle", "Ellipse", "Rectangle", "RoundedRectangle", "Capsule", "Path",
-        "Canvas", "Arc", "LinearGradient", "RadialGradient", "AngularGradient",
-    ]
 }
 
 // MARK: - R17 · App Activity is the single record
@@ -1193,34 +1101,39 @@ final class LawsTests: XCTestCase {
                        "an interpolation holding its own strings must come back whole")
     }
 
-    // MARK: - Law 2 · never measure, in the view layer
+    // MARK: - Law 2 · the narrow floor, in the view layer
     //
-    // `HomesHarnessTests` reads every string the instrument *composes*. Nothing
-    // here repeats that. These read the *views*, which it says it cannot.
+    // U0 · ruling 10, V33: the measuring-word lists are lifted. What stays is
+    // one narrow floor — no quantity of his practice is shown, spoken or drawn —
+    // held here by the four practice words (`NeverMeasure.measuring`) and by
+    // the value scan (`practiceSymbols`, `testNoPracticeValueIsBoundIntoAViewString`).
+    // `HomesHarnessTests` reads every string the instrument *composes*; these
+    // read the *views*, which it says it cannot.
 
-    /// The nine patterns in this file must be the harness's nine, character for
+    /// The patterns in this file must be the harness's, character for
     /// character. Read out of `HomesHarnessTests.swift` on disk rather than
-    /// remembered, so a change to Design's port fails here instead of quietly
+    /// remembered, so a change to the port fails here instead of quietly
     /// leaving two different detectors in one suite.
-    func testTheNinePatternsAreTheHarnessOwn() throws {
+    func testTheFloorPatternsAreTheHarnessOwn() throws {
         let harness = try XCTUnwrap(LawSource.unitTest("HomesHarnessTests.swift"),
                                     "the harness is gone — the two ports cannot be compared")
         let ported = harness.calls(to: ["Pattern"])
-        XCTAssertEqual(ported.count, 9, "the harness carries \(ported.count) MEASURING patterns, not nine")
+        XCTAssertEqual(ported.count, NeverMeasure.measuring.count,
+                       "the harness carries \(ported.count) floor patterns, not \(NeverMeasure.measuring.count)")
 
         // `Pattern(js:pattern:ignoresCase:catches:)` — the second literal is the body.
         let theirs = ported.compactMap { $0.literals.count >= 2 ? $0.literals[1].text : nil }
-        XCTAssertEqual(theirs.count, 9, "a Pattern(…) in the harness no longer carries two literals")
         XCTAssertEqual(theirs, NeverMeasure.measuring.map(\.pattern),
                        """
-                       this file's MEASURING has drifted from the harness's port of \
-                       `homes-verify.js`. They must stay the same nine.
+                       this file's floor has drifted from the harness's port of \
+                       `homes-verify.js`. They must stay the same patterns.
                        """)
     }
 
     /// The detector's own proof. A check like this is worthless if it cannot
-    /// fail, so every rule below is shown catching the thing it exists for and
-    /// letting the instrument's real vocabulary through.
+    /// fail, so every rule below is shown catching the thing it exists for,
+    /// letting the instrument's real vocabulary through — and letting through
+    /// what ruling 10 lifted.
     func testTheDetectorCatchesWhatItIsFor() {
         for p in NeverMeasure.measuring {
             XCTAssertTrue(NeverMeasure.measuresOutLoud(p.catches).contains(p.pattern),
@@ -1229,7 +1142,10 @@ final class LawsTests: XCTestCase {
         for clean in ["She is waiting.", "Kāmākarṣiṇī — first recognition",
                       "Where do you feel her, right now?", "Ninth Āvaraṇa — crossed",
                       "she was felt here", "and she felt you back",
-                      "Of the second āvaraṇa — the sixteen petals"] {
+                      "Of the second āvaraṇa — the sixteen petals",
+                      // Lifted by ruling 10 — numbers, ordinals, dates, figures, "again".
+                      "Day 11 of the moon", "3 of 9", "62% of the light", "Level 2",
+                      "Kāmākarṣiṇī — felt again", "seat 31 of 102"] {
             XCTAssertTrue(NeverMeasure.measuresOutLoud(clean).isEmpty,
                           "false positive on \"\(clean)\"")
         }
@@ -1247,72 +1163,35 @@ final class LawsTests: XCTestCase {
                           "false positive on \"\(structural)\": \(NeverMeasure.practiceTouched(in: structural))")
         }
 
-        // The identity exception: both halves must hold, and nothing else does.
-        XCTAssertTrue(NeverMeasure.isIdentity(numerator: "⟨content.kp⟩", denominator: "102"))
-        XCTAssertTrue(NeverMeasure.isIdentity(numerator: "⟨kp⟩", denominator: "⟨KhadgamalaMap.total⟩"))
-        XCTAssertFalse(NeverMeasure.isIdentity(numerator: "3", denominator: "9"),
-                       "a bare fraction is not identity")
-        XCTAssertFalse(NeverMeasure.isIdentity(numerator: "⟨kp⟩", denominator: "9"),
-                       "the bound must be the garland, not a ring")
-        XCTAssertFalse(NeverMeasure.isIdentity(numerator: "⟨kp⟩", denominator: "⟨seats.count⟩"),
-                       "a bound that can change is not the garland")
-        XCTAssertFalse(NeverMeasure.isIdentity(numerator: "⟨memory.visits⟩", denominator: "102"),
-                       "a visit count wearing identity's clothes is still a visit count")
-        XCTAssertFalse(NeverMeasure.isIdentity(numerator: "⟨recognitionCount⟩", denominator: "102"))
-        XCTAssertFalse(NeverMeasure.isIdentity(numerator: "⟨level + 1⟩", denominator: "⟨ShaktiStatus.allCases.count⟩"),
-                       "the embodiment ladder is not a khaḍgamālā position — it is pinned, not allowed")
-
         // End to end, over source the scanner has never seen.
         let bad = synthetic(#"""
         struct Bad: View {
             var body: some View {
                 Text("felt \(memory.visits) times")
-                Text("\(memory.visits) of 102")
-                Text("day \(n) of your practice")
                 Text("\(kp) of 102")
-                    .accessibilityLabel("Your progress: 62%")
+                Text("Day \(n) of the moon")
+                    .accessibilityLabel("your streak")
             }
         }
         """#)
         let calls = bad.calls(to: LawSource.walkerFacingCallees)
-        XCTAssertGreaterThanOrEqual(calls.count, 5, "the synthetic view was not read")
+        XCTAssertGreaterThanOrEqual(calls.count, 4, "the synthetic view was not read")
 
         let measuredWords = calls.flatMap { c in c.literals.flatMap { NeverMeasure.measuresOutLoud($0.text) } }
-        XCTAssertFalse(measuredWords.isEmpty, "\"62%\" and \"felt … times\" must be caught in the words")
+        XCTAssertFalse(measuredWords.isEmpty, "\"your streak\" must be caught in the words")
 
         let practice = calls.flatMap { c in c.expressions.flatMap(NeverMeasure.practiceTouched) }
         XCTAssertFalse(practice.isEmpty, "`memory.visits` must be caught in the expressions")
 
-        var allowed = 0
-        var refused: [String] = []
-        for c in calls {
-            for lit in c.literals {
-                var remaining = lit.shape
-                var sawHerSeat = false
-                for d in NeverMeasure.digitShapes(in: lit.shape)
-                where NeverMeasure.isIdentity(numerator: d.numerator, denominator: d.denominator) {
-                    remaining = remaining.replacingOccurrences(of: d.whole, with: " her seat ")
-                    sawHerSeat = true
-                }
-                if sawHerSeat { allowed += 1 }
-                if !NeverMeasure.measuresOutLoud(NeverMeasure.probe(remaining)).isEmpty {
-                    refused.append(lit.shape)
-                }
-            }
-        }
-        XCTAssertEqual(allowed, 1, "only `\\(kp) of 102` is her seat")
-        XCTAssertEqual(refused.count, 4,
-                       """
-                       four of the five synthetic strings measure: the visit count, the visit count \
-                       dressed as a position, "day N", and the percentage. Caught: \(refused)
-                       """)
-        // The probe is what catches the one that straddles the boundary.
-        XCTAssertTrue(refused.contains { $0.contains("day ⟨n⟩") },
-                      "`day \\(n) of your practice` measures, and only the probe can see it")
+        // Her seat and a day of the moon are not practice: neither is refused.
+        let refusedShapes = calls.flatMap { c in c.literals.map(\.shape) }
+            .filter { !NeverMeasure.measuresOutLoud(NeverMeasure.probe($0)).isEmpty }
+        XCTAssertFalse(refusedShapes.contains("⟨kp⟩ of 102"), "her seat is refused")
+        XCTAssertFalse(refusedShapes.contains("Day ⟨n⟩ of the moon"), "a day of the moon is refused")
     }
 
     /// The words. Every authored string in a `Text`, an accessibility label, a
-    /// button, an alert — run against Design's nine.
+    /// button, an alert — run against the narrow floor.
     func testNoWalkerFacingViewMeasuresOutLoud() {
         var offences: [String] = []
         var read = 0
@@ -1328,8 +1207,8 @@ final class LawsTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(read, 80, "the detector read \(read) strings — too few to be the view layer")
         XCTAssertTrue(offences.isEmpty,
                       """
-                      \(offences.count) walker-facing string(s) measure out loud — a Law-2 breach. \
-                      Change the copy; never weaken the pattern.
+                      \(offences.count) walker-facing string(s) say a quantity of his practice — \
+                      the narrow floor. Change the copy; never weaken the pattern.
                       \(offences.joined(separator: "\n"))
                       """)
     }
@@ -1407,46 +1286,10 @@ final class LawsTests: XCTestCase {
         }
     }
 
-    /// The only digit the walker may see is a seat in the garland.
-    ///
-    /// Every walker-facing string is probed with its interpolations standing as
-    /// digits, so a number that arrives at run time is read as the number it is.
-    /// Her khaḍgamālā position is struck out first — it is identity, not
-    /// measurement — and whatever Design's nine still find in what is left must
-    /// be written down, with a reason, or taken off the screen.
-    func testTheOnlyDigitShapeIsASeatInTheGarland() {
-        var identity: [String] = []
-        var offences: Set<String> = []
-        var probed = 0
-
-        for call in LawSource.walkerFacing {
-            for lit in call.literals {
-                probed += 1
-                var remaining = lit.shape
-                var sawHerSeat = false
-                for d in NeverMeasure.digitShapes(in: lit.shape)
-                where NeverMeasure.isIdentity(numerator: d.numerator, denominator: d.denominator) {
-                    remaining = remaining.replacingOccurrences(of: d.whole, with: " her seat ")
-                    sawHerSeat = true
-                }
-                if sawHerSeat { identity.append("\(call.file) · \(lit.shape)") }
-
-                if !NeverMeasure.measuresOutLoud(NeverMeasure.probe(remaining)).isEmpty {
-                    offences.insert("\(call.file) · \(lit.shape)")
-                }
-            }
-        }
-
-        XCTAssertGreaterThanOrEqual(probed, 80, "only \(probed) walker-facing strings were probed")
-        XCTAssertGreaterThanOrEqual(identity.count, 2,
-                                    "her position should be on screen in at least two places: \(identity)")
-        XCTAssertEqual(offences, NeverMeasure.pinnedNonIdentityDigits,
-                       """
-                       a number that is neither her khaḍgamālā position nor a refused practice measure \
-                       reached the walker. Take it off the screen, or write it into \
-                       `pinnedNonIdentityDigits` with the reason it is not a measurement.
-                       """)
-    }
+    // U0 · retired: `testTheOnlyDigitShapeIsASeatInTheGarland` (VER-L-0743).
+    // Ruling 10 allows numbers, ordinals, dates, timers, seat numbers and
+    // Design's figures; a quantity of his practice is refused by the value scan
+    // above, which is the narrow floor.
 
     // MARK: - Law 3 · the two Recognition lines
 
@@ -1735,10 +1578,19 @@ final class LawsTests: XCTestCase {
         XCTAssertTrue(js.isEmpty, "a .js file is inside the shipping app: \(js.map(\.lastPathComponent))")
     }
 
-    // MARK: - Law 4 · aniconic
+    // MARK: - Law 4 · aniconic — the floor: no figure of a Śakti
+    //
+    // U0 rewrote this section to the floor only (verification.md §2.2,
+    // VER-L-0769 / 0770 / 0771; VER-L-0793 retired). The catalogue pin, the
+    // one-chevron pin, the ban on drawing from a file, the iconography-prose
+    // ban and the primitive count are gone: images may enter, iconography prose
+    // may be read. What is checked is names — of assets, files and the literals
+    // handed to every drawing primitive — against the figural vocabulary, and
+    // every image file against the reviewed allow-list.
 
-    /// There is no picture of her anywhere, because there is no picture at all.
-    func testTheAssetCatalogueHoldsNoFigure() {
+    /// No asset, and no image file, names a figure; every image file in the
+    /// shipping tree has been reviewed.
+    func testNoAssetOrImageFileIsAFigure() {
         let catalogues = [
             LawSource.productionRoot.appendingPathComponent("Assets.xcassets"),
             LawSource.productionRoot.appendingPathComponent("Preview Content/Preview Assets.xcassets"),
@@ -1759,31 +1611,30 @@ final class LawsTests: XCTestCase {
         }
         XCTAssertTrue(readOne, "the asset catalogue could not be read at \(catalogues.map(\.path))")
         XCTAssertFalse(entries.isEmpty, "the catalogue scan found nothing at all — it is not reading")
-
-        XCTAssertEqual(entries, Aniconic.pinnedCatalogue,
-                       """
-                       the asset catalogue changed. Nothing figural may enter it, and an image set for \
-                       a Śakti may never enter it at all: forms are shapes performing actions.
-                       """)
         for e in entries {
-            XCTAssertFalse(e.hasSuffix(".imageset") || e.hasSuffix(".symbolset"),
-                           "\(e) is a picture in the catalogue")
-            XCTAssertNil(Rx.first(Aniconic.figuralVocabulary, e),
-                         "\(e) names a figure")
+            XCTAssertNil(Rx.first(Aniconic.figuralVocabulary, e), "\(e) names a figure")
         }
 
-        // And on disk: one app icon, and nothing else drawn.
         var images: Set<String> = []
         if let walker = FileManager.default.enumerator(at: LawSource.productionRoot, includingPropertiesForKeys: nil) {
             for case let u as URL in walker where Aniconic.imageExtensions.contains(u.pathExtension.lowercased()) {
                 images.insert(LawSource.relativePath(of: u, under: LawSource.productionRoot))
             }
         }
-        XCTAssertEqual(images, Aniconic.pinnedImageFiles,
-                       "an image file entered the shipping app")
+        XCTAssertFalse(images.isEmpty, "the image scan found nothing — not even the app icon")
+        for path in images {
+            XCTAssertNil(Rx.first(Aniconic.figuralVocabulary, path), "\(path) names a figure")
+        }
+        let unreviewed = images.subtracting(Aniconic.reviewedImageFiles)
+        XCTAssertTrue(unreviewed.isEmpty,
+                      """
+                      image file(s) entered the shipping app without review: \(unreviewed.sorted()). \
+                      Look at each; if it is no figure of a Śakti, add it to \
+                      `Aniconic.reviewedImageFiles`.
+                      """)
     }
 
-    /// Nothing that draws is handed a figure, and almost nothing draws.
+    /// Nothing that draws is handed a figure.
     func testNoDrawingPrimitiveIsHandedAFigure() {
         var literals: Set<String> = []
         var sites: [String] = []
@@ -1795,23 +1646,8 @@ final class LawsTests: XCTestCase {
         }
         XCTAssertGreaterThanOrEqual(sites.count, 2,
                                     "the drawing-primitive scan found \(sites.count) sites — it is not reading")
-        XCTAssertEqual(literals, Aniconic.pinnedDrawnLiterals,
-                       """
-                       a drawing primitive is being handed something new: \(sites.joined(separator: " | ")). \
-                       If it is a shape, say so here; if it is a picture of her, Law 4 refuses it.
-                       """)
         for l in literals {
             XCTAssertNil(Rx.first(Aniconic.figuralVocabulary, l), "a figure is being drawn: \"\(l)\"")
-        }
-
-        // Nothing loads a picture from disk or from the network, either.
-        for f in LawSource.production {
-            let code = String(f.lexed.masked)
-            for forbidden in [#"\bAsyncImage\b"#, #"UIImage\s*\(\s*named\s*:"#,
-                              #"UIImage\s*\(\s*contentsOfFile\s*:"#, #"\bImage\s*\(\s*decorative\s*:"#] {
-                XCTAssertFalse(Rx.matches(forbidden, code),
-                               "\(f.path) loads an image — nothing in this instrument is drawn from a file")
-            }
         }
 
         // The detector can fail.
@@ -1825,35 +1661,13 @@ final class LawsTests: XCTestCase {
                       "the figural vocabulary let \(found) through")
     }
 
-    /// Her iconographic prose is real data out of Airtable, and it stays data.
-    /// Drawn in words is still drawn.
-    func testHerIconographicProseNeverReachesARenderPath() {
+    /// The somatic fields name where she is felt in the walker's own body —
+    /// that is the practice, not a picture of a goddess — and are never treated
+    /// as iconography. (U0 retired `testHerIconographicProseNeverReachesARenderPath`,
+    /// VER-L-0793: iconography prose is not a figure.)
+    func testTheSomaticFieldsAreNeverIconography() {
         let props = LawSource.modelProperties(of: "Shakti.swift")
         XCTAssertGreaterThanOrEqual(props.count, 25, "Shakti's properties were not read: \(props.count)")
-        for field in Aniconic.iconographicFields {
-            XCTAssertTrue(props.contains(field),
-                          "Shakti.\(field) is gone — this check would then be proving nothing")
-        }
-
-        var offences: [String] = []
-        for call in LawSource.walkerFacing {
-            for expr in call.expressions {
-                for field in Aniconic.iconographicFields where Rx.matches(#"\b\#(field)\b"#, expr) {
-                    offences.append("\(call.origin) — renders \(field)")
-                }
-            }
-        }
-        XCTAssertTrue(offences.isEmpty,
-                      """
-                      a Śakti's iconographic prose is being put on a screen. It describes a form, and \
-                      Law 4 refuses the form whether it arrives as pixels or as sentences.
-                      \(offences.joined(separator: "\n"))
-                      """)
-
-        // The somatic fields are deliberately *not* on that list. "throat",
-        // "heart", "skin" name where she is felt in the walker's own body —
-        // that is the practice, not a picture of a goddess — and a check that
-        // flagged them would be noise pretending to be a law.
         for somatic in ["bodilyLocation", "somatic", "somaticPoetry"] {
             XCTAssertTrue(props.contains(somatic), "Shakti.\(somatic) went missing")
             XCTAssertFalse(Aniconic.iconographicFields.contains(somatic),
@@ -1861,42 +1675,16 @@ final class LawsTests: XCTestCase {
         }
     }
 
-    /// "Forms are shapes performing actions" is only a law if the render path is
-    /// really made of shapes. It is: the whole instrument is drawn from
-    /// primitives, and the one `Image` that exists is a chevron.
-    func testTheRenderPathIsMadeOfShapes() {
-        var primitives = 0
-        var renderFiles = 0
-        for f in LawSource.production where f.path.hasPrefix("Views/") || f.path.hasPrefix("Theme/") {
-            renderFiles += 1
-            let code = String(f.lexed.masked)
-            for p in Aniconic.geometricPrimitives {
-                primitives += Rx.all(#"\b\#(p)\s*[({]"#, code).count
-            }
-        }
-        XCTAssertGreaterThanOrEqual(renderFiles, 25, "the render path was not found")
-        XCTAssertGreaterThanOrEqual(primitives, 150,
-                                    "only \(primitives) geometric primitives in the render path — it is no longer drawn from shapes")
-
+    /// Every `Image` in the tree is a system symbol, a picture the app drew
+    /// from its own shapes, or a named image whose name is no figure. The check
+    /// reads what kind of thing is drawn, never how many shapes draw it.
+    func testEveryImageIsASymbolARenderOrANamedNonFigure() {
         let imageSites = LawSource.production.flatMap { $0.calls(to: ["Image"]) }
         XCTAssertGreaterThanOrEqual(imageSites.count, 2,
                                     "the Image scan found \(imageSites.count) sites — it is not reading")
-        XCTAssertTrue(imageSites.contains { $0.argumentCode.contains("uiImage") },
-                      "the Portrait is an Image rendered from the app's own shapes")
-        XCTAssertTrue(imageSites.contains { $0.argumentCode.contains("systemName") },
-                      "the disclosure chevron is an Image")
-
-        // Every `Image` in the tree is one of exactly two things: a symbol from
-        // the system's own set, or a picture the app drew itself from shapes.
-        // There is no third kind, and a third kind is how a figure would arrive.
-        let acceptedImageLabels = ["systemName", "uiImage", "cgImage", "nsImage"]
         for site in imageSites {
-            XCTAssertTrue(acceptedImageLabels.contains { site.argumentCode.contains($0) },
-                          """
-                          \(site.origin) draws something that is neither a system symbol nor a picture \
-                          the app rendered from its own shapes — `Image("name")` reaches into the asset \
-                          catalogue, and the catalogue is where a figure would arrive.
-                          """)
+            XCTAssertNil(Rx.first(Aniconic.figuralVocabulary, site.argumentCode),
+                         "\(site.origin) draws something whose name is a figure: \(site.argumentCode)")
         }
     }
 
@@ -2088,7 +1876,7 @@ final class LawsTests: XCTestCase {
 // width — and the suite above cannot see any of them.
 //
 // Every never-measure check in this file reads **strings and interpolations**:
-// `testNoWalkerFacingViewMeasuresOutLoud`, `testTheOnlyDigitShapeIsASeatInTheGarland`,
+// `testNoWalkerFacingViewMeasuresOutLoud`, `testNoPracticeValueIsBoundIntoAViewString`,
 // `testOnlyTheMandalaItselfIsEverCounted`. That is the right net for a label and
 // blind to a number that never becomes text. And one had been sitting in the
 // shipped canvas since the field was first drawn:
@@ -2103,9 +1891,16 @@ final class LawsTests: XCTestCase {
 // gone, and this is the net that would have caught it.
 //
 // The law it states: **a practice count may be reduced to a state and used for
-// nothing else.** Whether she has been felt may be seen. How often may not reach
-// a radius, an opacity, a width or a coordinate — and the surest form of that,
-// on the surfaces that draw, is that the count never arrives there at all.
+// nothing else.** How often may not reach a radius, an opacity, a width or a
+// coordinate — and the surest form of that, on the surfaces that draw, is that
+// the count never arrives there at all.
+//
+// U0 rewrite (verification.md §2.2, VER-L-0800 / 0801): the two-state rule is
+// lifted. A seat may carry **several states** — felt, written to, dwelt in, a
+// sealed letter waiting — each of them a fact, none of them scaling with a
+// count; C-1284 "every light breathes the same, met or not" stays. This is the
+// narrow floor V33 names ("no monotone function of a count reaching a view"),
+// so both checks below are kept; only "felt or not, and nothing else" went.
 
 final class LawsDrawnMeasureTests: XCTestCase {
 
@@ -2179,7 +1974,9 @@ final class LawsDrawnMeasureTests: XCTestCase {
             "            let baseR: CGFloat = isFocus ? 7 : isToday ? 6 : inFamily ? 5.5 : felt ? 4 + min(CGFloat(countByKp[kp] ?? 0), 6) * 0.4 : 3"))
         XCTAssertTrue(Self.isArithmetic("let r = 3 + Double(serverRecognitionCount) * 0.4"))
         XCTAssertTrue(Self.isArithmetic("opacity = Double(recognitionCount) / 6.0"))
-        // And does not cry wolf over the lawful shapes.
+        // And does not cry wolf over the lawful shapes — including a seat that
+        // carries several states, none of them a count (U0).
+        XCTAssertFalse(Self.isArithmetic("let state: SeatState = sealed ? .letterWaiting : dwelt ? .dweltIn : written ? .writtenTo : felt ? .felt : .quiet"))
         XCTAssertFalse(Self.isArithmetic("let count = shakti.serverRecognitionCount ?? 0"))
         XCTAssertFalse(Self.isArithmetic("if (s.serverRecognitionCount ?? 0) > 0 { f.insert(k) }"))
         XCTAssertFalse(Self.isArithmetic("m[kp] = max(m[kp] ?? 0, s.serverRecognitionCount ?? 0)"))
@@ -2256,34 +2053,11 @@ final class LawsTheMarginTests: XCTestCase {
         }
     }
 
-    /// **The number must never exist.** `NeverMeasure.practiceSymbols` has no
-    /// exception mechanism precisely so that a count of anything he did cannot
-    /// be laundered onto a screen; the surest way to keep that true of the
-    /// margin is for nothing in its layer to be able to say *how many*. A
-    /// `notes.count` reaching a `Text` should fail the day somebody writes it,
-    /// not the day somebody notices.
-    ///
-    /// `isEmpty` is not a count and is deliberately allowed: "Nothing left here
-    /// yet." is a **state**, the same shape as the shipped "She has not been
-    /// felt here yet."
-    /// **The scan's reach, widened.** It read the view and the store only, and
-    /// the margin has two more files a quantity could be written into: the model
-    /// and the one Settings section that carries its doors. Neither counts
-    /// anything today, and neither could grow one unnoticed now.
-    func testTheMarginCannotSayHowMany() {
-        for path in [marginFile, storeFile, settingsFile, modelFile] {
-            let body = String(source(path).lexed.masked)
-            for line in body.components(separatedBy: "\n") {
-                XCTAssertFalse(Rx.matches(#"[A-Za-z_][A-Za-z0-9_.]*(?:\.count|Count)\b"#, line),
-                               """
-                               \(path) counts something. A list of his notes is his own words \
-                               handed back and is correct; a count, a badge or an ordinal is \
-                               law 2 broken:
-                                   \(line.trimmingCharacters(in: .whitespaces))
-                               """)
-            }
-        }
-    }
+    // U0 · retired (verification.md §2.2, VER-L-0751): `testTheMarginCannotSayHowMany`.
+    // A blanket ban on any `.count` in the margin's layer was a measuring-word
+    // rule, lifted by ruling 10. The narrow floor — no quantity of his practice
+    // is shown, spoken or drawn — is held app-wide by `LawsTests`'
+    // `testNoPracticeValueIsBoundIntoAViewString` and by `LawsDrawnMeasureTests`.
 
     /// **The door, and why it is the law fix rather than a layout choice.** If
     /// the notes rendered inline, Settings would grow with his writing, "Re-enter
@@ -2320,22 +2094,9 @@ final class LawsTheMarginTests: XCTestCase {
                        + "note he has ever written to reach it")
     }
 
-    /// **No numeral reaches the ear.** Every literal on the margin's own screens,
-    /// and every accessibility string in them, is free of digits — and the one
-    /// thing that is not a literal, the day a note was written, is spoken in
-    /// words by `MarginDate.spoken` (`MarginDateTests` walks a whole year of it).
-    func testNothingInTheMarginIsSpokenAsADigit() {
-        for lit in source(marginFile).literals {
-            XCTAssertFalse(lit.text.contains(where: \.isNumber),
-                           "a digit in the margin's words: \"\(lit.text)\"")
-        }
-        for call in source(settingsFile).calls(to: ["accessibilityLabel", "accessibilityHint"]) {
-            for lit in call.literals {
-                XCTAssertFalse(lit.text.contains(where: \.isNumber),
-                               "a digit in Settings' spoken margin: \"\(lit.text)\"")
-            }
-        }
-    }
+    // U0 · retired (verification.md §2.2, VER-L-0752): `testNothingInTheMarginIsSpokenAsADigit`.
+    // Numbers, ordinals and dates may be spoken (ruling 10); `MarginDate.spoken`
+    // stays as Design's way of saying a day, no longer as a law.
 
     /// **The reduce-motion path is real rather than stilled.** Nothing in the
     /// margin animates at all: there is no ambient motion to gate, and the only

@@ -242,43 +242,57 @@ final class GameStructureTests: XCTestCase {
         XCTAssertEqual(ThreePools.surface(for: .essence), .none)
     }
 
-    // MARK: One sound at a time
+    // MARK: The mixing law
+    //
+    // U0 rewrite (verification.md §2.2, VER-L-0737 / 0738): "one sound at a
+    // time" is lifted. Beds may layer; what is asserted is a summed ceiling,
+    // never a count of voices. A struck bīja still ducks the bed (by at least
+    // 6 dB — `bedUnderAccent`), the Om stays under any bed, and the Om is a
+    // floor, never a crescendo (`TreeOfLife.omFloor` ≤ .05 at depth 9, held
+    // in `testTheOmIsTheEarthsOwnPitchAndRisesWithDepth`).
 
-    func testOneBedSoundsAndTheRestAreHeldAtNothing() {
-        let g = SoundArbiter.gains(beds: [.field, .room], accenting: false)
-        XCTAssertEqual(g[.room], 1, "her room stands in front of the field")
-        XCTAssertEqual(g[.field], 0, "the field is held, not piled under the room")
-        XCTAssertEqual(g[.om], SoundArbiter.omUnderBed)
-
-        let game = SoundArbiter.gains(beds: [.field, .room, .play], accenting: false)
-        XCTAssertEqual(game[.play], 1)
-        XCTAssertEqual(game[.room], 0)
-        XCTAssertEqual(game[.field], 0)
-
-        let alone = SoundArbiter.gains(beds: [], accenting: false)
-        XCTAssertEqual(alone[.om], 1, "with nothing else sounding, the Om is heard — noise decreasing")
-
-        let struck = SoundArbiter.gains(beds: [.field], accenting: true)
-        XCTAssertEqual(struck[.field], SoundArbiter.bedUnderAccent, "a struck bīja ducks the bed")
-        XCTAssertEqual(struck[.om], 0)
-        XCTAssertEqual(struck[.bija], 1)
-
-        // Never more than one bed at full voice, whatever is asking.
-        let beds: [SoundVoice] = [.field, .room, .play]
-        for mask in 0..<8 {
-            let asking = Set(beds.enumerated().filter { mask & (1 << $0.offset) != 0 }.map(\.element))
-            let full = SoundArbiter.gains(beds: asking, accenting: false)
-                .filter { $0.key.role == .bed && $0.value > 0 }
-            XCTAssertLessThanOrEqual(full.count, 1, "\(asking) sounds \(full.count) beds at once")
+    /// Summed bed gain never passes unity, whoever is asking — the arbiter's
+    /// side of "summed peak ≤ −1 dBFS" (the rendered half is V08, measured).
+    func testTheBedsNeverSumPastTheCeiling() {
+        let beds: [SoundVoice] = [.field, .room, .play, .heart]
+        for climbing in [false, true] {
+            for accenting in [false, true] {
+                for mask in 0..<(1 << beds.count) {
+                    let asking = Set(beds.enumerated().filter { mask & (1 << $0.offset) != 0 }.map(\.element))
+                    let g = SoundArbiter.gains(beds: asking, accenting: accenting, climbing: climbing)
+                    let summed = g.filter { $0.key.role == .bed }.values.reduce(0, +)
+                    XCTAssertLessThanOrEqual(summed, 1 + 1e-9,
+                                             "\(asking) sums \(summed) — past the ceiling")
+                    for (voice, gain) in g { XCTAssertTrue((0...1).contains(gain), "\(voice) at \(gain)") }
+                }
+            }
         }
     }
 
+    func testAStruckBijaDucksTheBedAndTheOmStaysUnder() {
+        let struck = SoundArbiter.gains(beds: [.field], accenting: true)
+        XCTAssertEqual(struck[.field], SoundArbiter.bedUnderAccent, "a struck bīja ducks the bed")
+        XCTAssertLessThanOrEqual(20 * log10(SoundArbiter.bedUnderAccent), -6,
+                                 "the duck is at least 6 dB")
+        XCTAssertEqual(struck[.bija], 1)
+        XCTAssertEqual(struck[.om], 0, "the Om goes silent under a struck tone")
+
+        let g = SoundArbiter.gains(beds: [.field, .room], accenting: false)
+        XCTAssertEqual(g[.om], SoundArbiter.omUnderBed, "the Om stays under the bed")
+        XCTAssertLessThan(SoundArbiter.omUnderBed, 1)
+
+        let alone = SoundArbiter.gains(beds: [], accenting: false)
+        XCTAssertEqual(alone[.om], 1, "with nothing else sounding, the Om is heard — noise decreasing")
+    }
+
     /// Wave 6.1 · his decision (gameplan §4.6): on the Climb the ring voices
-    /// stand in front; the room's drone waits for the room. The Om stays beneath.
+    /// stand in front; the room's drone waits for the room; the heart register
+    /// he chose stands before everything. As a mixing law: the voice in front
+    /// is the loudest bed, not the only one allowed.
     func testOnTheClimbTheRingVoicesStandInFront() {
         let climb = SoundArbiter.gains(beds: [.field, .room], accenting: false, climbing: true)
         XCTAssertEqual(climb[.field], 1, "the ring voices in front on the climb")
-        XCTAssertEqual(climb[.room], 0, "the grounds wait for the room")
+        XCTAssertLessThanOrEqual(climb[.room] ?? 0, climb[.field] ?? 0, "the grounds wait for the room")
         XCTAssertEqual(climb[.om], SoundArbiter.omUnderBed, "the Om beneath")
 
         let room = SoundArbiter.gains(beds: [.room], accenting: false, climbing: false)
@@ -286,7 +300,9 @@ final class GameStructureTests: XCTestCase {
 
         let heart = SoundArbiter.gains(beds: [.field, .room, .play, .heart], accenting: false)
         XCTAssertEqual(heart[.heart], 1, "the heart register he chose stands in front")
-        XCTAssertEqual(heart[.play], 0)
+        for other in [SoundVoice.field, .room, .play] {
+            XCTAssertLessThanOrEqual(heart[other] ?? 0, heart[.heart] ?? 0, "\(other) above the heart")
+        }
     }
 
     func testTheOmFollowsDepthAndPanelNinesSwell() {

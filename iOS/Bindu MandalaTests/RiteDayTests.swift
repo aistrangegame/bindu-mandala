@@ -16,22 +16,24 @@ final class RiteDayTests: XCTestCase {
         calendar.date(from: DateComponents(year: y, month: m, day: d, hour: h))!
     }
 
-    // MARK: Three doors
+    // MARK: The day's doors
+    //
+    // U0 · widened (VER-L-0735): "three doors, never five" was a restriction
+    // ("three controls") and is lifted, with its no-digit clause (VER-L-0759).
+    // What stays is the floor of kindness: the one-second door is always
+    // offered, and every door says what it is.
 
-    func testThreeDoorsNeverFiveAndOneIsAlwaysTheFloor() {
+    func testTheOneSecondDoorIsAlwaysOffered() {
         for hour in 0..<24 {
             let doors = RiteDay.doors(hour: hour)
-            XCTAssertEqual(doors.count, 3, "hour \(hour)")
-            XCTAssertEqual(Set(doors).count, 3, "hour \(hour)")
+            XCTAssertFalse(doors.isEmpty, "hour \(hour)")
+            XCTAssertEqual(Set(doors).count, doors.count, "a door offered twice — hour \(hour)")
             XCTAssertTrue(doors.contains(.oneSecond), "the floor is always offered — hour \(hour)")
             for d in doors {
-                let t = RiteDay.title(d, hour: hour)
-                XCTAssertFalse(t.isEmpty)
-                XCTAssertNil(t.rangeOfCharacter(from: .decimalDigits), t)
+                XCTAssertFalse(RiteDay.title(d, hour: hour).isEmpty)
             }
         }
         XCTAssertTrue(RiteDay.doors(hour: 21).contains(.closeTheDay), "the evening offers the close")
-        XCTAssertFalse(RiteDay.doors(hour: 8).contains(.closeTheDay))
     }
 
     func testThePulseLivesFromTheCorridorToTheSummit() {
@@ -67,7 +69,6 @@ final class RiteDayTests: XCTestCase {
                                                      lastSurfaced: nil, surfaced: []))
         XCTAssertEqual(line.rowId, "r2", "her own room before a sister's, even when older")
         XCTAssertEqual(line.text, "Three nights ago, you kept a silence with Vajreśī. It was standing in this room.")
-        XCTAssertNil(line.text.rangeOfCharacter(from: .decimalDigits))
     }
 
     func testGraceReturnsASistersMomentToTheEnclosure() throws {
@@ -137,7 +138,8 @@ final class RiteDayTests: XCTestCase {
         d.deepestRing = 7
         d.todaysName = "Sarvajñā"
         let s = SakshiClose.sentence(d)
-        XCTAssertNil(s.rangeOfCharacter(from: .decimalDigits), s)
+        // U0: the no-digit clause is retired (VER-L-0759); the narrow floor —
+        // never a tally of whom he met — is the "and others" line below.
         XCTAssertTrue(s.contains("walked one second"), s)
         XCTAssertTrue(s.contains("Aruṇā, Vimalā, Kaulinī and others"), "past three it is never a tally: \(s)")
         XCTAssertTrue(s.contains("seventh enclosure"), s)
@@ -148,7 +150,8 @@ final class RiteDayTests: XCTestCase {
     func testAnEmptyDayIsNotADebt() {
         let s = SakshiClose.sentence(SakshiClose.Today())
         XCTAssertTrue(s.hasPrefix("Nothing was asked of you today."), s)
-        for word in ["missed", "streak", "behind", "again", "only"] {
+        // "again" is allowed now (ruling 10); the words of a debt are not.
+        for word in ["missed", "streak", "behind", "only"] {
             XCTAssertFalse(s.lowercased().contains(word), "\(word) in \(s)")
         }
     }

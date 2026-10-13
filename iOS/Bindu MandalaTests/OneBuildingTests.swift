@@ -131,7 +131,7 @@ final class OneBuildingTests: XCTestCase {
         XCTAssertEqual(Set(entries.filter(\.isMet).map(\.ring)), [1, 2])
         for e in entries {
             XCTAssertFalse(e.region.isEmpty)
-            XCTAssertNil(Rx.first(#"\d"#, e.region), "the rail says a number: \(e.region)")
+            // U0: its no-digit clause is retired (ruling 10); the narrow floor stays.
             XCTAssertTrue(NeverMeasure.measuresOutLoud(e.region).isEmpty)
         }
         // The same rail on the first day and the ten-thousandth, save for where
@@ -150,7 +150,6 @@ final class OneBuildingTests: XCTestCase {
         said.append(ClimbWords.near(ClimbLights.Seat(kp: 4), isToday: true))
         for s in said {
             XCTAssertTrue(NeverMeasure.measuresOutLoud(s).isEmpty, "the climb measures out loud: \(s)")
-            XCTAssertNil(Rx.first(#"\d"#, s), "the climb says a digit: \(s)")
         }
         XCTAssertEqual(ClimbWords.ordinal(1), "first")
         XCTAssertEqual(ClimbWords.ordinal(9), "ninth")
@@ -293,11 +292,11 @@ final class OneBuildingTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(b, 1 - 1e-9)
             XCTAssertLessThanOrEqual(b, 1.1 + 1e-9)
         }
-        // The words in the silence are his and Design's, and none of them is a number.
+        // The words in the silence are his and Design's, and none of them is a
+        // quantity of his practice (U0: the no-digit clause is retired).
         for words in [WhoIsSaying.line, WhoIsSaying.beneath, Pointy.loves, MaunaView.hint,
                       Pravesha.falling, Pravesha.fallingBeneath, Pravesha.recognised] {
             XCTAssertTrue(NeverMeasure.measuresOutLoud(words).isEmpty, words)
-            XCTAssertNil(Rx.first(#"\d"#, words), "the silence speaks a digit: \(words)")
         }
         XCTAssertEqual(WhoIsSaying.line, "Who is saying that?", "C-1305, verbatim")
     }
@@ -431,12 +430,15 @@ final class OneBuildingTests: XCTestCase {
 
     // MARK: - The field's voices
 
-    func testEveryPlaceHasAVoiceAndTheClimbCrossfadesTwo() {
+    /// U0 rewrite (VER-L-0739): "one sound at a time" is lifted — the climb's
+    /// voices may layer. The mixing law asserts the summed level, never how
+    /// many voices sound.
+    func testEveryPlaceHasAVoiceAndTheClimbsVoicesSumToOne() {
         for f in stride(from: 0.0, through: 8, by: 0.125) {
             let want = RingFieldVoice.want(climbFraction: f)
             XCTAssertFalse(want.isEmpty, "the climb is silent at \(f)")
-            XCTAssertLessThanOrEqual(want.count, 2)
-            XCTAssertEqual(want.values.reduce(0, +), 1, accuracy: 1e-9)
+            XCTAssertEqual(want.values.reduce(0, +), 1, accuracy: 1e-9, "the summed level at \(f)")
+            for level in want.values { XCTAssertTrue((0...1).contains(level)) }
         }
         XCTAssertEqual(RingFieldVoice.want(enteredRing: 0), [0: 1], "the point is silent")
         XCTAssertEqual(RingFieldVoice.want(enteredRing: 7), [7: 1])
