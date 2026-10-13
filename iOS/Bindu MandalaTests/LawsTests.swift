@@ -1765,10 +1765,11 @@ final class LawsTests: XCTestCase {
     /// spreads, something else has learned to write events.
     func testTheLedgersVocabularyLivesOnlyInTheLedger() {
         var logged: Set<String> = []
+        // Each file is read for its log lines once, not once per word.
+        let sources = LawSource.production.map { (f: $0, messages: LedgerIsTheRecord.loggedLiteralStarts(in: $0)) }
         for word in LedgerIsTheRecord.eventVocabulary {
             var files: Set<String> = []
-            for f in LawSource.production {
-                let messages = LedgerIsTheRecord.loggedLiteralStarts(in: f)
+            for (f, messages) in sources {
                 for lit in f.literals where lit.text.contains(word) {
                     if messages.contains(lit.start) {
                         logged.insert("\(f.path) · \(lit.text)")

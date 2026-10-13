@@ -177,6 +177,14 @@ struct Luminance: Equatable {
     /// Measure `image`, cropped first to `crop` (in the image's pixels) when given.
     static func measure(_ image: UIImage, crop: CGRect? = nil) -> Luminance? {
         guard var cg = image.cgImage else { return nil }
+        // Design's measurement read the stored bytes (no colour management):
+        // read them the same way wherever the layout is plain 8-bit, and box-
+        // average each of the 64 × 64 cells. Core Graphics converts a dark
+        // frame's tone curve on draw (F03 read 10.8 against Design's 6.9).
+        // The bytes are read from the whole image and cropped by hand (a
+        // cropped CGImage may share its parent's provider).
+        if let stored = storedBytesGrid(cg, crop: crop) { return measure(rgba: stored, count: grid * grid) }
+        // Otherwise (premultiplied, 16-bit, rendered images): Core Graphics.
         if let crop, let cropped = cg.cropping(to: crop.integral) { cg = cropped }
         let n = grid
         var buffer = [UInt8](repeating: 0, count: n * n * 4)
@@ -189,6 +197,57 @@ struct Luminance: Equatable {
         ctx.interpolationQuality = .high
         ctx.draw(cg, in: CGRect(x: 0, y: 0, width: n, height: n))
         return measure(rgba: buffer, count: n * n)
+    }
+
+    /// The image's stored 8-bit values, box-averaged onto the 64 × 64 grid as
+    /// RGBA bytes — nil when the layout is not plain 8-bit RGB(A).
+    static func storedBytesGrid(_ cg: CGImage, crop: CGRect? = nil) -> [UInt8]? {
+        guard cg.bitsPerComponent == 8, cg.colorSpace?.model == .rgb,
+              cg.bitsPerPixel == 32 || cg.bitsPerPixel == 24,
+              let data = cg.dataProvider?.data, let base = CFDataGetBytePtr(data) else { return nil }
+        let bpp = cg.bitsPerPixel / 8, row = cg.bytesPerRow
+        guard CFDataGetLength(data) >= row * cg.height else { return nil }
+        let whole = CGRect(x: 0, y: 0, width: cg.width, height: cg.height)
+        let area = (crop?.integral ?? whole).intersection(whole)
+        guard !area.isNull, area.width >= 1, area.height >= 1 else { return nil }
+        let ox = Int(area.minX), oy = Int(area.minY), w = Int(area.width), h = Int(area.height)
+        let alpha = cg.alphaInfo
+        let little = cg.bitmapInfo.contains(.byteOrder32Little)
+        // Byte offsets of R, G, B within one pixel.
+        var r = 0, g = 1, b = 2
+        if bpp == 4 {
+            let alphaFirst = alpha == .first || alpha == .premultipliedFirst || alpha == .noneSkipFirst
+            if little {
+                // Stored reversed: A|X R G B → B G R A|X ; R G B A|X → A|X B G R.
+                if alphaFirst { r = 2; g = 1; b = 0 } else { r = 3; g = 2; b = 1 }
+            } else if alphaFirst {
+                r = 1; g = 2; b = 3
+            }
+        } else if little {
+            return nil
+        }
+        let premultiplied = alpha == .premultipliedFirst || alpha == .premultipliedLast
+        if premultiplied { return nil }   // let Core Graphics unpremultiply
+        let n = grid
+        var out = [UInt8](repeating: 255, count: n * n * 4)
+        for gy in 0..<n {
+            let y0 = gy * h / n, y1 = Swift.max(y0 + 1, (gy + 1) * h / n)
+            for gx in 0..<n {
+                let x0 = gx * w / n, x1 = Swift.max(x0 + 1, (gx + 1) * w / n)
+                var sr = 0, sg = 0, sb = 0, count = 0
+                for y in y0..<Swift.min(y1, h) {
+                    let line = base + (oy + y) * row
+                    for x in x0..<Swift.min(x1, w) {
+                        let px = line + (ox + x) * bpp
+                        sr += Int(px[r]); sg += Int(px[g]); sb += Int(px[b]); count += 1
+                    }
+                }
+                guard count > 0 else { continue }
+                let i = (gy * n + gx) * 4
+                out[i] = UInt8(sr / count); out[i + 1] = UInt8(sg / count); out[i + 2] = UInt8(sb / count)
+            }
+        }
+        return out
     }
 
     /// The same measure over raw RGBA bytes — `count` pixels, 4 bytes each.
