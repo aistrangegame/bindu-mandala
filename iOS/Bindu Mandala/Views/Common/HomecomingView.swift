@@ -29,6 +29,12 @@ import SwiftData
 /// whole, the words simply there.
 struct HomecomingView: View {
     @Binding var isPresented: Bool
+    /// Upgrade U2 · A · when Home hosts the Homecoming (`Home/HomeWorld.swift`),
+    /// the covenant does not cover the instrument with the Recognition: the
+    /// Homecoming finishes into Home, and Home opens the Today door after it has
+    /// stood one breath (`spine-and-home.md` #2, §7 settled 1). Nil keeps the
+    /// old way (RootView's shell).
+    var onCovenant: (() -> Void)? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
 
@@ -232,6 +238,11 @@ struct HomecomingView: View {
             drawAt = Date()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + HomecomingScore.enterAfter(reduceMotion: reduceMotion)) {
+            if let onCovenant {
+                finish()
+                onCovenant()
+                return
+            }
             if let today = HomecomingView.todaysShakti(in: shaktis) {
                 ceremonyShakti = today
                 showCeremony = true
