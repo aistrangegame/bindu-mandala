@@ -40,13 +40,13 @@ enum HomeSub {
 @MainActor
 enum HomeWorldBuilder {
     static func register() {
-        WorldBuilders.register(.home) { address in AnyView(HomeWorld(address: address)) }
+        WorldBuilders.register(.home) { address in AnyView(BinduHomeWorld(address: address)) }
     }
 }
 
 /// Home, the Bindu — `spine-and-home.md` §1.
 @MainActor
-struct HomeWorld: View {
+struct BinduHomeWorld: View {
     let address: Address
 
     @Environment(Router.self) private var router
