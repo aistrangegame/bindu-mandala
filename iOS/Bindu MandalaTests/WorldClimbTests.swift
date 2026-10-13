@@ -426,9 +426,13 @@ final class WorldClimbTests: XCTestCase {
         // And the one door really is the only one: `tempo` appears in code in
         // exactly two files — where it is defined, and where a band's felt
         // period is reported.
-        let pinned: Set<String> = ["HomeWorlds.swift", "WorldBands.swift"]
+        // U1 · Look carries each ring's and world's motion tempo as a visual
+        // token (`RingLook.tempo`, `WorldStyle.tempo` — visual.md §1.4/§1.6);
+        // it paces light and breath, never a stay's clock. A whole word only:
+        // `temporaryDirectory` is not a tempo.
+        let pinned: Set<String> = ["HomeWorlds.swift", "WorldBands.swift", "CanonColour.swift", "WorldStyle.swift"]
         var naming: Set<String> = []
-        for file in LawSource.production where String(file.lexed.masked).contains("tempo") {
+        for file in LawSource.production where Rx.matches(#"\btempo\b"#, String(file.lexed.masked)) {
             naming.insert(file.name)
         }
         XCTAssertEqual(naming, pinned,

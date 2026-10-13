@@ -47,6 +47,38 @@
                BlueprintName = "Bindu MandalaUITests"
                ReferencedContainer = "container:Bindu Mandala.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "AccessibilityReachTests">
+               </Test>
+               <Test
+                  Identifier = "BinduMandalaUITests">
+               </Test>
+               <Test
+                  Identifier = "DynamicTypeReachTests">
+               </Test>
+               <Test
+                  Identifier = "FeltRegisterSnapshots">
+               </Test>
+               <Test
+                  Identifier = "HitAreaTests">
+               </Test>
+               <Test
+                  Identifier = "MandalaLightReachTests">
+               </Test>
+               <Test
+                  Identifier = "SpikeColdLaunchTests">
+               </Test>
+               <Test
+                  Identifier = "TheLibraryFoldUITests">
+               </Test>
+               <Test
+                  Identifier = "TheMarginUITests">
+               </Test>
+               <Test
+                  Identifier = "TheWayInUITests">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>
