@@ -295,7 +295,9 @@ struct ScoreTimeline {
             let lower = s.lowercased()
             if lower.hasPrefix("phase:") {
                 let key = String(s.dropFirst("phase:".count)).trimmingCharacters(in: .whitespaces)
-                if let p = phases.first(where: { $0.name.lowercased() == key.lowercased() }) { return p.start }
+                // A phase is found by its own label (not a Śakti's name).
+                let labels = phases.map { $0.name.lowercased() }
+                if let i = labels.firstIndex(of: key.lowercased()) { return phases[i].start }
                 if let i = Int(key), phases.indices.contains(i) { return phases[i].start }
                 return nil
             }

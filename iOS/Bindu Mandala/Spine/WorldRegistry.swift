@@ -144,7 +144,8 @@ enum WorldRegistry {
         case .rings:
             return WorldEntry(id: id, displayName: "the Nine Rings", station: .ring(4),
                               essenceHex: "#CE9546", colourSource: .init(file: visual, section: "§1.4.4 Ring 1 amber, the first enclosure"),
-                              threads: [.kp, .day], kpDoors: nil, arrival: .bloom)
+                              // #47: the day's doors are Today, Time, Memory and the Well — not the rings.
+                              threads: [.kp], kpDoors: nil, arrival: .bloom)
         case .climb:
             return WorldEntry(id: id, displayName: "the Climb", station: .ring(5),
                               essenceHex: "#D8B658", colourSource: .init(file: visual, section: "§1.4.7 ascent sky"),

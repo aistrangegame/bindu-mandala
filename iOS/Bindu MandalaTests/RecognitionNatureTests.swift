@@ -274,7 +274,9 @@ final class RecognitionNatureTests: XCTestCase {
         XCTAssertLessThan(commit.lowerBound, gather.lowerBound, "the ceremony gathers before his note is kept")
 
         XCTAssertTrue(view.contains("source: src"), "where she was felt from no longer reaches the ledger")
-        XCTAssertTrue(view.contains("object: src.rawValue"), "the settle no longer says where she was felt from")
+        // U2: the settle is a Router call (the channel is gone), still told where she was felt from.
+        XCTAssertTrue(view.contains("recognitionSettled(source: src.rawValue)"),
+                      "the settle no longer says where she was felt from")
         let raw = try XCTUnwrap(LawSource.production("RecognitionMomentView.swift")).text
         XCTAssertTrue(raw.contains("RECOGNIZE_AUTOCLOSE"), "the headless close path is gone")
     }

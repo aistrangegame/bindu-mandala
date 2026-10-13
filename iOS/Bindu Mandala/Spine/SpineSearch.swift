@@ -34,7 +34,9 @@ struct SpineSearchEntry: Identifiable, Equatable {
     /// Does the folded query live in any of its spellings?
     func answers(_ folded: String) -> Bool {
         guard !folded.isEmpty else { return false }
-        return words.contains { $0.contains(folded) }
+        // Matched on code units, not graphemes: a Devanāgarī query ends where
+        // her name runs on (स्पर्श inside स्पर्शाकर्षिणी, the श joined to its ā).
+        return words.contains { ($0 as NSString).range(of: folded, options: .literal).location != NSNotFound }
     }
 }
 

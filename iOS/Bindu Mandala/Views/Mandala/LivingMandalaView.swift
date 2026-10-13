@@ -255,7 +255,8 @@ struct LivingMandalaView: View {
         let rest = closed > 0 ? Double((veilOffset ?? closed) / closed) : 1
         return Text("the instrument · look, do not operate")
             .font(AppFont.voice(13))
-            .foregroundStyle(Color.cream.opacity(0.42))
+            // Design's .42 lifted to the cream floor (visual.md §1.14: ≥ .5).
+            .foregroundStyle(Color.cream.opacity(0.5))
             .opacity(camera.tier == 0 && focus == nil ? rest : 0)
             .padding(.bottom, MandalaVeilDrawer.peek + 18)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
