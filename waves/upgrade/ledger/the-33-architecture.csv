@@ -1,0 +1,116 @@
+id,world,element,source,numbers_to_match,reference_frame,status_today,code_today,build_action,verify_by
+T33A-001,the-33,§2.1 33 world root; constellation/Road/rooms/rites moved off Mandala,G7-0201 G7-0202 G7-0204,Mandala has 0 chakra buttons over seats; faint light per address only,—,wrong,Mandala/ChakraConstellationLayer.swift:272-343; ChakraLayerOverlay.swift:26-284,move,ui-walk-step; unit-test
+T33A-002,the-33,§2.1 roadCatcher and 44 pt seat buttons removed from Mandala,G7-0069 G7-0075,a tap on a Śakti seat always flies to her; Mandala controls live during any 33 state,—,wrong,ChakraLayerOverlay.swift:134-139; ChakraConstellationLayer.swift:301-343,move,ui-walk-step
+T33A-003,the-33,§2.2 field: breathing Śrī Yantra beneath,G5-0650,"opacity .035→.058; scale 1→1.025; period 14 s; light rgba(201,168,76,.14)",—,not,,new,measure-light; measure-timing
+T33A-004,the-33,§2.2 field: 33 orbs on a hairline as body altitude,G5-0430 G5-0437,orb scale 1→1.07 ≈4 s; period 3.8 s + offset; Axis 18 drawn as ring,—,not,,new,screenshot-vs-frame (corpus orbs); measure-timing
+T33A-005,the-33,§2.3 Road carousel card,G5-0655,card 340 px × ≥500; glow .18→.34; seam 1.5 px; inactive .68/.96/sat .85; active 1.02 + 80 px glow; glyph 38 px pulse 4.4 s (3.2 active); rings .88→1.7 second delayed 1.1 s; Cinzel 25,—,not,,new,screenshot-vs-frame (14-aistrangegame.md:773-795); measure-timing
+T33A-006,the-33,§2.3 two flames from ledger events,G5-0052,flame lit only by App Activity rows; no stored done flag,—,not,,new,unit-test
+T33A-007,the-33,§2.4 DoorView crossing,G4-0780,52 px disc; lean .55 over .55 s; piece → .2; navigate at 520 ms,—,not,,new,measure-timing
+T33A-008,the-33,§2.4 colour flood entry,G5-0469,overlay 0→.92 in .70 s ease-in; glyph ×11; navigate 700 ms,—,not,,new,measure-timing
+T33A-009,the-33,§2.4 rising door,G5-0184,arch 132×172; arrives 20 s; 'Tap to cross' 22 s; crossing scale 1→5.5,—,not,,new,measure-timing; screenshot-vs-frame (13-rupakarshini.md:417-419)
+T33A-010,the-33,§2.5 hold to withdraw + edge way out + left-edge drag,G7-0459 G2-0488,2.2 s hold; edge 22 pt / 72 pt; left drag start <24 px travel >70 px,—,built (Śakti rooms),R/TheWayOut.swift; R/TheEdgeWayOut.swift,reuse,ui-walk-step; measure-timing
+T33A-011,the-33,§2.5 back to exactly where,G7-0461,back from a room entered from Leela returns to the board with LeelaWalk kept; from Climb to same height,—,partial,,new,ui-walk-step
+T33A-012,the-33,"§2.6 ways in by state, verbatim",G5-0206 G2-0913,"5 state doors verbatim; midday [wakeup, floor, practice] else [corridor, practice, floor]",—,not,,new,unit-test; ui-walk-step
+T33A-013,the-33,§2.7 the die scoped to the 33,G5-0287,no repeat of last pick; hold 2200 ms throws,—,not,,new,unit-test
+T33A-014,the-33,§2.8 threshold card,G4-0689,weights 40/23/20/12/5; first = threshold; noRepeat; no auto-advance,—,not,,new,unit-test
+T33A-015,the-33,§2.9 ChakraRite three beats,G7-0435,"stations [0,.3,.62,.88,1]; writing 2.4 s (3.4 RM) × 1/.68/.46 floor .36; sizes 23/38/25/16.5/11; prompts verbatim",—,not (Śakti built),R/RiteOfEntering.swift:98-428,reuse,measure-timing; unit-test
+T33A-016,the-33,§2.9 rite strike at room tone,G7-0435,strike Hz = Table 2.1 tone,—,not,,new,measure-sound
+T33A-017,the-33,"§2.9 no beat indicator, no visit count, no welcome back",G7-0435,zero counters rendered,—,built (Śakti),R/RiteOfEntering.swift:31-44,reuse,unit-test
+T33A-018,the-33,§2.10 33 distinct room grounds,G7-0462,"33 looks, not 7; seeds from ChakraRoomField",—,partial,Chakra/ChakraRoomDoor.swift:60-145,new,screenshot-vs-frame (room contract); his-walk
+T33A-019,the-33,"§2.11 braid: three thread doors max, one breath apart",G2-0920 G5-0379,≤3 doors; spacing 5 s × pace; walked doors dim never vanish,—,wrong,ChakraRoomView.swift:88-519,new,ui-walk-step; measure-timing
+T33A-020,the-33,§2.11 gate states shape only,G7-0452,'The gate is warm.' / 'The gate knows how to wait too.'; never locked,—,not,,new,ui-walk-step; unit-test
+T33A-021,the-33,§2.11 braid state derived from ledger,G4-0158,state recomputed from App Activity rows; no stored flag,—,not,,new,unit-test
+T33A-022,the-33,§2.11 gate-continue line and node,G5-0607,gold line grows down; node at tip; his word below; tap node opens next room,—,not,,new,ui-walk-step
+T33A-023,the-33,§2.12 breath pacing law,G2-0925,no piece arrives < 5 s × pace after the previous; nothing fades in together,—,wrong,"ChakraRoomView.swift:100-101, 608-609",new,measure-timing
+T33A-024,the-33,§2.13 next-colour bleed,G7-0450 G3-0270,next hex rises from bottom edge at 24 s and during crossings,—,not,,new,measure-timing; measure-light
+T33A-025,the-33,§2.13 progressive luminance on the Road,G3-0270,first room 5% → crown 90%; summit to white,—,not,,new,measure-light
+T33A-026,the-33,§2.13 atmosphere wash,G5-0651,opacity .18; 1.4 s transition,—,not,,new,measure-light; measure-timing
+T33A-027,the-33,§2.14 geometry is the room's own āvaraṇa,G4-0469 G4-0035,petal/triangle counts match Map Avarana per room,—,not,,new,unit-test; his-walk
+T33A-028,the-33,§2.15 verb arriving,G5-0432,64–84 pt Lora italic 300; scale .84→1 over .6 s,—,not,,new,measure-timing
+T33A-029,the-33,§2.15 identity header,G5-0475,disc 96 px; glowPulse 5 s; Lora 26/500,—,not,,new,screenshot-vs-frame (13-rupakarshini.md:541)
+T33A-030,the-33,§2.16 chrome that sinks,G5-0153,hide after 3.8 s with .6 s ease-out; tap returns,—,not,,new,measure-timing
+T33A-031,the-33,§2.17 corridor engine,G4-0776,"nearest-centre activation; 80 ms throttle; opacity 1.1 s; transform 1.3 s cubic-bezier(.16,1,.3,1); --from .86/1.12/1; restore ≤ furthest step; no i/N",—,not,,new,unit-test; measure-timing
+T33A-032,the-33,§2.18 figure protocol + room contract,G4-0777,every thread declares figure + slots; 33 contracts validate,—,not,,new,unit-test
+T33A-033,the-33,§2.19 walk it / read it; ask first,G3-0466 G3-0494,Three Ways In asked before shown,—,wrong,ChakraRoomView.swift,new,ui-walk-step
+T33A-034,the-33,§2.20 Story Portal Headline baked,G6-0602,33/33 verbatim,—,not,,new,unit-test
+T33A-035,the-33,§2.21 DotStage,G2-0483 G7-0436,r 7; breath 6 s ±9%; lean ≤5 px at 2.2/s; condense 90 motes 12 s; never unmounted in room,—,not,,new,measure-timing; unit-test
+T33A-036,the-33,§2.21 first-visit arrival sequence,G2-0485,2 breaths empty → condense 2.4 → 1 → hint → 1.6 → question → 1.4 → affordance; still-touch 24 px one breath; haptic 20,—,not,,new,measure-timing; ui-walk-step
+T33A-037,the-33,§2.22 wordless five movements,G2-0490,"bells 151/97/211 Hz; Sakshi point (.91,.30) to .3; cross 2.8 s; haptic 40; bell 272.2 Hz 7 s; dawn 9 s",—,not,,new,measure-sound; measure-timing
+T33A-038,the-33,§2.22 no text over point or pool,G2-0491,text band never intersects figure bounds,—,wrong (corpus),shell/bindu-slice-b.js,new,screenshot-vs-frame; unit-test
+T33A-039,the-33,§2.23 Veil and eyes,G3-0161,veil #060308; eyes 42×15 at 700 ms blink ~2 s; prompt 2900 ms; ring r 32 C 201 fills 1.8 s; early release resets .4 s; dissolve 600 ms,—,not,,new,measure-timing
+T33A-040,the-33,§2.23 story sections only by the room's gesture,G4-0681,4 sections; no section appears without the act,—,wrong,ChakraRoomView.swift:197-263,new,ui-walk-step
+T33A-041,the-33,§2.23 held beats and ember,G5-0117,"beat 1500 ms; ember .5 at ≥3.5 s, .72 ≥7 s, .92 ≥14 s",—,not,,new,measure-timing
+T33A-042,the-33,§2.24 blend law + shape library,G4-0325 G4-0039,blend <1 except Return; heart/lemniscate/spiral/rose formulas,—,not,,new,unit-test
+T33A-043,the-33,§2.25 practice card circle,G4-0783,SMALL 62 / BIG 176; in 4 s / out 6 s; done 2.5 s; tide 11 s,—,not,,new,measure-timing
+T33A-044,the-33,§2.25 Codex held movements by road,G7-0987,"euphoriaPulse 13,14; hamHetHum 6,15,16; fearInWaves 2; restlessness 19; heartHome 5; lastMemories 17; feelingThrough 10; roar 110 Hz then 6 s silence",—,built (10 rooms),Chakra/ChakraMovementPractice.swift; Models/ChakraMovement.swift:130-141,reuse,unit-test; measure-sound
+T33A-045,the-33,§2.26 room type → form of time,G6-0487 G4-0713,"Recognition 1,9,20,30–33; Stillness 2–8; Movement 10–19; Visualization 21–29; Aperture 34 px/200 px/9 s; Pace 4/4/6/2; Trail formula; Hold 1.2 px at .18 s drop 16 px; Bloom ≤.34; Orbit ≤9, 50/88/126 px; Night 2.5 s, 34 stars",—,not,,new,unit-test; measure-timing
+T33A-046,the-33,§2.26 forms begin/close by 1.1 s ring,G5-0392,1100 ms G0 ring,—,not,,new,measure-timing
+T33A-047,the-33,§2.27 practice library placements,G5-0707…G5-1082,26 Learning topics reachable as Three-Ways-In alternatives,—,not,,new,unit-test; his-walk
+T33A-048,the-33,§2.27 senses COUNT without numbers,G4-0806,"5·4·3·2·1 beads, 44 px targets; no 'n of 15'",—,not,,new,screenshot-vs-frame; unit-test
+T33A-049,the-33,§2.28 wake-up opens with one breath,G7-0444,5.5 s ring with 4 ticks or 5 s hold unlocking sound + wake lock + one haptic,—,not,,new,measure-timing
+T33A-050,the-33,§2.28 awakening ladder,G7-0444,tone (Table 2.1) → binaural pair → body point → breaths → release → bleed at 24 s; ends on one word,—,partial,ChakraRoomView.swift:362-402,new,measure-sound; ui-walk-step
+T33A-051,the-33,§2.28 mirror frequency step (body rooms),G6-0492 G6-0564,mic-aware; silence where the Map says silence,—,not,,new,measure-sound; ui-walk-step
+T33A-052,the-33,§2.30 gate type per room,G4-0816 G6-0495,"Canvas 1; Textarea 2–9,17,20–33; Sound 10–13,15,16; Tap 14; Tilt 18,19; 1.4 s capsule retired",—,wrong,"ChakraRoomView.swift:77, 407-519",new,unit-test; ui-walk-step
+T33A-053,the-33,§2.31 hold engine G0,G7-0484,commit at threshold; act on release; drain DOWN 620–750 ms; cancel >9 px; haptic ramp .15→.6 sharp .3; latch medium; held key parity,—,partial,onLongPressGesture uses,new,unit-test; measure-timing
+T33A-054,the-33,§2.32 one hold ladder,G3-0212 G2-0930,3500/3200/2800/2600/2400/2000/1800/1500; Bindu 5000; corridor 700; veil 1800; withdraw 2200; carve ≈2200; lay down 2600+1700,—,wrong,ChakraRoomView.swift:77,new,unit-test; measure-timing
+T33A-055,the-33,§2.33 Canvas engine,G2-0589 G7-0438,point persists at same coords on return; spiral trace done within 26 units,—,wrong,text field (G7-0352),new,ui-walk-step; unit-test
+T33A-056,the-33,§2.34 word without a box,G4-0712,large italic question; word in accent with blinking cursor on thin rule; 'or speak it' on-device,—,partial,ChakraRoomView.swift TextField,new,screenshot-vs-frame; ui-walk-step
+T33A-057,the-33,§2.34 carve / lay down,G5-0207,"lay down: hold 2.6 s; translateY 0→24, opacity 1→0, blur 0→2 px over 1.7 s; carve ≈2.2 s second→first person",—,not,,new,measure-timing
+T33A-058,the-33,§2.34 offering ember + canon line,G7-0141 G3-0261,'The room keeps what you gave it. You walk lighter.' verbatim,—,built,"ChakraRoomView.swift:80, 740-797",reuse,unit-test
+T33A-059,the-33,§2.35 mic loudness gate,G4-0745,"fft 256; v=.8v+.2raw; act >.05; marks >.08 every 300–400 ms (≤12, 8 s); complete .92; tap +.14",—,not,,new,measure-sound; unit-test
+T33A-060,the-33,§2.35 per-room FFT listeners,G7-0439 G3-0190,hum bins 2–12 >40; breath 1–40 >20; friction 1–30 >25; speech 3–15 >35 ×3 frames; presence 2:00,—,not,,new,unit-test; his-walk
+T33A-061,the-33,§2.35 nothing recorded; mic off when hidden,G4-0775,no buffer persisted; tap removed on scenePhase != active,—,not,,new,unit-test
+T33A-062,the-33,§2.36 tap rhythm gate,G4-0747,avg of last 6 taps; beat 1000 ms 98 Hz; second drum 147 Hz at +500 ms; ±130 ms gold; 'The music answers.' at 8; open at steady 40–140 bpm; haptic echo,—,not,P/PlayPhysics.swift:93-133 (HeartbeatCatch),reuse,measure-sound; measure-timing
+T33A-063,the-33,§2.37 tilt gate,G4-0744,"x=C+clamp(γ·9,±300); y=C+clamp((β−10)·9,±300); follow .12; r 46 ring fills 7 s; drain .004/frame; fallback 1.8 s",—,not,PlayMotion,reuse,measure-timing; ui-walk-step
+T33A-064,the-33,§2.37 shake then still (Crow),G7-0441,30 s shake >7 m/s² then still <1.8 m/s²,—,not,PlayMotion,reuse,unit-test
+T33A-065,the-33,§2.38 permissions and fallbacks,G4-0775 G5-0219,mic/camera/motion strings; every gate completes without the sensor,—,not,,new,ui-walk-step
+T33A-066,the-33,§2.39 element answer,G4-0712,fire 5.5 s 4 ripples; water 6.5 s 4; air 6.0 s 5; ether 4.8 s 3; earth 7.5 s 2; light 3.8 s 5; settle 1.4 s,—,partial,chord 110/165/220,new,measure-timing
+T33A-067,the-33,"§2.39 whisper + warmer light, never a checkmark",G4-0712,one of 'The room has changed.' · 'Held.' · 'Seen.' · 'Kept.',F14 (typography),not,,new,screenshot-vs-frame F14
+T33A-068,the-33,§2.40 reveal clock,G2-0504,420 ms/word; +620 period; +260 comma; +180 dash; +1200 paragraph; 1600 initial; word fade ~260 ms y 6→0 blur 3→0,—,not,,new,measure-timing; unit-test
+T33A-069,the-33,§2.40 every line verbatim; canon chip in review,G5-0386,string equality with Map cell; composed lines carry chip in review builds,—,not,,new,unit-test
+T33A-070,the-33,§2.41 reading gestures,G4-0726…G4-0774,G2 52 px/1.5 s; G4 r 104/1.35 s; G6 56/84 px/1.15 s; G10 7 stages 1.3 s 18→41 px; G34 2800 ms 55%; G36 10 s 40/15/40/5,—,not,,new,measure-timing; ui-walk-step
+T33A-071,the-33,§2.41 'read plainly' way out of withholding,G4-0682,one switch turns G1–G11 off,—,not,,new,ui-walk-step
+T33A-072,the-33,§2.42 SilenceEngine,G2-0482 G7-0437,68.05/136.1/272.2 Hz at .15/1/.3; gain from 0; LFO .05 Hz depth .004,—,not,PlayInstruments:301-321 drone,reuse,measure-sound
+T33A-073,the-33,§2.42 gain learns to sound,G2-0485 G3-0207,still-touch +.004+p·.008; staging .01→.06→.10→.15→.08–.13→.14→.16→.18→.20,—,not,,new,measure-sound
+T33A-074,the-33,§2.42 soundOn read live,G7-0144,toggle mid-room takes effect ≤100 ms,—,wrong,ChakraRoomView.swift:73,new,unit-test
+T33A-075,the-33,§2.43 fixed tone per room,G2-0864 G3-0040…0045,"Table 2.1 values (174/210/320/341/384/426/480/528; twins; 136.1; 98.00 ring-7 derived; none at 9, 32)",—,wrong,P/PlayPhysics.swift:506-532,new,measure-sound; unit-test
+T33A-076,the-33,§2.44 song only during the dance,G6-0748 G4-0229,song gain 0 outside the dance view; absent-fifth carrier only in dance,—,not,,new,measure-sound
+T33A-077,the-33,§2.44 song paths and shas,audio-on-github.md,9 tree-of-life files + bindu/in_shadow.mp3 + maya-chakra-ending.mp3 load,—,not,,new,unit-test
+T33A-078,the-33,§2.45 the pulse,G7-0423 G3-0260,60 bpm ±1 haptic; 58 Hz; depth .028; glow arc bottom; rooms 9–32 only,—,not,shell-ground.jsx 69-96 (corpus),new,measure-timing; measure-sound; measure-light
+T33A-079,the-33,§2.45 pulse never explained,G3-0260,"no string, tutorial, setting label or ledger row mentions it",—,not,,new,unit-test
+T33A-080,the-33,§2.45 pulse phase survives crossings,G7-0443,beat phase continuous across 9→32 crossings and Road segments,—,not,,new,measure-timing
+T33A-081,the-33,§2.46 Shadow corridor walk,G3-0174,700 ms hold per step; >10 px cancels; steps 1850 / 3250 / 2450; lines at 600/2600/5400; hint 7800,—,not,,new,measure-timing; ui-walk-step
+T33A-082,the-33,§2.46 twelve scrolls + LOOK eyes,G3-0175,12 scrolls verbatim; eyes stare 13 s then blink every 4.5–11 s,—,not,,new,unit-test; measure-timing
+T33A-083,the-33,§2.46 inversion and permission,G3-0176,"order [3,1,0,2] at 520 ms/letter; Let/Be lines verbatim; floor band → Soles",—,not,,new,measure-timing; unit-test
+T33A-084,the-33,§2.46 Shadow crossing rite moved,G7-0076,"walls 0–1.2 s, hold to 2.6, thin 1.2 s; 18 stars; word every .9 s from 2.8 s; 110 Hz 3.2 s .07; haptic .9",—,built (on Mandala),"MandalaThresholdMoment.swift:102-141, 236-280",move,measure-timing; measure-sound
+T33A-085,the-33,§2.47 Armin rite moved,G7-0077,garland 1.4 s; gate 1.6–3.2 s; Tat · Tvam · Asi 34 pt; chord 136.1/204.15/272.2 3.4 s stagger .12; 3 bead haptics,—,built (on Mandala),"MandalaThresholdMoment.swift:143-192, 284-329",move,measure-timing; measure-sound
+T33A-086,the-33,§2.47 Tat · Tvam · Asi acts,G6-0574,TAT 3 min still; TVAM ten lights in turn then all; ASI two-thumb hold merging,—,not,,new,ui-walk-step; measure-timing
+T33A-087,the-33,§2.48 veil → flame passage,G5-0628,Maya → Aatma veil dissolves to a steady flame; inverted register #E8E4DF→#DDD7CE; red bindu 4 s,—,not,,new,his-walk; measure-timing
+T33A-088,the-33,§2.49 nine stages named,G6-0582,"I Origin … IX The Play; Mind order 28,23,25,24,21,22,26,27,29",—,partial,ChakraRoad.swift (Book Position order),new,unit-test; ui-walk-step
+T33A-089,the-33,§2.49 camera dwell,G7-0070,scale 2.5/3.0; .42 h; travel 2–4 s; dwell 5 / 6.5 Bindu / ≥6.5 thresholds / 7 at 33 / 16 at 31 and 32,—,built,ChakraRoad.swift:93-117,move,measure-timing
+T33A-090,the-33,§2.49 Mind overture,G5-0625 G6-0583,"'IN. / Nine doorways. All pointing inward.'; nine IN-words one at a time; triad fills rgba(238,136,0) / (100,140,220) / (201,168,76)",—,not,,new,measure-timing; screenshot-vs-frame
+T33A-091,the-33,§2.49 no story at Road stations; none at 32,G7-0224 G7-0073,"station shows verb, verbs, seed lines only",—,wrong,ChakraLayerOverlay.swift:181-192,new,unit-test
+T33A-092,the-33,§2.50 mirror doors graph,G6-0601 G6-0521,33 edges as listed; 17→4; 22 none; 32 sealed; seam at H−150 fade .8 s,—,not,R/NeighbourDoorsView.swift,reuse,unit-test; ui-walk-step
+T33A-093,the-33,§2.51 mudrā chain + three breaths,G6-0600,chain per row 51; 3 breaths held; Khecharī 21–28 (pending Q5),—,not,,new,unit-test; ui-walk-step
+T33A-094,the-33,§2.51 mudrā as a way back from Home,G6-0600,two-thumb hold re-opens last room carrying that mudrā; Yoni → the point,—,not,,new,ui-walk-step
+T33A-095,the-33,§2.52 tree in every room,G6-0599 G6-0479,"64 px disc at .78; caption beside; pinch 1–6×, double-tap 2.4×; snap <1.08; no overlay text",—,not,,new,ui-walk-step; screenshot-vs-frame
+T33A-096,the-33,§2.53 the Word's Star,G4-0240,same word → same hashed position across days; alpha .06+.10·bloom+.30·shweta,—,not,,new,unit-test
+T33A-097,the-33,§2.55 Lalita convergence,G5-0282,33→8 3.2 s; 8⟂ 6.4 s; ∞ 8.6 s; ♡ #C0392B 11.4 s; title flip 13.4 s; line 15 s; Road Home 17.5 s; trigger never shown as count,F10 (red bloom),not,,new,measure-timing; screenshot-vs-frame F10
+T33A-098,the-33,§2.56 Leela landing opens room,G7-0426 G7-0447,landing → room cover at gate + one way in; back to board with walk kept,—,wrong,PlayGamesPattern.swift:597-606,new,ui-walk-step
+T33A-099,the-33,§2.57 contrast law,G4-0778,OKLab mix; every text/ground pair ≥4.5:1 (dim ≥3:1); chrome solid ink,—,not,,new,unit-test; measure-light
+T33A-100,the-33,§2.57 flicker ≤3 Hz; ≤1 ring per 1.08 s,G5-0149 G5-0431,no element flashes >3 Hz,—,not,,new,measure-timing
+T33A-101,the-33,§2.59 five light tiers,G5-0174,glyph/text/sub .95/.95/.60 · .82/.84/.50 · .62/.66/.40 · .30/.34/.22 veil .55 · .16/.20/.13 veil .72,—,not,,new,measure-light
+T33A-102,the-33,§2.60 eight named archetypes + declarations,G6-0711…0719 G6-0933,"Archetype enum has Bindu, Gaia, Sid, Arch, Karishma, Sakshi, Ashrey, Lalita; declarations verbatim",—,wrong,Services/TrinityOfGuidance.swift:15-26,new,unit-test
+T33A-103,the-33,§2.61 Score player decodes ScoreV2,G4-0459 G4-0505,24 sections decode; validator rules; -data.json 0.5 s frames; unknown module → Layer 1,—,not,,new,unit-test
+T33A-104,the-33,§2.62 ensemble presence law + entry order,G4-0017 G4-0021,rise .04 / fall .015; entries .12/.22/.32/.45/.65; Karishma inverse,—,not,,new,unit-test
+T33A-105,the-33,§2.63 photosensitivity floor in dance,G5-0149,≤1 ring per 1.08 s,—,not,,new,measure-timing
+T33A-106,the-33,§2.64 Mirror wash,G4-0037,target rules; rise ×.06; decay ×.97; radius maxR·1.8; ×.35,—,not,,new,measure-light
+T33A-107,the-33,§2.66 word at peak + I Love You,G4-0050 G4-0051,"word at PEAK_T 55% white scale 1.05 spacing 10 → 1.8 / 30 / 0 after 3.5 s; line at PEAK_T−3, 3 s fade",—,not,,new,measure-timing
+T33A-108,the-33,§2.67 Return caps + adaptive start,G4-0043 G4-0045,"caps rT/20,(rT−2)/16,(rT−4)/12,(rT−6)/8,(rT−8)/4; start t>DUR·.85 ∧ e<.15 ∧ accel<.3",—,not,,new,unit-test
+T33A-109,the-33,§2.68 binaural only in dance; Karishma freeze,G4-0164,two sines L/R; beat table per Score; freeze in windows; dropout .35 s,—,not,,new,measure-sound
+T33A-110,the-33,§2.71 dance input by gate type,G4-0230,tilt → path; taps → H; voice → mids; point → coords,—,not,,new,ui-walk-step
+T33A-111,the-33,§2.75 bake adds the 21 absent fields,G6-0493,"Teaching, Post-Engagement, Function, Tree, Caption, Dyad, Headline, Panel fields, Linked Builds present",—,partial,Data/ChakraConstellation.json,new,unit-test
+T33A-112,the-33,§2.78 ledger rows for the 33,G6-0950,Gesture Source 'The 33'; Link to The Map set; types per §4.3; no count in names,—,wrong,"ActivityLedger.swift:43, 461",new,unit-test
+T33A-113,the-33,§2.80 chakra 32 sealed,G7-0477 G2-0477,no 32 story/practice/gate/Leela text in any view or log; 'A letter waits.',—,wrong,ChakraRoomView (renders); ChakraRoad.swift:103-117,new,unit-test; ui-walk-step
+T33A-114,the-33,§2.81 substrate never surfaced,G2-0479,Gaia Voice and Shakti Practice absent from bundle and views,—,n/a,,new,unit-test
+T33A-115,the-33,§2.82 no counts or declarations,G2-0923 G3-0269,"no 'Breathing', 'N of 33', 'Nth', 'i / N', streaks or progress bars",—,n/a,,new,unit-test

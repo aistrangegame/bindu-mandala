@@ -1,0 +1,127 @@
+id,world,element,source,numbers_to_match,reference_frame,status_today,code_today,build_action,verify_by
+HH-01a,her-home,Tap on a Śakti opens her room through the rite,HH-01; G6-1062,every route in §5 lands in HerRoomPassage; Detail reachable only as Presence/library,—,wrong,ShaktiDetailView.swift:65-123; LivingMandalaView.swift:566-571,move routes,ui-walk-step; unit-test
+HH-01b,her-home,Detail sections all reachable (nothing deleted),HH-01; G7-0649,every ShaktiDetailView section present in library or Presence,—,partial,TheLibraryFoldUITests,reshape,ui-walk-step; unit-test
+HH-03a,her-home,Fly-in from Mandala seat,HH-03; G7-0018,"scale 3.0 at h·.36, easeOut .72 s; log camera radii [1.38…0.06], R=min(W,H)·.335",F04 F05 F13 F40,built,LivingMandalaView.swift:554-613,reuse,measure-timing; screenshot-vs-frame F13
+HH-03b,her-home,The point becomes her room (no cut),HH-03; G1-0084,chamber scale .02+.98·swallow; presences vanish past .7; bands past .96; no fullScreenCover cut,F13,partial,TheBuilding.swift:287-307; WorldClimbView.swift:247-260,new continuous crossing,ui-walk-step; measure-timing
+HH-03c,her-home,Pulse Gate into the room,HH-03; G5-0675,breath 3 s; hold 2.5 s; haptic 80 ms; ×40 scale,—,not-built,—,new,measure-timing; ui-walk-step
+HH-04a,her-home,Beat 1 inscription,HH-04,23 px cream .04em; op clamp(bp/.34)·.94; fallback chain,Rite of Entering.html (02:206),built,RiteOfEntering.swift:98-428,reuse,unit-test; screenshot-vs-frame F40
+HH-04b,her-home,Beat 2 unseen hand,HH-04,"38 px; 3 strokes; seg=min(2.999,bp·3); 72 % stroke; +7 % mask",Rite of Entering.html,built,RiteOfEntering.swift,reuse,unit-test; measure-timing
+HH-04c,her-home,Beat 3 roots part and rejoin,HH-04,25 px; split /.58; join (bp−.52)/.48; gap ·30 px; gloss 16.5 px ×.6 from .6,Rite of Entering.html,built,RiteOfEntering.swift,reuse,unit-test
+HH-04d,her-home,Beat timing and compression,HH-04,"2.4 s (3.4 RM) × max(.36,.68^min(v,4)) → 1/.68/.4624/.36",—,built,HomeMemory.swift:82-131,reuse,unit-test
+HH-04e,her-home,Minimum dwell per beat,HH-04; G1-0411,touch ignored until bp ≥ .99,—,wrong,RiteOfEntering.swift,fix,unit-test; ui-walk-step
+HH-04f,her-home,Struck tone per beat,HH-04; G1-0282,"carrier×[1,1.5,2]; 0→.05 in 20 ms; .0001 by 3.4 s; stop 3.6 s",—,built,HomeCarrier.strikeFrequency,reuse,measure-sound
+HH-04g,her-home,Beat marks restored,HH-04; G6-1014,3 dots bottom 88; 4×4; current 16 wide gold; done .6; pending .25; 500 ms,Rite of Entering.html (02:210),not-built,RiteOfEnteringView.swift:60-63 (refused),restore,screenshot-vs-frame F40; unit-test
+HH-04h,her-home,Prompts,HH-04; G7-0315,'touch to go on' / 'touch to enter'; mono 9 px .3em op .44 at bp ≥ .99,—,built,RiteOfEntering.swift,reuse,unit-test
+HH-05a,her-home,Body cue beat 0,HH-05,one verbatim cue by body region; 5.5 s,—,not-built,—,new (on his yes),his-walk
+HH-06a,her-home,Per-Śakti adaptation clock,HH-06; G6-1043,adapt 62·mul (44.6/62/85.6/69.4 s); hold 165; second 120; flip b > .45,—,partial,HomeMemory.swift:82; RoomView.swift:61-135,change constants to f(kp),unit-test; measure-timing
+HH-06b,her-home,Rate per Śakti by physics rule,§7 C1; App. A,fast/even/slow/late table for all 102,—,not-built,—,new table,unit-test
+HH-07a,her-home,Resolution by kp,HH-07,"authored {1,2,3,4,6,27,28,102}; counts [28,16,8,14,10,10,12,3,1]; nobody at seat",—,built,HomeRooms.swift:201-269,reuse,unit-test
+HH-08a,her-home,Mechanism layer may hold light,HH-08,her layer accepts emissive solids/lines/shaders; inscription kept,—,wrong,RoomMaterial.swift:17-23; RoomScene.swift:827-833,rewrite,unit-test; measure-light
+HH-09a,her-home,Aṇimā CONTRACT,HH-09,walls to 34 %; aperture ×12 at b; key 900/k²; beyond z −18→−5,Concept Board V3 · Aṇimā (01:734),wrong,ContractRoom.swift,rewrite,screenshot-vs-frame Concept·Aṇimā; measure-light
+HH-10a,her-home,Mahimā ENDLESS,HH-10,24 frames r 6+.52i; SPAN 120; 3.4 u/s; 10 behind at b,Concept Board V3 · Mahimā (01:735),wrong,EndlessRoom.swift,rewrite,screenshot-vs-frame Concept·Mahimā; measure-timing
+HH-11a,her-home,Laghimā RELEASE,HH-11,cloth hems; 340 rising pts size 1–9; seat y −3.4+4.2lift; walls rise at b,Concept Board V3 · Laghimā (01:736),wrong,ReleaseRoom.swift,rewrite,screenshot-vs-frame Concept·Laghimā; measure-light
+HH-12a,her-home,Garimā PRESS,HH-12,slab y 11−7.4k(+5.2b); displacement .5+1.9k(+1.4b); palm #B8263C emissive 1.4+3.4b; fog .03+.028k,Concept Board V3 · Garimā (01:737),wrong,PressRoom.swift; GarimaSceneKitRoom.swift,rewrite from spike,screenshot-vs-frame Concept·Garimā; measure-light
+HH-12b,her-home,The Gate: Laghimā vs Garimā,HH-91; G7-0710,"divergence > .5; Design 100 % geometry, 116 luminance",Concept Board V3 · Laghimā/Garimā,built,GateRoomTests.swift; GateLookTests.swift:53,"keep, re-baseline lit",unit-test; measure-light
+HH-13a,her-home,Leaving Garimā costs effort,HH-13,hold 3.3 s; slab lifts .6; drain 750 ms,—,not-built,—,new,measure-timing; his-walk
+HH-14a,her-home,Vaśitva KNOWN,HH-14,SpotLight 2400 angle .4 penumbra .88; Lissajous wander; converge at b angle .4−.17b ×(1+.7b),Concept Board V3 · Vaśitva (01:741),wrong,KnownRoom.swift,rewrite,screenshot-vs-frame Concept·Vaśitva; measure-light
+HH-15a,her-home,Sarva-Yoni MEMBRANE,HH-15,transmission .94 ior 1.38; 8 veins; backlights 540/420/420/320/250; breath .28 rad/s,Concept Board V3 · Sarva-Yoni (01:738),wrong,MembraneRoom.swift,rewrite,screenshot-vs-frame Concept·Sarva-Yoni; measure-light
+HH-16a,her-home,Sarva-Trikhaṇḍā TRIPLE,HH-16,3 render targets; RGB composite; sep curve; converge to white,Concept Board V3 · Trikhaṇḍā (01:739); Rooms in 3D 86|81 → 81|81,wrong,TripleRoom.swift,rewrite (Metal),screenshot-vs-frame Concept·Trikhaṇḍā; measure-light
+HH-17a,her-home,Mahātripurasundarī DISSOLVE,HH-17,gold line yantra op .46; scale (.94+.07br)(1+2.1b); z 7.4b; bindu z −8.4→0,Concept Board V3 · Mahātripurasundarī (01:740),wrong,DissolveRoom.swift:200-204,"rewrite by hand, last",screenshot-vs-frame Concept·Mahātripurasundarī; his-walk
+HH-18a,her-home,R1 Siddhi lent,HH-18,octahedron r 1.5 ×2.4; 6 echoes delay .6+.5i; object to 20 % at b,—,partial,SiddhiRoom.swift,upgrade,unit-test; measure-light
+HH-19a,her-home,R1 Mātṛkā letters,HH-19,n 5/8/11/14; turn .22; sin^8·5; stretch ×(1+3.4b); floor disc r 13,—,partial,MatrkaRoom.swift,upgrade,unit-test; measure-light
+HH-20a,her-home,R1 Mudrā seal,HH-20,5 digits on 11-pt arc; open .42b(1+.1i); held ×(1+3.6b); deep 'the seal has opened its hand',—,partial,MudraRoom.swift; HomeGrammar.swift:686-694,upgrade; restore line,unit-test
+HH-21a,her-home,R2 crossed,HH-21,7 tori vs 7 sprites; lag 3.2 s; +.5 phase; converge at b; kp 44 key pairing,F01 (ring 2 petals),partial,CrossingRoom.swift,upgrade,unit-test; measure-light
+HH-22a,her-home,R3 bodiless,HH-22,8 sprites r 5.4; rim r 1.5; key 2200 at empty centre,F19 F21,partial,BodilessRoom.swift,upgrade,unit-test; measure-light
+HH-23a,her-home,R4 cosmic,HH-23,14 loops r 3.4+2.1i; delay .42 s/shell; amp 1+.22i; shell r 26,—,partial,CosmicRoom.swift,upgrade,unit-test
+HH-24a,her-home,R5 giving,HH-24,12 gifts r 16→1.4; u .055 (≈18 s); cup ×(1+4.2b),—,partial,GivingRoom.swift,upgrade,unit-test; measure-timing
+HH-25a,her-home,R6 revealing,HH-25,10 icosahedra ×3.2 r 6; lit veil r 9.4 op .72−.46a−.26b,—,partial,RevealingRoom.swift,upgrade,unit-test; measure-light
+HH-26a,her-home,R7 sounding + Weapons strike,HH-26,n = 2+(kp mod 8); amp .5+1.6b; nodes r 8.4; strike per tempo breath 95–98,F26,partial,SoundingRoom.swift,upgrade; new strike,unit-test; measure-sound
+HH-27a,her-home,R8 sourcing,HH-27,"triangle R 4.6; hers 6.4 + 900; others 2.4 .2 + 90 → .2+.7b, 90+700b",F02 F27,partial,SourcingRoom.swift,upgrade,screenshot-vs-frame F27; unit-test
+HH-28a,her-home,Seat floor extruded shell,HH-28,seatShell r 6 d 26 z −.62d; chamberSeat r 6.4 d 28; key 700+1500a,—,partial,RoomShell.swift:46-188,upgrade,unit-test
+HH-29a,her-home,Grammar four channels,HH-29,53 rules in order; 0 fall to breathe; 18 altitude zones; phase divisors 10/8/16/8/14/10/10,—,built,HomeGrammar.swift:135-436,reuse,unit-test
+HH-30a,her-home,Every room reverses,HH-30,answer ≠ premise for all 102; deep words verbatim,—,built,HomeBecoming.swift:122-209,reuse,unit-test
+HH-31a,her-home,"Attribute drawn lit, tinted",HH-31,"26 forms, 52 keys, KIN, 15 tints; mount (.5−alt)·6.4−.4 z −4.6; scale .9→3.5; opacity ×(1−.55b) once",—,partial,HomeAttribute.swift:177-722; RoomMaterial.swift:470-536,upgrade render,unit-test; measure-light
+HH-31b,her-home,Attribute periods,HH-31,noose 11.1 · goad 7.7 · cup 18.2 · arrows 6.25/1.25 · bow 13.3 · rosary 1.67 · vajra 9.09 · skullcup 20.8 · plough 14.3 · garland 30 · chain 16.7 · line 7.1 s,—,built,HomeAttribute.swift,reuse,measure-timing
+HH-32a,her-home,World air per ring,HH-32,counts W1–W9 (90 motes … 9 lamps + 220),F15–F33 (ring worlds),built,RoomAir.swift:268-710,reuse,unit-test
+HH-32b,her-home,Gem diffusion and sourceless crown,HH-32,topaz .20 … pearl .95 cat's-eye .10 R9 .70; R7 no key,—,built,RoomLightRig.swift:104-124,reuse,unit-test
+HH-33a,her-home,Room luminance at Design's band,HH-33,80–255 at both adaptations; hi > 90/255; range > 70; near-half ratio < 3.5; < 25 % px > .96,Concept Board V3 (all nine),wrong,RoomCaptureTests (.01–.9),raise light; rewrite bounds,measure-light
+HH-33b,her-home,Colour through staying in the room,HH-33,grey saturate .32 brightness .70 → full with a,—,not-built,—,new,measure-light
+HH-34a,her-home,Bīja-locked rhythm,HH-34,period = carrier/32 folded to 4–12 s,—,not-built,—,new,unit-test; measure-timing
+HH-35a,her-home,Tattva modifies key and grain,HH-35,fire +18° .3 · water −12° .2 · earth grain +.04 · air motes ×1.2 · ether fog ×.85 · light bloom +.15,—,not-built,HomeGrammar.swift:299-307,new,unit-test; measure-light
+HH-36a,her-home,Room words,HH-36,place 11 · name 28 · quality 15 · sentence 18.5; 2 Hz; recede .25 while dragging; form + verb 6 s,—,partial,HomeWords.swift; RoomWordsView.swift,reuse + new recede,unit-test; ui-walk-step
+HH-37a,her-home,Portrait lines by stillness,HH-37,4+6.5n s once a ≥ .4; ratchet; 19 px; 2600 ms; halo .82; none truncated,Rite of Entering.html (02:227),not-built,—,new,measure-timing; unit-test; his-walk
+HH-38a,her-home,Personal Connection on her walls,HH-38,after portrait; italic 15 px .62; 6.5 s cadence; not kp 102,—,not-built,—,new,ui-walk-step; unit-test
+HH-39a,her-home,Well letter folded object,HH-39,36×14→27 px 820 ms; right 22 bottom 150 op .85; only if exists,Rite of Entering.html (02:228),not-built,—,new,unit-test (never fabricated); ui-walk-step
+HH-40a,her-home,Doors by family/cluster,HH-40,neighbourOf per App. A; kp 37 → 36/38; kp 102 none; sister door,—,partial,TheBuilding.swift:35-51,change,unit-test
+HH-40b,her-home,Crossing to a neighbour without a cut,HH-40,rite reruns from where he stands; no .7 s opacity swap,—,partial,HerRoomDoor.swift:84-98,new,ui-walk-step; measure-timing
+HH-41a,her-home,Activation cycle gestures,HH-41,fire 3.0 s/.45 · water 180 pt <240 pt/s · air 10 s 4/6 · earth 3.5 s · ether 8 s · light ±.22/2.4 s · presence 6 s; recede ×1/.6/0,—,built,ActivationCycle.swift:66-130,reuse,unit-test; his-walk
+HH-43a,her-home,I feel her in the room,HH-43,G39 300/1100/2600/4300/5400; collapse 620; room ×(1+.8k); Shweta 2 s .10; lines verbatim; ledger first,F14,not-built,—,new (RecognitionNature reuse),measure-timing; unit-test; screenshot-vs-frame F14
+HH-44a,her-home,Family question and gloss,HH-44,52 glosses kp 1–52 verbatim; family lights 1–10/11–18/19–28/29–44/45–52,—,not-built,—,new; bake Shakti Function,unit-test; ui-walk-step
+HH-45a,her-home,Heart Register in every ring,HH-45,Sa C–F; drone .5/1/1.5/2 gains .55/.7/.45/.25; answer one breath,—,partial,HeartRegister.swift,extend,measure-sound
+HH-46a,her-home,Mudrā close three breaths,HH-46,words-only hand instruction; 3 × 5.5 s; ring 7 Khecharī,—,not-built,—,new,his-walk
+HH-47a,her-home,Gift lands in her Home,HH-47,≤1/day; window 10–20 h; lands through compressed rite,—,partial,EnergyGift.swift:19-201,re-route,ui-walk-step
+HH-49a,her-home,Head start and caps,HH-49,0 < 12 s; dwell·.55 capped holdEnd(kp)−6; dwellCap 4000,—,built,HomeMemory.swift:82-131,reuse; cap by kp,unit-test
+HH-49b,her-home,HomeMemory restored from ledger,HH-49,empty store → accumulatedDwell from Silence Held/First Dwelling Duration,—,not-built,—,new,unit-test
+HH-50a,her-home,'you have stood here before' once per return,HH-50,first 14 s after head start; never first visit; no number,—,not-built,RiteOfEnteringView.swift:65 (removed),new,ui-walk-step; unit-test
+HH-50b,her-home,Floor traces as light,HH-50,"≤ 7; size 1.1; op .16; y −4.1; seed (kp,n)",—,not-built,—,new,measure-light; unit-test
+HH-50c,her-home,Climb lights stay alike,HH-50; ruling 15,no met-core on the Climb,—,built,TheBuilding.swift:139-166,keep,unit-test
+HH-52a,her-home,Hand ring settles true,HH-52,4 s settle; tone 1.5 % flat → in tune; gain .036@3.2 s .020@6 s 0@9 s,—,not-built,—,new,measure-sound; measure-timing
+HH-55a,her-home,Silence Held / First Dwelling by kp,HH-55,Silence at adaptEnd(kp) once/visit; First Dwelling at holdEnd(kp) once ever,—,built (62/227),HomeDwelling.swift:79-225,marks by kp,unit-test
+HH-57a,her-home,Shaft with Design's solids,HH-57,"46 rungs r 5.4·.985^i; STATION_Z −16…−88; torus knot, 13 bars hers lit, roots 14 s, icosahedron, 3 tori",—,partial,HomeDescent.swift:21-43; DescentShaft.swift,restore solids,unit-test; measure-light
+HH-58a,her-home,Go deeper always offered,HH-58,no 62 s gate,—,wrong,HomeDescentTests:327-339,lift,unit-test
+HH-59a,her-home,Library sheet,HH-59,520/620 ms; radius 24; rows verbatim; empty omitted; foot links,Rite of Entering.html (02:271-277),not-built,—,new,ui-walk-step; unit-test
+HH-60a,her-home,Light Room geometry,HH-60,402×874; R 330; kFar .28; kNear 2.55; VP alt·874; riteApertureSpan,Rite of Entering.html (02:156-196),not-built,—,new,screenshot-vs-frame Rite·Seat; unit-test
+HH-60b,her-home,Light field adapts,HH-60,"farL 20+62a; blur 2.2+5(1−a), far 3+16(1−a); motes after a > .2",Rite of Entering.html,not-built,—,new,measure-light
+HH-61a,her-home,Aperture faces,HH-61,7 faces; L = lum(.34+.66a); s = r·.66; face by key (App. A),Rite of Entering.html (02:173-180),not-built,—,new,screenshot-vs-frame Rite·Faces; unit-test
+HH-62a,her-home,Yantra beyond at b,HH-62,scale .34+.5b; op .1+.72b; face ×(1−.7b),Rite of Entering.html (02:184),not-built,—,new,measure-light; screenshot-vs-frame Rite·Second
+HH-63a,her-home,Light Room threshold,HH-63,"24/36/15/26/16.5 px; bars bottom 92; {2.4,3.2,2.8}×.66 compression",Rite of Entering.html (02:199-216),not-built,—,new,measure-timing; screenshot-vs-frame Rite·Threshold
+HH-64a,her-home,Light Room overlay,HH-64,name 30 px .62; go deeper at a ≈ .28; overlay 1800 ms,Rite of Entering.html (02:219-235),not-built,—,new,screenshot-vs-frame Rite·Dwelling
+HH-65a,her-home,Fall through five chambers,HH-65,dz .055; scale 2.5^(−rel); 5 chambers; floor of her,Rite of Entering.html (02:238-273),not-built,—,new,ui-walk-step; measure-timing
+HH-66a,her-home,Light Room clock,HH-66,90·mul/165/120; RM 160/190/150; smoothstep²,—,not-built,—,new,unit-test
+HH-67a,her-home,Her Dance door and return,HH-67,long-press 1.3 s; Mandala long hold; returns to the exact room moment,—,not-built,—,new,ui-walk-step
+HH-68a,her-home,Songless score,HH-68,P from Score ‖ 5.5 s; 180 s phases; PEAK_T 100; no Hz stored per Śakti,—,not-built,—,new,unit-test; measure-timing
+HH-69a,her-home,Ensemble numbers,HH-69,entry .12/.22/.32/.45/.65; lerp .04/.015; Sid .012; Sakshi .003; Arch delay .7 s,—,not-built,—,new,unit-test; his-walk
+HH-70a,her-home,Bloom stages,HH-70,rise .06 fall .012; thresholds .15/.3/.5/.7,—,not-built,—,new,unit-test
+HH-73a,her-home,Binaural and inverse gain,HH-73,"L carrier, R carrier+beat; 7.83 at peak 3 s; amp .045+.015 sin .18t+.025(1−E)",—,not-built,—,new,measure-sound
+HH-74a,her-home,Mirror washes,HH-74,α 40–70 %; rise 1–2 s; fade 2–4 s; boost 3–5 s,—,not-built,—,new,measure-light; measure-timing
+HH-79a,her-home,No figure in the dance,HH-79,no figural geometry in any dance layer,—,n/a,—,floor,unit-test
+HH-80a,her-home,Way out,HH-80,hold 2.2 s (Garimā 3.3); edge 22/72 pt; RM one touch; filed once,—,built,TheWayOut.swift:49-56; TheEdgeWayOut.swift; TheStay.swift,reuse,ui-walk-step; measure-timing
+HH-81a,her-home,After-effect felt never named,HH-81,180 s; e=(1−age/180)²; kinds per ring; filters per kind; no line,—,partial,HomeAfterEffect.swift:101-104; HerSiddhiLingers.swift; HomesWaveOneTests.swift:272,delete line; app-wide modifier,unit-test (no text); measure-light
+HH-82a,her-home,Back to where he was,HH-82,exact prior place and zoom; no didSettle jump from a room,—,partial,RootView,change,ui-walk-step
+HH-83a,her-home,Room sound table,HH-83,"roots [55…123.47]; JUST 12; carrier = root·JUST[idx%12]·2 (Am 110, ka 137.5); techniques per ring",—,built,HomeSoundService.swift:79-1176,reuse,measure-sound; unit-test
+HH-83b,her-home,Sound control returns,HH-83; ruling 10,one sound control in room; silent switch honoured,—,wrong,HomeVoice.swift:50-52,lift,ui-walk-step
+HH-84a,her-home,Bīja tap at her carrier,HH-84,no FNV pentatonic hash,—,wrong,BijaSoundService.swift:108-159,change,measure-sound
+HH-85a,her-home,Reduce Motion slowed,HH-85,a 4 steps b 3; adapt ×160/90; hold 190; second 150; 15 fps .5×,—,wrong,RoomView.swift:29-54,rewrite,unit-test; ui-walk-step
+HH-86a,her-home,Accessibility in rooms,HH-86,AX3XL no cut; ≥ 43.5 pt; ≥ 11 pt ≥ .3 α; names spoken without numerals,—,partial,AccessibilityReachTests,extend,ui-walk-step
+HH-88a,her-home,Ruling 4 elements,HH-88,31 fire · 40 air · 42 light · 43 water; .light in parse,—,wrong,Element.swift:28-36,fix,unit-test
+HH-89a,her-home,Bīja series + names by kp,HH-89,16 vowels a…aḥ; names from row by kp,—,wrong,ShaktiBootstrap.swift:151-267,fix,unit-test
+HH-90a,her-home,Passage fetch,HH-90,one predicate fetch per entry,—,wrong,HerRoomDoor.swift:120-139,fix,unit-test
+HH-91a,her-home,Harness port,HH-91,66 checks; fingerprints 5×5 at 7 times·rate; divergence > .1; verify the verifier,—,partial,HomesHarnessTests.swift,extend,unit-test
+HH-97a,her-home,One hold engine,HH-97,commit/act on release; drain 620–750; haptic .15→.6; keyboard parity; ladder,—,partial,various,new shared engine,unit-test; measure-timing
+HH-98a,her-home,Stillness kept,HH-98,4.6 s → yantra arrives op .12; kept per kp,—,not-built,—,new,unit-test
+HP-01a,her-presence,Her Presence as its own world,HP-01,order hero → portrait → somatic → bīja → appreciation → embodiment → moments → deeper → doorways/witness → Still Point → footer,02 L-13 (Living Rite Detail),partial,ShaktiDetailView.swift,reshape,screenshot-vs-frame L-13; ui-walk-step
+HP-02a,her-presence,Arrival staging,HP-02,dark 0–22 % then 1.8 s; .4/2.2/3.4/5.6 s; words at 200 ms after 4 s ring,—,not-built,—,new,measure-timing
+HP-03a,her-presence,"Identity disc, no figure",HP-03,96 px; glyph; bīja 320 px .065; .1 Hz hold 1→1.06; back face; pinch 1–4×,—,not-built,—,new,unit-test (no figure); his-walk
+HP-04a,her-presence,Form line,HP-04,'{Ordinal} Āvaraṇa · {form}' 11.5 px .3em; name lrNameSize 50,02 L-13 (02:692),partial,ShaktiDetailView.swift:379-385,change,screenshot-vs-frame L-13
+HP-05a,her-presence,Portrait by stillness,HP-05,4+6.5n s ratchet; italic 20 lh 1.6 gold; rise 14 px blur 6→0 3.2 s; none truncated,—,partial,ShaktiDetailView (static codex portrait),new mechanism,measure-timing; unit-test; his-walk
+HP-06a,her-presence,Ring's Personal Connection,HP-06,sentence by sentence; fallback portrait,—,not-built,—,new,unit-test
+HP-07a,her-presence,The Turning,HP-07,UP 2900 DOWN 750; saturate .32+.68l; brightness .70+.30l; words past .55,—,not-built,—,new,measure-light; measure-timing
+HP-08a,her-presence,Where she is felt,HP-08,12 regions; her location lit; doorway incl. light,—,partial,SomaticRegion.swift; WhereSheSpeaksView,move; add light,unit-test
+HP-09a,her-presence,Bīja tap,HP-09,84 px; 3.6 s; pulse 1.4 s; 3 rings 90 px delays 0/.5/1,02 L-13 (02:701),built,ShaktiDetailView.swift,reuse; retune,measure-sound; measure-timing
+HP-11a,her-presence,go deeper rows,HP-11,Tattva · Bodily seat · Her ring · Form · Mental state · Chakra · Iconography · Function · Etymology · family,02 L-13 (02:706-719),partial,ShaktiDetailView.swift,change rows,unit-test
+HP-12a,her-presence,Embodiment crossing chosen,HP-12,hold 750 ms; vibrate 12; readiness only breathes 2.2 s; no seeded status,—,wrong,ShaktiDetailView.swift:521-532; ShaktiBootstrap,change,unit-test; his-walk
+HP-13a,her-presence,Her moments,HP-13,'she was felt here · {when}' + moon phase + note; empty line,02 L-13 (02:937),built,ShaktiDetailView.swift:761-815,reuse,unit-test
+HP-14a,her-presence,Deepening offered freely,HP-14,all six layers open,—,wrong,HerDeepeningSection.swift:52-56,lift gate,unit-test
+HP-15a,her-presence,Doorways re-grounded,HP-15,seal 2.4 s; noticed once a day; copy cites C-1337,—,built,WagerStore.swift:77-109,re-ground copy,unit-test
+HP-16a,her-presence,Witness Page,HP-16,1.8 s hold; kept every save; reseals,—,built,HerWitnessPage.swift,reuse,ui-walk-step
+HP-17a,her-presence,Still Point,HP-17,"7 holds × 1.3 s; text shortens, type grows",—,not-built,—,new,ui-walk-step
+HP-18a,her-presence,Recognition timeline,HP-18,.3/1.1/2.6/4.3/5.4; collapse .62; after-glow 1.8 s; record first,F14,built,"RecognitionMomentView.swift:270,288",reuse,measure-timing; unit-test; screenshot-vs-frame F14
+HP-18b,her-presence,Six natures,HP-18,LR_RECOG rows fy/focal/resp/ripple/n/motes exact,—,built,RecognitionNature.swift,reuse,unit-test
+HP-18c,her-presence,Recognition lines verbatim,HP-18,'she was felt here' / 'and she felt you back',F14,built,"LawsTests.swift:728-769,1453,1483,1540",keep unchanged,unit-test
+HP-19a,her-presence,Settle to Memory from everywhere,HP-19,3400 ms; fly 0–.34; halo .34–1 r 6→36,—,partial,RootView.swift:105-106,extend,measure-timing; ui-walk-step
+HP-20a,her-presence,Field Connection,HP-20,only kp 31/40/42,—,built,ShaktiBootstrap.swift,reuse,unit-test
+HP-21a,her-presence,Element composition and hour relight,HP-21,six plans; mood bits; dawn/noon/dusk/night table; backdrop breaths 11/13/12/9.6/15/7.6 s,—,partial,AtmosphereBackground.swift:51-61,extend,measure-light
+HP-23a,her-presence,Silent voice card,HP-23,'·' 40 px; never invent,—,not-built,—,new,unit-test
+HP-24a,her-presence,Footer and position,HP-24,'I feel her' h60 r30 23 px; '{kp} · 102'; play door for all 102,02 L-13 (02:672),built,ShaktiDetailView.swift:180-252,reuse; change glyph,unit-test
+HP-27a,her-presence,Presence data defects,HP-27,kp 102 by key; kp from row; real source,—,wrong,LivingMandalaView.swift:516; RecognitionMomentView.swift:499-501,fix,unit-test
+HP-28a,her-presence,Ways into Her Presence,HP-28,every door in §5 reaches her Presence through the point,—,built (covers),RootView; DailyRiteView,re-route,ui-walk-step

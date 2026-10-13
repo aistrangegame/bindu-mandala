@@ -1,0 +1,148 @@
+id,world,element,source,numbers_to_match,reference_frame,status_today,code_today,build_action,verify_by
+MT-001,modes,M01 Modes world is its own space (not a sheet),G7-0597 G7-0210,own root view; crossing bloom 0.9 s in mode tint; no hamburger overlay,03 A11 host,wrong,ModesDoorView.swift; LivingMandalaView:207,move off Mandala; new ModesWorldView,ui-walk-step
+MT-002,modes,M01 Ring of eight lights,G7-0597,8 lights on r132 pt; 14 pt ModeLight halo r×3 @.6; outer ring r196,03 A11; 21:132,not,ModeField.swift:71-82 (ModeLight),new layout,screenshot-vs-frame modes.jsx host; unit-test
+MT-003,modes,M01 Glyph motion signatures,G5-0467,Darśana still; Recognition 7 s pulse; Sādhana 42 s rotate; Smṛti 1.4 s; Mauna 6 s; Svapna 3 s; Pūjā 3.5 s; Saṅgha 5–7 s,13-rupakarshini:530-533,not,—,new,measure-timing
+MT-004,modes,M01 Codex closing line verbatim,G1-0639,'The mode is read from the moment. The moment determines the mode. There is no menu to choose from — only the gesture that fits.' arrival 1.1 s,03:111-122 CX-04,not,—,new,unit-test (string)
+MT-005,modes,M02 Lean by the real sun,G7-0499,Svapna first-open before solar noon; Pūjā after Ephemeris sunset (18:00 fallback); sandhyā ±24 min; lit 1.0 others .45,21:19,wrong,ModesDoorView:116-123,replace order with TimeService.moment,unit-test
+MT-006,modes,M03 G2 tap bindu → Mauna,G1-0640,tap on bindu hit area (Home),03 CX-05,not,—,GestureRouter,ui-walk-step
+MT-007,modes,M03 G3 long-press ring → Smṛti(ring),G1-0640,0.6 s on ring band,03 CX-05,not,—,GestureRouter,ui-walk-step
+MT-008,modes,M03 G4 pinch out → Sādhana,G1-0640,scale > 1.25 from the point,03 CX-05,not,—,GestureRouter,ui-walk-step
+MT-009,modes,M03 G5 vertical & still → Darśana,G1-0640,"pitch 70–110°, motion < .035 for 3 s, no touch",03 CX-05,not,StillnessSensor,GestureRouter,ui-walk-step; unit-test
+MT-010,modes,M03 G7 swipe down from top → Pūjā (after sunset),G1-0640,"start y < 44 pt, travel > 120 pt; after sunset only",03 CX-05,not,—,GestureRouter,ui-walk-step
+MT-011,modes,M03 G9 long-press anywhere → Catch,G1-0640,"0.8 s on empty area (Home, Mandala, Time, Modes)",03 CX-05,not,—,GestureRouter,ui-walk-step
+MT-012,modes,M03 Saṅgha two fingers + tilt,G2-0046,two touches resting + tilt > 15°,04:107,not,—,GestureRouter,ui-walk-step
+MT-013,modes,M04 Mode tint field chassis,G5-0491,hsl(h 55% 68%) over #020208; element hues fire 25 air 195 light 50 water 210,13-rupakarshini:625-632,not,—,ModeChassis tokens,measure-light
+MT-014,modes,M04 Fonts bundled,G5-0491,Lora italic 300; Cinzel; DM Mono 7 px .16em,13-rupakarshini:625-632,not,—,bundle fonts,screenshot-vs-frame modes.jsx
+MT-015,modes,M05 102 distinct seat points; ring 1 on square,G7-0496 G7-0497,ring 1 bhūpura perimeter; rings 2–8 circles; ring 9 origin,21:18,built,ModeField.swift:11-26,keep; log Portrait circle for Memory,unit-test
+MT-016,modes,M06 Darśana arriving,G1-0729,3 s; bg #0A0608→#060104 60%→#030103; yantra 280; intensity .85; motes 6; status .5; 'hold still · she wakes' @.55,modes.jsx M1 L61-162,partial,DarshanaView.swift:21-112,add size/motes,screenshot-vs-frame modes.jsx M1; measure-timing
+MT-017,modes,M06 Darśana holding,G1-0729,30 s; #0D0608→#030103 70%→#010001; 320; 1.0; motes 10; status .15; 'beholding · 30s' @.25,modes.jsx M1,partial,DarshanaView.swift:19-20,restore label,screenshot-vs-frame modes.jsx M1; measure-timing
+MT-018,modes,M06 Darśana entered,G1-0729,2 min; #0F0708→#020001 70%→#000; 360; 1.2; motes 14; status 0; '∞'; transitions 2 s,modes.jsx M1,partial,DarshanaView.swift,extend,screenshot-vs-frame modes.jsx M1; measure-timing
+MT-019,modes,M06 Steady-seconds clock,G7-0501,+dt while motion < .035; −1.2·dt moving; lines high-water,21:20,built,DarshanaView; StillnessSensor,keep,unit-test
+MT-020,modes,M07 Bījas at holding,G7-0502,r = yantra×.62; 13 px italic gold .55; glow 8; 4 s loop; delay i×.35 s; only existing bījas,modes.jsx M1,not,—,new layer,screenshot-vs-frame modes.jsx M1; unit-test (no invented bīja)
+MT-021,modes,M08 Radiance at entered,G7-0601,"540 pt radial rgba(201,150,63,.18)→rgba(139,26,42,.06) 35%; 6 s scale 1→1.15 opacity .6→1",modes.jsx M1,partial,DarshanaView (gold .22/red .10),match Design alphas,measure-light
+MT-022,modes,M08 Chrome fades by entered,G7-0502,status bar .5→.15→0; all chrome 0; point stays,modes.jsx M1,not,—,new,screenshot-vs-frame modes.jsx M1
+MT-023,modes,M09 DarshanaClock observable,G7-0503,@Observable 10 Hz,21:20,wrong,DarshanaView.swift,fix,unit-test
+MT-024,modes,M10 Catch sheet geometry,G1-0730,360 pt; radius 20; gradient .98→.94 65%→.82; border gold .18; padding 32; name 38; bīja 22 @.78; circle 68 px,modes.jsx M2 L170-279,partial,RecognitionMomentView,new CatchSheet,screenshot-vs-frame modes.jsx M2
+MT-025,modes,M10 Catch timing,G1-0677,fill 18 px over 1.2 s; 'and she felt you back' ~1.5 s after tap; petal glow 60 px 3 s; mandala .5/.3/.42,modes.jsx M2; 03:351-354,not,—,new,measure-timing
+MT-026,modes,M10 Catch words verbatim; no tally,G1-0628,'tap to register the moment' / 'she is named' / 'and she felt you back' / 'LOGGED · {time}' (no 'her 3rd today'),modes.jsx M2,not,—,new,unit-test (strings; no count)
+MT-027,modes,M11 Naming picker + ledger row,G1-0778,"opens on today's kp; swipe across 102; writes RecognitionEntry(.felt) + 'Shakti Recognized' with Lunar Day, Moon Phase",03:983,partial,ActivityLedger.recognition (276-292),new picker,unit-test; his-walk
+MT-028,modes,M12 Saṅkalpa verbatim,G7-0507,"'I begin the garland / not to gain anything, / but to remember / what I have always been.' 30 italic; 'One hundred and two names will arrive in sequence. ~28 minutes. Sit upright. Breath low.'; 'Begin'",modes.jsx M3 L287-602,wrong,TheModes.swift:120,restore,unit-test (string); screenshot-vs-frame modes.jsx M3
+MT-029,modes,M13 Station layout,G1-0731,ring name top 64; name 46; bīja 26; quality 17; 9 dots 8 px/.55/.15; line 240×1 = kp/102; '{kp} of 102 · Ring {r}',modes.jsx M3,partial,SadhanaView.swift,add dots + line,screenshot-vs-frame modes.jsx M3
+MT-030,modes,M13 Ring sizes sum to 102,G1-0731,28·16·8·14·10·10·12·3·1,03:653-656,built,KhadgamalaMap.total,keep,unit-test
+MT-031,modes,M13 No invented fallbacks,G1-0731,"no 'hsauṁ', no 'She of the field'",03:653,not,—,drop fallbacks,unit-test
+MT-032,modes,M14 Transition station,G7-0506,'DESCENDING'; 'You leave the {ring}.'; 'You enter'; name 36 italic gold glow 18; two-line gloss; 'tap to continue',modes.jsx M3,partial,SadhanaView (6 s words),add stage,screenshot-vs-frame modes.jsx M3; ui-walk-step
+MT-033,modes,M15 Bindu station,G7-0509,100 px bindu glow 70/20 .45; core 28; 5 s breath 1→1.15; 'Lalitā'; 'aiṁ klīṁ sauḥ'; 'One hundred and two have been said. / What remains is what was always there.',modes.jsx M3,wrong,TheModes.swift:126,add stage + restore,screenshot-vs-frame modes.jsx M3; unit-test
+MT-034,modes,M16 Visarjana verbatim,G7-0508,"'VISARJANA · THE RELEASE'; MiniYantra 140 @1.4 5 s; 'What I have received, / I release.'; 'The garland is offered back / to the one who wove it. / The 102 return to the One.'; 'tap to close · she remains'",modes.jsx M3,wrong,TheModes.swift:123-124,restore,unit-test (string)
+MT-035,modes,M17 Sādhana sound default off,G7-0505,sadhana_sound default false; bīja voice 3.6 s; ring chime 392→196 Hz 1.7 s; never playBija(''),02:1628; 02:302,wrong,SadhanaView.swift:30,fix,unit-test; measure-sound
+MT-036,modes,M18 Pace,G7-0602,"16.5 s/name (28 min/102), polled .25 s; tap advances; transitions wait",21:21,partial,SadhanaView,add tap,measure-timing
+MT-037,modes,M19 Garland Recited row,G6-0786,"'The whole garland, offered back' → kp 102 / 'Recited inward to the {ordinal} enclosure'; no duration",17:159,built,ActivityLedgerRites.swift:32-52,keep,unit-test
+MT-038,modes,M20 Full constellation,G1-0733,one light per felt seat; twinkle .82–1; same-day threads gold .16; unfelt .18; recent 6% 1.4 s; MiniYantra 380 @.25,modes.jsx M4 L611-800,partial,SmritiView.swift,keep + recent twinkle,screenshot-vs-frame modes.jsx M4
+MT-039,modes,M21 One Śakti's cluster,G7-0513,"hers ×2.3, others .04; 'last caught — {date}, {time}'; 'TAP ANY STAR · OPEN HER LOG'",modes.jsx M4,not,—,new,ui-walk-step
+MT-040,modes,M22 Time-lapse scrubber,G7-0513,240 pt at 72% height; knob 9 px gold; date labels only; 'WATCHING HERSELF EMERGE',modes.jsx M4,not,—,new,screenshot-vs-frame modes.jsx M4
+MT-041,modes,M23 Filters,G7-0513,All time / This year / Month / Week; gold underline,modes.jsx M4,not,—,new,ui-walk-step
+MT-042,modes,M24 Merged sky,G7-0512,"local ∪ App Activity by kp + Felt At, de-duplicated",21:159,wrong,SmritiView (local only),new reader,unit-test
+MT-043,modes,M25 Smṛti title,G7-0514,'where she has been most alive',modes.jsx M4,wrong,SmritiView:96,fix,unit-test (string)
+MT-044,modes,M26 Mauna names and bindu,G1-0734,R2 names r158 11 px .14 (+.04 d28) delays .18+i×.20 fade 5 s; R3 r110 10 px .10 delays .4+i×.22; orbits r200/r92 .04; bindu 84 core 22 breath 6 s,modes.jsx M5 L808-922,partial,TheCentre.swift:220 MaunaView,verify + match,screenshot-vs-frame modes.jsx M5
+MT-045,modes,M26 Mauna captions by steady seconds,G1-0734,7 'All of her. Here. Always.' · 14 'She has not gone anywhere.' · 21 'You have not gone anywhere.' · 28 silence; 18 italic .7 at cy+230; captionIn 7 s,modes.jsx M5,partial,StillnessAtTheCentre.swift:68,verify,measure-timing; unit-test
+MT-046,modes,M26 Mauna on the ring and at the centre,G7-0495,openable from ring; G2; arrives by stillness at kp 102 after 7 s,21:87; 22:570,partial,OneBuildingTests:243,add to ring,ui-walk-step
+MT-047,modes,M27 Silence grows richer,G1-0681,one orbital per ring crossed; radii 92→40; bindu 76→84 px,03:376-379,not,—,new,unit-test
+MT-048,modes,"M28 Silence Held, never felt",G2-0467,"row at ≥1.0 s, kp 102; never settles as felt in Portrait",04:752,built,ActivityLedger mauna (390),keep + filter,unit-test
+MT-049,modes,M29 Svapna question,G7-0515,"bg #1A1018→#0A0A18→#050810; peach radial rgba(232,180,140,.20); motes 12; 'Who walked through / last night?' 34 italic; 'I felt someone' / 'The night was still'",modes.jsx M6 L930-1172,wrong,SvapnaView.swift:8-9,rebuild,screenshot-vs-frame modes.jsx M6
+MT-050,modes,M30 Svapna marking,G1-0735,"mark glow 30 px 3 s .45→.85 scale 1→1.3, next +1.5 s; 'MARKED · HOLD TO ADD A NOTE'; hold 0.6 s → note",modes.jsx M6,not,—,new,screenshot-vs-frame modes.jsx M6; measure-timing
+MT-051,modes,M31 Svapna voice,G7-0598,mic 76 px pulse 2.2 s; 42 bars 3 px live level; 'tap to speak' / '{mm:ss} · recording'; on-device transcription; 'OR WRITE',modes.jsx M6,not,SpeechCapture (CorrespondenceView:367),new,ui-walk-step; his-walk
+MT-052,modes,M32 Dream kept privately,G6-0788,"file 'dreams' on device; Codex row per Q1; ledger 'Dream Told' links marked kp, no words",03:805-810,not,CodexWrite.swift:17-129,new SvapnaStore,unit-test (no words in ledger)
+MT-053,modes,M33 Record's walkers layer,G7-0515,previous practice day's felt seats at .35 dream-light,21:23,built,SvapnaView.swift,keep as layer,screenshot-vs-frame modes.jsx M6
+MT-054,modes,M34 Pūjā gathering,G1-0736,"bg #0A0508→#060104→#030103; sunset rgba(199,90,80,.12); eyebrow rgba(199,143,90,.7); dots r9 blur + r3 3.5 s delays i×.4 at r120/128",modes.jsx M7 L1180-1359,partial,PujaView.swift,extend,screenshot-vs-frame modes.jsx M7
+MT-055,modes,M35 Offering list and hold,G7-0517,"rows dot · time · name (+ his note); 'offer the day' rgba(199,143,90,.15) border .4 as 2.4 s hold",modes.jsx M7,not,PujaView:9-10,new,screenshot-vs-frame modes.jsx M7; ui-walk-step
+MT-056,modes,M36 Release,G7-0599,"gather 0–40%, rise 160 pt, dissolve 40–100% over 6 s; bindu 16→48 px 2.5 s glow 40/12 .45 core 5→16; lines after 2.5 s",modes.jsx M7; 21:24,partial,PujaView.swift,add absorb,measure-timing
+MT-057,modes,M36 Day Offered row,G6-0786,RitesPractice.offerTheDay + dayClosed + 'Day Offered',17:159,built,ActivityLedgerRites.swift:56-68,keep,unit-test
+MT-058,modes,M37 Pūjā candle chassis + closing bell,G6-0874,#100A08 #E8D9B8 #C9A84C #E8C162; bell 136.1 Hz 7 s @.22,13-rupakarshini:662-666; 19:441,partial,TheBells.swift,tokens,measure-light; measure-sound
+MT-059,modes,M38 Saṅgha restored (inner),G7-0494,MiniYantra 340 @.65 int 1.2; R2 names r192 10 px α .42+status×.35 breathe 5–7 s; R3 r122 9 px gold .55; lines verbatim,modes.jsx M8 L1384-1668,not,TheModes.swift:6,reverse; new view,screenshot-vs-frame modes.jsx M8
+MT-060,modes,M39 Saṅgha outer,G1-0737,"souls on r192 16 px breathe 4 s 1→1.18; dashed 2 4 .5 to seats at r116; Gaia kp31, Ashrey kp40, Ram kp42",modes.jsx M8; ruling 11,not,—,new,screenshot-vs-frame modes.jsx M8; unit-test (kp)
+MT-061,modes,M40 Person detail,G7-0596,seats glow 32 px at r130; name 36 italic; 'CARRIES'; 'THIS IS HOW SHE ENTERS THROUGH HIM',modes.jsx M8,not,—,new,ui-walk-step
+MT-062,modes,M41 Ambient Saṅgha,G1-0624,102 names at .08 outermost orbit in Modes world,03:111-122,not,—,new,screenshot-vs-frame modes.jsx M8
+MT-063,modes,M42 Breath 101 ground · Come Home,G4-0349,Diaphragmatic 4:8; carrier 80 Hz / beat 2.5 Hz; row rec7sR8aqptY7uQpe,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-064,modes,M42 Breath 102 balance · The Even Breath,G4-0350,Box 5:5:5:5; carrier 136.1 Hz / beat 10 Hz; row rechUbF8gHsuu51PS,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-065,modes,M42 Breath 103 open · The Hum,G4-0351,Bhramari; carrier 136.1 Hz / beat 6.5 Hz; row recsi52JcIgBbDRZA,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-066,modes,M42 Breath 104 clarify · The Counted Exhale,G4-0352,Susokukan; carrier 256 Hz / beat 10.5 Hz; row recyhgZSwsPVEZA0R,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-067,modes,M42 Breath 105 activate · The Stoke,G4-0353,Bhastrika (screened); carrier 194.18 Hz / beat 18 Hz; row recKE2cq3dwPTkYoS,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-068,modes,M42 Breath 106 rest · The Long Release,G4-0354,4-7-8; carrier 60 Hz / beat 1.5 Hz; row recMeuavySskl60n6,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-069,modes,M42 Breath 107 dissolve · The Empty Pause,G4-0355,Bahya kumbhaka; carrier 136.1 Hz / beat 5.5 Hz; row recAfXRujKb2C3NAS,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-070,modes,M42 Breath 108 expand · The Thinning Breath,G4-0356,8:4:8; carrier 221.23 Hz / beat 7.5 Hz; row reca2ZsfcgKobscb6,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-071,modes,M42 Breath 109 cohere · Home Frequency,G4-0357,~6 bpm; carrier 136.1 Hz / beat 10 Hz; row recLSSOozJbHKm702,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-072,modes,M42 Breath 110 sound · The Ocean Breath,G4-0358,Ujjayi; carrier 194.18 Hz / beat 8.5 Hz; row recA1b1fTg6cL1ijB,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-073,modes,M42 Breath 111 sleep · The Night Protocol,G4-0359,Cyclic sighing; carrier 60 Hz / beat 1.5 Hz; row recYKA8lnBVzPkvPF,09:222-238; 10:394,not (Bindu Field built),—,new BreathRoomView,measure-sound; unit-test (ratio from spec)
+MT-074,modes,M42 Library order and intentions,G4-0679,"Come Home first, Night Protocol last; intentions ×8; minutes 3·5·10·15",10:500; 11:93-98,not,—,new,ui-walk-step
+MT-075,modes,M42 ORB and cues,G5-0391,circle .7↔1.2; grace 1.5; 'mmm' / 'haaa'; recognition at 45% for 4 s; 1.1 s hold ring,11:93-98; 12:618,not,—,new,measure-timing
+MT-076,modes,M42 TIDE ground,G5-0023,5 s in / 5 s out; held rises; release falls over 8 s,12:147,not,—,new,measure-timing
+MT-077,modes,M43 Ratios from spec,G4-0601,102 5:5:5:5; 103 4:0:8; 106 4:7:8; 108 8:4:8 (not stored counts),10:535,wrong,Airtable count fields,read spec,unit-test
+MT-078,modes,M44 Beat arc + inverse gain,G4-0616,"[{until,hz,state}] smoothstep; gain base+0.025·(1−E)",10:461,not,SoundConductor,new scheduler,measure-sound
+MT-079,modes,M45 Breath words verbatim,G4-0606,Lalita 4 headings; Lyrical Words; BINDU one-word; 'The breath is the structure; the breather activates it.'; 'Goodnight. The body knows the way from here.',10:417-446,not,—,new reads,unit-test (verbatim)
+MT-080,modes,M46 Screened gate,G4-0628,four conditions; 'not today' honoured; never-standing line verbatim,10:515,not,—,new,ui-walk-step
+MT-081,modes,M47 Resonance finder,G4-0575,5 · 5.5 · 6 · 6.5 bpm × 1 min; merge > .82,10:488; 12:522,not,—,new,measure-timing
+MT-082,modes,M48 Breath as navigation — Design first,G4-0761,concept only,11:311,not,—,Design round,his-walk
+MT-083,modes,M49 Six planetary tones + honest frame,G4-0610,136.1 · 194.18 · 221.23 · 256 · 80 · 60 Hz; Frequency text verbatim,10:427-435,not,—,new NadaView,measure-sound; unit-test (verbatim)
+MT-084,modes,M49 S·T·C badge,G5-0148,"2×5 px, radius 4, border .5, mono 7 px .16em; S rgba(72,190,170,.10/.32/.88); C rgba(195,82,68,.10/.30/.82)",13-rupakarshini:202-203,not,—,new,screenshot-vs-frame rupakarshini EC 971
+MT-085,modes,M50 Beat offered alone,G5-0415,136.1 L / 136.6 R; gain 0→.085 in 1.4 s; →0 in .9 s; silent until pressed,13-rupakarshini:1022,not,—,new,measure-sound
+MT-086,modes,M51 Lab ranges and bands,G5-0147,"carrier 40–600 ±0.01; beat 0.5–40; delta .5–4 terracotta, theta 4–8 violet, alpha 8–13 blue, beta 13–30 teal, gamma 30+ gold",12:447,not,—,new LabView,unit-test; measure-sound
+MT-087,modes,M51 Mixer L/R and let the field choose,G4-0772,beat = |L−R|; digits cycle then lock,11:322,not,—,new,ui-walk-step
+MT-088,modes,M51 Player,G4-0301,verb 62 pt; recognition .12; 2 pt scrubber; play 56 pt; controls hide after 4 s; sheets 55% / 80%,09:19-22; 12:451,not,—,new,screenshot-vs-frame Bindu Field Player
+MT-089,modes,M52 Note after a piece,G5-0154,'what did you remember?'; Notes = his words; gold-edged card,12:452,not,—,new,unit-test
+MT-090,modes,M53 Seven forms of time,G4-0713,"Aperture 34/200/150 px 9 s · Pace 4·4·6·2 .62→1.12 · Trail 60+150·climb · Hold 1.2 px @.18 s drop 16 · Bloom ≤.34 · Orbit ≤9 r50/88/126 14–29 s · Night 2.5 s, 34 stars 3–7 s, ember 9 s; 1.1 s hold ring",11:198-208,not,—,new FormsOfTime,measure-timing; screenshot-vs-frame padakarshini forms
+MT-091,modes,M54 Carried practices (20),G6-0540,one held door 1.1 s each; one row 'Practice Carried'; timings per Map list,15:446-497,partial,RiteDay.swift:64-77,new shelf,ui-walk-step; unit-test (no count)
+MT-092,modes,M55 The Bell,G6-0764,bowl only on his tap; three breaths 4·4·6·2; back to where he was,16:324,partial,BijaSoundService:258-302,reuse,measure-sound; ui-walk-step
+MT-093,modes,M56 Mudrā picker,G6-0763,five hands; links kp 19–28; three breaths,16:323,not,—,new,ui-walk-step
+MT-094,modes,M57 Senses 5·4·3·2·1,G4-0806,44 px targets; lit beads; never stored,11:435,not,—,new,unit-test (not stored)
+MT-095,modes,M58 Learning practices verbatim,G4-0805,full list first; no 'where to start' without basis; text from record,11:432-434,not,—,new,unit-test (verbatim)
+MT-096,modes,M59 Heart register door,G6-0818,Sa C–F 130.81–174.61 default C♯; ratios .5/1/1.5/2 gains .55/.7/.45/.25; answer silence one breath,17:457,built,HeartRegister.swift:15-214,add door,measure-sound
+MT-097,modes,M60 Words that drift,G5-0393,nine words ±3 px over 6–9 s; then 3·5·10·15,13-rupakarshini:282,not,—,new,measure-timing
+MT-098,modes,M61 Walk it or read it,G4-0690,two equal halves; two flames,11:130,not,—,new,ui-walk-step
+MT-099,modes,M62 Body as a way in,G5-0201,8 qualities; inks Alive · Tight · Absent; no generated verse,12:534,partial,WhereSheSpeaksView.swift,door,ui-walk-step
+MT-100,modes,M64 No guilt strings,G3-0371,"no 'missed', 'again', 'behind', 'streak' in Modes",07:260-263,n/a,—,test,unit-test
+MT-101,modes,M65 Steady horizon,G4-0786,horizon at 22%; #B33A2E; no play,11:386,not,—,new,screenshot-vs-frame padakarshini fieldguide
+MT-102,time,T01 Time is its own world,G7-0580,own root; bloom 0.9 s #0B0A18; yantra t×0.008 breath .9+.16·sin(t×.13); schematic 240/360/600 s,03:744-810,not,—,new TimeWorldView,ui-walk-step
+MT-103,time,T02 Engine moved; Portrait point door removed,G7-0581,ThePointView → Views/Time; PortraitMandalaView:191-228 door gone,"21:33, 21:170",wrong,PortraitMandalaView.swift:66,move,ui-walk-step
+MT-104,time,T02 Ephemeris accuracy,G7-0730,USNO 2026 phases; Bensalem rise/set 07:07 / 12:46 / 18:25 EDT 12 Oct; .25°; Lahiri 24.23°,22:426-431,built,EphemerisTests.swift:45-197,keep,unit-test
+MT-105,time,T03 Place,G1-0781,"home 40.1046, −74.9516; zone meridian fallback; asked once in Time",03:805-810,partial,Ephemeris:199-220,new ask,ui-walk-step
+MT-106,time,T04 Five wheels,G1-0752,hour r158 24 #C9963F; tithi r130 30; nakṣatra r102 27 #D4A067; season r74 6 #D4A017; sun r48 12 #C45050; stroke .25 .5; dot 4.5 + 1.5; bindu 13↔16 5 s,F03; 03:760-769,partial,ThePointView.swift:15-224,restyle,screenshot-vs-frame F03
+MT-107,time,T04 No label collision,G2-0396,names only in legend grid,F03 defect,wrong,ThePointView legend,fix,screenshot-vs-frame F03
+MT-108,time,T05 THIS MOMENT,G7-0533,'THIS MOMENT'; '{sandhyā} …'; '{nakṣatra} watches the moon {waxing|waning}.'; '{PAKṢA} · DAY {n} · THE MOON IS {p}% FULL',F03,not,—,new,screenshot-vs-frame F03; unit-test
+MT-109,time,T06 Moon glyph,G1-0471,stroke .30 w .8; lit .82; rx = |ill−.5|·2r; eight names by phase,02:491-504,partial,MoonPhaseView.swift,reuse,unit-test
+MT-110,time,T06 Roman numeral date,G5-0382,DD · MM · YYYY tracked caps,13-rupakarshini:253,not,—,new,unit-test
+MT-111,time,T07 Lunar Yantra four atmospheres,G1-0753,new int .25 cool bindu 90 motes 4 · waxing .75 warm 28/8 · full 1.35 bloom 22/14 · waning .55 silver 38/8; lines verbatim,03:771-778,not,—,new,screenshot-vs-frame temporal.jsx TMP-2
+MT-112,time,T07 Recognitions at their tithi,G6-0739,inner ring 30 ticks; App Activity Lunar Day,16:287,not,—,new,unit-test
+MT-113,time,T08 Tithi world,G1-0757,moon 80 px real illumination; tithi 38 italic; Nityā 46 italic gold; empty fields draw nothing,03:801-803,partial,NityaDevi.swift,new TithiView,screenshot-vs-frame temporal.jsx TMP-6
+MT-114,time,T09 Tithi label truthful,G1-0470,"tithi 16 → 'Kṛṣṇa Pratipadā'; Nityā mirrors; new→Kāmeśvarī, full→Lalitā, 8→Tvaritā",02:489,wrong,DailyRiteView:365-375,fix,unit-test
+MT-115,time,T10 Nityā sheet,G1-0522,backdrop .55 .3 s; radius 26; 78%; .42 s; grabber 40×4; lines verbatim; Airtable quality/bīja/dhyāna,02:941-955,built,NityaDetailView.swift:94-121,add reads,screenshot-vs-frame rite Nitya sheet; unit-test
+MT-116,time,T11 Sandhyā windows,G1-0754,±24 min round sunrise / solar noon / sunset,03:780-786,partial,Ephemeris:386-430,reuse,unit-test
+MT-117,time,T11 Prātaḥ · Brāhmī,G1-0754,"sky #0F0610→#200818→#481020→#88381F→#C66832; glow rgba(232,180,140,.45); lines verbatim; kp 11",03:780-786,not,—,new,screenshot-vs-frame temporal.jsx TMP-3
+MT-118,time,T11 Madhyāhna · Vaiṣṇavī,G1-0754,"#FFE4A0→#FFCB6A→#E8A040→#B66828; rgba(255,230,168,.55); only light ground; kp 14",03:780-786,not,—,new,screenshot-vs-frame temporal.jsx TMP-3
+MT-119,time,T11 Sāyam · Rudrāṇī,G1-0754,"#060104→#1A081C→#501020→#8A2828→#C44030; rgba(196,64,48,.50); → Māheśvarī kp 12",03:780-786,not,—,new,screenshot-vs-frame temporal.jsx TMP-3
+MT-120,time,T11 Sandhyā practice and bells,G5-0309,Pace 4·4·6·2 ×3 or 60 s Aperture; east gate by heading; Gāyatrī one line per screen; 272.2 / 136.1 Hz; 'Sandhyā Kept',12:902; 19:441,not,TheBells.swift,new,measure-sound; his-walk
+MT-121,time,"T12 Offered first, never forced",G1-0607,launch → Bindu; sandhyā/Svapna/Pūjā doors glow; notification off by default,03:34,not,—,new,ui-walk-step
+MT-122,time,T13 Seasonal Yantra,G1-0755,"four atmospheres, colours, intensities, motes, lines verbatim; quarter by tropical λ; southern +180°; six ṛtus named",03:788-795,not,PlayPhysicsWhole:721-727 SeasonLight,new,screenshot-vs-frame temporal.jsx TMP-4; unit-test
+MT-123,time,T14 Great Wheel geometry,G1-0756,"centre (195,432); sectors r165 tints; rays r56→56+90v w .7; thresholds .7/.45/.2; full moons r168; centre r38 + bindu r9; today r5 ~60/min",03:797-799,not,—,new,screenshot-vs-frame temporal.jsx TMP-5
+MT-124,time,T14 No totals; gaps are space,G6-0741,no numerals; nest day→fortnight→four months→year,16:289; 17:346,not,LivingMandala year ring (C-1348),new,unit-test
+MT-125,time,T14 Swipe years; tap day,G1-0609,first ledger year → now; tap → Smṛti(day),03:36-38,not,—,new,ui-walk-step
+MT-126,time,T15 Special days ring,G6-0735,r178; Act light in hue; Notice hollow; Lead Time 3/3/7; Timeline primary,16:283-286,not,—,new,unit-test; his-walk
+MT-127,time,T15 Ceremony grammar,G5-0232,hue = palette; kind = geometry; years = repetition (unknown 12),12:571,not,—,new,screenshot-vs-frame rupakarshini EC 1971
+MT-128,time,T16 Diwali ARC figure,G4-0785,band 46svh; a = π(1−d); 8 lamps from dusk i≥5; flicker 2.6 s; 2.4 s transitions,11:381-385,not,—,new,screenshot-vs-frame padakarshini calendar.html
+MT-129,time,T16 Lunar festival dates,G5-0311,Kārttika Amāvasyā; Karva Chauth moonrise; Uposatha 4/month,12:904,not,Ephemeris,new,unit-test
+MT-130,time,T17 Day's stations,G6-0740,dawn · morning · noon · evening · night; one pause each; routine Field colour,"16:288, 16:313",not,—,new,ui-walk-step
+MT-131,time,T18 Sky-state windows by sun,G2-0450,dawn sunrise−1 h; noon sunrise+3 h; dusk sunset−2 h; night sunset+2 h; new moon < .03,04:735,wrong,LunarPhaseService:130-138,fix,unit-test
+MT-132,time,T18 TIME_VARIANTS verbatim,G1-0656,"dawn #0A0610 … newmoon #020001, bindu 1.6, motes 8/6/9/12/3",03:205-212,built,TimeVariant.swift:5-179,keep,unit-test
+MT-133,time,T18 Living Rite deltas; moteMul read,G1-0466,dh/lAdd/sMul/glow/tint per state; S 6–90; L 8–82,02:457-474,partial,TimeVariant.swift,read moteMul,unit-test; measure-light
+MT-134,time,T19 Dawn and dusk rites,G6-0828,dawn 'Open the eyes before the world opens them for you.'; dusk 'What you carried today may be offered here.'; HourWay by sun,17:534,built,RiteOpenings.swift:33-263,sun windows,unit-test
+MT-135,time,T19 Two bells,G7-0132,272.2 Hz 5.5 s @.2 rigid; 136.1 Hz 7 s @.22 double soft,19:441-444,built,TheBells.swift,keep,measure-sound
+MT-136,time,T20 Summons,G6-0825,"06:00, no sound, no badge, title her name; tap → Bindu → Today",17:509,partial,DailySummons.swift:4-157,route tap,ui-walk-step
+MT-137,time,T20 Gift,G6-0826,≤1/day in 10–20 h; seeded day + salt; lands on her,17:515,built,EnergyGift.swift,keep,unit-test
+MT-138,time,T21 Night and dawn shelf,G6-0592,"intention, replay, long blink, look up, Echo's prompt; morning press",15:1428-1430,partial,OneSecondFloorView,new,ui-walk-step
+MT-139,time,T22 Year of 102 as light,G6-0878,yearLight = 1 − .45×place on the Cosmic Now bindu; no number,17:534,partial,RiteOpenings:97-109,draw,measure-light
+MT-140,time,T23 The Signal,G5-0596,delays 1400/1100/800/700 ms; drone resolves 136.1 Hz,14:408-412,not,—,new,measure-timing; measure-sound
+MT-141,time,T24 Wall-clock breath,G5-0211,8 s phase (now mod 8000)/8000,12:546,not,—,new,unit-test
+MT-142,time,T25 Dawn that moved,G5-0068,"min(.92, .30 + .62·(1−e^(−min/40))); τ 40 days",12:322,not,—,new,unit-test
+MT-143,time,T26 Long arcs,G4-0573,40 days Muladhara 146.8 → Maya 116.5 Hz; opt-in,10:244,not,—,new,unit-test
+MT-144,time,T27 Time chassis,G5-0523,linen #F6EFE2/#25201A/#B8593A; candle; Cormorant; hue journey 30/40/30,13-rupakarshini:777,not,—,tokens,measure-light
+MT-145,time,T28 Elapsed time floor,G1-0026,no simulated or sped clocks in Time,01:90,built,—,keep,unit-test
+MT-146,time,T29 Widget,G2-0186,"moon, tithi, Nityā, next sandhyā; tap → Time",04:290,not,—,new,ui-walk-step
+MT-147,time,T30 Ledger vocabulary,G6-0950,types Sandhyā Kept · Dream Told · Breath Sat · Tone Kept · Practice Carried; Gesture Source Time / Modes,17:904,wrong,ActivityLedger.swift:461,extend,unit-test

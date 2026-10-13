@@ -1,0 +1,97 @@
+id,world,element,source,numbers_to_match,reference_frame,status_today,code_today,build_action,verify_by
+CL-01,climb,"The Climb as its own world (router, no overlay)",G7-0211 G7-0145 G7-0026; 19-code-mandala-today.md:720-738,one route; 0 nested fullScreenCovers; one point home; back restores world+altitude+yaw,,W,LivingMandalaView.swift:211-214; ClimbBodyChakras.swift:93; ChakraRoomView.swift:126-128,move WorldClimbView into World.climb route,ui-walk-step; unit-test
+CL-02,climb,"Axis geometry: 9 bands 30 apart, TOP 240",G1-0098; 01-homes.md:270-271,worldY(i)=i*30; TOP=240; 9 bands Feet..Totality,F40,B,Homes/Render/WorldClimb.swift,reuse,unit-test
+CL-03,climb,Render stack,G1-0067; 01-homes.md:196-199,ACES exposure 1.04; FogExp2 0.014; FOV 60 near .1 far 500; env #3a3a44>#1a1a20>#0a0a0c; HDR+bloom on,F40,P,Homes/Render/WorldClimbScene.swift,reuse; enable bloom,measure-light; unit-test
+CL-04,climb,Luminance to Design,G2-0383 G7-1025; 04-briefs-audits-frames.md:625,band captures mean within Design 80-255/255 range; hi>90/255; range>70,F40,W,WorldClimbCaptureTests.swift (bounds .01-.9),fix light rig and test bounds,measure-light
+CL-05,climb,Ascent chassis tokens at Totality,"G5-0490 G5-0519; 13-rupakarshini.md:618-623,818-819","sky radial stops #D8B658..#FFFFFF centre (0.5,1.10); ink #3A2E15/#4A3C1E/#5A4B28; door #B8322B",,N,—,new Chassis.ascent,screenshot-vs-frame F40; unit-test
+CL-06,climb,Arrival by thread,G1-0010 G6-1035 G7-0027; 01-homes.md:246,kp->ring facing her; chakra->band; Today->presiding ring; menu->last altitude; never at launch,,P,LivingMandalaView.swift:211-214,new thread-aware entry,ui-walk-step; unit-test
+CL-07,climb,Crossing in: boot veil + first line,G1-0067 G5-0619,"'the axis' 12px .3em op .5 fade 900ms removed 1000ms; 'Everything begins as a point.' +3s, focus 3.2s, gone 9s, first arrival per day",,N,—,new,measure-timing; screenshot-vs-frame F40
+CL-08,climb,Vertical drag climbs,G7-0340 G1-0072,640 pt per band; settle .06 (reduced .035),,B,Views/Rooms/WorldClimbView.swift; WorldClimb.swift,reuse,unit-test; measure-timing
+CL-09,climb,Horizontal turn,G7-0340 G1-0072,yaw 0.0024 rad/pt max pi; pitch +-0.5 by 0.0016; tap <=8px,,B,WorldClimbView.swift,reuse,unit-test
+CL-10,climb,Rise toggle,G1-0072 G7-0958,target += dt*3.4; auto-off at TOP-0.05; rise at top resets to 0,F40,P,WorldClimb.swift (rise 3.4 built; toggle/reset not),new toggle,unit-test; ui-walk-step
+CL-11,climb,Eye drift,G1-0072,"eye (sin(t*.07)*.5, climb+1.2, 9+cos(t*.05)*.4); look 9 ahead; continuity <.25 u per .25 s",,B,WorldClimbScene.swift; WorldClimbTests,reuse,unit-test
+CL-12,climb,Weather blending,G1-0076 G6-1017,"density*(1+veil*.55); fog*(1+swallow*1.6); bg fog*.5*(1-swallow*.8); visible 30*1.15, swallow<.96; tempo not on adaptation clock",,B,HomeWorlds.swift:308-328; WorldClimb.swift,reuse,unit-test
+CL-13,climb,Nine weathers W1-W9 objects on the axis,G2-0284 G5-0441 G2-0388 G6-1004,R1 20 s sun arc; R2 7 red rings on blue; R3 2600-pt curl; R4 3 caustics+diamond; R5 72 ribs+shafts; R6 9 ruby bodies lit within; R7 no key light; R8 chatoyant band; R9 9 gem lamps,F40,P,WorldBands.swift:52-78 relief only; RoomAir.swift:268-710,move RoomAir bodies onto axis,screenshot-vs-frame F40; measure-light; his-walk
+CL-14,climb,Band clocks and tempo,G7-0958 G6-1004,clocks .05/1.05/flow/.0398/.0199/.0066/.0033/.062/.008 breath .9+.16 sin(t*.13); tempo 1.00 .82 .62 .72 .66 .50 .44 .36 .28,,B,WorldBands.swift; HomeWorlds.swift,reuse,unit-test
+CL-15,climb,Ring world table,G7-0949..G7-0957,fog #1d1206 .0125 · #0a1330 .017 · #2a0c06 .021 · #0b1219 .014 · #06180e .018 · #1a0409 .022 · #d8d2c4 .034 · #0f0b04 .015 · #141008 .009,,B,"HomeWorlds.swift; HomeWorldsTests.swift:27,98",reuse,unit-test
+CL-16,climb,World words,G1-0074 G2-0433,kicker '{form} · the {ordinal} āvaraṇa · {region}'; material '{gem} on {dhatu} · {clock}'; shown world i1 if k>.5,F40,B,TheBuilding.swift ClimbWords,reuse,screenshot-vs-frame F40; unit-test
+CL-17,climb,Weather sentences verbatim,G1-0100; 01-homes.md:287,nine sentences exactly as 01-homes.md:287,F40,B,HomeWorlds.swift,reuse,unit-test
+CL-18,climb,102 lights geometry,G1-0069 G1-0068,"R=5.6+min(n,28)*.1; a=(k/n)2π-π/2; pos (cos a R, y+.6+sin(1.7k)*.5, sin a R-1.4); counts 28·16·8·14·10·10·12·3·1",F11,B,TheBuilding.swift ClimbLights L61-280,reuse,unit-test; screenshot-vs-frame F11
+CL-19,climb,102 lights alike,G1-0070 G3-0533 G6-1076 G7-0960,"every light halo 1.5*1.25, op .95, rate .22, depth .09, core .5; no met/authored split",F11,P,TheBuilding.swift:139-166 (authored 1.5 vs .95 remains),fix size split,unit-test (FLOOR)
+CL-20,climb,Nearest presence and low line,G1-0075,"within 26 u, align>=.55, score dist*(2-align); 'hers is the day' / quality; 'turn to find her' / 'enter her'",F40,B,TheBuilding.swift ClimbWords.near,reuse,unit-test
+CL-21,climb,Hint never overlaps enter,G2-0433,hint and enter-her rects do not intersect; hint gone after first rise; top text .25 while dragging,F40,P,WorldClimbView.swift,fix layout,screenshot-vs-frame F40; ui-walk-step
+CL-22,climb,Ring touch mechanisms,G7-0341..G7-0346 G6-1038,r3 scatter/gather; r6 follow+whisper; r7 12-voice chord 55 ms stagger; r8 unite kp99-101; r1/4/5 still hand; r2 lotus-sun; lineage .6 s/seat; zero at rest,,B,RingMechanisms.swift:27-124; TheBuilding.swift:195-277,reuse,unit-test; his-walk
+CL-23,climb,Ring breath on empty air,G1-0544,ripple 1.8 s 20->320; shimmer 1.4 s on the ring's lights,,N,—,new,measure-timing; ui-walk-step
+CL-24,climb,Rail of nine,G1-0073 G6-1037,"right edge; TOTALITY..FEET; tick 14x1, current 24x2; op .32/.8/1; met gold tick .55; tap flies to world",F40,B,TheBuilding.swift:315-341; WorldClimbView (rest .55),reuse; match Design opacities,screenshot-vs-frame F40
+CL-25,climb,Depth label on rail,G1-0542 G2-0397 G2-0398 G2-0406 G2-0407,label THE RING / THE SEAT / FELT / BINDU; mono 8px; current dot 7px gold glow; gauge op .15+.85*chrome,F04 F05 F13 F14,N,—,new,screenshot-vs-frame F04; screenshot-vs-frame F05; screenshot-vs-frame F13; screenshot-vs-frame F14
+CL-26,climb,Rail index of nine line drawings,G5-0442,180x180; strokes .6-.7px op .35-.5; name 30px; role 17px italic gold,,N,—,new,ui-walk-step
+CL-27,climb,Crown light,G1-0069 G6-1034,"crown sprite 3.4, breath .86+.14 sin(.3t), op .85; 'she presides today' only in her world",F40,B,WorldClimbScene.swift:807-852; TheBuilding.swift:369,reuse,screenshot-vs-frame F40; unit-test
+CL-28,climb,6 am handover in place,G1-0091 G2-0281,crown moves at nextTurnover 6am without reload; DailyEnergyService epoch 2020-01-01 SplitMix64 Fisher-Yates,,B,Services/DailyEnergyService.swift; WorldClimbScene,reuse,unit-test
+CL-29,climb,Today control,G1-0091 G1-0328,'today' flies to presiding world facing crown; from room endLeave,F40,N,—,new,ui-walk-step
+CL-30,climb,Rite of entering on the Climb,G1-0077 G1-0002,"STATION [0,.30,.62,.88,1]; overlay fade 700 ms; strike per beat ratios 1/1.5/2; self-paced, never a timer",F13,P,WorldClimbView.swift:247-260 (1.1 s flight then RiteOfEnteringView cover),move beats into Climb scene,measure-timing; ui-walk-step; measure-sound
+CL-31,climb,Entering flight,G1-0084,trav += dt/2.2 (reduced /3.4); camera to her z+7.4-7.4*swallow; chamber scale .02+.98*swallow; presences gone >.7; bands gone >.96; no transition screen,F13,P,TheBuilding.swift ClimbFlight L287-307,move RoomView into scene,measure-timing; his-walk
+CL-32,climb,Beat dashes,G6-1014 G5-0409,three dashes 16x2 px gap 6,,N,RiteOfEnteringView.swift:60-63 (refused),new,screenshot-vs-frame F13
+CL-33,climb,Recognition at a light,G2-0407 G6-0865,long-press .9 s; line1 cream sans ~15px; line2 +3 s italic gold Cormorant ~24px; both verbatim; haptic crossing_peak; rail FELT; Shakti Recognized source Climb,F14,N,AirtableService.swift:770-778 (no Climb source),reuse takeover; fix enum,screenshot-vs-frame F14; measure-timing; unit-test
+CL-34,climb,Garland neighbours,G6-1025 G4-0855,"ring 1 within family, ring 2 within cluster, else ±1; neighbours x1.15",,P,TheBuilding.swift:35-51,fix corridors,unit-test
+CL-35,climb,Body lights on the spine,G6-0892 G7-0155,"Soles..Crow road 10-19 kp 53,65,71,69,70,66,80,77,84,82; band 0->6 even, 20 u apart; target 64x44; reach .75 band",,B,ChakraTeaching.swift:298-343; ClimbBodyChakras.swift:60-63,reuse,unit-test
+CL-36,climb,Ruling 3 pinned,G7-1028 G7-0480,"chakra 18 = Axis, 19 = Crow asserted",,N,PlayGamesGrowth.swift:323-324 (bake matches),new test,unit-test
+CL-37,climb,Body Location quiet facts,G6-0580 G6-0263..G6-0281,"verbatim 10 strings; 60% op, 11px .14em; only when nearest",,P,ChakraConstellation.json bodyLocation (unshown),new view,ui-walk-step; unit-test
+CL-38,climb,Body numbers as facts,G6-0560,verbatim Map lines; never a count of him,,N,—,new,his-walk
+CL-39,climb,Dyad two-tone lights,G6-0604 G6-0423..G6-0433,10 pairs + hexes per 15-airtable-map.md:129-138; crossfade on breath rate .22,,N,fld4Bdiu8fg0RNrbE not baked,new bake + shader,screenshot-vs-frame F11; unit-test
+CL-40,climb,Dyad Description reveal,G6-0072..G6-0144,"one sentence per beat on hold, verbatim",,N,flds5Iwg3XLrrbn1H not baked,new bake,unit-test; ui-walk-step
+CL-41,climb,Body couples,G6-0522..G6-0526,5 pairs per Teaching Text; partner op x1.6 in .8 s; caption verbatim,,N,—,new,ui-walk-step; unit-test
+CL-42,climb,Mirror thread to energy twin,G6-0521 G6-0601,10 body->energy links per subtleMirror graph,,P,ChakraConstellation.json subtleMirror (unshown),new,unit-test
+CL-43,climb,"Gate law: instrument per type, in place",G6-0563 G6-0495 G6-0614,hold light .6 s starts gate; Gate Text one line per beat; button words verbatim; on-device; tap fallback,,W,every gate one 1.4 s hold,new GateInstrument,unit-test; ui-walk-step
+CL-44,climb,Soles gate: press and hum,G6-0563,"majorRadius >=1.5x rest held + low hum (proposed RMS>=-42 dBFS, centroid<400 Hz, >=4 s)",,N,—,new,measure-sound; his-walk
+CL-45,climb,Forge gate: warmth,G6-0563,hum low and bright >=4 s; warmth band #EDB877,,N,—,new,measure-sound; his-walk
+CL-46,climb,Prāṇa gate: three breaths,G6-0563,3 breath envelopes (proposed 2-8 s); orange->azure per exhale,,N,—,new,measure-sound; his-walk
+CL-47,climb,Hands gate / Euphoria Pulse,G6-0578,rub 15-20 s heard; two-thumb apart hold; chest; reach line; 'I am held by what I just sent.',,P,ChakraMovement.swift euphoriaPulse,reuse + extend,measure-sound; his-walk
+CL-48,climb,Pulse gate: tap rhythm three places,G6-0579,40-140 bpm steady (proposed 6 intervals ±12%); haptic echo; wrist/neck/temple .5/.7/.9,,N,—,new,measure-timing; his-walk
+CL-49,climb,Sonar gate: spoken word,G6-0563,"one word recognised on device, not stored",,N,SpeechCapture exists,reuse,his-walk
+CL-50,climb,Echo gate: hum then silence,G6-0563 G6-0564,hum HAM then >=5 s at ambient; ground voice to 0,,N,—,new,measure-sound; his-walk
+CL-51,climb,Vision gate: inner image,G6-0563,eyes closed (blink >=.8) three breaths + OM hum; open + tap,,N,—,new,his-walk
+CL-52,climb,Axis gate: deliberate blink,G6-0575 G3-0133,"eyeBlink L/R >=.8 for >=3.0 s then <.3; indigo while closed, chartreuse bloom .6 s on open; variant 5/3; fallback hold 3 s",,N,—,new (TrueDepth),measure-timing; his-walk
+CL-53,climb,Crow gate: shake then still,G6-0576 G7-0441,30 s timer; shake >7 m/s^2; still <1.8 m/s^2 held (proposed >=5 s),,N,PlayMotion; ChakraMovement shakeFloor .35 g,reuse,measure-timing; his-walk
+CL-54,climb,Crow flood,G6-0576,spine floods bottom->top (proposed 9 s); stays 4 min as return point,,N,—,new,measure-timing; ui-walk-step
+CL-55,climb,Mirror Frequency wake-up step,G6-0564 G6-0492,words verbatim from fld1lfG7r96PQGPxP / fldNkcMhpaeuVQC22; silence where Map says silence,,P,shown as text,new step,measure-sound; his-walk
+CL-56,climb,Held movements extended,G6-0797 G6-0891,pulseCharge 2.4 g·s; ebb .25/s; roarHold 1.2 s; Ham·Het·Hum 4-4-4; add Axis/Forge/Prāṇa,,P,ChakraMovement.swift:17-178,extend,unit-test
+CL-57,climb,Axis spirit level and Access line,G3-0055 G6-0613 G6-0936,level within ±2° for 3 s (proposed); gold line up spine; axis line verbatim word by word,,W,GameStructure.json:82-86 not decoded,fix decoder; new level,unit-test; his-walk
+CL-58,climb,Blink · Breathe · Press,G6-0577,"three-finger hold .6 s; Axis t0, Prāṇa +1 s, Soles +2 s; hold to release; one Chakra Practiced row linked to 3 Map rows",,P,—,new,measure-timing; unit-test
+CL-59,climb,Shadow membrane 3->4,G5-0401 G4-0739,"y 75; span .42; K 30/14/0; decay .18/s; RES .58/.80; meniscus R0(1.62-.92t), 132 seg, 9 beads; 26 shards decay 1.15/s; opens -> tension x.20",,N,—,new,measure-timing; unit-test; his-walk
+CL-60,climb,Shadow corridor in passage,G7-0076,"walls 0-1.2 s, hold 2.6 s, thin 1.2 s; 18 stars; 'please come back home' word/.9 s from 2.8 s; 110 Hz 3.2 s @.07",,W,"MandalaThresholdMoment.swift:102-141,236-280 (on Mandala pinch)",move to shared component,measure-timing; measure-sound
+CL-61,climb,Armin membrane 6->7,G5-0401,y 165; same physics; ruby/pearl 50/50,,N,—,new,unit-test; his-walk
+CL-62,climb,Armin gate in passage + TVAM,G7-0077 G6-0574,garland 1.4 s; gate 1.6-3.2 s; Tat . Tvam . Asi 34 pt; aurora 5 bands; chord 136.1/204.15/272.2 3.4 s stagger .12; ten body lights flash in turn then all,,W,"MandalaThresholdMoment.swift:143-192,284-329",move + extend,measure-timing; measure-sound; his-walk
+CL-63,climb,Membrane line once ever,G5-0401,'It holds until you mean it.' shown once ever,,N,—,new flag,unit-test
+CL-64,climb,Passage,G5-0059,5.4 s first / .85 s opened; 34 throat rings; 52 streaks; 9 copies; gates t=.34/.68; aperture ((t-.28)/.72)^2.5; landing .75 s + white veil; reduced .6 s dissolve,,N,TheBuilding Glissando 2.4 s,new Metal pass,measure-timing; his-walk
+CL-65,climb,Spine rail,G1-0697 G4-0800 G5-0599 G5-0350,"x 38; suṣumnā 2 px (1-4), op .45/.7/.25; 7 nodes y 30/45/60/90/120/150/180; petals 4·6·10·12·16·2 + crown; bīja labels; 33 ticks 1 px .18 with ring on 18",,N,—,new Canvas layer,ui-walk-step; unit-test
+CL-66,climb,Walked traces on spine,G5-0657,"walked body chakra keeps colour trace, breathes 4.2 s; never a count",,N,—,new (App Activity read),unit-test
+CL-67,climb,Body-map lenses,G5-0254 G4-0801,"7 Chakras / Orbit loop / Neidan / Tree 22 paths, flash, Da'at dashed; source line verbatim",,N,—,new,ui-walk-step
+CL-68,climb,Ladder of centres,G4-0699 G5-0221,60 s per centre (15 s quick); ring-root tones octave+sub 2.8 s fade; heartbeat 68+52 Hz,,N,—,new,measure-timing; measure-sound
+CL-69,climb,Āvaraṇa 4/5 bracket,G6-0581,"bracket Soles..Sonar with 5 nested (Prāṇa, Hands, Pulse)",,N,—,new (bake Śakti Function),unit-test
+CL-70,climb,Stillness gate,G5-0060 G5-0688,"still after 340 ms to 4600 ms; ring R0(1.10+1.30·still); tone 136.1 + 204.15->272.2 gain still^2*.026 glide .35 s, gone .22 s at touch; line once after 700 ms",,N,—,new G2 engine,measure-timing; measure-sound; unit-test
+CL-71,climb,Wake lock while still,G5-0689,isIdleTimerDisabled during still/eyes-closed phases only,,N,—,new,unit-test
+CL-72,climb,Empty summit lines,G6-0971 G7-0959,emptiness from .55 band below top; 'I am what I am becoming.' then 'I already did.'; gated by stillness,,B,Homes/ClimbSummit.swift:1-49,reuse; gate behind CL-70,unit-test; his-walk
+CL-73,climb,"Summit chord, Om, loop",G5-0057 G5-0690 G5-0691,"chord 136.1/272.2/408.3 over 9 s; bowl; convolver 8.5 s; ground ->0, Om stays; loop never transitions; 'Everything ends as a point.' at .12",,N,—,new,measure-sound; measure-timing
+CL-74,climb,Summit convergence,G5-0696 G4-0254 G4-0253,"one all-colour blend; lines to keystone (W*.5,H*.30); 16 rays; rings .5-1 s; Sakshi ghost flares, 10 s echo",,N,—,new,his-walk; screenshot-vs-frame F40
+CL-75,climb,Ground crossfade and carrier,G1-0093 G6-0816 G6-0815,"setGround(i0,i1,k); setCarrier(ring,swallow,syl); setRoom(smooth(chamberT/62),fifth); roots [55..123.47]; withheld fifth .05; ground fifth x.75 @.035",,B,HomeSoundService.swift:1128-1176; RingFieldVoice.swift,reuse,measure-sound; unit-test
+CL-76,climb,Lift one-sound-at-a-time,G6-0815 G6-0816 (ruling 10),ground + carrier + Om concurrent,,W,RingFieldVoice.swift:85-96; HomeSoundService.swift:762-776,fix conductorGain,measure-sound
+CL-77,climb,Binaural arc by altitude,G5-0057 G4-0616,beat 8 .. 4 Hz by band; max gain .075; smoothstep; passes 7.83 once designed:true,,N,—,new scheduler,measure-sound
+CL-78,climb,Ring-crossing tone + haptic,G6-0747 G2-0151 G4-0477,"9 timbres at ring roots, ring 9 silence; bell haptic [20,30,40,30,20]; Ring Crossed once per ring per day",,N,Glissando exists,new,measure-sound; unit-test
+CL-79,climb,Om floor by depth,G6-0829,136.1 + 272.2@.30 + 68.05@.15; floor .004+.026*d/9; LFO .05 Hz ±.008,,B,TreeOfLife.swift:159-169; RingAudioService.swift:348-377,reuse; bind d,measure-sound
+CL-80,climb,Guidance faces,G7-0339 G6-0832,"Bindu at ring<=1, Lalitā at ring>=9, once per day, 7.5 s",,B,ClimbGuide.swift; TrinityOfGuidance.swift,reuse; extend archetypes,unit-test
+CL-81,climb,Chrome sinks and thins,G5-0153 G5-0172,hide after 3.8 s ease .6 s; density ring .8 seat .6 felt .25 bindu 0; altitude factor,,N,—,new,measure-timing; screenshot-vs-frame F04
+CL-82,climb,The watching point,G1-0539 G5-0397 G4-0589,"26 px radial; breath 4 s; scale 1.1 s; colour #C9A84C->#C0392B by depth; Lissajous orbit, 28-pt trail; hold .9 s source",,P,spine point,new depth colour/orbit,screenshot-vs-frame F04; measure-timing
+CL-83,climb,Motes and horizon,G5-0185,motes gold->silver by altitude; 1 px horizon at H/5 40->100% once,,P,WorldClimbScene 900 motes,tint,screenshot-vs-frame F04
+CL-84,climb,Next band bleeds in,G5-0367 G5-0399,next band fog radial .12 at top edge; previous at bottom,,N,—,new,screenshot-vs-frame F40
+CL-85,climb,Ascent text shades,G5-0373,"#3A2E15 -> #4A3C1E -> #5A4B28, last word #2A1F08; contrast 11.00/8.90/7.04:1",,N,—,new,unit-test
+CL-86,climb,Rising door into chakra room,G5-0184 G5-0183,arch 132x172 red radial; 'Tap to cross' at 2 s; scale 1->5.5; focus-not-fade 3.2 s,,N,—,new,measure-timing; ui-walk-step
+CL-87,climb,Chakra colour wash,G5-0651,18% wash over 1.4 s,,N,—,new,measure-timing
+CL-88,climb,Yantra breathing beneath,G5-0650,"op .035->.058, scale 1->1.025 over 14 s",,N,—,new,measure-timing
+CL-89,climb,Ledger writes with Climb source,G6-0950 G2-0203,Light Entered; Shakti Recognized; Chakra Practiced; Ring Crossed fldi7SOuep57UoXzi; Gesture Source Climb via typecast,,W,"ActivityLedger.swift:43,461",fix,unit-test
+CL-90,climb,Five tiers of light,G5-0174,here .95/.95/.60 · open .82/.84/.50 · ground .62/.66/.40 · ahead .30/.34/.22 dashed · veiled .16/.20/.13 dashed; >=3:1,,N,—,new,measure-light; unit-test
+CL-91,climb,Controls,G2-0288,enter her · rise · sound · today · forget me (caps tracked),F40,P,WorldClimbView.swift,new today/forget me,screenshot-vs-frame F40
+CL-92,climb,Hand-feel LONG/SHORT,G5-0402,drag .00018/.00052; wheel .00008/.00022; pinch .0020/.0060; damp .956/.955; span .42/.24; passage 5.4/1.2,,N,—,new setting,unit-test
+CL-93,climb,Doors with live facts,G7-0348 G7-0361,entry from chakra room carries live facts and todayKp,,W,ChakraRoomView.swift:712-718,fix,ui-walk-step; unit-test
+CL-94,climb,Where She Speaks door,G7-0539,door from body light to body-of-light view,,B,WhereSheSpeaksView.swift,reuse,ui-walk-step
+CL-95,climb,Open instrument (no gates),G2-0195 G2-0197 G2-0437,no ring locked; no content gate; DescentState memory only,,B,VeilView (gate deleted),keep,unit-test
+CL-96,climb,Summit walk,G3-0449 G3-0408,"rise to Totality, stay still, lines arrive, point leads home",,N,—,—,his-walk
