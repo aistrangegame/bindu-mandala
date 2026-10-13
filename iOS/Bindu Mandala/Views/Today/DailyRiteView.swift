@@ -31,6 +31,9 @@ struct DailyRiteView: View {
     /// Wave 6 · the Rite's opening (Arrival): the hour's call, "Stop. Breathe.
     /// Remember.", the Sacred Pause. Set while it stands; the nine beats wait.
     @State private var opening: RiteOpening.Kind?
+    /// U0 · ruling 16 — the opening is no longer held to twice a day; it comes
+    /// once per arrival (this keeps the arrival that follows it from re-opening).
+    @State private var openingGiven = false
     /// Wave 6 · Offering and Carry, after she has been felt.
     @State private var closing = false
     /// Wave 6 · the low-state door.
@@ -137,15 +140,17 @@ struct DailyRiteView: View {
         // Wave 6 · B · the day's opening bell (once a practice day).
         TheBells.riteOpened()
         guard !arrived, opening == nil else { return }
-        // Wave 6 · Arrival comes first: once in the light half of a practice
-        // day and once in the dark half, the opening stands before the beats.
+        // Wave 6 · Arrival comes first: the opening stands before the beats.
+        // U0 · ruling 16 lifted the twice-a-day limit (``RiteOpening/oncePerHalfDay``):
+        // it comes on every arrival.
         let hour = Calendar.current.component(.hour, from: Date())
         let day = DailyEnergyService.practiceDayIndex()
-        if !Self.openingsSkipped,
+        if !Self.openingsSkipped, !openingGiven,
            RiteOpening.opens(lastKey: UserDefaults.standard.string(forKey: RiteOpening.lastOpeningKey),
                              practiceDay: day, hour: hour) {
             UserDefaults.standard.set(RiteOpening.key(practiceDay: day, hour: hour),
                                       forKey: RiteOpening.lastOpeningKey)
+            openingGiven = true
             opening = RiteOpening.kind(hour: hour)
             return
         }
@@ -173,13 +178,16 @@ struct DailyRiteView: View {
         beginArrival()
     }
 
-    /// Offering and Carry, once a practice day — a same-day return continues
-    /// rather than repeats (expansion #24).
+    /// Offering and Carry, whenever she is felt. (Once a practice day until
+    /// U0 — expansion #24's same-day rule is an app-added limit, lifted by
+    /// ruling 16: ``RiteStation/oncePerDay``.)
     private func beginClosing() {
         guard !Self.openingsSkipped else { return }
         let day = DailyEnergyService.practiceDayIndex()
-        guard UserDefaults.standard.object(forKey: RiteStation.closedDayKey) == nil
-                || UserDefaults.standard.integer(forKey: RiteStation.closedDayKey) != day else { return }
+        if RiteStation.oncePerDay {
+            guard UserDefaults.standard.object(forKey: RiteStation.closedDayKey) == nil
+                    || UserDefaults.standard.integer(forKey: RiteStation.closedDayKey) != day else { return }
+        }
         UserDefaults.standard.set(day, forKey: RiteStation.closedDayKey)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             withAnimation(.easeInOut(duration: still ? 0.01 : 1.2)) { closing = true }

@@ -3,10 +3,12 @@
 // Spike apparatus. It is named after the one Swift file that uses it and has no
 // other caller; when the spike is removed, this file leaves with it.
 //
-// Unlike every Swift file beside it, this one DOES reach a Release build: a
-// `.metal` file cannot be `#if DEBUG`-ed out of a target, so it compiles into
-// `default.metallib` either way. That is the canvas spike's headline finding and
-// the renderer ruling's second limb. The production pass Phase 3.1 built from it
+// A `.metal` file cannot be `#if DEBUG`-ed out of a target, so it used to compile
+// into `default.metallib` in Release too — the canvas spike's headline finding and
+// the renderer ruling's second limb. Since U0 (13 Oct 2026) it is listed in the app
+// target's `membershipExceptions`, so it is in no build of the app at all; the
+// spike's `ShaderLibrary.garimaLightPass` finds no function and its light pass is
+// absent. The production pass Phase 3.1 built from it
 // is `Homes/Render/RoomLightPass.metal`. It carries no figure and no glyph — it is a gradient, a set of shafts and
 // a bloom, which is to say light, which is what a room is made of.
 //

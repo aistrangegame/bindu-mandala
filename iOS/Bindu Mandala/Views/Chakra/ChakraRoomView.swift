@@ -133,7 +133,7 @@ struct ChakraRoomView: View {
         }
         .theEdgeWayOut(shown: practice == nil, onOut: { leave() })
         .fullScreenCover(item: $exit) { e in
-            ChakraRoomExitView(exit: e, onDone: { exit = nil })
+            ChakraRoomExitView(exit: e, mapRecordId: chakra.recordId, onDone: { exit = nil })
         }
         .onAppear(perform: arrive)
         .preferredColorScheme(.dark)
@@ -729,6 +729,9 @@ struct ChakraRoomView: View {
 
 struct ChakraRoomExitView: View {
     let exit: ChakraRoomExit
+    /// U0 · C14 — the room this door was opened from: a game played through it
+    /// is a room-born event, so its row carries `Link to The Map`.
+    var mapRecordId: String? = nil
     let onDone: () -> Void
 
     @Environment(\.modelContext) private var context
@@ -740,7 +743,7 @@ struct ChakraRoomExitView: View {
         case .ring(let r):
             ChakraRingClimb(ring: r, onLeft: onDone)
         case .game(let g, let kp):
-            PlayField.host(g, atPosition: kp, onClose: onDone)
+            PlayField.host(g, atPosition: kp, fromRoom: mapRecordId, onClose: onDone)
         }
     }
 }

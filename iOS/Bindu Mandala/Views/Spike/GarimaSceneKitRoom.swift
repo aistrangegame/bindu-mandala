@@ -2,11 +2,12 @@
 // is compiled out of Release, so none of it can exist in a build that reaches
 // Neev. The test action builds Debug, so every spike test still sees it.
 //
-// **One file in this folder is the exception, and it is named rather than
-// buried:** `GarimaSceneKitRoom.metal` compiles into `default.metallib` in
+// **One file in this folder was the exception, and it is named rather than
+// buried:** `GarimaSceneKitRoom.metal` compiled into `default.metallib` in
 // Release regardless of `#if DEBUG`, because a `.metal` file cannot be
 // conditionally compiled out of a target. The renderer ruling recorded this as
-// the canvas spike's headline finding. Phase 3.1's own pass lives at
+// the canvas spike's headline finding. Since U0 it is a membership exception of
+// the app target (in no build), so this room's light pass finds no function. Phase 3.1's own pass lives at
 // `Homes/Render/RoomLightPass.metal`, which is production code; this one stays
 // beside the room that is its only caller and leaves with it.
 #if DEBUG

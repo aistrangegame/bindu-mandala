@@ -39,6 +39,7 @@
 				Config.xcconfig,
 				Fonts/README.md,
 				Info.plist,
+				Views/Spike/GarimaSceneKitRoom.metal,
 			);
 			target = D1E2F3A4B5C6D7E8F9A0B1C2 /* Bindu Mandala */;
 		};

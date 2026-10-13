@@ -138,6 +138,8 @@ enum PlayLedger {
 struct PlayGameHost: View {
     let game: PlayGame
     var startPosition: Int? = nil
+    /// U0 · C14 — the chakra room this game was opened from, if any.
+    var mapRecordId: String? = nil
     var onClose: () -> Void
 
     @Query private var shaktis: [Shakti]
@@ -153,9 +155,11 @@ struct PlayGameHost: View {
     @State private var word = ""
     @FocusState private var wordFocused: Bool
 
-    init(game: PlayGame, startPosition: Int? = nil, onClose: @escaping () -> Void) {
+    init(game: PlayGame, startPosition: Int? = nil, mapRecordId: String? = nil,
+         onClose: @escaping () -> Void) {
         self.game = game
         self.startPosition = startPosition
+        self.mapRecordId = mapRecordId
         self.onClose = onClose
         _session = StateObject(wrappedValue: PlaySession(game: game, startPosition: startPosition))
         _model = State(initialValue: PlayModels.make(game, startPosition: startPosition))
@@ -351,12 +355,14 @@ struct PlayGameHost: View {
         ledgered = true
         let s = handToShakti
         let ring = session.ringInPlay ?? s?.ringNumber ?? game.address.ring
-        let row = PlayLedger.row(game: game,
+        var row = PlayLedger.row(game: game,
                                  ring: ring,
                                  shaktiName: s?.name,
                                  shaktiRecordId: s?.airtableRecordId,
                                  seconds: PlayClock.now - session.startedAt,
                                  at: .now)
+        // U0 · C14 — a game opened from a chakra's room is born in that room.
+        if let m = mapRecordId, !m.isEmpty { row.linkToMap = [m] }
         PlayLedger.write(row)
         // Wave 6 · the same act, kept on the phone for the Portrait's layers.
         PlayTraceStore.shared.note(game: game.rawValue, position: s?.khadgamalaPosition ?? session.handTo,

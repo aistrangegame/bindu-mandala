@@ -1,20 +1,21 @@
 import Foundation
 
-// MARK: - The after-effect: her siddhi is still on the instrument
+// MARK: - The after-effect: her siddhi lingers on the instrument, felt, never named
 //
 // Wave 1 · Slice D. Design built this twice and the restrained build shipped
 // neither:
 //
 //   * the Axis (`The Homes - The Axis.html`, `beginLeave`): on leaving, the
-//     whole instrument's exposure lifts — `1.04 + 0.12 × (1 − age / 24)` — and
-//     a line reads *"her siddhi is still on the instrument"* for twelve seconds;
+//     whole instrument's exposure lifts — `1.04 + 0.12 × (1 − age / 24)` (the
+//     Axis also wrote a line naming it; ruling 15, 12 Oct 2026: the after-effect
+//     is felt, never named, so that line is not carried);
 //   * the older Rite (`rite-core.jsx`, `riteAfterStyle`): for 180 seconds the
 //     instrument is a little **lighter**, **heavier**, **sharper** or **wider**,
 //     by her āvaraṇa, decaying as the square of what is left — *"Her Siddhi
 //     lingers on the whole instrument. Decays over minutes. Never named."*
 //
-// Both come home. The line is the Axis's; the four kinds are the Rite's; the
-// lift is the Axis's exposure. None of it is a score: it says nothing about
+// Both come home. The four kinds are the Rite's; the lift is the Axis's
+// exposure. No words name it (ruling 15). None of it is a score: it says nothing about
 // how long he stayed or how often he has come, and it is the same after-effect
 // for every stay in a ring. It is her, still present, and then gone.
 
@@ -37,13 +38,8 @@ enum HomeAfterEffect {
     static let lingers: TimeInterval = 180
     /// The Axis's exposure lift fades over 24 seconds.
     static let liftFades: TimeInterval = 24
-    /// …and its line stays for twelve.
-    static let lineHolds: TimeInterval = 12
     /// The Axis's `0.12` of exposure, at the moment of leaving.
     static let exposureLift: Double = 0.12
-
-    /// The Axis's own words.
-    static let line = "her siddhi is still on the instrument"
 
     /// The instrument, at one moment after leaving, as numbers a view applies.
     struct Look: Equatable {
@@ -96,11 +92,6 @@ enum HomeAfterEffect {
         let lift = 1 - min(1, max(0, age / liftFades))
         look.brightness += exposureLift / 1.04 * lift / 2
         return look
-    }
-
-    /// Whether the line is still standing.
-    static func lineShows(age: TimeInterval) -> Bool {
-        age >= 0 && age < lineHolds
     }
 
     // MARK: - Leaving

@@ -10,8 +10,10 @@ import SwiftUI
 //
 // Here:
 //   • **Rare.** At most one in any few days: never within `minimumGapDays` of
-//     the last (or of the first day the instrument was opened), and even then
-//     only by chance, once a practice day at most — so it is never expected.
+//     the last, and even then only by chance (`chance`), once a practice day at
+//     most — so it is never expected. His own rule (≥ 3 days apart, then 30 %);
+//     the app-added "never in the first days" was lifted by ruling 16 (U0), so
+//     the very first drop may come on any day.
 //   • **Never foreshadowed.** No notification, no badge, no hint that one is
 //     coming, and nothing that says one came. It simply arrives.
 //   • **His words.** Each drop is two exact substrings of one of The Map's
@@ -34,7 +36,8 @@ enum LeelaDrops {
     static let lastConsideredDayKey = "leela_last_considered_day"
     static let firstSeenDayKey = "leela_first_seen_day"
 
-    /// Pure: may a drop come today?
+    /// Pure: may a drop come today? `firstSeenDay` is kept for the callers'
+    /// shape and no longer gates anything (ruling 16).
     static func shouldDrop(today: Int,
                            firstSeenDay: Int,
                            lastDropDay: Int?,
@@ -43,8 +46,9 @@ enum LeelaDrops {
         // One chance a day at most — a second opening the same day is not a
         // second draw.
         if lastConsideredDay == today { return false }
-        let since = today - (lastDropDay ?? firstSeenDay)
-        guard since >= minimumGapDays else { return false }
+        if let last = lastDropDay {
+            guard today - last >= minimumGapDays else { return false }
+        }
         return roll < chance
     }
 
