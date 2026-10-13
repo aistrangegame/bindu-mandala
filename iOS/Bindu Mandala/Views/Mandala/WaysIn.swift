@@ -84,15 +84,15 @@ enum WayIn: String, CaseIterable, Identifiable, Equatable {
 }
 
 /// A way asked for from somewhere other than the Mandala — Lalitā's field's
-/// quiet way to the Road. The shell turns to the Mandala, and the Mandala takes
+/// quiet way to the Road. U2 · the Router crosses to the world the way
+/// reaches (`Router.askWay`); `pending` is kept for a world that still takes
 /// the way once it stands (`take()` empties the request, so it is taken once).
 enum MandalaWays {
-    static let notification = Notification.Name("BinduMandalaWayAsked")
     private(set) static var pending: WayIn?
 
     static func ask(_ way: WayIn) {
         pending = way
-        NotificationCenter.default.post(name: notification, object: way.rawValue)
+        Task { @MainActor in Router.shared.askWay(way) }
     }
 
     static func take() -> WayIn? {

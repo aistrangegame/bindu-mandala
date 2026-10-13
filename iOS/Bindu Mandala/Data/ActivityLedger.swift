@@ -164,6 +164,10 @@ enum ActivityLedger {
         /// The name his higher self gave, kept in Bindu memory (C-1325). Linked
         /// to the point's own row (kp 102); the name, his words, in `Notes`.
         static let nameKept         = "Name Kept"
+        /// U2 · the spine. One crossing between worlds (`spine-and-home.md`
+        /// §2 H #64): written once per crossing, never on a move within a
+        /// world. Born on first write by `typecast: true`.
+        static let worldCrossed     = "World Crossed"
     }
 
     // MARK: - The two once-ever milestones
@@ -266,6 +270,61 @@ enum ActivityLedger {
         static let well    = "Well"
         static let silence = "Silence"
         static let play    = "Play"      // Wave 4 — born by typecast on first write
+        // U2 · the spine — the worlds a crossing may leave (§2 H #64). Each
+        // born by typecast on first write; new options, never new fields.
+        static let home         = "Home"
+        static let chakra       = "Chakra"
+        static let climb        = "Climb"
+        static let time         = "Time"
+        static let relationship = "Relationship"
+        static let beneath      = "Beneath"
+        static let game         = "Game"
+        static let modes        = "Modes"
+    }
+
+    /// U2 · The `Gesture Source` of a crossing: the world he left (§2 H #64).
+    /// The eight new options name their worlds; the rest keep the options
+    /// they already wrote under (the rings and her presence are the Mandala's,
+    /// her home is a room, memory is the Mandala's Portrait).
+    static func gestureSource(leaving world: WorldID) -> String {
+        switch world {
+        case .home:         return GestureSource.home
+        case .today:        return GestureSource.today
+        case .mandala:      return GestureSource.mandala
+        case .rings:        return GestureSource.mandala
+        case .herHome:      return GestureSource.room
+        case .herPresence:  return GestureSource.mandala
+        case .climb:        return GestureSource.climb
+        case .the33:        return GestureSource.chakra
+        case .game:         return GestureSource.game
+        case .modes:        return GestureSource.modes
+        case .time:         return GestureSource.time
+        case .memory:       return GestureSource.mandala
+        case .well:         return GestureSource.well
+        case .beneath:      return GestureSource.beneath
+        case .relationship: return GestureSource.relationship
+        }
+    }
+
+    /// U2 · A `World Crossed` row (§2 H #64): Source App Mandala, Detail
+    /// "from {world} to {world}", linked to her Mandala row when a kp thread
+    /// is carried in (`mandalaLink`, else empty) and to The Map when a chakra
+    /// is. No count appears in any word.
+    static func worldCrossed(from: WorldID, to: WorldID,
+                             mandalaLink: String, mapRecordId: String?,
+                             at: Date) -> PendingActivity {
+        var row = PendingActivity(
+            type: ActivityType.worldCrossed,
+            linkRecordId: mandalaLink,
+            name: "\(to.title) — crossed into",
+            detail: "from \(from.title) to \(to.title)",
+            at: at,
+            gestureSource: gestureSource(leaving: from),
+            lunarDay: LunarPhaseService.currentDay(at: at),
+            moonPhase: LunarPhaseService.phaseName(at: at)
+        )
+        if let mapRecordId, !mapRecordId.isEmpty { row.linkToMap = [mapRecordId] }
+        return row
     }
 
     // MARK: - Builders

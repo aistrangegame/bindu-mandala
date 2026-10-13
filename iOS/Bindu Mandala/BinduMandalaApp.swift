@@ -88,10 +88,14 @@ struct BinduMandalaApp: App {
         // Wave 5 · a tapped gift lands on her. Installed before launch finishes,
         // so a gift that opens the app is not missed.
         GiftRouter.shared.install()
+        // U2 · every world is given its view as the root is made, before it
+        // first draws (`SpineRoot.init` → `SpineWorlds.registerAll()`).
     }
 
     var body: some Scene {
         WindowGroup {
+            // U2 · the root is the spine (`Views/Root/AppRoot.swift`): one
+            // world at a time, every launch arriving at the Bindu (ruling 1).
             AppRoot()
                 // Wave 1 · the Homes: her siddhi lingers on the whole
                 // instrument after a stay (`Views/Rooms/HerSiddhiLingers.swift`).
@@ -99,113 +103,5 @@ struct BinduMandalaApp: App {
                 .preferredColorScheme(.dark)
         }
         .modelContainer(container)
-    }
-}
-
-/// Wraps RootView and lays the Homecoming over it on every launch.
-private struct AppRoot: View {
-    @Environment(\.modelContext) private var context
-    @Environment(\.scenePhase) private var scenePhase
-
-    @AppStorage("daily_summons_enabled") private var summonsEnabled = true
-    @AppStorage("daily_summons_hour")    private var summonsHour: Int = DailySummons.defaultHour
-
-    @State private var showHomecoming: Bool = {
-        let args = ProcessInfo.processInfo.arguments
-        if args.contains("FORCE_HOMECOMING") { return true }
-        if args.contains("SKIP_HOMECOMING")  { return false }
-        // Wave 3: the Homecoming greets every launch. The first is the whole
-        // Origin; every return after it compresses to one breath (HomecomingView).
-        // The XCTest host stays quiet, as it does for sync and the summons.
-        return !AppRuntime.isUnitTesting
-    }()
-
-    var body: some View {
-        ZStack {
-            // U1 · A: `SPINE=1` (DEBUG) mounts the Router's fifteen worlds in
-            // place of the five rooms, so the walk can reach every world.
-            if SpineLaunch.isRequested { SpineRoot() } else { RootView() }
-            if showHomecoming {
-                HomecomingView(isPresented: $showHomecoming)
-                    .transition(.opacity)
-            }
-        }
-        .animation(.easeInOut(duration: 0.8), value: showHomecoming)
-        .onReceive(NotificationCenter.default.publisher(for: HomecomingView.reEnterNotification)) { _ in
-            showHomecoming = true
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            switch newPhase {
-            case .active:
-                // Drain any queued recognition writes whenever the app returns to active.
-                // Also reschedule the rolling summons window so dates ahead stay primed
-                // and today's slot is dropped if the rite was already done.
-                guard !AppRuntime.isUnitTesting else { return }
-                Task { await AirtableService.shared.flushPending(context: context) }
-                Task { await DailySummons.reschedule(enabled: summonsEnabled, hour: summonsHour) }
-                // Wave 5 · the gift's fortnight stays drawn, and practice set
-                // down offline (strokes, river letters, wagers) reaches the ledger.
-                Task { await EnergyGift.reschedule() }
-                Task { await PracticeLedger.flush(context: context) }
-            case .background:
-                // Ring-world voices must not keep sounding once the app leaves
-                // the foreground; every drone, triad and descent stops here.
-                RingAudioService.shared.stopAll()
-                HomeSoundService.shared.stopAll()
-                // Wave 6 · and the Om, which the field's stop leaves standing.
-                SoundConductor.shared.letGo()
-            default:
-                break
-            }
-        }
-        // **Keyed on the homecoming, so the prompt never lands on top of it.**
-        //
-        // The authorization alert used to fire from a bare `.task` at launch,
-        // which put a system dialog over `HomecomingView` — the app's one
-        // ceremonial greeting, and on the smallest screen it covered both lines
-        // of it outright. Worse than covering them: while the alert is up the
-        // homecoming's tap-to-enter is inert, so the very first thing a new
-        // walker does is swallowed, and he has learned before anything else
-        // that touching this app does nothing.
-        //
-        // The prompt costs nothing after the greeting is dismissed, and keying
-        // the task on `showHomecoming` is the whole fix: it declines while the
-        // greeting is up and runs again the moment it goes. On every launch
-        // after the first, `showHomecoming` is already false and the timing is
-        // exactly what it was.
-        .task(id: showHomecoming) {
-            guard !AppRuntime.isUnitTesting, !AppRuntime.skipsSummons else { return }
-            guard !showHomecoming else { return }
-            // First-launch authorization for the default-on summons. Silent
-            // once the system has a decision; only runs while still
-            // .notDetermined, so the practitioner sees the prompt at most once.
-            guard summonsEnabled else { return }
-            let status = await DailySummons.authorizationStatus()
-            switch status {
-            case .notDetermined:
-                let ok = await DailySummons.requestAuthorization()
-                if ok {
-                    await DailySummons.reschedule(enabled: true, hour: summonsHour)
-                } else {
-                    summonsEnabled = false
-                }
-            case .authorized, .provisional:
-                await DailySummons.reschedule(enabled: true, hour: summonsHour)
-            default:
-                summonsEnabled = false
-            }
-        }
-        .task(id: scenePhase) {
-            // Periodic background re-sync while the app is foregrounded, so
-            // Airtable edits made elsewhere show up without a relaunch. The
-            // task is cancelled and reissued on every scenePhase change, so
-            // backgrounding cleanly stops the loop.
-            guard scenePhase == .active, !AppRuntime.isUnitTesting else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(300))
-                if Task.isCancelled { return }
-                await AirtableService.shared.sync(context: context)
-            }
-        }
     }
 }

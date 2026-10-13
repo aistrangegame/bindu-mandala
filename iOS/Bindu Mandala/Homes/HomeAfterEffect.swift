@@ -96,12 +96,10 @@ enum HomeAfterEffect {
 
     // MARK: - Leaving
 
-    /// The notification a room posts when he crosses out of it. The ring is in
-    /// `userInfo["ring"]`, and nothing else is — not the stay, not her position.
-    static let didLeave = Notification.Name("bindu.homes.herSiddhiLingers")
-
-    /// He has crossed out of a room in this āvaraṇa.
+    /// He has crossed out of a room in this āvaraṇa. U2 · the Router carries
+    /// it across worlds (`Router.afterEffect`); only the ring travels — not
+    /// the stay, not her position.
     static func left(ring: Int) {
-        NotificationCenter.default.post(name: didLeave, object: nil, userInfo: ["ring": ring])
+        Task { @MainActor in Router.shared.leftHerRoom(ring: ring) }
     }
 }

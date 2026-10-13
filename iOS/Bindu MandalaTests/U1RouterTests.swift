@@ -476,9 +476,11 @@ final class U1RouterTests: XCTestCase {
         XCTAssertNil(DeepLink.launchAddress(arguments: ["START_TAB=well"]))
 
         // The shell reads OPEN_WORLD through here, and only in DEBUG.
-        let root = try XCTUnwrap(LawSource.production("RootView.swift"))
-        XCTAssertTrue(String(root.lexed.masked).contains("DeepLink.launchAddress(arguments:"),
-                      "RootView reads OPEN_WORLD around the Router")
+        // U2 · the root is the Router's: it takes its launch address from here.
+        let router = try XCTUnwrap(LawSource.production("Router.swift"))
+        XCTAssertTrue(String(router.lexed.masked).contains("DeepLink.launchAddress("),
+                      "the Router reads OPEN_WORLD around itself")
+        XCTAssertNil(LawSource.production("RootView.swift"), "the retired RootView is back")
         let link = try XCTUnwrap(LawSource.production("DeepLink.swift"))
         XCTAssertTrue(link.text.contains("#if DEBUG"), "OPEN_PLACE is honoured outside DEBUG")
 
@@ -488,82 +490,77 @@ final class U1RouterTests: XCTestCase {
         }
     }
 
-    // MARK: 8 · The six channels, each with its Router call
+    // MARK: 8 · The six channels are gone; each poster calls its Router method
+    //
+    // U2 · B: U1 bridged the six NotificationCenter channels; U2 switched every
+    // poster to its Router call and removed the channels (§2 J #71).
 
-    @MainActor
-    func testEveryChannelInTheTreeIsBridged() throws {
-        let declared: Set<String> = Set(LawSource.production.flatMap { f in
-            Rx.groups(#"Notification\.Name\(\s*"([^"]+)"\s*\)"#, f.text).map { $0[1] }
-        })
-        let bridged: Set<String> = Set(SpineChannel.allCases.map { $0.notificationName.rawValue })
-        XCTAssertEqual(SpineChannel.allCases.count, 6)
-        XCTAssertEqual(bridged.count, 6, "two channels share a notification")
-        XCTAssertEqual(declared, bridged, "a NotificationCenter channel exists that the Router does not answer")
-        XCTAssertEqual(Set(SpineChannel.allCases.map(\.routerCall)).count, 6)
-        // Born red: a seventh channel would not be bridged.
-        XCTAssertNotEqual(declared.union(["bindu.somewhere.new"]), bridged)
+    /// The poster of each retired channel, and the Router call it now makes.
+    static let posters: [(file: String, call: String)] = [
+        ("RecognitionMomentView.swift", "Router.shared.recognitionSettled("),
+        ("WaysIn.swift", "Router.shared.askWay("),
+        ("EnergyGift.swift", "Router.shared.giftOpened("),
+        ("PlayGame.swift", "Router.shared.openPlay("),
+        ("HomecomingView.swift", "Router.shared.reEnterHomecoming("),
+        ("HomeAfterEffect.swift", "Router.shared.leftHerRoom("),
+    ]
+
+    func testNoNotificationChannelIsLeft() throws {
+        let declared: [String] = LawSource.production.flatMap { f in
+            Rx.groups(#"Notification\.Name\(\s*"([^"]+)"\s*\)"#, f.text).map { "\(f.path) · \($0[1])" }
+        }
+        XCTAssertEqual(declared, [], "a NotificationCenter channel routes around the Router")
+        for p in Self.posters {
+            let f = try XCTUnwrap(LawSource.production(p.file), p.file)
+            let code = String(f.lexed.masked)
+            XCTAssertTrue(code.contains(p.call), "\(p.file) no longer calls \(p.call)")
+            XCTAssertFalse(code.contains("NotificationCenter.default.post"), "\(p.file) still posts a notification")
+        }
+        let presenters = LawSource.production.filter {
+            let code = String($0.lexed.masked)
+            return code.contains("func playFieldPresenter(") || code.contains("func leelaDrops(")
+        }
+        XCTAssertEqual(presenters.map(\.path), [], "a global presenter is back")
+        // Born red: a declared channel is seen.
+        XCTAssertFalse(Rx.groups(#"Notification\.Name\(\s*"([^"]+)"\s*\)"#,
+                                 #"static let x = Notification.Name("bindu.somewhere.new")"#).isEmpty)
     }
 
     @MainActor
-    func testEachChannelReachesItsRouterCall() throws {
+    func testEachPosterReachesItsRouterCall() throws {
         let r = Router(directory: nil, launch: nil, settlesInstantly: true)
-        func post(_ c: SpineChannel, _ object: Any? = nil, _ info: [AnyHashable: Any]? = nil) {
-            RouterBridge.handle(c, Notification(name: c.notificationName, object: object, userInfo: info), router: r)
-        }
 
-        post(.recognitionSettled, AirtableService.RecognitionSource.mandala.rawValue)
+        r.recognitionSettled(source: AirtableService.RecognitionSource.mandala.rawValue)
         XCTAssertEqual(r.state.current.world, .memory, "Recognition settles into Memory from every source")
         XCTAssertTrue(r.back())
         XCTAssertEqual(r.state.current, .home, "back returns him to where he felt her")
 
-        post(.mandalaWayAsked, WayIn.modes.rawValue)
+        r.askWay(.modes)
         XCTAssertEqual(r.state.current.world, .modes)
 
-        GiftRouter.shared.hold(29)
-        post(.giftOpened)
+        r.giftOpened(kp: 29)
         XCTAssertEqual(r.state.current, Address(.home, kp: 29, sub: Address.cardSub))
-        XCTAssertNil(GiftRouter.shared.peek(), "the gift was not taken once")
 
         let game = try XCTUnwrap(PlayGame.allCases.first)
-        post(.playFieldOpen, game.rawValue)
+        r.openPlay(game)
         XCTAssertEqual(r.state.current, Address(.game, sub: game.rawValue))
-        post(.playFieldOpen)
+        r.openPlay(nil)
         XCTAssertEqual(r.state.current, Address(.game), "the whole field")
 
-        post(.homecomingReEnter)
+        r.reEnterHomecoming()
         XCTAssertEqual(r.state.current, .home)
         XCTAssertEqual(r.takeCeremony(), .homecoming)
         XCTAssertNil(r.takeCeremony(), "the Homecoming was owed twice")
 
-        post(.herSiddhiLingers, nil, ["ring": 3])
+        r.leftHerRoom(ring: 3)
         XCTAssertEqual(r.afterEffect?.ring, 3)
 
         r.leelaDropped(id: "drop-7")
         XCTAssertEqual(r.state.current, Address(.game, sub: Address.leelaSubPrefix + "drop-7"))
+        XCTAssertEqual(r.state.current.leelaDropID, "drop-7")
 
-        // Born red: a way that does not exist routes nowhere.
-        let before = r.state
-        post(.mandalaWayAsked, "nowhere")
-        XCTAssertEqual(r.state, before)
-    }
-
-    /// Listening for real: a channel posted on a NotificationCenter moves the Router.
-    @MainActor
-    func testTheRouterHearsTheChannelsWhileListening() {
-        let center = NotificationCenter()
-        let r = Router(directory: nil, launch: nil, settlesInstantly: true)
-        let tokens = RouterBridge.listen(r, center: center)
-        XCTAssertEqual(tokens.count, 6)
-        center.post(name: MandalaWays.notification, object: WayIn.climb.rawValue)
-        let deadline = Date().addingTimeInterval(2)
-        while r.state.current.world != .climb && Date() < deadline {
-            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
-        }
-        XCTAssertEqual(r.state.current.world, .climb)
-        RouterBridge.stop(tokens, center: center)
-        center.post(name: MandalaWays.notification, object: WayIn.modes.rawValue)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-        XCTAssertEqual(r.state.current.world, .climb, "the bridge kept listening after it was stopped")
+        // Born red: a way that does not exist is not a way.
+        XCTAssertNil(WayIn(rawValue: "nowhere"))
     }
 
     // MARK: 9 · The crossing blooms in the right colour, and is remembered once

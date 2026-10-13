@@ -15,11 +15,9 @@ import SwiftData
 ///
 /// On close the practice data is committed first (the note, the ledger write),
 /// then the ceremony gathers into her point, a brief after-glow of her light
-/// stays there and falls away, and `didSettleNotification` is posted —
-/// RootView listens and navigates to the Portrait, where the newly-lit point glows.
+/// stays there and falls away, and the Router settles him into Memory (U2:
+/// `Router.recognitionSettled`, from every source), where the newly-lit point glows.
 struct RecognitionMomentView: View {
-    static let didSettleNotification = Notification.Name("RecognitionMomentDidSettle")
-
     let shakti: Shakti
     @Binding var isPresented: Bool
     var source: AirtableService.RecognitionSource = .today
@@ -433,14 +431,12 @@ struct RecognitionMomentView: View {
     /// The after-glow has fallen away: hand off.
     private func settle() {
         isPresented = false
-        // She settles into the Portrait — the practitioner sees the newly-lit
-        // point in the field of their attention. RootView listens for this.
-        // The notification carries where she was felt from: only a felt from
-        // the Rite settles into the Portrait. From the Mandala, the Field or
-        // a room he stays where he is (Wave 0 · B4); the Portrait still lights
-        // her point the next time it opens.
+        // She settles into Memory — the practitioner sees the newly-lit point
+        // in the field of his attention. U2 · the Router carries him there from
+        // every source, as Design does (spine-and-home §2 J #73), and back()
+        // returns him to where he felt her.
         let src = source
-        NotificationCenter.default.post(name: Self.didSettleNotification, object: src.rawValue)
+        Task { @MainActor in Router.shared.recognitionSettled(source: src.rawValue) }
     }
 
     private func timeString(_ d: Date) -> String {

@@ -55,6 +55,41 @@ struct Address: Codable, Hashable {
     /// The sub-place prefix a Leela drop is presented under in A Strange Game (§2 J #74).
     static let leelaSubPrefix = "leela."
 
+    // MARK: U2 · the sub-places the spine names
+
+    /// U2 · The source at Home — Lalitā source, the arrival from the inside
+    /// (`spine-and-home.md` §2 #25, #36: "hold the point → straight to the
+    /// source"). Always keyed by kp 102, never `shaktis.last`.
+    static let sourceSub = "source"
+    /// U2 · Her position at the source: the point's own seat.
+    static let sourceKP = 102
+    /// U2 · The place the point's hold falls to (§2 C #36).
+    static let source = Address(.home, kp: sourceKP, sub: sourceSub)
+
+    /// U2 · A ring inside the Nine Rings world is the sub-place `ring.<n>`
+    /// (`mandala-and-rings.md` §1A: "a Veil row crosses to that ring in the
+    /// nine rings world").
+    static let ringSubPrefix = "ring."
+
+    /// U2 · The Nine Rings world opened on ring `n` (1–9).
+    static func ringPlace(_ n: Int) -> Address {
+        Address(.rings, sub: ringSubPrefix + String(min(max(n, 1), 9)))
+    }
+
+    /// U2 · The ring this address opens on, when its sub-place names one.
+    var ringNumber: Int? {
+        guard let sub, sub.hasPrefix(Self.ringSubPrefix),
+              let n = Int(sub.dropFirst(Self.ringSubPrefix.count)), (1...9).contains(n) else { return nil }
+        return n
+    }
+
+    /// U2 · The Leela drop this address presents, when its sub-place names one.
+    var leelaDropID: String? {
+        guard world == .game, let sub, sub.hasPrefix(Self.leelaSubPrefix) else { return nil }
+        let id = String(sub.dropFirst(Self.leelaSubPrefix.count))
+        return id.isEmpty ? nil : id
+    }
+
     /// Every thread within its range; a sub-place, when named, is not blank.
     var isValid: Bool {
         if let kp, !Self.kpRange.contains(kp) { return false }
