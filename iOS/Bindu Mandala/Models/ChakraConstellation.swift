@@ -103,6 +103,59 @@ struct Chakra33: Codable, Identifiable, Equatable {
     /// Codex References — provenance only (4 of 33).
     var codexReferences: String? = nil
 
+    // MARK: U0 · the energy its room carries (ruling 17: shown word for word)
+    //
+    // Re-baked from the dated export of 13 Oct 2026. Same law as above: each is
+    // the Map's own cell, verbatim, or absent; all optional with a default so a
+    // bake without them still decodes. The Map's own field names, camel-cased.
+
+    /// Teaching Text.
+    var teachingText: String? = nil
+    /// Post-Engagement Teaching.
+    var postEngagementTeaching: String? = nil
+    /// Shakti Function.
+    var shaktiFunction: String? = nil
+    /// Tree (Soul Tree · Bindu Tree · Maya Tree · Structural).
+    var tree: String? = nil
+    /// Tree Caption.
+    var treeCaption: String? = nil
+    /// Dyad Description.
+    var dyadDescription: String? = nil
+    /// Color Dyad.
+    var colorDyad: String? = nil
+    /// Mind Triad (Creation · Recognition · Emergence).
+    var mindTriad: String? = nil
+    /// Story Portal Headline.
+    var storyPortalHeadline: String? = nil
+    /// Panel Verb.
+    var panelVerb: String? = nil
+    /// Panel Seed Message.
+    var panelSeedMessage: String? = nil
+    /// Gaia Voice.
+    var gaiaVoice: String? = nil
+    /// Shakti Practice.
+    var shaktiPractice: String? = nil
+    /// Threshold Architecture (Shadow · Armin · Other).
+    var thresholdArchitecture: String? = nil
+    /// URL — the room's web practice page.
+    var url: String? = nil
+    /// Build Status.
+    var buildStatus: String? = nil
+    /// Linked Builds — record ids in The Builds.
+    var linkedBuilds: [String]? = nil
+    /// The room's song in Bindu Field (`tblv3WvMZ90Sfhun6`), where one exists.
+    var binduFieldRecordId: String? = nil
+
+    /// Ruling 2 · room 32 (the Ego Reveal) is sealed: the bake carries only its
+    /// public identity (name, verb, colour, subtitle, Śakti, mudrā, Book Position,
+    /// record id) and `sealed: true`. Its words are not in the bundle at all.
+    var sealed: Bool? = nil
+
+    /// Sealed rooms show their identity and a held threshold, never a text body.
+    /// Keyed on the bake's flag *and* the Road position, so an older bake that
+    /// still carries room 32's text is sealed all the same.
+    var isSealed: Bool { sealed == true || road == ChakraConstellation.sealedRoad }
+
     var id: Int { road }
 
     enum Kind: String, Codable, CaseIterable {
@@ -126,6 +179,12 @@ enum ChakraConstellation {
 
     /// The file the bake writes, bundled with the app (synchronized group).
     static let resourceName = "ChakraConstellation"
+
+    /// Ruling 2 · the Ego Reveal's Road position. Its words stay sealed on every route.
+    static let sealedRoad = 32
+
+    /// The line a sealed room shows in place of any text.
+    static let sealedLine = "held for its own walk"
 
     private struct File: Decodable {
         let chakras: [Chakra33]
