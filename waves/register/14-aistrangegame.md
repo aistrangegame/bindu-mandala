@@ -141,7 +141,7 @@ Learning lakes: Therapy 318 · Consciousness 258 · Learning 103.
 - *"The 404 offers the three nearest pages, then the die."*
 - Search prompt: *"Type one word you're carrying"*. It searches the dances' verbs and seeds too.
 - The Now page is *"the site's own growth rings"*.
-- The contact form goes to ashreys@gmail.com, never printed.
+- The contact form goes to his own inbox (address never printed).
 
 **State (V3:84).**
 - One key each, in the `asg.` namespace: *"sound · lens · where you left · what you've walked · the Point · your name from the Game · words you give a page"*.
