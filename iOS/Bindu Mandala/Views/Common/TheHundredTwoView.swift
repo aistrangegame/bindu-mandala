@@ -57,7 +57,8 @@ struct TheHundredTwoView: View {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { thresholdFor = av }
                     }
                     // Debug: `OPEN_CLIMB` rises onto the axis directly.
-                    if ProcessInfo.processInfo.arguments.contains("OPEN_CLIMB") {
+                    if ProcessInfo.processInfo.arguments.contains("OPEN_CLIMB")
+                        || WorldID.fromLaunchArguments()?.opensClimb == true {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { showClimb = true }
                     }
                 }

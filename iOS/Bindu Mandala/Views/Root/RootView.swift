@@ -18,6 +18,10 @@ struct RootView: View {
 
     private static func initialDestination() -> Destination {
         let args = ProcessInfo.processInfo.arguments
+        // U0 · the walk: `OPEN_WORLD=<id>` (DEBUG only) opens the closest
+        // existing screen to that world (`WorldID.u0Destination`).
+        if let world = WorldID.fromLaunchArguments(args),
+           let d = Destination(rawValue: world.u0Destination) { return d }
         if args.contains("START_TAB=mandala") { return .mandala }
         if args.contains("START_TAB=rite")    { return .rite }
         if args.contains("START_TAB=well")    { return .well }

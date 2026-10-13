@@ -294,6 +294,8 @@ struct PlayFieldPresenter: ViewModifier {
                 }
             }
             .onAppear {
+                // U0 · the walk: `OPEN_WORLD=game` opens Lalitā's field.
+                if WorldID.fromLaunchArguments()?.opensPlayField == true { fieldShown = true }
                 for arg in ProcessInfo.processInfo.arguments where arg.hasPrefix("OPEN_PLAY") {
                     let parts = arg.split(separator: "=", maxSplits: 1)
                     if parts.count == 2, let game = PlayGame(rawValue: String(parts[1])) {

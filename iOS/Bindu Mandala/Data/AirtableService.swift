@@ -121,6 +121,11 @@ final class AirtableService {
     // MARK: - Orchestration
 
     func sync(context: ModelContext) async {
+        // U0 · a `SNAPSHOT=<date>` launch reads the dated export, never the API.
+        if SnapshotSource.isActive {
+            syncFromSnapshot(context: context)
+            return
+        }
         if syncIsDisabled() { return }
         // Drain any pending recognitions first — they piggyback on every sync.
         // Safe without a token: each queue holds its items and returns.
@@ -809,6 +814,8 @@ extension AirtableService {
                            note: String?,
                            source: RecognitionSource,
                            context: ModelContext) async {
+        if SnapshotLedger.shared.divert(entry: "recordRecognition", table: ActivityLedger.tableId,
+                                        summary: "\(shakti.khadgamalaPosition ?? 0) · \(source.rawValue)") { return }
         if syncIsDisabled() { return }
         guard let recordId = shakti.airtableRecordId, !recordId.isEmpty else {
             log.notice("Recognition: no airtableRecordId — skipping Airtable write")
@@ -1079,6 +1086,8 @@ extension AirtableService {
         shakti.lastSyncedAt = .now
         try? context.save()
 
+        if SnapshotLedger.shared.divert(entry: "advanceStatus", table: Self.tableId,
+                                        summary: "\(shakti.khadgamalaPosition ?? 0) · \(newStatus.rawValue)") { return }
         if syncIsDisabled() { return }
         guard let token = pat,
               let recordId = shakti.airtableRecordId, !recordId.isEmpty else { return }
@@ -1149,6 +1158,8 @@ extension AirtableService {
     /// `restoreDescentIfLocalEmpty` reads. `typecast: true` creates the
     /// `Ring Crossed` Activity-Type option on first write (it is not pre-created).
     func recordCrossing(ring: Int) async {
+        if SnapshotLedger.shared.divert(entry: "recordCrossing", table: ActivityLedger.tableId,
+                                        summary: "ring \(ring)") { return }
         if syncIsDisabled() { return }
         let item = PendingCrossing(ring: ring, feltAt: .now)
         if !(await processCrossing(item)) { enqueueCrossing(item) }
@@ -1248,6 +1259,9 @@ extension AirtableService {
     func saveLetter(shakti: Shakti, body: String) async {
         // The letter is already saved locally by the caller (The Well is
         // offline-first); only the Airtable mirror and the ledger row stop here.
+        // The letter's words never enter the mock — only that one was written.
+        if SnapshotLedger.shared.divert(entry: "saveLetter", table: Self.tableId,
+                                        summary: "\(shakti.khadgamalaPosition ?? 0)") { return }
         if syncIsDisabled() { return }
         guard let recordId = shakti.airtableRecordId, !recordId.isEmpty else {
             log.notice("Letter: no airtableRecordId — skipping Airtable write")
@@ -1396,6 +1410,8 @@ extension AirtableService {
     /// Write one event to the ledger. Fire-and-forget; on failure the item is
     /// queued in UserDefaults and drained by `flushPending`.
     func logActivity(_ item: PendingActivity) async {
+        if SnapshotLedger.shared.divert(entry: "logActivity", table: ActivityLedger.tableId,
+                                        summary: item.type, activity: item, at: item.at) { return }
         if syncIsDisabled() { return }
         if await processActivity(item) == false {
             enqueueActivity(item)
@@ -1413,6 +1429,14 @@ extension AirtableService {
     /// so an offline dwell drains with the other events. Zero call sites
     /// until Phase 3.6 wires the dwell.
     func recordSilence(shakti: Shakti, durationSec: Double, at: Date = .now) async {
+        if SnapshotSource.isActive {
+            // The row it would write, handed to the mock through `logActivity`.
+            await logActivity(ActivityLedger.silence(shaktiRecordId: shakti.airtableRecordId ?? "",
+                                                     name: shakti.name,
+                                                     durationSec: durationSec,
+                                                     at: at))
+            return
+        }
         if syncIsDisabled() { return }
         guard let recordId = shakti.airtableRecordId, !recordId.isEmpty else {
             log.notice("Silence: no airtableRecordId — skipping Airtable write")
@@ -1467,6 +1491,10 @@ extension AirtableService {
     /// Nothing is shown, ever — law 2. The instrument knows; he does not.
     func recordMilestone(_ milestone: ActivityLedger.Milestone,
                          row: @autoclosure () -> PendingActivity) async {
+        if SnapshotSource.isActive {
+            await logActivity(row())   // to the mock; nothing remembered on the phone
+            return
+        }
         if syncIsDisabled() { return }
         if Self.hasLedgeredMilestone(milestone) { return }
         var verdict = Self.decision(for: .absent)
@@ -1707,6 +1735,10 @@ extension AirtableService {
     /// Raising `maxFailures` was the alternative and would have changed
     /// behaviour for four other queues to fix one.
     func recordNote(_ note: MarginNote, context: ModelContext) async {
+        // His words never enter the mock — only that a note was left. The note
+        // stays un-stamped, so a later real launch still ledgers it.
+        if SnapshotLedger.shared.divert(entry: "recordNote", table: ActivityLedger.tableId,
+                                        summary: "note") { return }
         if syncIsDisabled() { return }
         guard note.ledgeredAt == nil, !note.isBlank else { return }
         // One POST per note at a time — see `beginNoteFlight`.
@@ -2284,6 +2316,8 @@ extension AirtableService {
 
     /// Write one note to the Codex. Fire-and-forget; on failure it is queued.
     func writeCodexNote(_ note: PendingCodexNote) async {
+        if SnapshotLedger.shared.divert(entry: "writeCodexNote", table: CodexWrite.tableId,
+                                        summary: "codex note", at: note.at) { return }
         if syncIsDisabled() { return }
         if await processCodexNote(note) == false {
             var queue = loadPendingCodexNotes()
@@ -2416,4 +2450,33 @@ extension AirtableService {
         ActivityLedger.Field.notes,
         ActivityLedger.Field.linkToMandala,
     ]
+}
+
+// MARK: - Upgrade U0 · the dated snapshot (DEBUG walk only)
+
+extension AirtableService {
+
+    /// `SNAPSHOT=<date>`: reconcile the store from the dated export through the
+    /// very same row models and reconcilers a live sync uses, and touch nothing
+    /// else — no queue is drained, no ledger is read, no request is built.
+    /// Practice restored from the ledger (recognitions, descent, river, notes)
+    /// is not in the export, so a snapshot launch has none of it.
+    func syncFromSnapshot(context: ModelContext) {
+        guard let dir = SnapshotSource.directory() else { return }
+        do {
+            let decoder = JSONDecoder()
+            let sk = try decoder.decode(Page<ShaktiRow>.self,
+                                        from: SnapshotSource.mandalaPage(rowType: "Shakti", in: dir)).records
+            let av = try decoder.decode(Page<AvaranaRow>.self,
+                                        from: SnapshotSource.mandalaPage(rowType: "Avarana", in: dir)).records
+            let nt = try decoder.decode(Page<NityaRow>.self,
+                                        from: SnapshotSource.mandalaPage(rowType: "Nitya", in: dir)).records
+            try reconcileShaktis(sk, context: context)
+            try reconcileAvaranas(av, context: context)
+            try reconcileNityas(nt, context: context)
+            log.notice("Snapshot read: \(sk.count) Śaktis · \(av.count) Āvaraṇas · \(nt.count) Nityās")
+        } catch {
+            log.error("Snapshot read failed: \(Self.describe(error), privacy: .public)")
+        }
+    }
 }

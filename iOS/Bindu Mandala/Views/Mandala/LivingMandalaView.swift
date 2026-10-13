@@ -735,7 +735,7 @@ struct LivingMandalaView: View {
         guard !appliedLaunchArgs else { return }
         appliedLaunchArgs = true
         let args = ProcessInfo.processInfo.arguments
-        if args.contains("OPEN_SILENCE") {
+        if args.contains("OPEN_SILENCE") || WorldID.fromLaunchArguments(args)?.opensDescent == true {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { openDescent() }
             return
         }

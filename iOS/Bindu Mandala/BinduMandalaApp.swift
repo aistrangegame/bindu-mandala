@@ -13,9 +13,12 @@ enum AppRuntime {
     /// environment. `AirtableService` returns early from sync, the flushes and
     /// every write, so a tested app never enqueues or writes a row. Main-actor
     /// isolated because every reader (the service, the scene) already is.
+    /// U0 · a `SNAPSHOT=<date>` launch (DEBUG) is never live either: it reads
+    /// the dated export (`SnapshotSource`) and its writes go to `SnapshotLedger`.
     @MainActor static var syncDisabled: Bool = isUnitTesting
         || ProcessInfo.processInfo.arguments.contains("SYNC_OFF")
         || ProcessInfo.processInfo.environment["BINDU_SYNC_OFF"] == "1"
+        || SnapshotSource.isActive
 
     /// Debug: skip the first-launch notification-authorization prompt so it never
     /// obscures screenshots. Pass `SKIP_SUMMONS` as a launch argument.
