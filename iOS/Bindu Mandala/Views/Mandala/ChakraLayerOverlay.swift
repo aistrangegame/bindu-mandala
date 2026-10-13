@@ -80,6 +80,10 @@ struct ChakraLayerOverlay: View {
     let onBeginRoad: () -> Void
     /// Hands the camera back to the host's resting view when the Road ends.
     let onEndRoad: () -> Void
+    /// U2 · C · when the host is a world of its own (the 33), a light opens
+    /// its room by crossing there through the Router instead of raising the
+    /// room over the glass. `nil`: the room is raised here, as before.
+    var onOpenRoom: ((Int) -> Void)? = nil
 
     private var seatPoints: [Int: CGPoint] {
         var out: [Int: CGPoint] = [:]
@@ -100,7 +104,7 @@ struct ChakraLayerOverlay: View {
                 // Wave 6 · every light is a door into its chakra's room.
                 ChakraConstellationVoices(chakras: ChakraConstellation.all, seats: seats,
                                           camera: camera, size: size,
-                                          onOpen: { openRoad = $0 })
+                                          onOpen: { open($0) })
             }
             if state.walking {
                 roadCatcher
@@ -200,7 +204,7 @@ struct ChakraLayerOverlay: View {
                 }
                 Button {
                     Haptics.medium()
-                    openRoad = c.road
+                    open(c.road)
                 } label: {
                     Text("enter its room")
                         .font(AppFont.label(11.5))
@@ -231,6 +235,11 @@ struct ChakraLayerOverlay: View {
             .transition(.opacity)
             .task(id: state.roadIndex) { await walk() }
         }
+    }
+
+    /// A chakra's room: crossed to (the 33's own world) or raised here.
+    private func open(_ road: Int) {
+        if let onOpenRoom { onOpenRoom(road) } else { openRoad = road }
     }
 
     private func beginRoad() {

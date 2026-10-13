@@ -16,6 +16,7 @@ struct PortraitMandalaView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var allEntries: [RecognitionEntry]
     @Query(sort: \Shakti.khadgamalaPosition) private var shaktis: [Shakti]
+    @Environment(Router.self) private var envRouter: Router?
 
     private let diameter: CGFloat = 344
     @State private var settleHighlight: Int? = nil  // khadgamalaPosition to glow
@@ -63,7 +64,13 @@ struct PortraitMandalaView: View {
         .onDisappear(perform: finishDrawing)
         .fullScreenCover(isPresented: $riverOpen) { CorrespondenceView() }
         .fullScreenCover(isPresented: $bodyOpen) { WhereSheSpeaksView() }
-        .fullScreenCover(isPresented: $pointOpen) { ThePointView() }
+        // U2 · C · the point's five clocks are Time — a world of their own,
+        // crossed to (back returns to the Portrait).
+        .onChange(of: pointOpen) { _, open in
+            guard open else { return }
+            pointOpen = false
+            WorldDoors.time(router: envRouter)
+        }
         .fullScreenCover(isPresented: $bookOpen) { ArchiveBookView() }
         .fullScreenCover(isPresented: $monthOpen) { MonthMirrorView() }
         .sheet(isPresented: Binding(

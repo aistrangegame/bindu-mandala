@@ -115,8 +115,10 @@ struct PlayFieldView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var playing: PlayGame? = nil
     @State private var arrived = false
-    /// Wave 6.1 · the modes, reached from the field.
+    /// Wave 6.1 · the modes, reached from the field. U2 · C · the Modes are
+    /// their own world: the field crosses there.
     @State private var modesOpen = false
+    @Environment(Router.self) private var envRouter: Router?
     /// The season the field is opened in (Wave 6 · the seasonal yantra).
     let season = Panchanga.rtu(at: Date())
 
@@ -193,8 +195,10 @@ struct PlayFieldView: View {
         .fullScreenCover(item: $playing) { game in
             PlayGameHost(game: game, onClose: { playing = nil })
         }
-        .fullScreenCover(isPresented: $modesOpen) {
-            ModesDoorView(onClose: { modesOpen = false })
+        .onChange(of: modesOpen) { _, open in
+            guard open else { return }
+            modesOpen = false
+            WorldDoors.modes(nil, router: envRouter)
         }
         .preferredColorScheme(.dark)
         .statusBarHidden()

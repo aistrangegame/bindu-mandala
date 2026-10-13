@@ -21,6 +21,8 @@ struct TheHundredTwoView: View {
     /// What each room remembers — read only as a state (has he stood here),
     /// for the climb's core lights.
     @Query private var rooms: [HomeMemory]
+    /// U2 · C · the Climb and her room are worlds of their own, crossed to.
+    @Environment(Router.self) private var envRouter: Router?
     /// Wave 2 · the room a seat's doorway opened. See ``HerRoomDoor``.
     @State private var roomKp: Int?
 
@@ -41,9 +43,6 @@ struct TheHundredTwoView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationDestination(item: $detailFor) { shakti in
-                    ShaktiDetailView(shakti: shakti, backLabel: "the field", source: .field)
-                }
                 .navigationDestination(item: $thresholdFor) { avarana in
                     AvaranaThresholdView(avarana: avarana,
                                          ringAtmosphere: ringAtmosphere(avarana.ringNumber),
@@ -63,18 +62,18 @@ struct TheHundredTwoView: View {
                     }
                 }
         }
-        .fullScreenCover(isPresented: $showClimb) {
-            WorldClimbView(live: liveWorlds,
-                           seats: climbSeats,
-                           met: metKp,
-                           todayKp: todayPos,
-                           startingAtRing: effectiveOpen ?? todayRing,
-                           forceReduceMotion: AppRuntime.forcesReduceMotion,
-                           onLeft: { showClimb = false })
+        // U2 · C · the Climb is its own world: the Field crosses there,
+        // rising from the ring he has open here (`ClimbWorld`).
+        .onChange(of: showClimb) { _, open in
+            guard open else { return }
+            showClimb = false
+            WorldDoors.climb(ring: effectiveOpen ?? todayRing, router: envRouter)
         }
         // Wave 2 · one building: a seat's doorway opens her room, through
-        // her rite, from the Field.
-        .herRoom($roomKp)
+        // her rite, from the Field. U2 · C · room first, and in Her Home —
+        // touching her name opens her room as well.
+        .crossesToHerHome(shakti: $detailFor)
+        .crossesToHerHome($roomKp)
     }
 
     /// The 102 for the climb, with the names and qualities the base gives them.
