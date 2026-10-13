@@ -275,45 +275,9 @@ struct PlayFieldView: View {
 }
 
 // MARK: - The shell's door into play
-
-/// Lets anything in the app open Lalitā's field or one game through
-/// `PlayField.open(_:)` — attached once, at the root. Also answers the launch
-/// argument `OPEN_PLAY` (the field) or `OPEN_PLAY=<game>` (one game), so a
-/// test harness can walk every game.
-struct PlayFieldPresenter: ViewModifier {
-    @State private var fieldShown = false
-    @State private var single: PlayGame? = nil
-
-    func body(content: Content) -> some View {
-        content
-            .onReceive(NotificationCenter.default.publisher(for: PlayField.openNotification)) { note in
-                if let raw = note.object as? String, let game = PlayGame(rawValue: raw) {
-                    single = game
-                } else {
-                    fieldShown = true
-                }
-            }
-            .onAppear {
-                // U0 · the walk: `OPEN_WORLD=game` opens Lalitā's field.
-                if WorldID.fromLaunchArguments()?.opensPlayField == true { fieldShown = true }
-                for arg in ProcessInfo.processInfo.arguments where arg.hasPrefix("OPEN_PLAY") {
-                    let parts = arg.split(separator: "=", maxSplits: 1)
-                    if parts.count == 2, let game = PlayGame(rawValue: String(parts[1])) {
-                        single = game
-                    } else {
-                        fieldShown = true
-                    }
-                }
-            }
-            .fullScreenCover(isPresented: $fieldShown) {
-                PlayFieldView(onClose: { fieldShown = false })
-            }
-            .fullScreenCover(item: $single) { game in
-                PlayGameHost(game: game, onClose: { single = nil })
-            }
-    }
-}
-
-extension View {
-    func playFieldPresenter() -> some View { modifier(PlayFieldPresenter()) }
-}
+//
+// U2 · the global presenter (`.playFieldPresenter()`, two covers over the
+// whole shell) is retired. `PlayField.open(_:)` crosses through the Router to
+// A Strange Game — its own space, at the game named (`Address.sub` = the
+// game's raw value) — and the launch argument `OPEN_PLAY` / `OPEN_PLAY=<game>`
+// is read as an address by `DeepLink.launchAddress`.

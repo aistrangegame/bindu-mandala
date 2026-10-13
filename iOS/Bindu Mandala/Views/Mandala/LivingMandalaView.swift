@@ -212,9 +212,6 @@ struct LivingMandalaView: View {
             ChakraRingClimb(ring: max(1, enteredRing > 0 ? enteredRing : veilHere),
                             onLeft: { climbOpen = false })
         }
-        .onReceive(NotificationCenter.default.publisher(for: MandalaWays.notification)) { _ in
-            takeAskedWay()
-        }
         // Wave 2 · one building, and the Mandala's voice.
         .herRoom($roomFor)
         .mandalaFieldVoice(ring: enteredRing, on: soundOn, descent: descent, stillSeconds: stillSeconds)

@@ -48,9 +48,10 @@ struct HerSiddhiLingers: ViewModifier {
                         .ignoresSafeArea()
                 }
             }
-            .onReceive(NotificationCenter.default.publisher(for: HomeAfterEffect.didLeave)) { note in
-                let ring = (note.userInfo?["ring"] as? Int) ?? 1
-                begin(HomeAfterEffect.kind(ring: ring))
+            // U2 · the Router carries her after-effect across worlds.
+            .onChange(of: Router.shared.afterEffect) { _, mark in
+                guard let mark else { return }
+                begin(HomeAfterEffect.kind(ring: mark.ring))
             }
     }
 

@@ -369,13 +369,12 @@ struct HomecomingView: View {
         UserDefaults.standard.bool(forKey: userDefaultsKey)
     }
 
-    /// Posted by Settings → "Re-enter the Homecoming". AppRoot listens and
-    /// re-presents the screen without requiring an app relaunch.
-    static let reEnterNotification = Notification.Name("BinduMandala.HomecomingReEnter")
-
+    /// Settings → "Re-enter the Homecoming". U2 · the Router owes the shell
+    /// the ceremony (`Router.reEnterHomecoming`), and `AppRoot` re-presents it
+    /// at Home without requiring an app relaunch.
     static func reset() {
         UserDefaults.standard.set(false, forKey: userDefaultsKey)
-        NotificationCenter.default.post(name: reEnterNotification, object: nil)
+        Task { @MainActor in Router.shared.reEnterHomecoming() }
     }
 }
 

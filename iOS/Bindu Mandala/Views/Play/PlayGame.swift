@@ -406,12 +406,10 @@ extension Shakti {
 /// raised from beneath another.
 enum PlayField {
 
-    /// Posted with a `PlayGame` raw value (or `nil` for the whole field).
-    static let openNotification = Notification.Name("BinduPlayFieldOpen")
-
-    /// Ask the shell to open one game, or Lalitā's whole field.
+    /// Open one game, or Lalitā's whole field. U2 · through the Router: A
+    /// Strange Game, its own space, at that game (`sub` = the game's raw value).
     static func open(_ game: PlayGame? = nil) {
-        NotificationCenter.default.post(name: openNotification, object: game?.rawValue)
+        Task { @MainActor in Router.shared.openPlay(game) }
     }
 
     /// One game, hosted, ready to put in a cover.

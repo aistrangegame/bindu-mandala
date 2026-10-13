@@ -140,29 +140,30 @@ enum DeepLink {
     static func launchAddress(arguments: [String] = ProcessInfo.processInfo.arguments) -> Address? {
         #if DEBUG
         guard let arg = arguments.last(where: {
-            $0.hasPrefix(openPlacePrefix) || $0.hasPrefix(WorldID.openWorldPrefix)
+            $0.hasPrefix(openPlacePrefix) || $0.hasPrefix(WorldID.openWorldPrefix) || $0.hasPrefix(openPlayPrefix)
         }) else { return nil }
         if arg.hasPrefix(openPlacePrefix) {
             return place(fromLaunchValue: String(arg.dropFirst(openPlacePrefix.count)))
+        }
+        if arg.hasPrefix(openPlayPrefix) {
+            return play(fromLaunchArgument: arg)
         }
         return WorldID.fromLaunchArguments([arg]).map { Address($0) }
         #else
         return nil
         #endif
     }
-}
 
-/// `SPINE=1` (DEBUG only): the shell mounts `SpineRoot` — the Router and its
-/// fifteen worlds — in place of `RootView`, so the walk can reach every world
-/// by `OPEN_WORLD` / `OPEN_PLACE` before U2 rewires the app onto the Router.
-enum SpineLaunch {
-    static let argument = "SPINE=1"
+    /// U2 · `OPEN_PLAY` (Lalitā's whole field) or `OPEN_PLAY=<game>` (one game)
+    /// — the retired play presenter's launch argument, now an address in A
+    /// Strange Game. An unknown game opens nothing.
+    static let openPlayPrefix = "OPEN_PLAY"
 
-    static let isRequested: Bool = {
-        #if DEBUG
-        return ProcessInfo.processInfo.arguments.contains(argument)
-        #else
-        return false
-        #endif
-    }()
+    static func play(fromLaunchArgument arg: String) -> Address? {
+        guard arg.hasPrefix(openPlayPrefix) else { return nil }
+        let rest = arg.dropFirst(openPlayPrefix.count)
+        if rest.isEmpty { return Address(.game) }
+        guard rest.hasPrefix("="), let game = PlayGame(rawValue: String(rest.dropFirst())) else { return nil }
+        return Address(.game, sub: game.rawValue)
+    }
 }

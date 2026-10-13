@@ -84,50 +84,13 @@ enum LeelaDrops {
 }
 
 // MARK: - The drop, when it comes
-
-/// Lets a Leela drop arrive over the shell, rarely, unannounced.
-@MainActor
-struct LeelaDropPresenter: ViewModifier {
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var drop: LeelaDrop?
-
-    /// A breath after he arrives, so a drop never lands on the opening itself.
-    static let settleSeconds: Double = 9
-
-    func body(content: Content) -> some View {
-        content
-            .overlay {
-                if let d = drop {
-                    LeelaDropView(drop: d, onAnswer: { answer(d, carried: $0) })
-                        .transition(.opacity)
-                        .zIndex(90)
-                }
-            }
-            .animation(.easeInOut(duration: 1.2), value: drop)
-            .task(id: scenePhase == .active) {
-                guard scenePhase == .active, drop == nil, !AppRuntime.isUnitTesting else { return }
-                try? await Task.sleep(for: .seconds(Self.settleSeconds))
-                guard !Task.isCancelled else { return }
-                if let d = LeelaDrops.draw() {
-                    Haptics.soft()
-                    drop = d
-                }
-            }
-    }
-
-    private func answer(_ d: LeelaDrop, carried: Bool) {
-        ThreePools.noteBeing(.leelaAnswered(d.id, carried: carried))
-        let item = ActivityLedger.leelaDrop(chakra: d.chakra, carried: carried, at: Date())
-        Task { await AirtableService.shared.logActivity(item) }
-        drop = nil
-    }
-}
-
-extension View {
-    /// Rare, unannounced Leela drops — see ``LeelaDrops``.
-    @MainActor
-    func leelaDrops() -> some View { modifier(LeelaDropPresenter()) }
-}
+//
+// U2 · the global overlay that laid a drop over whatever screen was up is
+// retired. A drop is now a place in A Strange Game (spine-and-home §2 J
+// #74): a breath (9 s) after he arrives at Home the shell draws
+// (`SpineServices.considerLeela`), the Router crosses to `game` at
+// `leela.<id>`, and `LeelaDropPlace` shows this view in its own space; his
+// answer writes the one row (`SpineServices.answerLeela`) and returns him.
 
 /// The drop on the glass: the lead, then — a breath later — the action, in the
 /// light of the face the row is spoken in; then two quiet answers.

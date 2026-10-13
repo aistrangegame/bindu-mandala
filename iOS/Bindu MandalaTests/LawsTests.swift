@@ -840,6 +840,8 @@ enum LedgerIsTheRecord {
         "Chakra Practiced",
         // Wave 6 · light sent back, and the name kept — held to the same rule.
         "Light Sent Back", "Name Kept",
+        // U2 · the spine: one crossing between worlds — held to the same rule.
+        "World Crossed",
         "Activity Type",
     ]
 

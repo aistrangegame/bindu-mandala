@@ -231,4 +231,71 @@ enum WorldBuilders {
         if let build = registered[address.world] { return build(address) }
         return AnyView(WorldPlaceholder(address: address))
     }
+
+    // MARK: U2 · the launch ceremony
+
+    /// U2 · The ceremony every launch passes through before Home stands
+    /// (`spine-and-home.md` §1 "Arriving": the Waking → the Homecoming). Part A
+    /// registers it; until it does, the shell plays the existing
+    /// `HomecomingView`, so nothing that greets him today is lost. The closure
+    /// is handed `done`, which it calls once the ceremony has given way to Home.
+    private(set) static var launchCeremony: ((_ done: @escaping () -> Void) -> AnyView)?
+
+    /// Give the launch its ceremony (Part A).
+    static func registerLaunch(_ build: @escaping (_ done: @escaping () -> Void) -> AnyView) {
+        launchCeremony = build
+    }
+}
+
+// MARK: - U2 · where the worlds are registered
+
+/// U2 · The one moment every world is given its view: `SpineWorlds.registerAll()`,
+/// called once by the app before the root first draws (`BinduMandalaApp.init`).
+///
+/// The parts that build worlds hook in **without touching this file** — each
+/// declares its own member on `SpineWorlds` in its own folder, and that member
+/// shadows the empty default below:
+///
+/// ```swift
+/// // Home/ (Part A)
+/// extension SpineWorlds {
+///     static func registerHome() {
+///         WorldBuilders.register(.home) { AnyView(HomeWorld(address: $0)) }
+///         WorldBuilders.registerLaunch { done in AnyView(TheWaking(onDone: done)) }   // optional
+///     }
+/// }
+/// // Worlds/ (Part C)
+/// extension SpineWorlds {
+///     static func registerHostedWorlds() {
+///         WorldBuilders.register(.today) { AnyView(TodayWorld(address: $0)) }
+///         …
+///     }
+/// }
+/// ```
+///
+/// A world nobody registers draws as its `WorldPlaceholder` (its name, its
+/// doors, the way back), so the root works whether or not a part has landed.
+@MainActor
+protocol SpineWorldsRegistering {}
+
+extension SpineWorldsRegistering {
+    /// Part A's hook (Home, `.home`). Empty until Part A declares its own.
+    static func registerHome() {}
+    /// Part C's hook (every other world). Empty until Part C declares its own.
+    static func registerHostedWorlds() {}
+}
+
+/// U2 · The worlds' registration point — see `SpineWorldsRegistering`.
+@MainActor
+enum SpineWorlds: SpineWorldsRegistering {
+
+    private static var done = false
+
+    /// Register every world once. Idempotent.
+    static func registerAll() {
+        guard !done else { return }
+        done = true
+        registerHome()
+        registerHostedWorlds()
+    }
 }

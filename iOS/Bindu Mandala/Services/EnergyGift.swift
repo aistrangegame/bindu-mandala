@@ -147,7 +147,6 @@ enum EnergyGift {
 final class GiftRouter: NSObject, UNUserNotificationCenterDelegate {
 
     static let shared = GiftRouter()
-    static let openNotification = Notification.Name("bindu.gift.open")
 
     private let lock = NSLock()
     private var held: Int?
@@ -181,8 +180,11 @@ final class GiftRouter: NSObject, UNUserNotificationCenterDelegate {
         if response.notification.request.identifier.hasPrefix("gift."),
            let kp = (info["kp"] as? Int) ?? (info["kp"] as? NSNumber)?.intValue {
             hold(kp)
-            DispatchQueue.main.async {
-                NotificationCenter.default.post(name: GiftRouter.openNotification, object: nil)
+            // U2 · the gift lands through the Router: Home, her card already
+            // open (spine-and-home §2 J #72). Taken exactly once, here or by
+            // the shell's launch (`SpineServices.landAnyGift`).
+            Task { @MainActor in
+                if let kp = GiftRouter.shared.take() { Router.shared.giftOpened(kp: kp) }
             }
         }
         completionHandler()

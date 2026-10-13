@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 import Observation
 
 // MARK: - Upgrade U1 · A · the Router
@@ -11,6 +12,15 @@ import Observation
 // routes). One source of truth: `state` (where he is and the way back) — and
 // exactly one world mounted at a time (`mounted`), which changes only at the
 // crossing's mount beat, under its bloom. Nothing is ever laid over a world.
+//
+// U2 · B: the Router is the app's root. The six NotificationCenter channels
+// are gone — every poster calls its Router method directly (`RecognitionMomentView`
+// → `recognitionSettled`, `MandalaWays.ask` → `askWay`, `GiftRouter` →
+// `giftOpened`, `PlayField.open` → `openPlay`, `HomecomingView.reset` →
+// `reEnterHomecoming`, `HomeAfterEffect.left` → `leftHerRoom`). The Router
+// also holds the spine's own two states that are not worlds: the menu (the
+// Constellation, §2 D #40–#42, above every world) and a spine place (Settings
+// #95, the one-second practice #35) drawn *in place of* the world, never over it.
 
 /// A crossing on its way — what `CrossingOverlay` draws.
 struct CrossingInFlight: Equatable, Identifiable {
@@ -38,8 +48,9 @@ struct CrossingInFlight: Equatable, Identifiable {
 @Observable
 final class Router {
 
-    /// The app's one router.
-    static let shared = Router()
+    /// The app's one router. In the unit-test host it keeps no journey file,
+    /// so a test that reaches a poster (`MandalaWays.ask`) writes nothing to disk.
+    static let shared = Router(directory: AppRuntime.isUnitTesting ? nil : PracticeVault.defaultDirectory)
 
     /// `PracticeVault` file of the journey (§4 "On the phone": `journey`).
     static let journeyFile = "journey"
@@ -55,6 +66,24 @@ final class Router {
         let at: Date
     }
 
+    /// U2 · The menu's three faces (§2 D #40 the Constellation, #41 the list,
+    /// #42 the Veil) — one switch; he stays where he is.
+    enum MenuFace: String, CaseIterable {
+        case constellation
+        case list
+        case veil
+    }
+
+    /// U2 · A place the spine itself keeps that is not one of the fifteen
+    /// worlds. It is drawn *in place of* the world (the world stays alive
+    /// beneath, hidden and untouchable), never over it.
+    enum SpinePlace: String, CaseIterable {
+        /// Settings becomes a place, never a sheet over a world (§2 M #95).
+        case settings
+        /// Blink · Breathe · Press — the one-second practice (§2 C #35).
+        case oneSecond
+    }
+
     /// Where he is, and the way back. The one source of truth.
     private(set) var state: NavigationState
     /// The one world drawn now. Follows `state.current` at each crossing's
@@ -68,6 +97,10 @@ final class Router {
     private(set) var pendingCeremony: Ceremony?
     /// Her room's after-effect, carried across worlds (§2 C #39).
     private(set) var afterEffect: AfterEffectMark?
+    /// U2 · The menu, when open, and on which face (§2 D #40–#42).
+    private(set) var menuFace: MenuFace?
+    /// U2 · The spine place drawn in place of the world, if any.
+    private(set) var place: SpinePlace?
 
     /// Set by the root from the environment: every crossing becomes the .2 s cross-fade.
     var reduceMotion = false
@@ -82,6 +115,11 @@ final class Router {
     private let directory: URL?
     private let settlesInstantly: Bool
     private let clock: () -> Date
+    /// U2 · The last back, so the root's edge and a world's own way out,
+    /// heard together for one swipe, take him back one step and not two.
+    @ObservationIgnored private var lastBackAt: Date?
+    /// U2 · Two backs closer than this are one gesture heard twice.
+    static let backDebounceSeconds = 0.35
 
     /// - Parameters:
     ///   - directory: where the journey is kept (`nil`: nowhere — tests).
@@ -125,6 +163,14 @@ final class Router {
     /// nothing happens.
     @discardableResult
     func back(via crossing: Crossing = .bloom()) -> Bool {
+        // U2 · back first closes what the spine has open, in place.
+        if menuFace != nil { closeMenu(); return true }
+        if place != nil { closePlace(); return true }
+        if !settlesInstantly {
+            let now = clock()
+            if let last = lastBackAt, now.timeIntervalSince(last) < Self.backDebounceSeconds { return false }
+            lastBackAt = now
+        }
         guard let entry = state.pop() else {
             guard state.current.place != Address.home else { return false }
             return home(via: crossing)
@@ -142,6 +188,46 @@ final class Router {
     @discardableResult
     func home(via crossing: Crossing = .bloom()) -> Bool {
         go(to: .home, via: crossing)
+    }
+
+    /// U2 · Back by the edge (§2 G #51–#53): under the return bloom when he
+    /// left that place within 45 minutes (#52), else the bloom from the touch.
+    @discardableResult
+    func backFromEdge(origin: CGPoint? = nil) -> Bool {
+        let recent = state.backStack.last.map {
+            clock().timeIntervalSince($0.at) <= Crossing.returnWindowMinutes * 60
+        } ?? false
+        return back(via: Crossing(kind: recent ? .returnBloom : .bloom, origin: origin))
+    }
+
+    /// U2 · The point's hold (§2 C #36): straight to the source — Home, at
+    /// Lalitā source, keyed by kp 102 — through the deep zoom's crossing.
+    @discardableResult
+    func toSource(from origin: CGPoint? = nil) -> Bool {
+        go(to: .source, via: Crossing(kind: .pravesha, origin: origin))
+    }
+
+    // MARK: U2 · The menu and the spine's places
+
+    /// Open the Constellation (or one of its faces) above the world.
+    func openMenu(_ face: MenuFace = .constellation) {
+        menuFace = face
+    }
+
+    /// Close the menu; the world beneath is exactly as he left it.
+    func closeMenu() {
+        menuFace = nil
+    }
+
+    /// Draw a spine place in place of the world (the world kept alive beneath).
+    func open(place p: SpinePlace) {
+        menuFace = nil
+        place = p
+    }
+
+    /// Leave the spine place; the world returns as it was.
+    func closePlace() {
+        place = nil
     }
 
     /// Keep where the camera / scroll / zoom now rests in this place, without
@@ -165,7 +251,7 @@ final class Router {
         inFlight = nil
     }
 
-    // MARK: The routes that replace the channels (`RouterBridge`)
+    // MARK: The routes that replaced the six channels (U2: called directly)
 
     /// Recognition has settled: memory settles in, from every source (§2 J #73).
     /// `source` is `AirtableService.RecognitionSource`'s raw value, kept for U2.
@@ -219,6 +305,10 @@ final class Router {
     }
 
     private func begin(_ crossing: Crossing, from: Address, to: Address, colourOf colourAddress: Address) {
+        // U2 · every crossing closes the menu and any spine place: he arrives
+        // in the world, never under something.
+        menuFace = nil
+        place = nil
         let timing = crossing.timing(reduceMotion: reduceMotion)
         let flight = CrossingInFlight(id: UUID(), crossing: crossing, from: from, to: to,
                                       colourHex: colour(for: colourAddress),
