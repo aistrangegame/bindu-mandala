@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bindu Mandala — The Field</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ground: #0D0508;
+    --gold: #C9963F;
+    --gold-deep: #A07830;
+    --cream: #F2E8D9;
+    --accent-red: #8B1A2A;
+    --rose: #C4725A;
+    --violet: #9A86C4;
+    --green: #5A9A8B;
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --measure: 720px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--ground); color: var(--cream); font-family: var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; line-height: 1.5; overflow-x: hidden; }
+  .ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% -5%, rgba(201,150,63,0.10), transparent 60%), radial-gradient(ellipse 60% 45% at 50% 105%, rgba(139,26,42,0.12), transparent 60%); }
+  .wrap { position: relative; z-index: 1; max-width: var(--measure); margin: 0 auto; padding: 0 28px 160px; }
+
+  .kicker { font-size: 10.5px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--gold); opacity: 0.82; }
+  .voice { font-family: var(--serif); font-style: italic; color: var(--gold); }
+  p { font-size: 16.5px; line-height: 1.78; color: rgba(242,232,217,0.74); margin: 0 0 1.15em; text-wrap: pretty; }
+  strong { color: rgba(242,232,217,0.95); font-weight: 600; }
+  em { color: var(--gold); font-style: italic; }
+
+  .bindu { width: 13px; height: 13px; border-radius: 50%; flex: 0 0 auto;
+    background: radial-gradient(circle at 50% 50%, var(--cream) 0 18%, var(--accent-red) 30%, rgba(139,26,42,0) 72%); box-shadow: 0 0 9px rgba(139,26,42,0.6); }
+
+  header.masthead { padding: 116px 0 50px; border-bottom: 0.5px solid rgba(201,150,63,0.18); margin-bottom: 56px; }
+  .masthead .kicker { display: block; margin-bottom: 26px; }
+  .masthead h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(48px, 10vw, 84px); line-height: 0.98; letter-spacing: 0.02em; margin: 0; color: var(--cream); }
+  .masthead h1 .glow { color: var(--gold); }
+  .masthead .sub { font-family: var(--serif); font-style: italic; font-size: clamp(20px, 4.2vw, 26px); color: rgba(242,232,217,0.6); margin: 22px 0 0; line-height: 1.42; }
+
+  section { margin-top: 88px; }
+  .sec-head { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
+  .sec-head .num { font-family: var(--serif); font-size: 15px; font-style: italic; color: var(--gold); opacity: 0.7; }
+  h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(30px, 6.5vw, 46px); line-height: 1.06; margin: 6px 0 18px; color: var(--cream); }
+  .lead { font-size: 17.5px; color: rgba(242,232,217,0.82); margin-bottom: 30px; }
+
+  /* SWOT grid */
+  .swot { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .quad { border: 0.5px solid rgba(201,150,63,0.18); border-radius: 4px; padding: 22px 22px 8px; background: linear-gradient(180deg, rgba(34,16,20,0.45), rgba(13,5,8,0.15)); }
+  .quad h3 { font-family: var(--sans); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; margin: 0 0 4px; }
+  .quad .gloss { font-family: var(--serif); font-style: italic; font-size: 15px; color: rgba(242,232,217,0.5); margin: 0 0 16px; }
+  .quad.s h3 { color: var(--green); } .quad.s { border-color: rgba(90,154,139,0.3); }
+  .quad.w h3 { color: var(--rose); } .quad.w { border-color: rgba(196,114,90,0.3); }
+  .quad.o h3 { color: var(--gold); } .quad.o { border-color: rgba(201,150,63,0.32); }
+  .quad.t h3 { color: var(--violet); } .quad.t { border-color: rgba(154,134,196,0.3); }
+  .quad ul { list-style: none; margin: 0; padding: 0; }
+  .quad li { position: relative; padding-left: 16px; margin-bottom: 13px; font-size: 14.5px; line-height: 1.55; color: rgba(242,232,217,0.74); }
+  .quad li::before { content: ""; position: absolute; left: 0; top: 9px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+  .quad li b { color: var(--cream); font-weight: 600; }
+
+  /* The coherence pull */
+  .pull { margin: 60px 0 8px; padding: 0 0 0 28px; border-left: 2px solid var(--accent-red); }
+  .pull p { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(25px, 5.4vw, 36px); line-height: 1.36; color: var(--gold); margin: 0; }
+  .pull .small { font-family: var(--sans); font-style: normal; font-size: 15px; color: rgba(242,232,217,0.6); margin-top: 18px; line-height: 1.7; }
+
+  /* Direction cards */
+  .dir { margin: 0 0 22px; border: 0.5px solid rgba(201,150,63,0.18); border-radius: 4px; overflow: hidden; background: linear-gradient(180deg, rgba(34,16,20,0.5), rgba(13,5,8,0.2)); }
+  .dir-head { padding: 26px 28px 0; display: flex; align-items: baseline; gap: 14px; }
+  .dir-head .rn { font-family: var(--serif); font-style: italic; font-size: 30px; font-weight: 300; color: var(--gold); opacity: 0.85; line-height: 1; flex: 0 0 auto; }
+  .dir-head h3 { font-family: var(--serif); font-weight: 400; font-size: 28px; color: var(--cream); margin: 0; line-height: 1.1; }
+  .dir-head .tagline { font-family: var(--serif); font-style: italic; font-size: 16px; color: rgba(242,232,217,0.55); display: block; margin-top: 4px; }
+  .dir-body { padding: 16px 28px 26px; }
+  .dir-body p:last-child { margin-bottom: 0; }
+  .resolves { margin-top: 16px; padding-top: 14px; border-top: 0.5px solid rgba(242,232,217,0.08); font-size: 13.5px; color: rgba(242,232,217,0.6); }
+  .resolves b { color: var(--gold); font-weight: 500; letter-spacing: 0.04em; }
+
+  .approve { margin-top: 64px; padding: 34px 30px; border: 0.5px solid rgba(201,150,63,0.28); border-radius: 4px; background: radial-gradient(ellipse 80% 120% at 50% 0%, rgba(201,150,63,0.06), transparent 70%); }
+  .approve h2 { margin-top: 0; }
+  .approve .opts { display: grid; gap: 12px; margin-top: 20px; }
+  .approve .opt { display: flex; gap: 13px; align-items: baseline; font-size: 15.5px; color: rgba(242,232,217,0.82); line-height: 1.6; }
+  .approve .opt .mk { color: var(--gold); font-family: var(--serif); font-style: italic; flex: 0 0 auto; }
+  .approve .opt b { color: var(--cream); font-weight: 600; }
+
+  .divider { display: flex; justify-content: center; margin: 10px 0; opacity: 0.5; }
+  @media (max-width: 560px) { .swot { grid-template-columns: 1fr; } .wrap { padding: 0 18px 110px; } header.masthead { padding-top: 72px; } .dir-head, .dir-body { padding-left: 18px; padding-right: 18px; } }
+</style>
+</head>
+<body>
+  <div class="ambient"></div>
+  <div class="wrap">
+
+    <header class="masthead">
+      <span class="kicker">The Field · Analysis &amp; Where This Goes</span>
+      <h1>What it is.<br />What it <span class="glow">could become.</span></h1>
+      <p class="sub">A SWOT, a coherence read, and three monumental directions —<br />presented for your approval, before I write the brief.</p>
+    </header>
+
+    <!-- SWOT -->
+    <section id="swot">
+      <div class="sec-head"><span class="bindu"></span><span class="num">i</span></div>
+      <h2>The field, squared</h2>
+      <p class="lead">An honest read of where the app stands — grounded in the live source, not the spec.</p>
+      <div class="swot">
+        <div class="quad s">
+          <h3>Strengths</h3>
+          <p class="gloss">what almost nothing else has</p>
+          <ul>
+            <li><b>Conceptual integrity.</b> The interface <em>is</em> the teaching — the Veil is an āvaraṇa, the descent is a descent. Metaphor and mechanism are the same word.</li>
+            <li><b>A living object.</b> The mandala breathes with the hour and the moon. It has weather. You return to something changed.</li>
+            <li><b>Tone held at scale.</b> Across a dozen screens it never once becomes a wellness app. No streaks, no badges. Rarest thing in the build.</li>
+            <li><b>The Portrait.</b> Your attention drawn as the yantra — a genuinely original idea, not a feature.</li>
+            <li><b>The voice.</b> Devotional, embodied, unwavering. The writing alone would carry it.</li>
+          </ul>
+        </div>
+        <div class="quad w">
+          <h3>Weaknesses</h3>
+          <p class="gloss">all problems of abundance</p>
+          <ul>
+            <li><b>No spine.</b> The daily rite that was the whole point is buried; the app reads as a museum you browse, not a practice you keep.</li>
+            <li><b>Discoverability.</b> Two hidden doors, no signpost. Half the app can go unfound.</li>
+            <li><b>Density without hierarchy.</b> The detail screen reads like a wiki entry; the soul sits seventh.</li>
+            <li><b>The floor.</b> Legibility and touch targets cross from <em>quiet</em> into <em>unusable</em> in places.</li>
+            <li><b>Uneven bar.</b> Rendering regressions and layout bugs mean the nine worlds aren't all held to the same standard yet.</li>
+          </ul>
+        </div>
+        <div class="quad o">
+          <h3>Opportunities</h3>
+          <p class="gloss">the unrealized power</p>
+          <ul>
+            <li><b>Time as the medium.</b> Turn it from an app you open into a practice you are <em>inside of</em>.</li>
+            <li><b>The authentic path.</b> Śrī Vidyā already <em>is</em> a structured ascent through the āvaraṇas. The app could hold your place on a real pilgrimage.</li>
+            <li><b>The years-long artwork.</b> The Portrait could fill in over months until the whole 102 is alight — a masterpiece that <em>is</em> the practice.</li>
+            <li><b>The devotional calendar.</b> Each Śakti has her day. The lunar wheel could make the app a living observance.</li>
+            <li><b>Singularity.</b> There is nothing else like this. The moat is depth, not features.</li>
+          </ul>
+        </div>
+        <div class="quad t">
+          <h3>Threats</h3>
+          <p class="gloss">what to guard against</p>
+          <ul>
+            <li><b>Feature creep.</b> The very abundance that is its strength can dilute the soul. Every new room is a tax on the whole.</li>
+            <li><b>The museum deepening.</b> More worlds, less return — beautiful but not habitual.</li>
+            <li><b>Retention.</b> Without a spine, awe doesn't become a daily relationship.</li>
+            <li><b>Bespoke scope.</b> Nine hand-built worlds at this bar is enormous to sustain and to keep coherent.</li>
+            <li><b>Drift.</b> Decisions made by accumulation, not intention — the slow erosion of a clear point of view.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- COHERENCE -->
+    <section id="coherence">
+      <div class="sec-head"><span class="bindu"></span><span class="num">ii</span></div>
+      <h2>The one thing I'd stake it on</h2>
+      <p class="lead">If you read the SWOT closely, every weakness and every opportunity is the same sentence said twice:</p>
+      <div class="pull">
+        <p>This is a relationship that deepens over time — but it presents as a place to browse.</p>
+        <p class="small">The whole app already believes in time: it breathes with the moon, status ripens with recognition, the Portrait remembers. But you can't yet <em>feel</em> the months passing, or see where you are on the way in. The single most powerful move is to make <strong>time the medium</strong> — to stop being an app you open, and become a practice you are inside of. Everything below is that one move, seen from three angles.</p>
+      </div>
+    </section>
+
+    <!-- THREE DIRECTIONS -->
+    <section id="directions">
+      <div class="sec-head"><span class="bindu"></span><span class="num">iii</span></div>
+      <h2>Three monumental directions</h2>
+      <p class="lead">Not three features — three faces of one idea. The path, the artifact, the pulse. Each is bold; none adds a single thing that isn't already latent in what you built.</p>
+
+      <div class="dir">
+        <div class="dir-head"><span class="rn">I</span><div><h3>The Descent</h3><span class="tagline">the path — a pilgrimage, not a museum</span></div></div>
+        <div class="dir-body">
+          <p>Right now the nine worlds are <em>wandered</em>. The monumental version makes them a <strong>sequential descent</strong> — Bhūpura, the outer earth, to the Bindu at the centre — gated and ceremonial, unfolding over a real span of practice. This is not invented: Śrī Vidyā's āvaraṇa worship <em>is</em> exactly this inward journey, ring by ring. The app simply holds your place on it.</p>
+          <p>You don't unlock Ring 4 by tapping; you arrive at it because you have <em>sat with</em> Rings 1–3. The Veil stops being a menu and becomes a threshold you are permitted to cross. There is a destination, and a reason the app knows where you are.</p>
+          <div class="resolves">Resolves: <b>the daily-spine vs. museum problem</b> · gives the whole thing a direction and an arrival.</div>
+        </div>
+      </div>
+
+      <div class="dir">
+        <div class="dir-head"><span class="rn">II</span><div><h3>The Portrait Becomes the Home</h3><span class="tagline">the artifact — a years-long living artwork</span></div></div>
+        <div class="dir-body">
+          <p>The Portrait Mandala is the cleverest thing in the app, and it's currently a side room. Make it the <strong>centre</strong>. Your own Śrī Yantra, beginning nearly dark, filling in petal by petal, triangle by triangle, as you recognize each of the 102 — warmer where you've been recently, dim where you have not yet walked. Over months, a portrait of your own attention assembles itself.</p>
+          <p>This is the artwork that <em>is</em> the practice — the thing you'd screenshot after a year and not recognize how far you'd come. It turns recognition from a logged event into a visible, accumulating <em>becoming</em>.</p>
+          <div class="resolves">Resolves: <b>retention &amp; the "why return"</b> · turns the Memory from a feature into the heart.</div>
+        </div>
+      </div>
+
+      <div class="dir">
+        <div class="dir-head"><span class="rn">III</span><div><h3>The Daily Rite, Re-Centred</h3><span class="tagline">the pulse — the small loop that feeds the other two</span></div></div>
+        <div class="dir-body">
+          <p>The path and the portrait both need a heartbeat. Restore the <strong>daily rite</strong> as the thing the app opens to: today's Śakti, drawn from where you are in the Descent; one breath with her somatic line; a single gesture of recognition that lights one more point of the Portrait. Thirty seconds. Repeatable. The engine.</p>
+          <p>This is the spine made literal — and it makes the bigger structures <em>earn</em> their weight, because every grand thing accrues from one small, daily, returnable act.</p>
+          <div class="resolves">Resolves: <b>the spine, discoverability, and the status ceremony</b> · the one surface that holds the whole practice together.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"><span class="bindu"></span></div>
+
+    <!-- APPROVAL -->
+    <div class="approve">
+      <h2>Where do you want to take this play?</h2>
+      <p>Here's what I'd build, and how I'd sequence it into a single Claude Code brief. Tell me which to carry forward — approve all, pick, reorder, or push back. <strong>Then I write the brief</strong>: the five ring fixes first (they're ready), and your chosen directions designed out properly on top.</p>
+      <div class="opts">
+        <div class="opt"><span class="mk">◇</span><div><b>The fixes</b> — Rings 1/3/6/8/9 + the five audit calls. Always in. (Already specced.)</div></div>
+        <div class="opt"><span class="mk">I</span><div><b>The Descent</b> — the nine āvaraṇas as a held pilgrimage with a destination.</div></div>
+        <div class="opt"><span class="mk">II</span><div><b>The Portrait as home</b> — the years-long mandala of your own attention.</div></div>
+        <div class="opt"><span class="mk">III</span><div><b>The Daily Rite</b> — the thirty-second heartbeat that feeds both.</div></div>
+      </div>
+      <p style="margin-top:26px; margin-bottom:0; font-family:var(--serif); font-style:italic; font-size:18px; color:rgba(242,232,217,0.8);">My honest recommendation: all three, in that order — but <span class="voice">III first in code</span>, because the heartbeat is small, and the path and the portrait are only meaningful once there's a daily pulse to fill them. Say the word and I'll design it out.</p>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>The Shell · Slice 0</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#030108;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+a{color:rgba(200,185,240,.55);} a:hover{color:rgba(220,210,248,.85);}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.07);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes pulsebeat{0%,100%{transform:scaleY(.86);opacity:.55}12%{transform:scaleY(1);opacity:1}30%{transform:scaleY(.9);opacity:.7}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0C0A12;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#181620;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #181620,0 108px 0 #181620;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#181620;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#06040A;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+textarea,input{font-family:inherit;outline:none;}
+textarea::placeholder{color:rgba(240,232,220,.22);}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="shell/walk-canon.js"></script>
+<script src="shell/canon-adapter.js"></script>
+<script type="text/babel" src="shell/tweaks-panel.jsx"></script>
+<script type="text/babel" src="shell/shell-ground.jsx"></script>
+<script type="text/babel" src="shell/shell-moments.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const SHELL_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "timeOfDay": "night",
+  "storyPos": 9,
+  "doorVoice": "plain",
+  "canonMarks": true,
+  "pulseMode": "tone",
+  "pace": 1
+}/*EDITMODE-END*/;
+
+const DAY_KEY = 'bindu-shell-day19';
+function loadDay() {
+  try { return JSON.parse(localStorage.getItem(DAY_KEY)) || { walked: [], released: false, rested: false }; }
+  catch (e) { return { walked: [], released: false, rested: false }; }
+}
+
+// The three doors — morning offers directions, midday offers sizes. One floor door, always.
+function doorsFor(time, voice, walked) {
+  const when = voice === 'when-voice';
+  const corridor = { key:'corridor', title: when ? 'When you\u2019re ready to go back in' : 'Return to the corridor', sub:'the story, where you left it' };
+  const practice = { key:'practice', title: when ? 'When something wants to open' : 'Open the heart', sub:'Anahata \u00b7 a full room' };
+  const wakeup   = { key:'wakeup',   title: when ? 'When the mind won\u2019t land' : 'One sound.', sub:'ninety seconds' };
+  const floor    = { key:'floor',    title: when ? 'When there is only a moment' : 'One second.', sub:'' };
+  const set = time === 'midday' ? [wakeup, floor, practice] : [corridor, practice, floor];
+  // threads that aren't calling don't announce themselves — walked doors quiet down, never vanish mid-set
+  return set.map(d => ({ ...d, dim: walked.includes(d.key) }));
+}
+
+function Ground({ t, day, onOpen, onClose }) {
+  const w = groundStyle(t.storyPos);
+  const greeting = WALK_CANON_LITE.day19.greeting.text;
+  const doors = doorsFor(t.timeOfDay, t.doorVoice, day.walked);
+  return (
+    <div data-screen-label="The Ground" style={{ height:'100%', position:'relative', background:w.bg }}>
+      {w.corridor && <ShellStarfield opacity={0.22} />}
+      <HorizonBleed hex={w.next} strength={day.walked.includes('corridor') ? .2 : .12} />
+      <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', padding:'0 40px', zIndex:10 }}>
+        <div style={{ flex:'0 0 34%', display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+          <p style={{ ...ST.italic(19, .62), animation:'emerge 2s ease' }}>
+            {day.rested ? 'Day 19.' : day.released ? 'Everything else today is extra.' : greeting}
+          </p>
+        </div>
+        <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center', gap:'2px' }}>
+          {!day.released && !day.rested && doors.map((d, i) => (
+            <div key={d.key} style={{ opacity: d.dim ? .38 : 1, transition:'opacity 1s ease' }}>
+              <Door title={d.title} sub={d.sub} delay={1.2 + i * .5} onOpen={() => onOpen(d.key)} />
+            </div>
+          ))}
+        </div>
+        <div style={{ flex:'0 0 96px', display:'flex', alignItems:'flex-start', justifyContent:'center' }}>
+          {!day.rested && day.walked.length > 0 && (
+            <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', padding:'12px', ...ST.label(9, .3), animation:'fade-in 3s ease' }}>
+              close the day
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShellApp() {
+  const [t, setTweak] = useTweaks(SHELL_DEFAULTS);
+  const [screen, setScreen] = useState('ground');
+  const [day, setDay] = useState(loadDay);
+  useEffect(() => { try { localStorage.setItem(DAY_KEY, JSON.stringify(day)); } catch (e) {} }, [day]);
+
+  const walkedNow = (key, extra) => {
+    setDay(d => ({ ...d, walked: d.walked.includes(key) ? d.walked : [...d.walked, key], ...extra }));
+    setScreen('ground');
+  };
+  const resetDay = () => { setDay({ walked: [], released: false, rested: false }); setScreen('ground'); };
+
+  const pace = t.pace;
+  const screens = {
+    ground:   <Ground t={t} day={day} onOpen={k => setScreen(k)} onClose={() => setScreen('close')} />,
+    floor:    <div data-screen-label="One Second Floor" style={{height:'100%'}}><FloorOneSecond pace={pace} onDone={() => walkedNow('floor', { released: true })} /></div>,
+    wakeup:   <div data-screen-label="Wake-up" style={{height:'100%'}}><WakeupMoment pace={pace} showNC={t.canonMarks} onDone={() => walkedNow('wakeup')} /></div>,
+    practice: <div data-screen-label="Practice · Anahata" style={{height:'100%'}}><PracticeMoment pace={pace} showNC={t.canonMarks} onDone={() => walkedNow('practice')} /></div>,
+    corridor: <div data-screen-label="The Corridor" style={{height:'100%'}}><CorridorMoment pace={pace} showNC={t.canonMarks} pulseMode={t.pulseMode} onDone={() => walkedNow('corridor')} /></div>,
+    close:    <div data-screen-label="Sakshi Close" style={{height:'100%'}}><SakshiClose walked={day.walked} onDone={() => walkedNow('close', { rested: true })} /></div>,
+  };
+
+  return (
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"></div>
+          <div className="ph-content">{screens[screen] || screens.ground}</div>
+        </div>
+      </div>
+      <TweaksPanel>
+        <TweakSection label="The day" />
+        <TweakRadio label="Time of day" value={t.timeOfDay} options={['morning','midday','night']} onChange={v => setTweak('timeOfDay', v)} />
+        <TweakButton label="Begin the day again" onClick={resetDay} />
+        <TweakSection label="The weather" />
+        <TweakSlider label="Story position" value={t.storyPos} min={1} max={33} step={1} onChange={v => setTweak('storyPos', v)} />
+        <TweakSection label="Register" />
+        <TweakRadio label="Door voice" value={t.doorVoice} options={['plain','when-voice']} onChange={v => setTweak('doorVoice', v)} />
+        <TweakToggle label="Mark non-canon text" value={t.canonMarks} onChange={v => setTweak('canonMarks', v)} />
+        <TweakSection label="The pulse" />
+        <TweakRadio label="Rendering" value={t.pulseMode} options={['glow','tone','both']} onChange={v => setTweak('pulseMode', v)} />
+        <TweakSection label="Pacing" />
+        <TweakSlider label="Breath scale" value={t.pace} min={0.3} max={1.5} step={0.05} onChange={v => setTweak('pace', v)} />
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<ShellApp />);
+</script>
+
+<div style="padding-bottom:26px;text-align:center;font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(220,210,235,.3);">
+  <p>Slice 0 &middot; The Shell &middot; Day 19 staging &nbsp;&mdash;&nbsp; <a href="Bindu.html">bindu &middot; slice 1a</a> &nbsp;&middot;&nbsp; <a href="Pairing Floor.html">the pairing floor</a></p>
+</div>
+</body>
+</html>

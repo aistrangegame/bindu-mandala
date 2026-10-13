@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bindu Mandala — v2 · Nine Rings</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #060104;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+    }
+    #root { width: 100vw; height: 100vh; }
+
+    /* ── Scrollbar ─────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,150,63,0.22); border-radius: 2px; }
+
+    /* ── Today screen animations ──────────────────────── */
+    @keyframes todayNameIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes todayPromptIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .today-name-anim   { animation: todayNameIn   1.4s cubic-bezier(.25,.1,.25,1) forwards; }
+    .today-prompt-anim { animation: todayPromptIn 1.4s cubic-bezier(.25,.1,.25,1) 0.55s both; }
+
+    /* ── Mandala — Ring 2, per-status petal breathing ─── */
+    @keyframes ring2TodayBreathe {
+      0%, 100% { opacity: 0.78; }
+      50% { opacity: 1.0; filter: brightness(1.45) drop-shadow(0 0 9px rgba(201,150,63,0.8)); }
+    }
+    @keyframes ring2EmbodiedBreathe {
+      0%, 100% { opacity: 1.0; }
+      50% { opacity: 0.80; }
+    }
+    @keyframes ring2ActiveBreathe {
+      0%, 100% { opacity: 0.76; }
+      50% { opacity: 0.92; }
+    }
+    @keyframes ring2ExploringBreathe {
+      0%, 100% { opacity: 0.44; }
+      50% { opacity: 0.56; }
+    }
+    @keyframes ring2MappedBreathe {
+      0%, 100% { opacity: 0.22; }
+      50% { opacity: 0.28; }
+    }
+    .ring2-today     { animation: ring2TodayBreathe     3s   ease-in-out infinite; }
+    .ring2-embodied  { animation: ring2EmbodiedBreathe  3.5s ease-in-out infinite; }
+    .ring2-active    { animation: ring2ActiveBreathe    5s   ease-in-out infinite; }
+    .ring2-exploring { animation: ring2ExploringBreathe 7s   ease-in-out infinite; }
+    .ring2-mapped    { animation: ring2MappedBreathe    11s  ease-in-out infinite; }
+
+    /* ── Ring 3 — Unlocked Lotus, slower amber pulse ──── */
+    @keyframes ring3PetalBreathe {
+      0%, 100% { opacity: 0.17; }
+      50% { opacity: 0.29; }
+    }
+    .ring3-petal { animation: ring3PetalBreathe 8s ease-in-out infinite; }
+
+    /* ── Rings 4-7 — Locked triangles, each metabolism ─ */
+    @keyframes lockR4 { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.22; } }
+    @keyframes lockR5 { 0%, 100% { opacity: 0.10; } 50% { opacity: 0.15; } }
+    @keyframes lockR6 { 0%, 100% { opacity: 0.07; } 50% { opacity: 0.11; } }
+    @keyframes lockR7 { 0%, 100% { opacity: 0.045;} 50% { opacity: 0.07; } }
+    .lock-r4 { animation: lockR4  9s ease-in-out infinite; }
+    .lock-r5 { animation: lockR5 11s ease-in-out infinite; }
+    .lock-r6 { animation: lockR6 13s ease-in-out infinite; }
+    .lock-r7 { animation: lockR7 15s ease-in-out infinite; }
+
+    /* ── Ring 8 — Deep ghost, barely perceptible ─────── */
+    @keyframes deepGhostTri {
+      0%, 100% { opacity: 0.028; }
+      50% { opacity: 0.052; }
+    }
+    .deep-ghost-tri { animation: deepGhostTri 18s ease-in-out infinite; }
+
+    /* ── Mandala Bindu — HTML overlay, 4s breath ─────── */
+    @keyframes mandalaBinduBreathe {
+      0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        box-shadow: 0 0 14px 6px rgba(139,26,42,0.45);
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.22);
+        box-shadow: 0 0 26px 14px rgba(139,26,42,0.68), 0 0 52px 28px rgba(139,26,42,0.28);
+      }
+    }
+    .mandala-bindu-breathe {
+      position: absolute; top: 50%; left: 50%;
+      border-radius: 50%;
+      animation: mandalaBinduBreathe 4s ease-in-out infinite;
+    }
+
+    /* ── Ring Indicator — home ring pulse ───────────────  */
+    @keyframes ringIndicatorPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 8px 2px rgba(201,150,63,0.55); }
+      50% { transform: scale(1.38); box-shadow: 0 0 14px 5px rgba(201,150,63,0.80); }
+    }
+
+    /* ── Avarana Threshold — sequential text reveal ───── */
+    @keyframes tLineIn {
+      from { opacity: 0; transform: translateY(7px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .t-line-1    { animation: tLineIn 1.4s cubic-bezier(.25,.1,.25,1) 0.3s  forwards; }
+    .t-line-2    { animation: tLineIn 1.2s cubic-bezier(.25,.1,.25,1) 1.1s  forwards; }
+    .t-line-3    { animation: tLineIn 1.0s cubic-bezier(.25,.1,.25,1) 1.8s  forwards; }
+    .t-line-4    { animation: tLineIn 1.0s cubic-bezier(.25,.1,.25,1) 2.4s  forwards; }
+    .t-line-5    { animation: tLineIn 1.0s cubic-bezier(.25,.1,.25,1) 3.0s  forwards; }
+    .t-line-6    { animation: tLineIn 1.0s cubic-bezier(.25,.1,.25,1) 3.6s  forwards; }
+    .t-line-7    { animation: tLineIn 1.0s cubic-bezier(.25,.1,.25,1) 4.2s  forwards; }
+    .t-connection{ animation: tLineIn 1.6s cubic-bezier(.25,.1,.25,1) 5.6s  forwards; }
+    .t-button    { animation: tLineIn 1.4s cubic-bezier(.25,.1,.25,1) 6.4s  forwards; }
+
+    /* ── Recognition ripple rings ─────────────────────── */
+    @keyframes rippleExpand {
+      0%   { transform: translate(-50%,-50%) scale(0.08); opacity: 0.7; }
+      100% { transform: translate(-50%,-50%) scale(5.5);  opacity: 0; }
+    }
+    .ripple-ring {
+      position: absolute; top: 50%; left: 50%;
+      width: 90px; height: 90px; border-radius: 50%;
+      border: 1px solid rgba(201,150,63,0.45);
+      animation: rippleExpand 4s ease-out infinite;
+      pointer-events: none;
+    }
+
+    /* ── Recognition content ──────────────────────────── */
+    @keyframes recognIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .recog-name        { animation: recognIn 1.8s cubic-bezier(.25,.1,.25,1) 0.3s  forwards; }
+    .recog-text        { animation: recognIn 1.8s cubic-bezier(.25,.1,.25,1) 0.9s  forwards; }
+    .recog-logged      { animation: recognIn 1.0s ease 2.6s forwards; }
+    .recog-reciprocity { animation: recognIn 1.4s cubic-bezier(.25,.1,.25,1) 4.1s  forwards; }
+
+    /* ── Dust motes ────────────────────────────────────── */
+    @keyframes moteRise {
+      0%   { transform: translate(0,0); opacity: 0; }
+      8%   { opacity: 1; }
+      50%  { transform: translate(calc(var(--drift)*.5), -420px); }
+      92%  { opacity: 0.5; }
+      100% { transform: translate(var(--drift), -880px); opacity: 0; }
+    }
+
+    /* ── Silence (Bindu) screen ────────────────────────── */
+    @keyframes silenceBreathe {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 48px 12px rgba(139,26,42,0.45), 0 0 96px 32px rgba(139,26,42,0.22);
+      }
+      50% {
+        transform: scale(1.12);
+        box-shadow: 0 0 72px 22px rgba(139,26,42,0.65), 0 0 144px 56px rgba(139,26,42,0.32);
+      }
+    }
+    .silence-bindu { animation: silenceBreathe 6s ease-in-out infinite; border-radius: 50%; }
+    @keyframes silenceNameIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .silence-name { animation: silenceNameIn 4s ease forwards; }
+    @keyframes silenceCaptionIn {
+      0%, 65% { opacity: 0; transform: translateY(8px); }
+      100%    { opacity: 1; transform: translateY(0); }
+    }
+    .silence-caption { animation: silenceCaptionIn 7s ease forwards; }
+
+    /* ── Petal breathe (original mandala screen) ──────── */
+    @keyframes petalBreathe {
+      0%, 100% { opacity: 0.76; }
+      50% { opacity: 1.0; filter: brightness(1.35) drop-shadow(0 0 6px rgba(196,114,90,0.7)); }
+    }
+    .petal-breathe { animation: petalBreathe 3s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ── Data layer — synchronous, plain JS ──────────────────────────────── -->
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+
+<!-- ── Component layer — Babel JSX, executed in order ─────────────────── -->
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="mandala-v2.jsx"></script>
+<script type="text/babel" src="screens-v2.jsx"></script>
+
+<!-- ── App ────────────────────────────────────────────────────────────── -->
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function App() {
+  // Pull avarana defs for the Threshold screens
+  const av3 = AVARANAS[2]; // Ring 3 — unlocked
+  const av4 = AVARANAS[3]; // Ring 4 — locked, first taste of what's ahead
+
+  return (
+    <DesignCanvas background="#060104" title="Bindu Mandala · Nine Rings · v2">
+
+      {/* ─────────────────────────────────────────────────────────────────
+          SECTION 1 — THE LIVING SRI YANTRA
+          The full 9-ring organism. Every layer breathing at its own rate.
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="living-mandala" title="The Living Sri Yantra"
+        subtitle="9 rings · 9 metabolisms · home ring 2, unlocked ring 3, rings 4–7 locked, 8–9 deep ghost">
+        <DCArtboard id="mandala-v2" label="Full Sri Yantra" width={390} height={844}>
+          <MandalaScreenV2/>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          SECTION 2 — AVARANA THRESHOLD
+          The doorway that knows you. Text arrives sequentially.
+          Two states: unlocked (open, inviting) and locked (ahead, waiting).
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="threshold" title="Avaraṇa Threshold"
+        subtitle="Tap a ring on the mandala — the territory names itself, then says: you have already been here">
+        <DCArtboard id="threshold-unlocked" label="Ring 3 — Unlocked · Open door" width={390} height={844}>
+          <AvaranaThresholdScreen avarana={av3}/>
+        </DCArtboard>
+        <DCArtboard id="threshold-locked" label="Ring 4 — Locked · Ahead, waiting" width={390} height={844}>
+          <AvaranaThresholdScreen avarana={av4}/>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          SECTION 3 — THE CATCH
+          Quick Recognition — a net deployed and retrieved in one motion.
+          State shown: just after the circle was tapped. She registered.
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="quick-catch" title="The Catch — Quick Recognition"
+        subtitle="One tap. One registered moment. The petal lights. She felt you back.">
+        <DCArtboard id="quick-recog" label="Mid-catch · 'and she felt you back'" width={390} height={844}>
+          <QuickRecognitionDemo/>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          SECTION 4 — TODAY — V3
+          Ring position indicator added — 9 dots, the whole game visible.
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="today-v3" title="Today — V3"
+        subtitle="With ring position indicator · The practitioner sees where they are in the 9-ring field">
+        <DCArtboard id="today-v3-screen" label="Today · Ring position visible" width={390} height={844}>
+          <TodayScreenV3/>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          SECTION 5 — SHAKTI DETAIL — EXPANDED
+          Five new fields: etymology, appreciation phrase, lineage,
+          cosmic function, Khadgamala position. The full vocabulary.
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="detail-v2" title="Śakti Detail — Expanded Vocabulary"
+        subtitle="Ātmākarṣiṇī · Etymology + appreciation + lineage + function + Khadgamala position">
+        <DCArtboard id="detail-v2-screen" label="Detail · Full vocabulary" width={390} height={844}>
+          <ShaktiDetailScreenV2/>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          SECTION 6 — THE SILENCE — V2
+          Two orbital rings of names: Ring 2 outer, Ring 3 inner.
+          The Bindu breathes slightly larger — the second ring has opened.
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="silence-v2" title="The Silence — V2 · Two Orbitals"
+        subtitle="Ring 3 names appear closer in — the Bindu slightly larger · All of her. Here. Always.">
+        <DCArtboard id="silence-v2-screen" label="Silence · Two orbital rings" width={390} height={844}>
+          <SilenceScreenV2/>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          ARCHIVE — ORIGINAL V1 SCREENS
+          The foundations. Everything built forward from here.
+      ────────────────────────────────────────────────────────────────── */}
+      <DCSection id="archive" title="Archive — Original Screens"
+        subtitle="The foundations of what came before — kept for reference">
+
+        <DCArtboard id="today-v1" label="Today V1 · Body Outline" width={390} height={844}>
+          <TodayScreenV1/>
+        </DCArtboard>
+        <DCArtboard id="today-v2" label="Today V2 · Bīja Texture" width={390} height={844}>
+          <TodayScreenV2/>
+        </DCArtboard>
+        <DCArtboard id="mandala-v1" label="Mandala V1 · Ring 2 only" width={390} height={844}>
+          <MandalaScreen/>
+        </DCArtboard>
+        <DCArtboard id="detail-v1" label="Detail V1 · Ātmākarṣiṇī" width={390} height={844}>
+          <ShaktiDetailScreen/>
+        </DCArtboard>
+        <DCArtboard id="recognition-v1" label="Recognition Moment" width={390} height={844}>
+          <RecognitionMomentScreen/>
+        </DCArtboard>
+        <DCArtboard id="silence-v1" label="Silence V1 · Ring 2 orbit" width={390} height={844}>
+          <SilenceScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

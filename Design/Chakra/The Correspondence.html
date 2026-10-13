@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>The Correspondence</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#030108;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.07);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes float-back{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(28px) scale(.88)}}
+@keyframes float-forward{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-28px) scale(.88)}}
+@keyframes arrival-pulse{0%,100%{box-shadow:0 0 14px #C0B0F830}50%{box-shadow:0 0 32px #C0B0F858}}
+@keyframes codex-glow{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes seal-close{0%{transform:scale(1.2);opacity:0}70%{transform:scale(.96)}100%{transform:scale(1);opacity:1}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0C0A12;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#181620;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #181620,0 108px 0 #181620;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#181620;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#06040A;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+textarea,input{font-family:inherit;outline:none;}
+textarea::placeholder,input::placeholder{color:rgba(240,232,220,.20);}
+input[type=date]{color-scheme:dark;}
+.scroll{overflow-y:auto;}.scroll::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ═══ A · DATA + UTILITIES ═══ -->
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const STORE = 'correspondence_v2';
+
+function getAll()   { try{return JSON.parse(localStorage.getItem(STORE)||'[]');}catch{return[];} }
+function saveAll(l) { localStorage.setItem(STORE,JSON.stringify(l)); }
+
+function addLetter(l) {
+  const id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  const ls=[...getAll(),{...l,id}]; saveAll(ls);
+  window.dispatchEvent(new Event('corr-updated')); return ls;
+}
+function patchLetter(id,p) {
+  const ls=getAll().map(l=>l.id===id?{...l,...p}:l); saveAll(ls);
+  window.dispatchEvent(new Event('corr-updated'));
+  return ls.find(l=>l.id===id);
+}
+
+function fmtTime(t) {
+  if(!t) return '';
+  if(t.type==='age')     return `Age ${t.value}`;
+  if(t.type==='year')    return `${t.value}`;
+  if(t.type==='moment')  return `"${String(t.value).slice(0,42).trim()}${t.value.length>42?'…':''}"`;
+  if(t.type==='emotion') return `when ${t.value}`;
+  if(t.type==='chapter') return `the chapter: ${t.value}`;
+  if(t.type==='date') {
+    try{return new Date(t.value+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});}catch{return t.value;}
+  }
+  if(t.type==='months')  return new Date(t.openAt).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  return String(t.value||'');
+}
+
+function salute(time,dir) {
+  if(!time?.value&&!time?.openAt) return dir==='past'?'Dear younger self,':'Dear future self,';
+  if(dir==='past') {
+    if(time.type==='age')     return `Dear self at Age ${time.value},`;
+    if(time.type==='year')    return `Dear self in ${time.value},`;
+    if(time.type==='moment')  return `Dear self in that moment,`;
+    if(time.type==='emotion') return `Dear self when you felt ${time.value},`;
+    if(time.type==='chapter') return `Dear self in ${time.value},`;
+  }
+  return `To myself, arriving ${fmtTime(time)},`;
+}
+
+function fmtAgo(ts) {
+  const d=Math.floor((Date.now()-ts)/86400000);
+  if(d===0)return'today';if(d===1)return'yesterday';
+  if(d<7)return`${d} days ago`;if(d<30)return`${Math.round(d/7)} wks ago`;
+  if(d<365)return`${Math.round(d/30)} mo ago`;return`${Math.round(d/365)}y ago`;
+}
+function fmtUntil(ts) {
+  const d=Math.ceil((ts-Date.now())/86400000);
+  if(d<=0)return'arrived';if(d===1)return'tomorrow';
+  if(d<7)return`${d} days`;if(d<30)return`${Math.round(d/7)} wks`;
+  if(d<365)return`${Math.round(d/30)} mo`;
+  const y=Math.round(d/365);return`${y}yr${y>1?'s':''}`;
+}
+
+const PC='#C49B17',PA='#F5DC80',FC='#4A3AAB',FA='#C0B0F8';
+Object.assign(window,{getAll,addLetter,patchLetter,fmtTime,salute,fmtAgo,fmtUntil,PC,PA,FC,FA});
+</script>
+
+<!-- ═══ B · TIMELINE ═══ -->
+<script type="text/babel">
+const{useState:useT,useEffect:useTE}=React;
+const{getAll:GA,fmtTime:FT,fmtAgo:FAgo,fmtUntil:FU,PC:PC2,PA:PA2,FC:FC2,FA:FA2}=window;
+
+function LetterCard({l,onRead}){
+  const past=l.direction==='past';
+  const clr=past?PC2:FC2, acc=past?PA2:FA2;
+  const arrived=!past&&Date.now()>=(l.openAt||0);
+  const preview=(l.body||'').slice(0,75).trim();
+  return(
+    <button onClick={()=>onRead(l)} style={{
+      display:'flex',alignItems:'stretch',borderRadius:'16px',cursor:'pointer',
+      textAlign:'left',width:'100%',overflow:'hidden',transition:'all .2s',
+      background:arrived&&!l.opened?`${clr}12`:`${clr}07`,
+      border:`1px solid ${clr}${arrived&&!l.opened?'40':'22'}`,
+      animation:arrived&&!l.opened?'arrival-pulse 3s ease-in-out infinite':'none',
+    }}>
+      <div style={{width:'3px',flexShrink:0,background:`${clr}${past?'55':'35'}`}}/>
+      <div style={{flex:1,padding:'13px 14px',display:'flex',flexDirection:'column',gap:'5px'}}>
+        <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:'8px'}}>
+          <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'16px',color:acc,letterSpacing:'.03em',
+            maxWidth:'180px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+            {FT(l.time)||'no address'}
+          </span>
+          <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.16em',
+            textTransform:'uppercase',color:arrived&&!l.opened?acc:`${acc}40`,flexShrink:0}}>
+            {past?FAgo(l.createdAt):arrived?'✦ arrived':FU(l.openAt)}
+          </span>
+        </div>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'14px',
+          color:'rgba(240,232,220,.50)',lineHeight:1.55,
+          overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>
+          {preview||<em>empty</em>}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+function NowBar({onCompose}){
+  return(
+    <div style={{padding:'10px 20px',position:'relative',flexShrink:0}}>
+      <div style={{position:'absolute',left:'20px',right:'20px',top:'50%',height:'1px',background:'rgba(240,232,220,.09)'}}/>
+      <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <span style={{background:'#06040A',paddingRight:'10px',fontFamily:"'DM Sans',sans-serif",
+          fontSize:'9px',letterSpacing:'.42em',color:'rgba(240,232,220,.32)',textTransform:'uppercase'}}>NOW</span>
+        <button onClick={onCompose} style={{background:'#06040A',border:'1px solid rgba(240,232,220,.16)',
+          borderRadius:'22px',padding:'8px 20px',cursor:'pointer',
+          fontFamily:"'Cormorant Garamond',serif",fontSize:'15px',color:'rgba(240,232,220,.58)',letterSpacing:'.08em'}}>
+          + write a letter
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TimelineView({onCompose,onRead,onCodex}){
+  const[letters,setLetters]=useT(()=>GA());
+  useTE(()=>{
+    const refresh=()=>setLetters(GA());
+    window.addEventListener('corr-updated',refresh);
+    return()=>window.removeEventListener('corr-updated',refresh);
+  },[]);
+
+  const future=letters.filter(l=>l.direction==='future').sort((a,b)=>(a.openAt||0)-(b.openAt||0));
+  const past=letters.filter(l=>l.direction==='past').sort((a,b)=>b.createdAt-a.createdAt);
+  const arrivals=future.filter(l=>Date.now()>=(l.openAt||0)&&!l.opened).length;
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'radial-gradient(ellipse at 50% 0%,#0C0820,#06040A)'}}>
+      <div style={{padding:'10px 22px 2px',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between'}}>
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'21px',color:'rgba(240,232,220,.82)',letterSpacing:'.1em'}}>The Correspondence</p>
+          {arrivals>0&&<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'10px',letterSpacing:'.2em',textTransform:'uppercase',color:FA2,animation:'arrival-pulse 2s ease-in-out infinite'}}>{arrivals} arrived</span>}
+        </div>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:'rgba(180,160,240,.28)',marginTop:'2px'}}>letters across time</p>
+      </div>
+
+      <div className="scroll" style={{flex:1,overflowY:'auto',padding:'6px 18px 10px',display:'flex',flexDirection:'column'}}>
+        {future.length>0?(
+          <div style={{display:'flex',flexDirection:'column',gap:'6px',paddingBottom:'4px'}}>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:'8px',letterSpacing:'.38em',textTransform:'uppercase',color:`${FA2}30`,padding:'6px 2px 5px'}}>future</div>
+            {[...future].reverse().map(l=><LetterCard key={l.id} l={l} onRead={onRead}/>)}
+          </div>
+        ):(
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'13px',color:`${FA2}22`,textAlign:'center',padding:'16px 0 4px'}}>no letters sent forward yet</p>
+        )}
+
+        <NowBar onCompose={onCompose}/>
+
+        {past.length>0?(
+          <div style={{display:'flex',flexDirection:'column',gap:'6px',paddingTop:'4px'}}>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:'8px',letterSpacing:'.38em',textTransform:'uppercase',color:`${PA2}30`,padding:'5px 2px 5px'}}>past</div>
+            {past.map(l=><LetterCard key={l.id} l={l} onRead={onRead}/>)}
+          </div>
+        ):(
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'13px',color:`${PA2}22`,textAlign:'center',padding:'4px 0 16px'}}>no letters sent backward yet</p>
+        )}
+
+        {letters.length===0&&(
+          <div style={{padding:'24px 16px 0',textAlign:'center',animation:'fade-in .8s ease'}}>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'19px',color:'rgba(240,232,220,.38)',lineHeight:1.7,marginBottom:'8px'}}>The river is waiting.</p>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'14px',color:'rgba(180,160,240,.24)',lineHeight:1.8}}>Write to a past self who needed to be found.<br/>Write to a future self who is already whole.</p>
+          </div>
+        )}
+
+        {/* Codex access */}
+        {letters.length>0&&(
+          <div style={{marginTop:'28px',paddingTop:'20px',borderTop:'1px solid rgba(180,160,240,.07)',display:'flex',flexDirection:'column',alignItems:'center',gap:'10px'}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'8px',letterSpacing:'.38em',textTransform:'uppercase',color:'rgba(180,160,240,.25)'}}>the codex</p>
+            <button onClick={onCodex} style={{background:'none',border:'1px solid rgba(180,160,240,.18)',borderRadius:'20px',padding:'10px 24px',cursor:'pointer',fontFamily:"'Cormorant Garamond',serif",fontSize:'16px',color:'rgba(180,160,240,.48)',letterSpacing:'.06em',animation:'codex-glow 4s ease-in-out infinite'}}>
+              What does the river know?
+            </button>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'11px',color:'rgba(180,160,240,.20)',textAlign:'center',lineHeight:1.6}}>The intelligence that sees your whole arc</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window,{TimelineView});
+</script>
+
+<!-- ═══ C · COMPOSE + WRITE ═══ -->
+<script type="text/babel">
+const{useState:useC,useRef:useCR}=React;
+const{fmtTime:FTC,salute:SAL,PC:PCC,PA:PAC,FC:FCC,FA:FAC}=window;
+
+const PAST_MODES=[
+  ['age',    'An age',    'You were how old?',        'number', '8'],
+  ['year',   'A year',    'What year was it?',         'number', '1994'],
+  ['moment', 'A moment',  'Describe the moment…',      'text',   'The day I first felt…'],
+  ['emotion','An emotion','What were you feeling?',    'text',   'afraid / lost / in love'],
+];
+
+function ComposeView({onCancel,onSend}){
+  const[step,setStep]=useC('direction');
+  const[dir,setDir]=useC(null);
+  const[tMode,setTMode]=useC('age');
+  const[tVal,setTVal]=useC('');
+  const[body,setBody]=useC('');
+  const[voice,setVoice]=useC('self');
+  const taRef=useCR(null);
+
+  const clr=dir==='past'?PCC:FCC, acc=dir==='past'?PAC:FAC;
+
+  function buildTime(){
+    if(dir==='past') return{type:tMode,value:tVal};
+    if(tMode==='date'){
+      const openAt=new Date(tVal+'T12:00:00').getTime();
+      return{type:'date',value:tVal,openAt};
+    }
+    const months=Math.max(1,parseInt(tVal)||6);
+    return{type:'months',value:months,openAt:Date.now()+months*30*24*60*60*1000};
+  }
+
+  // ── DIRECTION ────────────────────────────────
+  if(step==='direction') return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'radial-gradient(ellipse at 50% 22%,#100820,#06040A)'}}>
+      <div style={{padding:'14px 22px 0',flexShrink:0}}>
+        <button onClick={onCancel} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(180,160,240,.38)',textTransform:'uppercase'}}>← Back</button>
+      </div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px 22px',gap:'12px'}}>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'28px',color:'rgba(240,232,220,.86)',textAlign:'center',lineHeight:1.3,marginBottom:'6px'}}>Where are you sending?</p>
+        {[
+          {d:'past',  clr:PCC,acc:PAC,arrow:'←',title:'Into the Past',
+           sub:'Send love backward through time. In writing to them, you become the higher self they needed.'},
+          {d:'future',clr:FCC,acc:FAC,arrow:'→',title:'Into the Future',
+           sub:'Plant an intention forward. Your future self writes back — sealed until the day arrives.'},
+        ].map(o=>(
+          <button key={o.d} onClick={()=>{setDir(o.d);setTMode(o.d==='past'?'age':'months');setStep('when');}} style={{
+            width:'100%',padding:'22px 20px',borderRadius:'20px',cursor:'pointer',textAlign:'left',
+            background:`${o.clr}0A`,border:`1px solid ${o.clr}2C`,
+            display:'flex',flexDirection:'column',gap:'7px',transition:'all .2s'}}>
+            <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'26px',color:o.acc,lineHeight:1}}>{o.arrow} {o.title}</span>
+            <span style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'14px',color:`${o.acc}55`,lineHeight:1.65}}>{o.sub}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ── WHEN ─────────────────────────────────────
+  if(step==='when') return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:`radial-gradient(ellipse at 50% 22%,${clr}10,#06040A)`}}>
+      <div style={{padding:'14px 22px 0',flexShrink:0}}>
+        <button onClick={()=>setStep('direction')} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:`${acc}42`,textTransform:'uppercase'}}>← Back</button>
+      </div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',padding:'16px 24px',gap:'16px',justifyContent:'center'}}>
+        <div>
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'26px',color:'rgba(240,232,220,.88)',lineHeight:1.3}}>
+            {dir==='past'?'When were you?':'When will it arrive?'}
+          </p>
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'14px',color:`${acc}50`,marginTop:'5px',lineHeight:1.7}}>
+            {dir==='past'?'Choose the self you are reaching toward.':'The letter waits, sealed, until this moment.'}
+          </p>
+        </div>
+
+        {dir==='past'?(
+          <>
+            {/* 2×2 grid of mode buttons */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'7px'}}>
+              {PAST_MODES.map(([m,label])=>(
+                <button key={m} onClick={()=>{setTMode(m);setTVal('');}} style={{
+                  padding:'10px 8px',borderRadius:'14px',cursor:'pointer',textAlign:'center',
+                  background:tMode===m?`${clr}14`:'none',border:`1px solid ${tMode===m?acc+'50':acc+'1C'}`,
+                  fontFamily:"'DM Sans',sans-serif",fontSize:'10px',letterSpacing:'.16em',
+                  textTransform:'uppercase',color:tMode===m?acc:`${acc}42`,
+                }}>{label}</button>
+              ))}
+            </div>
+            {/* Dynamic input based on mode */}
+            {PAST_MODES.filter(([m])=>m===tMode).map(([m,,prompt,inputType,placeholder])=>(
+              inputType==='number'?(
+                <input key={m} type="number" value={tVal} onChange={e=>setTVal(e.target.value)}
+                  placeholder={placeholder} autoFocus
+                  style={{width:'100%',background:`${clr}08`,border:`1px solid ${acc}28`,borderRadius:'14px',
+                    padding:'16px 20px',textAlign:'center',color:'rgba(240,232,220,.90)',
+                    fontFamily:"'Cormorant Garamond',serif",fontSize:'30px'}}/>
+              ):(
+                <textarea key={m} value={tVal} onChange={e=>setTVal(e.target.value)}
+                  placeholder={placeholder} autoFocus rows={2}
+                  style={{width:'100%',background:`${clr}08`,border:`1px solid ${acc}28`,borderRadius:'14px',
+                    padding:'14px 18px',color:'rgba(240,232,220,.90)',
+                    fontFamily:"'Cormorant Garamond',serif",fontSize:'20px',lineHeight:1.65,resize:'none'}}/>
+              )
+            ))}
+          </>
+        ):(
+          <>
+            <div style={{display:'flex',gap:'8px'}}>
+              {[['months','Months away'],['date','Exact date']].map(([m,label])=>(
+                <button key={m} onClick={()=>{setTMode(m);setTVal('');}} style={{
+                  flex:1,padding:'9px 0',borderRadius:'14px',cursor:'pointer',
+                  background:tMode===m?`${clr}14`:'none',border:`1px solid ${tMode===m?acc+'50':acc+'1C'}`,
+                  fontFamily:"'DM Sans',sans-serif",fontSize:'10px',letterSpacing:'.18em',
+                  textTransform:'uppercase',color:tMode===m?acc:`${acc}40`,
+                }}>{label}</button>
+              ))}
+            </div>
+            {tMode==='months'?(
+              <input type="number" value={tVal} onChange={e=>setTVal(e.target.value)}
+                placeholder="6" autoFocus
+                style={{width:'100%',background:`${clr}08`,border:`1px solid ${acc}28`,borderRadius:'14px',
+                  padding:'16px 20px',textAlign:'center',color:'rgba(240,232,220,.90)',
+                  fontFamily:"'Cormorant Garamond',serif",fontSize:'30px'}}/>
+            ):(
+              <input type="date" value={tVal} onChange={e=>setTVal(e.target.value)}
+                style={{width:'100%',background:`${clr}08`,border:`1px solid ${acc}28`,borderRadius:'14px',
+                  padding:'15px 18px',color:'rgba(240,232,220,.88)',
+                  fontFamily:"'Cormorant Garamond',serif",fontSize:'18px'}}/>
+            )}
+            {tVal&&tMode==='months'&&<p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'15px',color:`${acc}55`,textAlign:'center',animation:'emerge .4s ease'}}>
+              Arrives {window.fmtTime(buildTime())}.
+            </p>}
+          </>
+        )}
+
+        {tVal&&(
+          <button onClick={()=>setStep('write')} style={{padding:'14px',borderRadius:'20px',cursor:'pointer',
+            background:`${clr}10`,border:`1px solid ${acc}32`,fontFamily:"'Cormorant Garamond',serif",
+            fontSize:'17px',color:'rgba(240,232,220,.80)',letterSpacing:'.14em',textTransform:'uppercase',animation:'emerge .5s ease'}}>
+            Continue →
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  // ── WRITE ─────────────────────────────────────
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:`radial-gradient(ellipse at 50% 8%,${clr}0E,#06040A)`}}>
+      <div style={{padding:'12px 20px 0',flexShrink:0,display:'flex',alignItems:'center',gap:'8px'}}>
+        <button onClick={()=>setStep('when')} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:`${acc}40`,textTransform:'uppercase'}}>← Back</button>
+        {dir==='past'&&(
+          <div style={{marginLeft:'auto',display:'flex',gap:'5px'}}>
+            {[['self','your voice'],['higher','higher self']].map(([v,label])=>(
+              <button key={v} onClick={()=>setVoice(v)} style={{
+                padding:'5px 10px',borderRadius:'10px',cursor:'pointer',fontSize:'9px',letterSpacing:'.16em',textTransform:'uppercase',
+                background:voice===v?`${acc}14`:'none',border:`1px solid ${voice===v?acc+'45':acc+'18'}`,
+                color:voice===v?acc:`${acc}35`,
+              }}>{label}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {dir==='past'&&voice==='higher'&&(
+        <div style={{padding:'8px 20px 0',flexShrink:0,animation:'fade-in .4s ease'}}>
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'13px',
+            color:`${acc}48`,lineHeight:1.65,padding:'10px 14px',borderRadius:'12px',
+            background:`${clr}08`,border:`1px solid ${acc}16`}}>
+            You are the one who made it through. Write from the place in you that already arrived, already loves them.
+          </p>
+        </div>
+      )}
+
+      <div style={{flex:1,display:'flex',flexDirection:'column',padding:'10px 22px 0',overflow:'hidden'}}>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'17px',
+          color:acc,flexShrink:0,marginBottom:'8px',letterSpacing:'.03em'}}>
+          {SAL(buildTime(),dir)}
+        </p>
+        <textarea ref={taRef} value={body} onChange={e=>setBody(e.target.value)} autoFocus
+          placeholder="Begin writing…"
+          style={{flex:1,width:'100%',background:'none',border:'none',resize:'none',
+            color:'rgba(240,232,220,.86)',fontFamily:"'Cormorant Garamond',serif",
+            fontSize:'19px',lineHeight:1.9,padding:'2px 0'}}/>
+      </div>
+      <div style={{padding:'12px 22px 22px',flexShrink:0}}>
+        {body.trim()?(
+          <button onClick={()=>onSend({direction:dir,time:buildTime(),body:body.trim(),voice,createdAt:Date.now()})} style={{
+            width:'100%',padding:'15px',borderRadius:'22px',cursor:'pointer',
+            background:`${clr}10`,border:`1px solid ${acc}32`,fontFamily:"'Cormorant Garamond',serif",
+            fontSize:'17px',color:'rgba(240,232,220,.80)',letterSpacing:'.14em',textTransform:'uppercase',animation:'emerge .4s ease'}}>
+            {dir==='past'?'Send into the past':'Send into the future'}
+          </button>
+        ):(
+          <p style={{textAlign:'center',fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:`${acc}28`}}>Write whatever needs to be said.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window,{ComposeView});
+</script>
+
+<!-- ═══ D · RITUAL ═══ -->
+<script type="text/babel">
+const{useState:useRI,useEffect:useRIE}=React;
+const{addLetter:ADD,fmtTime:FTR,salute:SALR,PC:PCR,PA:PAR,FC:FCR,FA:FAR}=window;
+
+function RitualView({letter,onDone}){
+  const[phase,setPhase]=useRI('breath');
+  const[text,setText]=useRI('');
+  const isPast=letter.direction==='past';
+  const clr=isPast?PCR:FCR, acc=isPast?PAR:FAR;
+
+  useRIE(()=>{
+    if(phase!=='breath')return;
+    const t=setTimeout(()=>setPhase('sending'),2400); return()=>clearTimeout(t);
+  },[phase]);
+
+  useRIE(()=>{
+    if(phase!=='sending')return;
+    const t=setTimeout(async()=>{
+      setPhase('arrive');
+      try{
+        if(isPast){
+          const r=await window.claude.complete({messages:[{role:'user',content:
+            `Someone just sent this letter to their ${FTR(letter.time)} self:\n\n"${letter.body.slice(0,350)}"\n\nIn one quiet sentence, reflect what happened in the sender in the act of writing this — not what they said, but what the sending itself accomplished in them. Warm. Specific. No cliché. Do not begin with "You". Do not use "journey".`
+          }]});
+          setText(r.trim());
+        }else{
+          const r=await window.claude.complete({messages:[{role:'user',content:
+            `You are this person's future self writing back. They wrote:\n\n"${letter.body.slice(0,400)}"\n\nTo be received: ${FTR(letter.time)}.\n\nWrite back as their future self who lived that time. Be specific: one thing that shifted physically, one thing they were wrong about in a good way, one thing that stayed constant. 3 short paragraphs. Begin with the word Beloved followed by a comma. Do not use markdown, headers, or asterisks. Do not use "journey".`
+          }]});
+          setText(r.trim());
+        }
+      }catch{
+        setText(isPast
+          ? 'The act of sending already did what it needed to do.'
+          : `Beloved,\n\nThe letter found me. What I want you to know is: the thing you were most uncertain about resolved itself quietly.\n\nSomething in your chest loosened around week three. You probably didn't notice it at the time.\n\nYou were already further along than you thought. You still are.\n\nWith love from here.`
+        );
+      }
+    },2000); return()=>clearTimeout(t);
+  },[phase]);
+
+  function finish(){
+    ADD({...letter,response:text,openAt:letter.time?.openAt||null,opened:false});
+    onDone();
+  }
+
+  if(phase==='breath') return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'20px',background:`radial-gradient(ellipse at 50% 42%,${clr}12,#06040A)`}}>
+      <div style={{width:'56px',height:'56px',borderRadius:'50%',background:`radial-gradient(circle at 36% 36%,${acc}40,${clr}60)`,boxShadow:`0 0 28px ${clr}45`,animation:'breathe 4s ease-in-out infinite'}}/>
+      <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'22px',color:'rgba(240,232,220,.65)',letterSpacing:'.1em'}}>Breathe once.</p>
+    </div>
+  );
+
+  if(phase==='sending') return(
+    <div style={{height:'100%',display:'flex',alignItems:'center',justifyContent:'center',background:'#06040A'}}>
+      <div style={{maxWidth:'260px',padding:'22px 24px',borderRadius:'18px',border:`1px solid ${acc}28`,background:`${clr}07`,animation:`${isPast?'float-back':'float-forward'} 1.8s .3s ease forwards`}}>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'13px',color:`${acc}60`,marginBottom:'10px'}}>
+          {isPast?`To myself at ${FTR(letter.time)}`:`To arrive ${FTR(letter.time)}`}
+        </p>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'17px',color:'rgba(240,232,220,.58)',lineHeight:1.75}}>
+          {letter.body.slice(0,120)}{letter.body.length>120?'…':''}
+        </p>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:`radial-gradient(ellipse at 50% 30%,${clr}10,#06040A)`,overflow:'hidden'}}>
+      <div className="scroll" style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 30px',gap:'26px'}}>
+        {isPast?(
+          <>
+            <div style={{width:'36px',height:'1px',background:`${acc}38`}}/>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'22px',color:'rgba(240,232,220,.76)',textAlign:'center',lineHeight:1.75,animation:'emerge .8s ease'}}>
+              {text||<span style={{opacity:.3}}>…</span>}
+            </p>
+            <div style={{width:'36px',height:'1px',background:`${acc}38`}}/>
+          </>
+        ):(
+          <>
+            <svg width="64" height="64" viewBox="0 0 64 64" style={{flexShrink:0,animation:'seal-close .7s cubic-bezier(.3,1.4,.5,1) both'}}>
+              <circle cx="32" cy="32" r="29" fill="none" stroke={`${acc}50`} strokeWidth="1.2"/>
+              <circle cx="32" cy="32" r="20" fill="none" stroke={`${acc}28`} strokeWidth=".8" strokeDasharray="3 6"/>
+              <text x="32" y="38" textAnchor="middle" fontFamily="'Cormorant Garamond',serif" fontSize="18" fill={`${acc}70`}>✦</text>
+            </svg>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'20px',color:'rgba(240,232,220,.80)',textAlign:'center',lineHeight:1.7,animation:'emerge .8s ease'}}>
+              {text?`Your future self has written back.\nSealed until ${FTR(letter.time)}.`:<span style={{opacity:.3}}>composing…</span>}
+            </p>
+          </>
+        )}
+      </div>
+      <div style={{padding:'12px 24px 24px',flexShrink:0}}>
+        {text&&(
+          <button onClick={finish} style={{width:'100%',padding:'15px',borderRadius:'22px',cursor:'pointer',background:`${clr}10`,border:`1px solid ${acc}30`,fontFamily:"'Cormorant Garamond',serif",fontSize:'17px',color:'rgba(240,232,220,.78)',letterSpacing:'.14em',textTransform:'uppercase',animation:'emerge .6s ease'}}>
+            {isPast?'Return to the river':'Place it in the river'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window,{RitualView});
+</script>
+
+<!-- ═══ E · WORD REVEAL + READ VIEW ═══ -->
+<script type="text/babel">
+const{useState:useRd,useEffect:useRdE,useRef:useRdR}=React;
+const{patchLetter:PATCH,fmtTime:FTRd,salute:SALRd,fmtAgo:FAgoRd,fmtUntil:FUntilRd,PC:PCRd,PA:PARd,FC:FCRd,FA:FARd}=window;
+
+function WordReveal({text,pace=1.55,accent}){
+  const[n,setN]=useRd(0);
+  const words=text.split(/\s+/).filter(Boolean);
+  const done=n>=words.length;
+
+  useRdE(()=>{
+    if(done)return;
+    const t=setTimeout(()=>setN(c=>c+1),1000/pace);
+    return()=>clearTimeout(t);
+  },[n,done,pace]);
+
+  return(
+    <div onClick={()=>!done&&setN(words.length)} style={{cursor:done?'default':'pointer',userSelect:'none'}}>
+      <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'19px',color:'rgba(240,232,220,.84)',lineHeight:1.9}}>
+        {words.map((w,i)=>(
+          <span key={i} style={{opacity:i<n?1:0,transition:i<n?'opacity .5s ease':'none'}}>{w}{' '}</span>
+        ))}
+      </p>
+      {!done&&<p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(240,232,220,.15)',textAlign:'center',marginTop:'10px'}}>tap to skip</p>}
+    </div>
+  );
+}
+
+function ReadView({letter:init,onBack}){
+  const[letter,setLetter]=useRd(init);
+  const[voiceMode,setVoiceMode]=useRd('raw');       // raw | higher | witness
+  const[revoiced,setRevoiced]=useRd({});             // {higher:'…', witness:'…'}
+  const[revoicing,setRevoicing]=useRd(false);
+  const[revealMode,setRevealMode]=useRd('direct');   // direct | slow
+  const[showResponse,setShowResponse]=useRd(false);
+
+  const isPast=letter.direction==='past';
+  const clr=isPast?PCRd:FCRd, acc=isPast?PARd:FARd;
+  const arrived=!isPast&&Date.now()>=(letter.openAt||0);
+  const sealed=!isPast&&!arrived&&!letter.opened;
+
+  const displayText=voiceMode==='raw'?letter.body:(revoiced[voiceMode]||letter.body);
+
+  async function switchVoice(v){
+    if(v==='raw'){setVoiceMode('raw');return;}
+    if(revoiced[v]){setVoiceMode(v);return;}
+    setRevoicing(true);
+    const prompts={
+      higher:`Rewrite this letter as the highest, most loving version of this person speaks it — from a place of complete self-love, expansive knowing, and no fear. Preserve the essence and specific details. Elevate the voice. Similar length. Do not use markdown, headers, or asterisks. Do not use "journey".`,
+      witness:`Rewrite this letter as a compassionate, wise witness would observe it — clear, present, without judgment. Tender third-person perspective. Similar length. Do not use markdown, headers, or asterisks. Do not use "journey".`,
+    };
+    try{
+      const r=await window.claude.complete({messages:[{role:'user',content:`${prompts[v]}\n\nOriginal letter:\n${letter.body}`}]});
+      setRevoiced(prev=>({...prev,[v]:r.trim()}));
+      setVoiceMode(v);
+    }catch{
+      setRevoiced(prev=>({...prev,[v]:letter.body}));
+      setVoiceMode(v);
+    }
+    setRevoicing(false);
+  }
+
+  function openLetter(){
+    const updated=PATCH(letter.id,{opened:true});
+    setLetter(updated);
+  }
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:`radial-gradient(ellipse at 50% 12%,${clr}12,#06040A)`,overflow:'hidden'}}>
+      <div style={{padding:'14px 22px 0',flexShrink:0}}>
+        <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:`${acc}42`,textTransform:'uppercase'}}>← Back</button>
+      </div>
+
+      <div className="scroll" style={{flex:1,overflowY:'auto',padding:'10px 24px 28px'}}>
+        {/* Meta */}
+        <div style={{marginBottom:'14px'}}>
+          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.28em',textTransform:'uppercase',color:`${acc}52`}}>
+            {isPast?`← to myself at ${FTRd(letter.time)}`:`→ arriving ${FTRd(letter.time)}`}
+          </p>
+          <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.18em',textTransform:'uppercase',color:`${acc}28`,marginTop:'2px'}}>
+            written {FAgoRd(letter.createdAt)}
+          </p>
+        </div>
+
+        {/* Voice selector */}
+        <div style={{display:'flex',gap:'6px',marginBottom:'14px'}}>
+          {[['raw','your voice'],['higher','highest self'],['witness','witness']].map(([v,label])=>(
+            <button key={v} onClick={()=>switchVoice(v)} style={{
+              flex:1,padding:'7px 4px',borderRadius:'12px',cursor:'pointer',
+              background:voiceMode===v?`${clr}16`:'none',border:`1px solid ${voiceMode===v?acc+'48':acc+'1C'}`,
+              fontFamily:"'DM Sans',sans-serif",fontSize:'8px',letterSpacing:'.14em',textTransform:'uppercase',
+              color:voiceMode===v?acc:`${acc}38`,lineHeight:1.3,
+            }}>
+              {revoicing&&v!=='raw'&&v===voiceMode?'…':label}
+            </button>
+          ))}
+        </div>
+
+        {revoicing&&(
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'13px',color:`${acc}40`,textAlign:'center',marginBottom:'12px',animation:'codex-glow 1.5s ease-in-out infinite'}}>
+            the codex is translating…
+          </p>
+        )}
+
+        {/* Reveal mode toggle */}
+        {!revoicing&&(
+          <div style={{display:'flex',gap:'6px',marginBottom:'16px'}}>
+            {[['direct','read directly'],['slow','reveal slowly']].map(([m,label])=>(
+              <button key={m} onClick={()=>setRevealMode(m)} style={{
+                flex:1,padding:'7px 4px',borderRadius:'12px',cursor:'pointer',
+                background:revealMode===m?`${clr}10`:'none',border:`1px solid ${revealMode===m?acc+'35':acc+'14'}`,
+                fontFamily:"'DM Sans',sans-serif",fontSize:'8px',letterSpacing:'.14em',textTransform:'uppercase',
+                color:revealMode===m?acc:`${acc}30`,
+              }}>{label}</button>
+            ))}
+          </div>
+        )}
+
+        {/* Salutation */}
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'17px',color:acc,marginBottom:'10px',letterSpacing:'.03em'}}>
+          {SALRd(letter.time,letter.direction)}
+        </p>
+
+        {/* Letter body */}
+        {!revoicing&&(
+          revealMode==='slow'
+            ?<WordReveal key={voiceMode+revealMode} text={displayText} accent={acc}/>
+            :<p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'19px',color:'rgba(240,232,220,.84)',lineHeight:1.9,whiteSpace:'pre-line',animation:'emerge .5s ease'}}>{displayText}</p>
+        )}
+
+        {/* ── Past: witness reflection ── */}
+        {isPast&&letter.response&&(
+          <div style={{borderTop:`1px solid ${acc}18`,paddingTop:'20px',marginTop:'24px',animation:'emerge .6s ease'}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.3em',textTransform:'uppercase',color:`${acc}38`,marginBottom:'12px'}}>witness</p>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'18px',color:'rgba(240,232,220,.55)',lineHeight:1.85}}>{letter.response}</p>
+          </div>
+        )}
+
+        {/* ── Future: sealed ── */}
+        {sealed&&(
+          <div style={{borderTop:`1px solid ${acc}14`,paddingTop:'22px',marginTop:'20px',display:'flex',flexDirection:'column',alignItems:'center',gap:'14px'}}>
+            <svg width="48" height="48" viewBox="0 0 48 48" style={{opacity:.45}}>
+              <circle cx="24" cy="24" r="21" fill="none" stroke={FARd} strokeWidth="1"/>
+              <circle cx="24" cy="24" r="14" fill="none" stroke={FARd} strokeWidth=".8" strokeDasharray="3 5"/>
+              <text x="24" y="29" textAnchor="middle" fontFamily="'Cormorant Garamond',serif" fontSize="13" fill={FARd}>✦</text>
+            </svg>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'15px',color:`${FARd}45`,textAlign:'center',lineHeight:1.7}}>
+              A response is sealed inside.<br/>Opens in {FUntilRd(letter.openAt)}.
+            </p>
+            <button onClick={openLetter} style={{padding:'8px 22px',borderRadius:'16px',cursor:'pointer',background:'none',border:`1px solid ${FARd}16`,fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.22em',textTransform:'uppercase',color:`${FARd}28`}}>
+              Peek · break seal
+            </button>
+          </div>
+        )}
+
+        {/* ── Future: arrived, not opened ── */}
+        {!isPast&&arrived&&!letter.opened&&(
+          <div style={{borderTop:`1px solid ${acc}18`,paddingTop:'22px',marginTop:'20px',display:'flex',flexDirection:'column',alignItems:'center',gap:'16px',animation:'arrival-pulse 2.5s ease-in-out infinite',padding:'20px',borderRadius:'16px',border:`1px solid ${acc}30`,background:`${FCRd}08`}}>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'20px',color:FARd,textAlign:'center',lineHeight:1.5}}>Your future self has written back.</p>
+            <button onClick={openLetter} style={{padding:'13px 34px',borderRadius:'22px',cursor:'pointer',background:`${FCRd}14`,border:`1px solid ${FARd}40`,fontFamily:"'Cormorant Garamond',serif",fontSize:'17px',color:FARd,letterSpacing:'.14em',textTransform:'uppercase'}}>
+              Open the letter
+            </button>
+          </div>
+        )}
+
+        {/* ── Future: opened ── */}
+        {!isPast&&letter.opened&&letter.response&&(
+          <div style={{borderTop:`1px solid ${acc}18`,paddingTop:'20px',marginTop:'20px',animation:'emerge .9s ease'}}>
+            <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.3em',textTransform:'uppercase',color:`${acc}38`,marginBottom:'14px'}}>from your future self</p>
+            {revealMode==='slow'
+              ?<WordReveal key={'response'+revealMode} text={letter.response} accent={acc}/>
+              :<p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'19px',color:'rgba(240,232,220,.84)',lineHeight:1.9,whiteSpace:'pre-line'}}>{letter.response}</p>
+            }
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window,{WordReveal,ReadView});
+</script>
+
+<!-- ═══ F · CODEX VIEW + APP ═══ -->
+<script type="text/babel">
+const{useState:useApp,useEffect:useAppE}=React;
+const{TimelineView:TLV,ComposeView:CPV,RitualView:RTV,ReadView:RDV,getAll:GAAPP,fmtTime:FTAPP}=window;
+
+function CodexView({onBack}){
+  const[text,setText]=useApp('');
+  const[loading,setLoading]=useApp(true);
+
+  useAppE(()=>{
+    async function load(){
+      const letters=GAAPP();
+      if(letters.length===0){setText('The river is empty. Write your first letter, and the codex will begin to form.');setLoading(false);return;}
+      const summary=letters.slice(-20).map((l,i)=>{
+        const dir=l.direction==='past'?'past self':'future self';
+        const addr=FTAPP(l.time)||'unnamed moment';
+        return `Letter ${i+1} — to ${dir} at ${addr}:\n"${l.body.slice(0,200).trim()}"\n${l.response?`Response: "${l.response.slice(0,100)}…"`:''}`;
+      }).join('\n\n');
+      try{
+        const r=await window.claude.complete({messages:[{role:'user',content:
+          `You are the Codex — the collective memory of this person's correspondence across time. You have read every letter they have written to their past and future selves. You see the whole arc.\n\nHere is their correspondence:\n\n${summary}\n\nIn three short paragraphs, speak as the Codex:\n\n1. Name one recurring thread you notice across the letters — a question or theme that keeps appearing in different forms.\n2. Name what this person appears to be in the process of understanding, right now, across all of this.\n3. Offer the single most important thing the entire river, if it had one voice, would say to them today.\n\nBe completely specific to what you read. No generalities. No platitudes. Do not use markdown, headers, or asterisks. Do not use the word "journey".`
+        }]});
+        setText(r.trim());
+      }catch{
+        setText('The codex is listening. Write more letters, and the patterns will emerge.');
+      }
+      setLoading(false);
+    }
+    load();
+  },[]);
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'radial-gradient(ellipse at 50% 20%,#0C0822,#06040A)',overflow:'hidden'}}>
+      <div style={{padding:'14px 22px 0',flexShrink:0}}>
+        <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(180,160,240,.38)',textTransform:'uppercase'}}>← Back</button>
+      </div>
+      <div className="scroll" style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',padding:'20px 26px 32px'}}>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'8px',letterSpacing:'.45em',textTransform:'uppercase',color:'rgba(180,160,240,.32)',marginBottom:'16px',textAlign:'center'}}>the codex</p>
+        {loading?(
+          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'16px'}}>
+            <div style={{width:'40px',height:'40px',borderRadius:'50%',border:'1px solid rgba(180,160,240,.35)',animation:'breathe 4s ease-in-out infinite'}}/>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'16px',color:'rgba(180,160,240,.42)',animation:'codex-glow 2s ease-in-out infinite'}}>reading the whole river…</p>
+          </div>
+        ):(
+          <div style={{animation:'emerge .9s ease'}}>
+            <div style={{width:'32px',height:'1px',background:'rgba(180,160,240,.3)',margin:'0 auto 24px'}}/>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'20px',color:'rgba(240,232,220,.82)',lineHeight:1.95,whiteSpace:'pre-line',textAlign:'center'}}>
+              {text}
+            </p>
+            <div style={{width:'32px',height:'1px',background:'rgba(180,160,240,.3)',margin:'28px auto 0'}}/>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const[view,setView]=useApp('timeline');
+  const[pending,setPend]=useApp(null);
+  const[reading,setRead]=useApp(null);
+
+  return(
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"/>
+          <div className="ph-content">
+            {view==='timeline'&&<TLV onCompose={()=>setView('compose')} onRead={l=>{setRead(l);setView('read');}} onCodex={()=>setView('codex')}/>}
+            {view==='compose'&&<CPV onCancel={()=>setView('timeline')} onSend={l=>{setPend(l);setView('ritual');}}/>}
+            {view==='ritual'&&pending&&<RTV letter={pending} onDone={()=>{setPend(null);setView('timeline');}}/>}
+            {view==='read'&&reading&&<RDV letter={reading} onBack={()=>setView('timeline')}/>}
+            {view==='codex'&&<CodexView onBack={()=>setView('timeline')}/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

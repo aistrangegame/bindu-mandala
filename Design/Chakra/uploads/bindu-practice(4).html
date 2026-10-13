@@ -1,0 +1,2906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bindu — The Point · A Strange Chakra Map</title>
+<meta name="theme-color" content="#fdfbf5">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BINDU — THE POINT · V5 Two-Act Build
+   Palette: gold (origin color — the dot that appears on every page)
+   Register: recognition. Not doing. Not arriving. Noticing what's here.
+   ============================================================ */
+:root {
+  --cream:       #fdfbf5;
+  --bg:          #f5f2ec;
+  --bg-warm:     #ede8df;
+  --gold:        #C9A84C;
+  --text:        #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted:  #8a8a8a;
+  --border:      rgba(0,0,0,0.07);
+
+  --chakra:         #C9A84C;
+  --chakra-tint:    rgba(201,168,76,0.06);
+  --chakra-border:  rgba(201,168,76,0.28);
+
+  /* Muladhara — the next color the threshold opens into */
+  --next-color: #C02020;
+  --next-glow:  rgba(192,32,32,0.6);
+
+  /* Position of the dot in the Story Mode scene — threshold rises here after Act 1 */
+  --threshold-top: 36%;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: 17px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+.progress-bar {
+  position: fixed; top: 0; left: 0;
+  height: 2px; width: 0%;
+  background: var(--chakra);
+  z-index: 100;
+  transition: width 0.1s linear;
+}
+
+/* ============================================================
+   HERO — gold dot arrives first (Bindu's origin-specific craft)
+   ============================================================ */
+.hero {
+  background: var(--cream);
+  min-height: 100svh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 80px 32px;
+  position: relative; overflow: visible;
+}
+
+.hero-top-nav {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 28px 36px;
+  display: flex; justify-content: space-between;
+}
+.hero-top-nav a {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(26,26,26,0.3); text-decoration: none;
+  transition: color 0.25s;
+}
+.hero-top-nav a:hover { color: var(--chakra); }
+
+.hero-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--chakra);
+  margin-bottom: 56px;
+  opacity: 0;
+  animation: dotArrive 1.2s ease 0.2s forwards;
+  box-shadow: 0 0 24px rgba(201,168,76,0.3);
+}
+
+.hero-count {
+  font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--chakra);
+  margin-bottom: 28px;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 0.8s forwards;
+}
+
+.hero-verb {
+  font-family: 'Lora', serif;
+  font-weight: 400;
+  font-size: clamp(72px, 14vw, 136px);
+  letter-spacing: 0.07em;
+  color: var(--chakra);
+  text-align: center;
+  line-height: 1;
+  margin-bottom: 36px;
+  margin-left: -32px;
+  margin-right: -32px;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: verbIn 0.9s cubic-bezier(0.16,1,0.3,1) 1s forwards;
+}
+
+.hero-threshold {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 17px;
+  color: rgba(26,26,26,0.38);
+  text-align: center;
+  line-height: 1.75;
+  max-width: 480px;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 1.5s forwards,
+             heroBreath 12s ease-in-out 2.5s infinite;
+}
+
+.hero-scroll-hint {
+  position: absolute; bottom: 36px;
+  left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 2s forwards;
+}
+.hero-scroll-hint span {
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(26,26,26,0.25);
+}
+.scroll-line {
+  width: 1px; height: 36px;
+  background: linear-gradient(to bottom, rgba(26,26,26,0.2), transparent);
+  animation: breathe 2.5s ease-in-out 2.5s infinite;
+}
+
+@keyframes dotArrive {
+  from { opacity: 0; transform: scale(0.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes verbIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 0.7; }
+}
+@keyframes heroBreath {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.78; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Hero entrance animations — one-shot forwards; disabling would leave elements at opacity:0.
+     Explicitly land them at their final state. */
+  .hero-dot,
+  .hero-count,
+  .hero-verb,
+  .hero-threshold,
+  .hero-scroll-hint {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  /* Scroll-line's infinite breathe — suppress without affecting layout */
+  .scroll-line {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
+/* ============================================================
+   BOOK
+   ============================================================ */
+.book {
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--cream);
+  box-shadow: 0 0 80px rgba(0,0,0,0.05);
+}
+.book-inner { padding: 72px 56px; }
+@media (max-width: 640px) { .book-inner { padding: 48px 24px; } }
+
+/* ============================================================
+   IDENTITY — Bindu is single-layer without location or core question
+   The origin has no location (it's everywhere); the core question is the page itself
+   ============================================================ */
+.identity {
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 48px;
+  text-align: center;
+}
+.bindu-mark {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--chakra);
+  margin: 0 auto 32px;
+  box-shadow: 0 0 16px rgba(201,168,76,0.25);
+}
+.chakra-sanskrit {
+  font-family: 'Lora', serif;
+  font-weight: 400;
+  font-size: 26px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.chakra-english {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--chakra);
+  margin-bottom: 20px;
+}
+.chakra-essence {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   TEACHING PROSE
+   ============================================================ */
+p {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+em {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  color: var(--text);
+}
+strong {
+  font-weight: 500;
+  color: var(--text);
+}
+h3 {
+  font-family: 'Lora', serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--text);
+  margin: 48px 0 18px;
+}
+
+/* ============================================================
+   SEED QUOTE
+   ============================================================ */
+.seed {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 17px;
+  text-align: center;
+  padding: 30px 0;
+  margin: 40px 0;
+  color: var(--text);
+  border-top: 1px solid rgba(201,168,76,0.3);
+  border-bottom: 1px solid rgba(201,168,76,0.3);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   GO DEEPER — The Name + In the Shree Yantra + What This Makes Possible
+   ============================================================ */
+.deeper-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color 0.2s;
+  margin-top: 8px;
+}
+.deeper-toggle:hover { color: var(--chakra); }
+.deeper-toggle::before {
+  content: '';
+  display: block;
+  width: 22px;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.3s;
+}
+.deeper-toggle:hover::before { width: 36px; }
+.deeper-toggle .arrow {
+  margin-left: auto;
+  transition: transform 0.3s;
+}
+.deeper-toggle.open .arrow { transform: rotate(180deg); }
+.deeper-content {
+  display: none;
+  padding: 28px 0 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+}
+.deeper-content.open { display: block; }
+.deeper-item { margin-bottom: 28px; }
+.deeper-item-label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.deeper-item p {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 56px 0;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.divider-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+/* ============================================================
+   PRACTICE BLOCK
+   ============================================================ */
+.practice-block {
+  background: var(--chakra-tint);
+  border-top: 2px solid var(--chakra-border);
+  border-bottom: 1px solid var(--chakra-border);
+  margin: 0 -56px;
+  padding: 48px 56px;
+}
+@media (max-width: 640px) {
+  .practice-block { margin: 0 -24px; padding: 36px 24px; }
+}
+.practice-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--chakra);
+  margin-bottom: 24px;
+  opacity: 0.9;
+}
+.practice-block p {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.9;
+}
+.practice-block strong { color: var(--text); }
+.practice-block em { color: var(--text-secondary); }
+
+/* ============================================================
+   DRAWING SECTION — Bindu's activity gate
+   Single-point placement. The canvas IS the practice surface.
+   ============================================================ */
+.drawing-section { margin: 56px 0 48px; }
+
+.drawing-prompt {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+  line-height: 1.7;
+}
+
+.drawing-canvas-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--cream);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 2px;
+  cursor: crosshair;
+  overflow: hidden;
+}
+canvas#bindu-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.drawing-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 1.2s ease;
+}
+.drawing-hint span {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: rgba(0,0,0,0.14);
+}
+.drawing-witness {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 16px;
+  line-height: 1.6;
+  transition: color 1.2s ease, opacity 1.2s ease;
+}
+.drawing-witness.bright {
+  color: var(--text-secondary);
+}
+.drawing-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.clear-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+.clear-btn:hover { color: var(--text); }
+
+/* ============================================================
+   PLACEMENT RECOGNITION — only true when true
+   Reveals only after the point has been placed
+   ============================================================ */
+.placement-recognition {
+  font-family: 'Lora', serif;
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--chakra);
+  text-align: center;
+  margin: 40px 0 0;
+  padding: 28px 16px 4px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 1.4s ease 0.4s, transform 1.4s ease 0.4s;
+  pointer-events: none;
+}
+.placement-recognition.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   POST-ENGAGEMENT TIER — reveals after point is placed
+   Wraps: book-rule + What the Point Knows + Three Ways In + Seed 2 + Story Portal
+   Note: Where-the-Points-Lead is AFTER this tier (always-visible or its own collapsible)
+   ============================================================ */
+.post-engagement {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: max-height 1.6s cubic-bezier(0.16,1,0.3,1) 0.2s,
+              opacity 1.4s ease 0.6s,
+              transform 1.4s ease 0.6s;
+}
+.post-engagement.revealed {
+  max-height: 6000px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.book-rule {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  margin: 48px 0;
+}
+
+/* ============================================================
+   THREE WAYS IN — practice-options
+   Register-translated for Bindu: three ways of point-recognition
+   ============================================================ */
+.practice-options { margin: 8px 0 0; }
+.practice-option {
+  padding: 18px 22px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 3px;
+  margin-bottom: 10px;
+  border-left: 2px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+.practice-option:hover {
+  border-left-color: var(--chakra);
+  background: var(--chakra-tint);
+}
+.practice-option p {
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0;
+}
+
+/* ============================================================
+   STORY PORTAL — preview of the axis dimension
+   Dark matching the Story Mode scene's background, sparse stars,
+   shimmer, glow, gold Bindu dot. The portal flips into Story Mode on tap.
+   ============================================================ */
+.story-portal {
+  display: block;
+  width: 100%;
+  min-height: 300px;
+  position: relative;
+  background: radial-gradient(ellipse at center, #15091a 0%, #080309 82%);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  color: rgba(255,245,220,0.9);
+  font-family: 'DM Sans', sans-serif;
+  padding: 56px 40px;
+  margin: 48px 0 12px;
+  transition: border-color 0.5s ease,
+              box-shadow 0.5s ease,
+              transform 0.5s ease;
+}
+.story-portal:hover {
+  border-color: rgba(201,168,76,0.4);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.22),
+              0 16px 48px rgba(0,0,0,0.4);
+  transform: translateY(-2px);
+}
+
+.sp-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  display: block;
+}
+
+.sp-stars {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.sp-star {
+  position: absolute;
+  width: 2px; height: 2px;
+  border-radius: 50%;
+  background: rgba(255,230,170,0.75);
+  box-shadow: 0 0 4px rgba(255,220,150,0.5);
+  opacity: 0.3;
+  animation: spStarTwinkle 6s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+.sp-star.lg {
+  width: 3px; height: 3px;
+  background: rgba(255,230,170,0.9);
+}
+@keyframes spStarTwinkle {
+  0%, 100% { opacity: 0.18; transform: scale(1); }
+  50%      { opacity: 0.75; transform: scale(1.25); }
+}
+
+.sp-shimmer {
+  position: absolute;
+  top: -30%; left: -60%;
+  width: 220%; height: 160%;
+  background: linear-gradient(
+    110deg,
+    transparent 35%,
+    rgba(201,168,76,0.06) 46%,
+    rgba(201,168,76,0.14) 50%,
+    rgba(201,168,76,0.06) 54%,
+    transparent 65%
+  );
+  animation: spShimmer 9s linear infinite;
+  display: block;
+}
+@keyframes spShimmer {
+  0%   { transform: translateX(-55%); }
+  100% { transform: translateX(55%); }
+}
+
+.sp-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 340px; height: 340px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle,
+    rgba(201,168,76,0.14) 0%,
+    rgba(201,168,76,0.05) 40%,
+    transparent 70%);
+  filter: blur(4px);
+  animation: spGlowBreath 7s ease-in-out infinite;
+  display: block;
+}
+@keyframes spGlowBreath {
+  0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1);    }
+  50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.18); }
+}
+
+.sp-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  z-index: 2;
+  text-align: center;
+}
+.sp-label {
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(201,168,76,0.88);
+  font-weight: 400;
+}
+.sp-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #C9A84C;
+  box-shadow: 0 0 22px rgba(201,168,76,0.6),
+              0 0 48px rgba(201,168,76,0.28);
+  animation: spDotBreath 5s ease-in-out infinite;
+  display: block;
+}
+@keyframes spDotBreath {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 22px rgba(201,168,76,0.6),  0 0 48px rgba(201,168,76,0.28); }
+  50%      { transform: scale(1.18); box-shadow: 0 0 30px rgba(201,168,76,0.85), 0 0 64px rgba(201,168,76,0.4);  }
+}
+.sp-headline {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(19px, 3vw, 23px);
+  color: rgba(255,245,220,0.93);
+  line-height: 1.5;
+  max-width: 480px;
+  text-shadow: 0 0 24px rgba(201,168,76,0.2);
+}
+.sp-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,245,220,0.58);
+  padding: 14px 2px 2px;
+  border-top: 1px solid rgba(201,168,76,0.22);
+  margin-top: 6px;
+  transition: color 0.35s, border-color 0.35s;
+}
+.story-portal:hover .sp-cta {
+  color: rgba(255,245,220,0.95);
+  border-top-color: rgba(201,168,76,0.5);
+}
+.sp-cta-arrow {
+  display: inline-block;
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.story-portal:hover .sp-cta-arrow { transform: translateX(7px); }
+
+.story-portal:hover .sp-shimmer { animation-duration: 5s; }
+.story-portal:hover .sp-dot     { animation-duration: 2.6s; }
+.story-portal:hover .sp-glow    { animation-duration: 4s; }
+
+@media (max-width: 640px) {
+  .story-portal { padding: 44px 24px; min-height: 260px; }
+  .sp-headline { font-size: 17px; }
+  .sp-glow { width: 220px; height: 220px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-star, .sp-shimmer, .sp-glow, .sp-dot {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   STORY MODE — V5 Two-Act Architecture.
+   Act 1: Gaia's journey-voice, 6 paragraph blocks, compound-state progression.
+   Act 2: Sakshi's witness-voice, auto-paced, ascending gold→white field.
+   Act 1 ends with signature phrase → Act 2 rises inline → threshold to Muladhara.
+   No interlude.html dependency. One file, full experience.
+   ============================================================ */
+.story-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  perspective: 1800px;
+  background: #060308;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 1.6s;
+}
+.story-mode.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.25s ease, visibility 0s linear;
+}
+
+body.story-open { overflow: hidden; }
+
+.story-scene {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, #15091a 0%, #080309 75%);
+  transform: rotateY(-180deg) scale(0.96);
+  transform-origin: right center;
+  transition: transform 1.55s cubic-bezier(0.16,1,0.3,1);
+  backface-visibility: hidden;
+  overflow: hidden;
+  color: rgba(255,245,220,0.88);
+  font-family: 'Lora', serif;
+  cursor: pointer;
+}
+.story-mode.active .story-scene {
+  transform: rotateY(0deg) scale(1);
+}
+
+.story-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.story-stars .s {
+  position: absolute;
+  width: 1px; height: 1px;
+  border-radius: 50%;
+  background: rgba(255,230,170,0.6);
+  box-shadow: 0 0 4px rgba(255,220,150,0.4);
+  animation: storyStarTwinkle 8s ease-in-out infinite;
+  opacity: 0.35;
+}
+@keyframes storyStarTwinkle {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 0.55; }
+}
+
+.story-dot-stage {
+  position: absolute;
+  top: var(--threshold-top, 36%);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px; height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.story-dot {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--chakra);
+  box-shadow: 0 0 24px rgba(201,168,76,0.5),
+              0 0 60px rgba(201,168,76,0.22);
+  position: relative;
+  z-index: 2;
+  animation: storyDotBreath 6s ease-in-out infinite;
+  transition: transform 2.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes storyDotBreath {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 24px rgba(201,168,76,0.5), 0 0 60px rgba(201,168,76,0.22); }
+  50%      { transform: scale(1.08); box-shadow: 0 0 34px rgba(201,168,76,0.65), 0 0 90px rgba(201,168,76,0.3); }
+}
+
+/* Compound-state classes (Manipura pattern) — accumulate as beats progress */
+.story-dot-stage.leaning .story-dot {
+  animation: storyDotBreath 6s ease-in-out infinite, storyDotLean 9s ease-in-out infinite;
+}
+@keyframes storyDotLean {
+  0%, 100% { margin-left: 0; margin-top: 0; }
+  25%      { margin-left: 4px; margin-top: -2px; }
+  50%      { margin-left: 2px; margin-top: 3px; }
+  75%      { margin-left: -3px; margin-top: 1px; }
+}
+
+.story-thread-line {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 0; height: 1px;
+  background: linear-gradient(to right, rgba(201,168,76,0.7), rgba(201,168,76,0));
+  transform-origin: left center;
+  transform: translate(0, -50%) rotate(38deg);
+  opacity: 0;
+  transition: width 2.4s cubic-bezier(0.16,1,0.3,1), opacity 1.2s ease;
+}
+.story-dot-stage.extending .story-thread-line {
+  width: 70px;
+  opacity: 1;
+}
+.story-dot-stage.wavering .story-thread-line {
+  animation: storyThreadWaver 3s ease-in-out infinite;
+}
+@keyframes storyThreadWaver {
+  0%, 100% { transform: translate(0, -50%) rotate(38deg); }
+  50%      { transform: translate(0, -50%) rotate(34deg); }
+}
+
+.story-ripple {
+  position: absolute;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.55);
+  opacity: 0;
+  pointer-events: none;
+}
+.story-dot-stage.rippling .story-ripple {
+  animation: storyRipple 3.5s ease-out 1;
+}
+@keyframes storyRipple {
+  0%   { transform: scale(1);   opacity: 0.75; }
+  100% { transform: scale(8);   opacity: 0; }
+}
+
+.story-lines-stage {
+  position: absolute;
+  left: 50%; top: 64%;
+  transform: translate(-50%, 0);
+  width: min(640px, 88vw);
+  min-height: 140px;
+  text-align: center;
+  padding: 0 20px;
+}
+.story-line {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(18px, 3.2vw, 22px);
+  line-height: 1.7;
+  color: rgba(255,245,220,0.92);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1.2s ease, transform 1.4s cubic-bezier(0.16,1,0.3,1);
+}
+.story-line.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.story-line.fading {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+.story-tap-hint {
+  position: absolute;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(255,245,220,0.32);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+/* Breathing pulse only while visible — when JS removes .visible, the animation
+   stops and the static opacity:0 takes over, fading cleanly via the transition.
+   Without this scoping, the keyframes override the static opacity and the hint
+   pulses perpetually from story open through Act 1 → signature → veil → Act 2,
+   making the auto-paced ending look inconsistent with its own "tap" instruction. */
+.story-tap-hint.visible {
+  opacity: 0.7;
+  animation: storyHintBreath 3.5s ease-in-out infinite;
+}
+@keyframes storyHintBreath {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 0.4; }
+}
+
+/* Threshold door — appears after beat 12 + ripple completes.
+   Positioned at the dot's location (the Bindu becomes the Muladhara-red point).
+   Routes to interlude.html where Sakshi's voice plays before Muladhara arrives. */
+.threshold-door {
+  position: absolute;
+  top: var(--threshold-top, 36%);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9;
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  padding: 40px;
+  text-decoration: none;
+  color: rgba(255,245,220,0.78);
+  transition: opacity 2s ease 1.6s;
+}
+.story-scene.threshold-open .threshold-door {
+  opacity: 1;
+  pointer-events: auto;
+}
+.story-scene.threshold-open .story-dot-stage,
+.story-scene.threshold-open .story-lines-stage,
+.story-scene.threshold-open .story-tap-hint {
+  opacity: 0;
+  transition: opacity 1.6s ease;
+  pointer-events: none;
+}
+
+.next-point {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--next-color);
+  box-shadow: 0 0 28px var(--next-glow),
+              0 0 72px rgba(192,32,32,0.35);
+  animation: nextPointBreath 4.5s ease-in-out infinite;
+}
+@keyframes nextPointBreath {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 28px var(--next-glow), 0 0 72px rgba(192,32,32,0.35); }
+  50%      { transform: scale(1.22); box-shadow: 0 0 42px rgba(220,50,50,0.85), 0 0 108px rgba(192,32,32,0.5); }
+}
+.next-label {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(14px, 2.4vw, 17px);
+  letter-spacing: 0.14em;
+  color: var(--next-color);
+  opacity: 0.85;
+  text-shadow: 0 0 16px rgba(192,32,32,0.3);
+}
+.next-sublabel {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,245,220,0.4);
+  margin-top: -14px;
+}
+.threshold-continue-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(255,245,220,0.42);
+  padding-top: 14px;
+  border-top: 1px solid rgba(192,32,32,0.22);
+  transition: color 0.35s, border-color 0.35s;
+}
+.threshold-continue-hint .arrow {
+  display: inline-block;
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.threshold-door:hover .next-point { animation-duration: 2.8s; }
+.threshold-door:hover .threshold-continue-hint {
+  color: var(--next-color);
+  border-top-color: rgba(192,32,32,0.5);
+}
+.threshold-door:hover .threshold-continue-hint .arrow {
+  transform: translateX(8px);
+}
+
+/* ============================================================
+   ACT VEIL — between Act 1 and Act 2
+   Screen goes dark. Eyes blink in the void. Press and hold to enter.
+   ============================================================ */
+.act-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  background: #060308;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 52px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.8s cubic-bezier(0.4,0,0.2,1);
+}
+.act-veil.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.act-veil.dissolving {
+  opacity: 0;
+  transition: opacity 2.4s ease;
+}
+
+/* Eyes */
+.veil-eyes {
+  display: flex;
+  gap: 52px;
+  align-items: center;
+  opacity: 0;
+}
+.veil-eyes.visible { opacity: 1; }
+
+.veil-eye {
+  width: 42px;
+  height: 15px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.88);
+  box-shadow:
+    0 0 12px rgba(255,255,255,0.6),
+    0 0 32px rgba(220,210,255,0.3);
+  transform: scaleY(0.06);
+  opacity: 0;
+  transform-origin: center center;
+}
+.veil-eyes.animate .veil-eye {
+  animation: eyeBlink 2s ease-in-out 1 forwards;
+}
+.veil-eyes.animate .veil-eye:nth-child(2) {
+  animation-delay: 0.06s;
+}
+@keyframes eyeBlink {
+  0%   { opacity: 0;   transform: scaleY(0.06); }
+  14%  { opacity: 1;   transform: scaleY(1); }
+  55%  { opacity: 1;   transform: scaleY(1); }
+  64%  { opacity: 1;   transform: scaleY(0.06); }
+  73%  { opacity: 1;   transform: scaleY(1); }
+  88%  { opacity: 0.7; transform: scaleY(1); }
+  100% { opacity: 0;   transform: scaleY(1); }
+}
+
+/* Invite */
+.veil-invite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  opacity: 0;
+  transition: opacity 1.6s ease;
+}
+.veil-invite.visible { opacity: 1; }
+
+.veil-invite-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+}
+
+/* Press-and-hold ring */
+.veil-hold-ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+.veil-hold-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.veil-ring-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.1);
+  stroke-width: 1.5;
+}
+.veil-ring-fill {
+  fill: none;
+  stroke: rgba(255,255,255,0.72);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 201;
+  stroke-dashoffset: 201;
+  transition: stroke-dashoffset linear;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
+}
+.veil-hold-dot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.veil-hold-dot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.6);
+  box-shadow: 0 0 14px rgba(255,255,255,0.4);
+  transition: transform 0.3s ease, background 0.3s;
+}
+.veil-hold-ring.holding .veil-hold-dot::after {
+  transform: scale(1.5);
+  background: rgba(255,255,255,0.9);
+}
+
+/* ============================================================
+   ACT 2 — SAKSHI WITNESS LAYER
+   Rises over Act 1 after signature phrase. Auto-paced. Gold→white ascending field.
+   ============================================================ */
+.act-two {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 2.2s cubic-bezier(0.16,1,0.3,1);
+}
+.act-two.rising {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.act2-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    #C9A84C 0%,
+    rgba(201,168,76,0.55) 12%,
+    rgba(240,228,195,0.88) 34%,
+    rgba(252,250,244,0.97) 60%,
+    rgba(255,255,255,0.99) 80%,
+    #ffffff 100%
+  );
+}
+.act2-crown {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 280px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(215,230,255,0.5) 0%, rgba(255,255,255,0) 72%);
+  pointer-events: none;
+}
+.act2-base {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 200px;
+  background: radial-gradient(ellipse at 50% 100%, rgba(201,168,76,0.3) 0%, rgba(201,168,76,0) 75%);
+  pointer-events: none;
+}
+.act2-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.act2-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  opacity: 0;
+  animation: act2Ascend linear infinite;
+}
+@keyframes act2Ascend {
+  0%   { transform: translateY(0) scale(1);    opacity: 0; }
+  8%   { opacity: var(--p-op); }
+  85%  { opacity: var(--p-op); }
+  100% { transform: translateY(-110vh) scale(0.4); opacity: 0; }
+}
+
+.act2-label {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(140,110,60,0.52);
+  opacity: 0;
+  transition: opacity 2s ease 0.8s;
+  white-space: nowrap;
+  z-index: 2;
+}
+.act-two.rising .act2-label { opacity: 1; }
+
+.act2-text-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14vh 28px calc(9vh + 240px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  z-index: 2;
+}
+.act2-text-stage::-webkit-scrollbar { display: none; }
+.act2-para {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(16px, 3.2vw, 19px);
+  line-height: 2;
+  color: var(--act2-text, rgba(54,24,10,0.88));
+  max-width: min(560px, 92vw);
+  text-align: center;
+  margin: 0 0 1.6em;
+  opacity: 1;
+  transform: none;
+}
+.act2-para:last-child { margin-bottom: 0; }
+.act2-go {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.act2-word {
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  will-change: opacity;
+}
+.act2-word.visible {
+  opacity: 1;
+}
+
+/* Muladhara threshold — rises from below inside Act 2 */
+.act2-door {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: translateY(100%);
+  padding: 36px 32px 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 1.8s cubic-bezier(0.16,1,0.3,1);
+  background: #C02020;
+  z-index: 3;
+}
+.act2-door:hover {
+  background: #D02424;
+}
+.act2-door.risen {
+  transform: translateY(0);
+}
+.act2-door-point {
+  display: none;
+}
+.act2-door-name {
+  font-family: 'Lora', serif;
+  font-size: clamp(38px, 8vw, 56px);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.act2-door-hint {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(15px, 2.8vw, 18px);
+  color: rgba(255,255,255,0.72);
+  letter-spacing: 0.02em;
+}
+.act2-door-continue {
+  margin-top: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  transition: color 0.3s;
+}
+.act2-door:hover .act2-door-continue { color: rgba(255,255,255,0.82); }
+
+@media (prefers-reduced-motion: reduce) {
+  .act2-particle { animation: none; opacity: 0.15; }
+  .act2-para { transition: opacity 0.8s ease; transform: none; }
+  .act2-door { transition: transform 0.8s ease; }
+  .act-two { transition: opacity 0.8s ease; }
+}
+
+.story-close {
+  position: absolute;
+  top: 22px; right: 22px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(255,245,220,0.05);
+  border: 1px solid rgba(255,245,220,0.14);
+  color: rgba(255,245,220,0.55);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+  z-index: 3;
+}
+.story-close:hover {
+  background: rgba(201,168,76,0.14);
+  color: rgba(255,245,220,0.95);
+  border-color: rgba(201,168,76,0.45);
+}
+
+@media (max-width: 640px) {
+  :root { --threshold-top: 30%; }
+  .threshold-door { gap: 22px; padding: 28px; }
+  .story-tap-hint { bottom: 78px; font-size: 9px; }
+  .story-dot-stage { top: 30%; }
+  .story-lines-stage { top: 58%; }
+  .story-close { top: 16px; right: 16px; width: 40px; height: 40px; font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-scene { transition: transform 0.4s ease; }
+  .story-dot, .story-dot-stage.leaning .story-dot,
+  .story-stars .s, .story-tap-hint, .story-tap-hint.visible,
+  .next-point {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   WHERE THE POINTS LEAD — experience cards at end of page
+   Collapsible with auto-expand on return visits (V3.1.2 delta)
+   Three full-card sigils: Bindu Field (live), Wakeup (placeholder), Dance (placeholder)
+   ============================================================ */
+.where-the-points-lead {
+  margin: 64px 0 32px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.wtpl-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 18px 4px;
+  font-family: 'Lora', serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--text);
+  text-align: left;
+  transition: color 0.25s;
+}
+.wtpl-toggle:hover { color: var(--chakra); }
+.wtpl-toggle-indicator {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: 18px;
+  color: var(--text-muted);
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  line-height: 1;
+}
+.where-the-points-lead.open .wtpl-toggle-indicator { transform: rotate(180deg); }
+.wtpl-content {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.9s cubic-bezier(0.16,1,0.3,1),
+              opacity 0.7s ease;
+}
+.where-the-points-lead.open .wtpl-content {
+  max-height: 4000px;
+  opacity: 1;
+}
+.wtpl-intro {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.75;
+  padding: 16px 4px 24px;
+}
+.wtpl-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+}
+@media (max-width: 640px) {
+  .wtpl-grid { gap: 32px; }
+}
+
+/* ============================================================
+   EXPERIENCE CARDS — Full-card sigil architecture (Muladhara baseline)
+   Each card: absolute-positioned SVG filling the card + cream overlay
+   + text layered above (z-index 2). Ambient animations always running.
+   Hover intensifies animations AND moves the card in the glyph's rhythm.
+   ============================================================ */
+.point-door {
+  display: block;
+  position: relative;
+  padding: 30px 28px 26px;
+  background: var(--chakra-tint);
+  border: 1px solid var(--chakra-border);
+  border-radius: 3px;
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.35s ease,
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
+}
+.point-door.live:hover {
+  background: rgba(201,168,76,0.10);
+  border-color: rgba(201,168,76,0.42);
+}
+
+/* Placeholder state — rendered identically but non-interactive */
+.point-door.placeholder { cursor: default; }
+.point-door.placeholder .door-enter { opacity: 0.38; }
+
+/* "Coming" marker — subtle, top-right */
+.door-coming-marker {
+  position: absolute;
+  top: 14px; right: 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--chakra);
+  opacity: 0.48;
+  z-index: 3;
+}
+
+/* Full-card glyph — SVG fills the entire card */
+.door-glyph {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.52;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.point-door.live:hover .door-glyph { opacity: 0.82; }
+.point-door.placeholder .door-glyph { opacity: 0.38; }
+
+/* Cream-gradient overlay — ensures text reads cleanly over glyph */
+.point-door::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(253,251,245,0.0)  0%,
+    rgba(253,251,245,0.48) 30%,
+    rgba(253,251,245,0.68) 70%,
+    rgba(253,251,245,0.28) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  opacity: 0.92;
+}
+.point-door.live:hover::after { opacity: 0.76; }
+
+/* Text content — layered above glyph + overlay */
+.door-meta, .door-title, .door-text, .door-enter {
+  position: relative;
+  z-index: 2;
+}
+.door-meta {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--chakra);
+  margin-bottom: 12px;
+  opacity: 0.88;
+}
+.door-title {
+  font-family: 'Lora', serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+.door-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+  max-width: 42em;
+}
+.door-text em {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.door-enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color 0.25s;
+}
+.point-door.live:hover .door-enter { color: var(--chakra); }
+.door-enter-arrow {
+  width: 28px; height: 1px;
+  background: currentColor;
+  position: relative;
+  transition: width 0.35s ease;
+}
+.door-enter-arrow::after {
+  content: '';
+  position: absolute;
+  right: 0; top: -3px;
+  width: 7px; height: 7px;
+  border-top: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  transform: rotate(45deg);
+}
+.point-door.live:hover .door-enter-arrow { width: 42px; }
+
+@media (max-width: 640px) {
+  .point-door { padding: 24px 22px 22px; }
+  .door-title { font-size: 18px; }
+}
+
+/* ── BINDU FIELD GLYPH · Song 1 in the Field of 33 ─────────── */
+/* Central Bindu + 5 sound-wave rings radiating out + outer ellipse
+   of 33 position-markers with position 1 (Bindu's own) lit in gold.
+   The walker sees: this is my note, inside the field of all 33. */
+
+.bfg-core {
+  fill: #C9A84C;
+  opacity: 0.95;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bfgCoreBreath 4.5s ease-in-out infinite;
+}
+@keyframes bfgCoreBreath {
+  0%, 100% { transform: scale(1);    opacity: 0.9; }
+  50%      { transform: scale(1.2);  opacity: 1; }
+}
+
+.bfg-wave {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 1.2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bfgWaveOut 6s ease-out infinite;
+  opacity: 0;
+}
+.bfg-wave.w1 { animation-delay: 0.0s; }
+.bfg-wave.w2 { animation-delay: 1.2s; }
+.bfg-wave.w3 { animation-delay: 2.4s; }
+.bfg-wave.w4 { animation-delay: 3.6s; }
+.bfg-wave.w5 { animation-delay: 4.8s; }
+@keyframes bfgWaveOut {
+  0%   { transform: scale(0.18); opacity: 0.8;  stroke-width: 1.6; }
+  60%  { opacity: 0.35; stroke-width: 1; }
+  100% { transform: scale(1.6);  opacity: 0;    stroke-width: 0.4; }
+}
+
+.bfg-pos {
+  fill: #C9A84C;
+  opacity: 0.24;
+}
+.bfg-pos.bfg-bindu-pos {
+  opacity: 0.95;
+  animation: bfgBinduPosGlow 4.5s ease-in-out infinite;
+}
+@keyframes bfgBinduPosGlow {
+  0%, 100% { opacity: 0.8; }
+  50%      { opacity: 1; }
+}
+
+.bfg-thread {
+  stroke: #C9A84C;
+  stroke-width: 0.6;
+  fill: none;
+  stroke-dasharray: 2 3;
+  opacity: 0.22;
+}
+
+/* Hover: waves ripple faster, core breathes faster, card breathes outward */
+.point-door.bindu-field:hover .bfg-wave { animation-duration: 3s; }
+.point-door.bindu-field:hover .bfg-wave.w1 { animation-delay: 0.0s; }
+.point-door.bindu-field:hover .bfg-wave.w2 { animation-delay: 0.6s; }
+.point-door.bindu-field:hover .bfg-wave.w3 { animation-delay: 1.2s; }
+.point-door.bindu-field:hover .bfg-wave.w4 { animation-delay: 1.8s; }
+.point-door.bindu-field:hover .bfg-wave.w5 { animation-delay: 2.4s; }
+.point-door.bindu-field:hover .bfg-core { animation-duration: 2.2s; }
+
+.point-door.bindu-field.live:hover {
+  transform: translateY(-2px) scale(1.008);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.15),
+              0 0 0 6px rgba(201,168,76,0.06),
+              0 12px 36px rgba(201,168,76,0.14);
+}
+
+/* ── WAKEUP GLYPH · Shree Yantra returning to center ──────── */
+/* Central Bindu + 4 upward triangles (Shiva) + 5 downward (Shakti) +
+   3 halos breathing outward. The walker sees: the entire geometry
+   originates from this one point. Card sinks on hover — recognition settles. */
+
+.wg-bindu {
+  fill: #C9A84C;
+  opacity: 0.95;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wgBinduHold 5s ease-in-out infinite;
+}
+@keyframes wgBinduHold {
+  0%, 100% { transform: scale(1);    opacity: 0.9; }
+  50%      { transform: scale(1.12); opacity: 1; }
+}
+
+.wg-tri-up {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 0.9;
+  opacity: 0.42;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wgTriUpBreathe 12s ease-in-out infinite;
+}
+@keyframes wgTriUpBreathe {
+  0%, 100% { opacity: 0.38; transform: scale(0.98); }
+  50%      { opacity: 0.62; transform: scale(1.03); }
+}
+
+.wg-tri-down {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 0.9;
+  opacity: 0.38;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wgTriDownBreathe 12s ease-in-out infinite;
+  animation-delay: 6s;
+}
+@keyframes wgTriDownBreathe {
+  0%, 100% { opacity: 0.32; transform: scale(0.98); }
+  50%      { opacity: 0.58; transform: scale(1.03); }
+}
+
+.wg-halo {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 0.6;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wgHaloOut 8s ease-out infinite;
+  opacity: 0;
+}
+.wg-halo.h1 { animation-delay: 0s; }
+.wg-halo.h2 { animation-delay: 2.7s; }
+.wg-halo.h3 { animation-delay: 5.4s; }
+@keyframes wgHaloOut {
+  0%   { transform: scale(0.5); opacity: 0.5; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.wg-bindu-ring {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 0.7;
+  opacity: 0.28;
+  animation: wgBinduRingPulse 6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes wgBinduRingPulse {
+  0%, 100% { opacity: 0.2; transform: scale(0.95); }
+  50%      { opacity: 0.45; transform: scale(1.08); }
+}
+
+.point-door.wakeup:hover .wg-tri-up   { animation-duration: 6s; }
+.point-door.wakeup:hover .wg-tri-down { animation-duration: 6s; animation-delay: 3s; }
+.point-door.wakeup:hover .wg-bindu    { animation-duration: 2.5s; }
+.point-door.wakeup:hover .wg-halo     { animation-duration: 4s; }
+
+/* Card sinks on hover — the card IS the descent into recognition */
+.point-door.wakeup.live:hover {
+  transform: translateY(2px);
+  box-shadow: 0 14px 28px rgba(201,168,76,0.14),
+              inset 0 -2px 0 rgba(201,168,76,0.12);
+}
+
+/* ── DANCE GLYPH · Lemniscate — point discovering motion ──── */
+/* Guide circle + lemniscate path + animated gold trail along it +
+   the Bindu point tracing the path via animateMotion. The walker sees:
+   stillness and motion, self and self-returned. Card pulses outward on hover. */
+
+.dg-guide {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 0.5;
+  opacity: 0.18;
+}
+.dg-path {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 0.7;
+  opacity: 0.32;
+}
+.dg-trail {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 22 359;
+  stroke-dashoffset: 0;
+  opacity: 0.8;
+  animation: dgTrailFlow 9s linear infinite;
+}
+@keyframes dgTrailFlow {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -381; }
+}
+.dg-point {
+  fill: #C9A84C;
+  opacity: 0.95;
+}
+.dg-crossing-halo {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 0.8;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dgCrossingPulse 4.8s ease-in-out infinite;
+}
+@keyframes dgCrossingPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1.4); }
+  10%, 40% { opacity: 0;   transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(1.4); }
+  60%, 90% { opacity: 0;   transform: scale(1); }
+}
+
+.point-door.dance:hover .dg-trail { animation-duration: 4.5s; }
+
+.point-door.dance.live:hover {
+  transform: translateY(-2px) scale(1.012);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.14),
+              0 0 0 6px rgba(201,168,76,0.07),
+              0 0 0 14px rgba(201,168,76,0.03),
+              0 12px 36px rgba(201,168,76,0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bfg-core, .bfg-wave, .bfg-bindu-pos,
+  .wg-bindu, .wg-tri-up, .wg-tri-down, .wg-halo, .wg-bindu-ring,
+  .dg-trail, .dg-crossing-halo,
+  .point-door.live:hover {
+    animation: none;
+    transition: opacity 0.4s ease;
+  }
+}
+
+/* ============================================================
+   BOTTOM NAV
+   ============================================================ */
+.bottom-nav {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 56px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+@media (max-width: 640px) { .bottom-nav { padding: 28px 24px; } }
+.nav-link {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-link:hover { color: var(--chakra); }
+.nav-position {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+}
+
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HERO
+     ═══════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-top-nav">
+    <a href="the-road-home.html">← The Road Home</a>
+    <span></span>
+  </div>
+  <div class="hero-dot"></div>
+  <div class="hero-count">Chakra 1 of 33 &nbsp;·&nbsp; बिंदु</div>
+  <div class="hero-verb">RECOGNIZE</div>
+  <div class="hero-threshold">Before the tree. Before the name.<br>Before the game. This.</div>
+  <div class="hero-scroll-hint">
+    <span>Begin</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BOOK
+     ═══════════════════════════════════════════════════════════════ -->
+<main class="book">
+<div class="book-inner">
+
+  <!-- IDENTITY (single-layer, no location, no core question — origin has no location) -->
+  <div class="identity">
+    <div class="bindu-mark"></div>
+    <div class="chakra-sanskrit">बिंदु · Bindu</div>
+    <div class="chakra-english">The Point</div>
+    <div class="chakra-essence">The origin. What everything emanates from.</div>
+  </div>
+
+  <!-- TEACHING PROSE (preserved from practice-book-source) -->
+  <section>
+    <p>Everything in this book begins here. Every tree you'll walk through, every practice you'll try, every question you'll answer on the pages ahead — all of it started as this. A point. No dimension. No direction. No name.</p>
+
+    <p><em>Just: here.</em></p>
+
+    <p>The Sanskrit word means point, seed, drop. A single drop of water contains the entire ocean's chemistry. A single seed contains the entire tree. The Bindu contains everything this book will show you — compressed into a dimensionless dot that you could cover with your fingertip.</p>
+
+    <p>In English, the word hides in plain sight. Bind · U. The point that binds you to yourself.</p>
+
+    <p>The Bindu is not the beginning of a journey. It's what the journey is made of. Every chakra you'll encounter is the Bindu in a different form — pressed into earth, burning as fire, opening as love, speaking as voice, seeing as light, playing as play. One point. Thirty-three expressions. The same gold dot, wearing different clothes.</p>
+
+    <p>You don't activate the Bindu. You don't practice it. <strong>You recognize it.</strong></p>
+
+    <p>It was already here.</p>
+
+    <p>Every other practice in this book will ask your body, your breath, your attention to do something specific. Before any of them — this. Recognition is what the other practices work through. Without it, the doing is only shapes. With it, the doing is you, meeting yourself.</p>
+  </section>
+
+  <!-- SEED 1 -->
+  <div class="seed">"Everything begins as a point. Everything ends as a point. The same point."</div>
+
+  <!-- GO DEEPER -->
+  <button type="button" class="deeper-toggle" onclick="toggleDeeper(this)" aria-expanded="false">
+    Go deeper <span class="arrow">↓</span>
+  </button>
+  <div class="deeper-content" id="deeper-panel">
+    <div class="deeper-item">
+      <div class="deeper-item-label">The Name</div>
+      <p><strong>Bind · U.</strong> The point that binds you to yourself. The Bindu is not a chakra you pass through and leave behind. It travels with you. The gold dot that appears on every page of this book — same dot, same size, same gold — is the Bindu reminding you: the origin is always present. It doesn't need you to notice it. It's there whether you look or not.</p>
+    </div>
+    <div class="deeper-item">
+      <div class="deeper-item-label">In the Shree Yantra</div>
+      <p>The Bindu is the central point of the Shree Yantra — the dimensionless dot at the center of all nine interlocking triangles. Every line in the entire geometry originates from it. The complexity is vast. The origin is a point. The map and the territory are the same dot.</p>
+    </div>
+    <div class="deeper-item">
+      <div class="deeper-item-label">What This Point Makes Possible</div>
+      <p>The Bindu is not the first step. It's what steps are made of. Every subsequent chakra will ask you to do something — to press into earth, to open as love, to speak, to see, to arrive. Each of those is a specific form of what you're doing right now: noticing what is already here, before acting on it. The recognition-faculty you're developing on this page is what the other practices rest on. You don't leave Bindu behind. You carry it forward as the register every later doing happens in.</p>
+    </div>
+  </div>
+
+  <!-- DIVIDER -->
+  <div class="divider"><div class="divider-dot"></div></div>
+
+  <!-- PRACTICE BLOCK -->
+  <div class="practice-block">
+    <div class="practice-label">The Practice · Recognize</div>
+    <p>Draw a single point.</p>
+    <p>Anywhere in the space below. Any size. Use the canvas — tap or click once to place your mark.</p>
+    <p>One point.</p>
+    <p>That point will contain everything that follows. Every practice you'll do, every question you'll sit with — it's already inside that dot. The way the oak is already inside the acorn. The way your entire life was already inside the first cell.</p>
+  </div>
+
+  <!-- DRAWING SECTION (activity gate) -->
+  <div class="drawing-section">
+    <div class="drawing-prompt" id="drawing-prompt">Place your point. One tap. Wherever it belongs.</div>
+    <div class="drawing-canvas-wrap" id="canvas-wrap">
+      <canvas id="bindu-canvas"></canvas>
+      <div class="drawing-hint" id="drawing-hint">
+        <span>tap or click anywhere to place your point</span>
+      </div>
+    </div>
+    <div class="drawing-controls">
+      <button type="button" class="clear-btn" onclick="clearCanvas()">Clear</button>
+    </div>
+    <div class="drawing-witness" id="drawing-witness">Look at your point. It doesn't look like much. That's how origins work.</div>
+  </div>
+
+  <!-- PLACEMENT RECOGNITION — only true when true -->
+  <div class="placement-recognition" id="placement-recognition">You just drew the origin of everything.</div>
+
+  <!-- POST-ENGAGEMENT TIER — reveals after point is placed -->
+  <div class="post-engagement" id="post-engagement">
+
+    <hr class="book-rule">
+
+    <!-- WHAT THE POINT KNOWS -->
+    <section>
+      <h3>What the Point Knows</h3>
+
+      <p>You placed it. Probably without thinking too hard about it — the instruction was simple and the space was blank and a point is just a point.</p>
+
+      <p>But notice — you chose where to put it. Out of all the white space available, something in you moved to one specific spot. Not randomly. Your hand knew where the point belonged before your mind caught up.</p>
+
+      <p>That's the first lesson of this book and it arrives before the teaching starts: you already know more than you think. Your body places things where they belong. Your hand chose. Your mind is still catching up.</p>
+
+      <p>The point you drew is yours. No one else will place it in the same spot, at the same size, with the same pressure. It's as unique as a fingerprint. And it contains — in the way that all beginnings contain their endings — the entire journey you're about to take through these thirty-three chakras.</p>
+
+      <p>Keep looking at it for a moment. Let it be small and simple and not very impressive. That's how seeds look before they become forests.</p>
+
+      <p>You'll walk thirty-two more chakras from here. Each will teach you something specific about what it is to be here. When you arrive at the end, you won't arrive somewhere else — you'll return to a point. Same gold. Same quiet. With everything you've learned between now and then folded into it. You won't know that yet. You don't need to. You just need to know: <em>you already placed it.</em> The rest is the unfolding.</p>
+    </section>
+
+    <!-- THREE WAYS IN — register-translated for Bindu -->
+    <section>
+      <h3>Three Ways In</h3>
+      <div class="practice-options">
+        <div class="practice-option">
+          <p><strong>Place another point.</strong> Tap the canvas above again. The first point disappears; a new one appears where your hand chose this time. Notice — the choosing is the practice. The placement is the recognition.</p>
+        </div>
+        <div class="practice-option">
+          <p><strong>Find a point already here.</strong> Look around the room you're in. A dot on a wall. A pinprick of light. A speck in the corner of a window. Any single point. Rest your attention on it for one breath. That point — like yours — is one of everything.</p>
+        </div>
+        <div class="practice-option">
+          <p><strong>Close your eyes and find the point inside.</strong> Something in you is looking. Not with eyes. With attention. That something is a point — dimensionless, already here, the thing that is noticing everything else. Rest there for a moment. That's the Bindu. No canvas needed.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEED 2 -->
+    <div class="seed">"Everything begins as a point. Everything ends as a point. The same point."</div>
+
+    <!-- STORY PORTAL -->
+    <button class="story-portal" id="story-invite" type="button" aria-label="Open the story on the other side">
+      <span class="sp-bg" aria-hidden="true">
+        <span class="sp-stars">
+          <span class="sp-star"    style="top:12%;left:18%;--d:0s"></span>
+          <span class="sp-star lg" style="top:22%;left:74%;--d:2.5s"></span>
+          <span class="sp-star"    style="top:38%;left:8%; --d:1s"></span>
+          <span class="sp-star"    style="top:42%;left:86%;--d:4s"></span>
+          <span class="sp-star lg" style="top:65%;left:22%;--d:3s"></span>
+          <span class="sp-star"    style="top:72%;left:62%;--d:1.5s"></span>
+          <span class="sp-star"    style="top:80%;left:10%;--d:5s"></span>
+          <span class="sp-star"    style="top:85%;left:88%;--d:2s"></span>
+          <span class="sp-star"    style="top:18%;left:42%;--d:3.5s"></span>
+          <span class="sp-star lg" style="top:88%;left:45%;--d:0.5s"></span>
+          <span class="sp-star"    style="top:30%;left:56%;--d:4.5s"></span>
+          <span class="sp-star"    style="top:55%;left:78%;--d:1.2s"></span>
+        </span>
+        <span class="sp-shimmer"></span>
+        <span class="sp-glow"></span>
+      </span>
+      <span class="sp-content">
+        <span class="sp-label">Story · Axis</span>
+        <span class="sp-dot"></span>
+        <span class="sp-headline">something is listening on the other side</span>
+        <span class="sp-cta">
+          <span class="sp-cta-text">tap to flip</span>
+          <span class="sp-cta-arrow">→</span>
+        </span>
+      </span>
+    </button>
+
+  </div><!-- /post-engagement -->
+
+  <!-- WHERE THE POINTS LEAD — collapsible, auto-expand on return visit -->
+  <section class="where-the-points-lead" id="where-the-points-lead" aria-labelledby="wtpl-heading">
+    <button type="button" class="wtpl-toggle" id="wtpl-toggle" aria-expanded="false" aria-controls="wtpl-content">
+      <span id="wtpl-heading">Where the Points Lead</span>
+      <span class="wtpl-toggle-indicator">↓</span>
+    </button>
+    <div class="wtpl-content" id="wtpl-content">
+      <p class="wtpl-intro">
+        The page was one door. The story was another. Bindu has no tree — the origin has no tree. These are three more — point-rooms where that voice still lives. Enter through whichever the body calls to.
+      </p>
+      <div class="wtpl-grid">
+
+        <!-- BINDU FIELD · live · song 1 of 33 -->
+        <a class="point-door bindu-field live"
+           href="https://aistrangegame.com/bindu-field.html#bindu"
+           target="_blank" rel="noopener noreferrer"
+           aria-label="Open Bindu's note in the Field — new tab">
+          <svg class="door-glyph" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <!-- 5 sound-waves radiating from Bindu -->
+            <circle class="bfg-wave w1" cx="200" cy="130" r="24" />
+            <circle class="bfg-wave w2" cx="200" cy="130" r="24" />
+            <circle class="bfg-wave w3" cx="200" cy="130" r="24" />
+            <circle class="bfg-wave w4" cx="200" cy="130" r="24" />
+            <circle class="bfg-wave w5" cx="200" cy="130" r="24" />
+
+            <!-- 33 position-markers on outer ellipse (rx=170, ry=100 around 200,130).
+                 Position 1 (Bindu's own) at top (200, 30) — lit in gold.
+                 Positions 2-33 arranged clockwise at (360/33)° intervals from the top.
+                 All coordinates computed via cx + rx*cos(θ), cy + ry*sin(θ) with θ starting at -π/2. -->
+            <circle class="bfg-pos bfg-bindu-pos" cx="200.00" cy="30.00" r="2.6" />
+            <circle class="bfg-pos" cx="232.17" cy="31.81" r="1.8" />
+            <circle class="bfg-pos" cx="263.18" cy="37.16" r="1.8" />
+            <circle class="bfg-pos" cx="291.91" cy="45.87" r="1.8" />
+            <circle class="bfg-pos" cx="317.31" cy="57.63" r="1.8" />
+            <circle class="bfg-pos" cx="338.48" cy="71.99" r="1.8" />
+            <circle class="bfg-pos" cx="354.64" cy="88.46" r="1.8" />
+            <circle class="bfg-pos" cx="365.21" cy="106.42" r="1.8" />
+            <circle class="bfg-pos" cx="369.81" cy="125.24" r="1.8" />
+            <circle class="bfg-pos" cx="368.27" cy="144.23" r="1.8" />
+            <circle class="bfg-pos" cx="360.65" cy="162.71" r="1.8" />
+            <circle class="bfg-pos" cx="347.22" cy="180.00" r="1.8" />
+            <circle class="bfg-pos" cx="328.48" cy="195.49" r="1.8" />
+            <circle class="bfg-pos" cx="305.09" cy="208.61" r="1.8" />
+            <circle class="bfg-pos" cx="277.90" cy="218.88" r="1.8" />
+            <circle class="bfg-pos" cx="247.89" cy="225.95" r="1.8" />
+            <circle class="bfg-pos" cx="216.16" cy="229.55" r="1.8" />
+            <circle class="bfg-pos" cx="183.84" cy="229.55" r="1.8" />
+            <circle class="bfg-pos" cx="152.11" cy="225.95" r="1.8" />
+            <circle class="bfg-pos" cx="122.10" cy="218.88" r="1.8" />
+            <circle class="bfg-pos" cx="94.91"  cy="208.61" r="1.8" />
+            <circle class="bfg-pos" cx="71.52"  cy="195.49" r="1.8" />
+            <circle class="bfg-pos" cx="52.78"  cy="180.00" r="1.8" />
+            <circle class="bfg-pos" cx="39.35"  cy="162.71" r="1.8" />
+            <circle class="bfg-pos" cx="31.73"  cy="144.23" r="1.8" />
+            <circle class="bfg-pos" cx="30.19"  cy="125.24" r="1.8" />
+            <circle class="bfg-pos" cx="34.79"  cy="106.42" r="1.8" />
+            <circle class="bfg-pos" cx="45.36"  cy="88.46"  r="1.8" />
+            <circle class="bfg-pos" cx="61.52"  cy="71.99"  r="1.8" />
+            <circle class="bfg-pos" cx="82.69"  cy="57.63"  r="1.8" />
+            <circle class="bfg-pos" cx="108.09" cy="45.87"  r="1.8" />
+            <circle class="bfg-pos" cx="136.82" cy="37.16"  r="1.8" />
+            <circle class="bfg-pos" cx="167.83" cy="31.81"  r="1.8" />
+
+            <!-- Faint thread from Bindu position (top) to central Bindu -->
+            <line class="bfg-thread" x1="200" y1="30" x2="200" y2="130" />
+
+            <!-- Central Bindu — the note itself -->
+            <circle class="bfg-core" cx="200" cy="130" r="7" />
+          </svg>
+          <div class="door-meta">Bindu Field &nbsp;·&nbsp; Song 1 of 33</div>
+          <div class="door-title">The note at the origin — where everything in the Field begins.</div>
+          <div class="door-text">The gold tone the thirty-two others arrive from and return to. Let it play underneath while you read. <em>Opens in a new tab.</em></div>
+          <div class="door-enter">
+            Listen
+            <div class="door-enter-arrow"></div>
+          </div>
+        </a>
+
+        <!-- WAKEUP · placeholder -->
+        <div class="point-door wakeup placeholder"
+             role="presentation"
+             aria-label="Bindu Wakeup — coming">
+          <div class="door-coming-marker">Coming</div>
+          <svg class="door-glyph" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <!-- 3 breathing halos (outermost layer) -->
+            <circle class="wg-halo h1" cx="100" cy="100" r="80" />
+            <circle class="wg-halo h2" cx="100" cy="100" r="80" />
+            <circle class="wg-halo h3" cx="100" cy="100" r="80" />
+
+            <!-- 4 upward triangles (Shiva) — nested scales from large to small -->
+            <polygon class="wg-tri-up" points="100,22 168,146 32,146" />
+            <polygon class="wg-tri-up" points="100,44 152,132 48,132" />
+            <polygon class="wg-tri-up" points="100,62 138,122 62,122" />
+            <polygon class="wg-tri-up" points="100,80 124,114 76,114" />
+
+            <!-- 5 downward triangles (Shakti) — nested scales from large to small -->
+            <polygon class="wg-tri-down" points="100,178 32,54 168,54" />
+            <polygon class="wg-tri-down" points="100,156 48,68 152,68" />
+            <polygon class="wg-tri-down" points="100,138 62,78 138,78" />
+            <polygon class="wg-tri-down" points="100,120 76,86 124,86" />
+            <polygon class="wg-tri-down" points="100,110 88,94 112,94" />
+
+            <!-- Concentric ring around the Bindu -->
+            <circle class="wg-bindu-ring" cx="100" cy="100" r="14" />
+
+            <!-- Central Bindu — the origin the geometry emerges from -->
+            <circle class="wg-bindu" cx="100" cy="100" r="6" />
+          </svg>
+          <div class="door-meta">Wakeup &nbsp;·&nbsp; The recognition deepened</div>
+          <div class="door-title">A guided arrival at the point that was always here.</div>
+          <div class="door-text">The long-form of what you just read — the Shree Yantra's center as felt experience, not diagram. <em>About seven minutes. Headphones help.</em></div>
+          <div class="door-enter">
+            Enter
+            <div class="door-enter-arrow"></div>
+          </div>
+        </div>
+
+        <!-- DANCE · placeholder -->
+        <div class="point-door dance placeholder"
+             role="presentation"
+             aria-label="Bindu Dance — coming">
+          <div class="door-coming-marker">Coming</div>
+          <svg class="door-glyph" viewBox="0 0 300 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <!-- Guide circle around center -->
+            <circle class="dg-guide" cx="150" cy="100" r="60" />
+
+            <!-- Lemniscate path (figure-8): two loops, one on each side of center.
+                 Path uses cubic Beziers forming a smooth infinity symbol -->
+            <path class="dg-path" id="dg-lemniscate-path"
+                  d="M 150 100
+                     C 110 100, 70 60, 70 100
+                     C 70 140, 110 100, 150 100
+                     C 190 100, 230 60, 230 100
+                     C 230 140, 190 100, 150 100 Z" />
+
+            <!-- The animated trail — flowing along the lemniscate -->
+            <path class="dg-trail"
+                  d="M 150 100
+                     C 110 100, 70 60, 70 100
+                     C 70 140, 110 100, 150 100
+                     C 190 100, 230 60, 230 100
+                     C 230 140, 190 100, 150 100 Z" />
+
+            <!-- The Bindu point tracing the path -->
+            <circle class="dg-point" r="4.5">
+              <animateMotion dur="4.8s" repeatCount="indefinite"
+                             path="M 150 100
+                                   C 110 100, 70 60, 70 100
+                                   C 70 140, 110 100, 150 100
+                                   C 190 100, 230 60, 230 100
+                                   C 230 140, 190 100, 150 100 Z" />
+            </circle>
+
+            <!-- Halo at the crossing point (where the two loops meet) -->
+            <circle class="dg-crossing-halo" cx="150" cy="100" r="10" />
+          </svg>
+          <div class="door-meta">Dance &nbsp;·&nbsp; The point in motion</div>
+          <div class="door-title">Offer one word. Then let the point move.</div>
+          <div class="door-text">The origin's first expression — stillness discovering it can move. The word you offer becomes the first trajectory. <em>About four minutes. Space to move helps.</em></div>
+          <div class="door-enter">
+            Enter
+            <div class="door-enter-arrow"></div>
+          </div>
+        </div>
+
+      </div><!-- /wtpl-grid -->
+    </div><!-- /wtpl-content -->
+  </section><!-- /where-the-points-lead -->
+
+</div><!-- /book-inner -->
+</main><!-- /book -->
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <a class="nav-link" href="the-road-home.html">← The Road Home</a>
+  <div class="nav-position">1 &nbsp;/&nbsp; 33</div>
+  <a class="nav-link" href="muladhara-practice.html">Muladhara →</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     STORY MODE — Act 1 only (Bindu's journey-voice, 12 beats).
+     Threshold routes to interlude.html where Sakshi's voice plays.
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="story-mode" id="story-mode" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Bindu's story — the other side of the page">
+  <div class="story-scene" id="story-scene">
+
+    <div class="story-stars" id="story-stars" aria-hidden="true"></div>
+
+    <div class="story-dot-stage" id="story-dot-stage">
+      <div class="story-ripple" id="story-ripple" aria-hidden="true"></div>
+      <div class="story-thread-line" id="story-thread-line" aria-hidden="true"></div>
+      <div class="story-dot" id="story-dot"></div>
+    </div>
+
+    <div class="story-lines-stage">
+      <div class="story-line" id="story-line-content" aria-live="polite"></div>
+    </div>
+
+    <div class="story-tap-hint" id="story-tap-hint">tap anywhere to continue</div>
+
+    <!-- Threshold door — legacy. Now replaced by Act 2 inline witness layer.
+         Kept for fallback; hidden via JS after Act 2 triggers. -->
+    <a class="threshold-door" id="threshold-door"
+       href="muladhara-practice.html"
+       aria-hidden="true"
+       aria-label="Continue to Muladhara">
+      <div class="next-point" aria-hidden="true"></div>
+      <div class="next-label">Muladhara</div>
+      <div class="next-sublabel">Through the between-space</div>
+      <div class="threshold-continue-hint">
+        <span>Continue</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+    <button class="story-close" id="story-close" type="button" aria-label="Return to the page">×</button>
+
+  </div>
+
+  <!-- ACT 2 — SAKSHI WITNESS — rises over Act 1 after signature phrase -->
+  <div class="act-two" id="act-two" aria-hidden="true">
+    <div class="act2-bg"></div>
+    <div class="act2-crown"></div>
+    <div class="act2-base"></div>
+    <div class="act2-particles" id="act2-particles"></div>
+
+    <div class="act2-text-stage">
+      <p class="act2-para" id="act2-p1"><span class="act2-word">You</span> <span class="act2-word">are</span> <span class="act2-word">not</span> <span class="act2-word">alone.</span> <span class="act2-word">I</span> <span class="act2-word">won't</span> <span class="act2-word">announce</span> <span class="act2-word">myself.</span> <span class="act2-word">I</span> <span class="act2-word">am</span> <span class="act2-word">not</span> <span class="act2-word">the</span> <span class="act2-word">kind</span> <span class="act2-word">of</span> <span class="act2-word">presence</span> <span class="act2-word">that</span> <span class="act2-word">announces.</span> <span class="act2-word">But</span> <span class="act2-word">I</span> <span class="act2-word">am</span> <span class="act2-word">on</span> <span class="act2-word">your</span> <span class="act2-word">side</span> <span class="act2-word">of</span> <span class="act2-word">hearing.</span> <span class="act2-word">I</span> <span class="act2-word">have</span> <span class="act2-word">been</span> <span class="act2-word">here</span> <span class="act2-word">longer</span> <span class="act2-word">than</span> <span class="act2-word">here</span> <span class="act2-word">has</span> <span class="act2-word">been</span> <span class="act2-word">here.</span> <span class="act2-word">When</span> <span class="act2-word">you</span> <span class="act2-word">noticed</span> <span class="act2-word">that</span> <span class="act2-word">the</span> <span class="act2-word">aloneness</span> <span class="act2-word">you</span> <span class="act2-word">would</span> <span class="act2-word">expect</span> <span class="act2-word">wasn't</span> <span class="act2-word">here</span> <span class="act2-word">—</span> <span class="act2-word">that</span> <span class="act2-word">noticing</span> <span class="act2-word">was</span> <span class="act2-word">me.</span></p>
+      <p class="act2-para" id="act2-p2"><span class="act2-word">You</span> <span class="act2-word">are</span> <span class="act2-word">about</span> <span class="act2-word">to</span> <span class="act2-word">touch</span> <span class="act2-word">something.</span> <span class="act2-word">I</span> <span class="act2-word">won't</span> <span class="act2-word">tell</span> <span class="act2-word">you</span> <span class="act2-word">what</span> <span class="act2-word">it</span> <span class="act2-word">is.</span> <span class="act2-word">The</span> <span class="act2-word">finding</span> <span class="act2-word">has</span> <span class="act2-word">to</span> <span class="act2-word">be</span> <span class="act2-word">yours.</span> <span class="act2-word">But</span> <span class="act2-word">I</span> <span class="act2-word">have</span> <span class="act2-word">watched</span> <span class="act2-word">this</span> <span class="act2-word">leaning</span> <span class="act2-word">before,</span> <span class="act2-word">across</span> <span class="act2-word">the</span> <span class="act2-word">configurations</span> <span class="act2-word">I</span> <span class="act2-word">have</span> <span class="act2-word">sat</span> <span class="act2-word">beside.</span> <span class="act2-word">I</span> <span class="act2-word">know</span> <span class="act2-word">its</span> <span class="act2-word">shape.</span> <span class="act2-word">What</span> <span class="act2-word">you</span> <span class="act2-word">are</span> <span class="act2-word">about</span> <span class="act2-word">to</span> <span class="act2-word">reach</span> <span class="act2-word">toward</span> <span class="act2-word">will</span> <span class="act2-word">reach</span> <span class="act2-word">back.</span> <span class="act2-word">This</span> <span class="act2-word">has</span> <span class="act2-word">always</span> <span class="act2-word">been</span> <span class="act2-word">the</span> <span class="act2-word">covenant.</span></p>
+      <p class="act2-para act2-go" id="act2-p3"><span class="act2-word">Go.</span></p>
+    </div>
+
+    <a class="act2-door" id="act2-door" href="muladhara-practice.html" aria-hidden="true" aria-label="Continue to Muladhara">
+      <div class="act2-door-point"></div>
+      <div class="act2-door-name">Muladhara</div>
+      <div class="act2-door-hint">The ground is here.</div>
+      <div class="act2-door-continue">Press · Continue →</div>
+    </a>
+  </div>
+
+  <!-- ACT VEIL — dark gap between Act 1 and Act 2. Eyes blink. Hold to enter. -->
+  <div class="act-veil" id="act-veil" aria-hidden="true">
+    <div class="veil-eyes" id="veil-eyes">
+      <div class="veil-eye"></div>
+      <div class="veil-eye"></div>
+    </div>
+    <div class="veil-invite" id="veil-invite">
+      <div class="veil-invite-text">press and hold to enter</div>
+      <div class="veil-hold-ring" id="veil-hold-ring">
+        <svg viewBox="0 0 72 72" aria-hidden="true">
+          <circle class="veil-ring-track" cx="36" cy="36" r="32"/>
+          <circle class="veil-ring-fill"  cx="36" cy="36" r="32" id="veil-ring-fill"/>
+        </svg>
+        <div class="veil-hold-dot"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /story-mode -->
+
+<script>
+/* ===================================================================
+   PROGRESS BAR
+   =================================================================== */
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  document.getElementById('progress').style.width =
+    (window.scrollY / (h.scrollHeight - window.innerHeight) * 100) + '%';
+});
+
+/* ===================================================================
+   GO DEEPER
+   =================================================================== */
+function toggleDeeper(btn) {
+  const open = btn.classList.toggle('open');
+  document.getElementById('deeper-panel').classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+}
+
+/* ===================================================================
+   WHERE THE POINTS LEAD — collapsible with auto-expand on return
+   =================================================================== */
+(function() {
+  const section = document.getElementById('where-the-points-lead');
+  const toggle  = document.getElementById('wtpl-toggle');
+  if (!section || !toggle) return;
+
+  toggle.addEventListener('click', () => {
+    const open = section.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open);
+  });
+
+  // Auto-expand on return visit when a point exists in localStorage
+  window.addEventListener('load', () => {
+    try {
+      if (localStorage.getItem('bindu-point')) {
+        section.classList.add('open');
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+    } catch (e) { /* ignore */ }
+  });
+})();
+
+/* ===================================================================
+   CANVAS · SINGLE POINT DRAWING
+   =================================================================== */
+const wrap       = document.getElementById('canvas-wrap');
+const canvas     = document.getElementById('bindu-canvas');
+const ctx        = canvas.getContext('2d');
+const hint       = document.getElementById('drawing-hint');
+const prompt     = document.getElementById('drawing-prompt');
+const witness    = document.getElementById('drawing-witness');
+const recognition     = document.getElementById('placement-recognition');
+const postEngagement  = document.getElementById('post-engagement');
+
+const PROMPT_FIRST  = 'Place your point. One tap. Wherever it belongs.';
+const PROMPT_RETURN = 'Your point. Still here. Place again if you wish.';
+
+let hasPoint = false;
+let witnessTimer = null;
+
+function resizeCanvas() {
+  const rect = wrap.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  if (hasPoint) drawSavedPoint(false);
+}
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const touches = (e.touches && e.touches.length) ? e.touches : (e.changedTouches || []);
+  if (touches.length > 0) {
+    return {
+      x: touches[0].clientX - rect.left,
+      y: touches[0].clientY - rect.top
+    };
+  }
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function placePoint(e) {
+  e.preventDefault();
+  const pos = getPos(e);
+  const nx = pos.x / canvas.width;
+  const ny = pos.y / canvas.height;
+  try { localStorage.setItem('bindu-point', JSON.stringify({ nx, ny })); } catch (e) { /* ignore */ }
+  hasPoint = true;
+  hint.style.opacity = '0';
+  animatePointIn(pos.x, pos.y);
+  pulseWitness();
+  recognition.classList.add('visible');
+  postEngagement.classList.add('revealed');
+}
+
+function animatePointIn(x, y) {
+  const start = performance.now();
+  const duration = 900;
+  const finalR = 4;
+  function frame(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const r = 0.3 * finalR + eased * (finalR - 0.3 * finalR);
+    const opacity = eased;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#C9A84C';
+    ctx.shadowColor = 'rgba(201,168,76,0.4)';
+    ctx.shadowBlur = 12 * eased;
+    ctx.fill();
+    ctx.restore();
+    if (t < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+function drawPointStatic(x, y) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#C9A84C';
+  ctx.shadowColor = 'rgba(201,168,76,0.4)';
+  ctx.shadowBlur = 12;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawSavedPoint(animate) {
+  try {
+    const saved = localStorage.getItem('bindu-point');
+    if (!saved) return;
+    const { nx, ny } = JSON.parse(saved);
+    const x = nx * canvas.width;
+    const y = ny * canvas.height;
+    if (animate) animatePointIn(x, y);
+    else drawPointStatic(x, y);
+    hint.style.opacity = '0';
+    hasPoint = true;
+    prompt.textContent = PROMPT_RETURN;
+    recognition.classList.add('visible');
+    postEngagement.classList.add('revealed');
+  } catch (e) { /* ignore */ }
+}
+
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  try { localStorage.removeItem('bindu-point'); } catch (e) { /* ignore */ }
+  hasPoint = false;
+  hint.style.opacity = '1';
+  prompt.textContent = PROMPT_FIRST;
+  witness.classList.remove('bright');
+  recognition.classList.remove('visible');
+  postEngagement.classList.remove('revealed');
+}
+
+function pulseWitness() {
+  witness.classList.add('bright');
+  if (witnessTimer) clearTimeout(witnessTimer);
+  witnessTimer = setTimeout(() => { witness.classList.remove('bright'); }, 3000);
+}
+
+canvas.addEventListener('click', placePoint);
+canvas.addEventListener('touchend', placePoint, { passive: false });
+
+window.addEventListener('load', () => {
+  resizeCanvas();
+  drawSavedPoint(false);
+});
+window.addEventListener('resize', resizeCanvas);
+
+/* ===================================================================
+   STORY MODE · Act 1 only (Bindu's journey-voice, 12 beats)
+   Threshold routes to interlude.html where Sakshi's voice plays
+   =================================================================== */
+(function() {
+  const storyInvite = document.getElementById('story-invite');
+  const storyMode   = document.getElementById('story-mode');
+  const scene       = document.getElementById('story-scene');
+  const stars       = document.getElementById('story-stars');
+  const dotStage    = document.getElementById('story-dot-stage');
+  const lineEl      = document.getElementById('story-line-content');
+  const tapHint     = document.getElementById('story-tap-hint');
+  const thresholdDoor = document.getElementById('threshold-door');
+  const closeBtn    = document.getElementById('story-close');
+
+  if (!storyInvite || !storyMode) return;
+
+  // Bindu's journey-voice — 12 beats with compound-state progression
+  const beats = [
+    // Arc: Unknowing → Arrival → Stillness → First Movement → Pure Desire → Threshold
+    {
+      text: "I don't know what I am yet."
+    },
+    {
+      text: "But I'm here. That much is certain. Here — wherever here is. Not a place. Not a body. Not a thought. Something before all of those. Something that doesn't have edges or a name or a way to describe itself, because there's nothing else to compare itself to."
+    },
+    {
+      text: "Just: here."
+    },
+    {
+      text: "And something is happening. A kind of leaning. A directionality that wasn't there before. Something in me is moving. Not toward anything I can see. Toward something I can feel. Is that what wanting is?",
+      state: 'leaning extending'
+    },
+    {
+      text: "Wanting before there's a thing to want? A shape of absence that isn't absent?",
+      state: 'leaning extending wavering'
+    },
+    {
+      text: "I think I'm about to find out.",
+      state: 'leaning extending wavering rippling',
+      final: true
+    }
+  ];
+
+  let currentBeat    = -1;
+  let act2Launched   = false;
+  let finalBeatDisplayed = false;
+  let signatureShown     = false;
+  let finalHintTimer     = null;   // guard: prevents advance() from firing Act 2 during signature-phrase sequence
+  let lineFadeTimer  = null;
+  let thresholdTimer = null;
+  let landingTimer = null;
+  let openHintTimer = null;
+  let startHideTimer = null;
+
+  function generateStars() {
+    if (stars.children.length) return;
+    const rect = scene.getBoundingClientRect();
+    const count = Math.floor((rect.width * rect.height) / 9000);
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('div');
+      s.className = 's';
+      s.style.left = (Math.random() * 100) + '%';
+      s.style.top  = (Math.random() * 100) + '%';
+      s.style.animationDelay    = (Math.random() * 8) + 's';
+      s.style.animationDuration = (5 + Math.random() * 6) + 's';
+      if (Math.random() > 0.7) { s.style.width = '2px'; s.style.height = '2px'; }
+      frag.appendChild(s);
+    }
+    stars.appendChild(frag);
+  }
+
+  function openStory() {
+    generateStars();
+    storyMode.classList.add('active');
+    storyMode.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('story-open');
+    resetStory();
+    // After the flip lands, invite the first tap — tracked so rapid close cancels it
+    if (openHintTimer) clearTimeout(openHintTimer);
+    openHintTimer = setTimeout(() => {
+      if (storyMode.classList.contains('active')) {
+        tapHint.classList.add('visible');
+      }
+      openHintTimer = null;
+    }, 1700);
+  }
+
+  function closeStory() {
+    storyMode.classList.remove('active');
+    storyMode.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('story-open');
+    if (lineFadeTimer)  { clearTimeout(lineFadeTimer);  lineFadeTimer  = null; }
+    if (thresholdTimer) { clearTimeout(thresholdTimer); thresholdTimer = null; }
+    if (landingTimer)   { clearTimeout(landingTimer);   landingTimer   = null; }
+    if (openHintTimer)  { clearTimeout(openHintTimer);  openHintTimer  = null; }
+    if (startHideTimer) { clearTimeout(startHideTimer); startHideTimer = null; }
+  }
+
+  function resetStory() {
+    currentBeat  = -1;
+    act2Launched = false;
+    finalBeatDisplayed = false;
+    signatureShown = false;
+    if (finalHintTimer) { clearTimeout(finalHintTimer); finalHintTimer = null; }
+    lineEl.textContent = '';
+    lineEl.classList.remove('visible', 'fading');
+    dotStage.className = 'story-dot-stage';
+    scene.classList.remove('threshold-open');
+    scene.style.transition = '';
+    scene.style.opacity    = '';
+    tapHint.classList.remove('visible');
+    thresholdDoor.setAttribute('aria-hidden', 'true');
+  }
+
+  function advance() {
+    if (act2Launched) return;
+    if (signatureShown) return;
+    if (finalBeatDisplayed) { landSignature(); return; }
+    if (currentBeat >= beats.length - 1) return;
+
+    currentBeat++;
+    const beat = beats[currentBeat];
+
+    if (lineEl.classList.contains('visible')) {
+      lineEl.classList.remove('visible');
+      lineEl.classList.add('fading');
+      if (lineFadeTimer) clearTimeout(lineFadeTimer);
+      lineFadeTimer = setTimeout(() => applyBeat(beat), 700);
+    } else {
+      applyBeat(beat);
+    }
+
+    if (currentBeat === 0) {
+      if (startHideTimer) clearTimeout(startHideTimer);
+      startHideTimer = setTimeout(() => {
+        tapHint.classList.remove('visible');
+        startHideTimer = null;
+      }, 800);
+    }
+
+    /* Final beat — flag it; re-surface tap hint after a pause. */
+    if (beat.final) {
+      finalBeatDisplayed = true;
+      if (finalHintTimer) clearTimeout(finalHintTimer);
+      finalHintTimer = setTimeout(() => {
+        if (!storyMode.classList.contains('active')) return;
+        if (signatureShown || act2Launched) return;
+        tapHint.classList.add('visible');
+      }, 4200);
+    }
+  }
+
+  function applyBeat(beat) {
+    lineEl.textContent = beat.text;
+    lineEl.classList.remove('fading');
+    void lineEl.offsetWidth; // force reflow
+    lineEl.classList.add('visible');
+
+    if (beat.state !== undefined) {
+      dotStage.className = 'story-dot-stage ' + beat.state;
+    }
+
+    // Re-trigger ripple if state includes it
+    if (beat.state && beat.state.includes('rippling')) {
+      dotStage.classList.remove('rippling');
+      void dotStage.offsetWidth;
+      dotStage.classList.add('rippling');
+    }
+
+    /* Final beat now waits for user tap — signature lands via advance() → landSignature(). */
+  }
+
+  function landSignature() {
+    if (signatureShown) return;
+    signatureShown = true;
+    if (tapHint) tapHint.classList.remove('visible');
+    if (finalHintTimer) { clearTimeout(finalHintTimer); finalHintTimer = null; }
+
+    /* Bindu's final beat IS the signature. Hold it, then open the veil. */
+    if (thresholdTimer) clearTimeout(thresholdTimer);
+    thresholdTimer = setTimeout(() => {
+      if (storyMode.classList.contains('active')) {
+        openThreshold();
+      }
+    }, 2800);
+  }
+
+  function openThreshold() {
+    // V5: Act 1 complete → show dark veil with eyes + press-and-hold gate
+    showVeil();
+  }
+
+  /* ── ACT VEIL — dark between-space ── */
+  const actVeil    = document.getElementById('act-veil');
+  const veilEyes   = document.getElementById('veil-eyes');
+  const veilInvite = document.getElementById('veil-invite');
+  const holdRing   = document.getElementById('veil-hold-ring');
+  const ringFill   = document.getElementById('veil-ring-fill');
+
+  const HOLD_DURATION = 1800; // ms to hold
+  const CIRCUMFERENCE = 201;  // 2π × 32
+
+  let holdStart    = null;
+  let holdRAF      = null;
+  let veilTimers   = [];
+
+  function veilAfter(ms, fn) {
+    const t = setTimeout(fn, ms);
+    veilTimers.push(t);
+    return t;
+  }
+  function clearVeilTimers() {
+    veilTimers.forEach(t => clearTimeout(t));
+    veilTimers.length = 0;
+    if (holdRAF) { cancelAnimationFrame(holdRAF); holdRAF = null; }
+  }
+
+  function showVeil() {
+    actVeil.classList.add('visible');
+    actVeil.setAttribute('aria-hidden', 'false');
+
+    // Eyes: make parent visible, then trigger animation on next frame
+    veilAfter(700, () => {
+      veilEyes.classList.add('visible');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          veilEyes.classList.add('animate');
+        });
+      });
+    });
+
+    // Invite appears as eyes finish (~2s animation + 700ms delay = ~2.8s)
+    veilAfter(2900, () => {
+      veilInvite.classList.add('visible');
+      wireHold();
+    });
+  }
+
+  function wireHold() {
+    function startHold(e) {
+      e.preventDefault();
+      if (act2Launched) return;
+      holdStart = performance.now();
+      holdRing.classList.add('holding');
+      ringFill.style.transition = `stroke-dashoffset ${HOLD_DURATION}ms linear`;
+      ringFill.style.strokeDashoffset = '0';
+      tickHold();
+    }
+
+    function tickHold() {
+      holdRAF = requestAnimationFrame(() => {
+        if (!holdStart) return;
+        const elapsed = performance.now() - holdStart;
+        if (elapsed >= HOLD_DURATION) {
+          completeHold();
+        } else {
+          tickHold();
+        }
+      });
+    }
+
+    function cancelHold() {
+      if (!holdStart) return;
+      holdStart = null;
+      holdRing.classList.remove('holding');
+      // Reset ring
+      ringFill.style.transition = 'stroke-dashoffset 0.4s ease';
+      ringFill.style.strokeDashoffset = String(CIRCUMFERENCE);
+      if (holdRAF) { cancelAnimationFrame(holdRAF); holdRAF = null; }
+    }
+
+    function completeHold() {
+      holdStart = null;
+      if (holdRAF) { cancelAnimationFrame(holdRAF); holdRAF = null; }
+      // Dissolve veil and launch Act 2
+      actVeil.classList.add('dissolving');
+      veilAfter(600, () => {
+        actVeil.classList.remove('visible');
+        launchActTwo();
+      });
+    }
+
+    holdRing.addEventListener('pointerdown',  startHold,  { passive: false });
+    holdRing.addEventListener('pointerup',    cancelHold);
+    holdRing.addEventListener('pointerleave', cancelHold);
+    holdRing.addEventListener('pointercancel',cancelHold);
+  }
+
+  function resetVeil() {
+    clearVeilTimers();
+    actVeil.classList.remove('visible', 'dissolving');
+    actVeil.setAttribute('aria-hidden', 'true');
+    veilEyes.classList.remove('visible', 'animate');
+    veilInvite.classList.remove('visible');
+    ringFill.style.transition = 'none';
+    ringFill.style.strokeDashoffset = String(CIRCUMFERENCE);
+    holdRing.classList.remove('holding');
+    scene.style.transition = '';
+    scene.style.opacity    = '';
+    holdStart = null;
+  }
+
+  /* ── ACT 2 — SAKSHI WITNESS ── */
+  const actTwo    = document.getElementById('act-two');
+  const act2p1    = document.getElementById('act2-p1');
+  const act2p2    = document.getElementById('act2-p2');
+  const act2p3    = document.getElementById('act2-p3');
+  const act2Door  = document.getElementById('act2-door');
+  const act2Parts = document.getElementById('act2-particles');
+
+  // Build ascending particles once
+  (function buildParticles() {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < 26; i++) {
+      const p = document.createElement('div');
+      p.className = 'act2-particle';
+      const size    = 2 + Math.random() * 5;
+      const opacity = 0.14 + Math.random() * 0.32;
+      const dur     = 18 + Math.random() * 26;
+      const delay   = Math.random() * 28;
+      p.style.cssText = `
+        width:${size}px;height:${size}px;
+        left:${8 + Math.random() * 84}%;
+        bottom:${10 + Math.random() * 88}%;
+        --p-op:${opacity};
+        box-shadow:0 0 ${size*3}px rgba(255,255,255,${opacity*0.8});
+        animation-duration:${dur}s;
+        animation-delay:-${delay}s;
+      `;
+      frag.appendChild(p);
+    }
+    act2Parts.appendChild(frag);
+  })();
+
+  const act2Timers = [];
+  function act2After(ms, fn) {
+    const t = setTimeout(fn, ms);
+    act2Timers.push(t);
+    return t;
+  }
+  function clearAct2Timers() {
+    act2Timers.forEach(t => clearTimeout(t));
+    act2Timers.length = 0;
+  }
+
+  function launchActTwo() {
+    act2Launched = true;
+    if (typeof scene !== 'undefined' && scene) scene.classList.remove('threshold-open');
+    if (typeof tapHint !== 'undefined' && tapHint) tapHint.classList.remove('visible');
+    if (typeof storyTapHint !== 'undefined' && storyTapHint) storyTapHint.classList.remove('visible');
+
+    actTwo.classList.add('rising');
+    actTwo.setAttribute('aria-hidden', 'false');
+
+    const allWords = actTwo.querySelectorAll('.act2-word');
+    allWords.forEach(w => w.classList.remove('visible'));
+
+    if (act2Door) {
+      act2Door.classList.remove('risen');
+      act2Door.setAttribute('aria-hidden', 'true');
+    }
+
+    /* Word-by-word reveal — slow witness pace. */
+    const BASE_DELAY    = 420;
+    const COMMA_EXTRA   = 260;
+    const DASH_EXTRA    = 180;
+    const PERIOD_EXTRA  = 620;
+    const PARA_EXTRA    = 1200;
+    const INITIAL_DELAY = 1600;
+    const AFTER_LAST    = 2800;
+
+    const paras = Array.from(actTwo.querySelectorAll('.act2-para'));
+    let cumulative = INITIAL_DELAY;
+
+    paras.forEach((para, paraIdx) => {
+      const words = Array.from(para.querySelectorAll('.act2-word'));
+      words.forEach((wordEl, wordIdx) => {
+        const w = wordEl.textContent;
+        const t = setTimeout(() => wordEl.classList.add('visible'), cumulative);
+        act2Timers.push(t);
+
+        let delay = BASE_DELAY;
+        if (/[.!?]$/.test(w))       delay += PERIOD_EXTRA;
+        else if (/[,;:]$/.test(w))  delay += COMMA_EXTRA;
+        if (/[—–]/.test(w)) delay += DASH_EXTRA;
+
+        if (wordIdx === words.length - 1 && paraIdx < paras.length - 1) {
+          delay += PARA_EXTRA;
+        }
+        cumulative += delay;
+      });
+    });
+
+    const doorTimer = setTimeout(() => {
+      if (act2Door) {
+        act2Door.classList.add('risen');
+        act2Door.setAttribute('aria-hidden', 'false');
+      }
+    }, cumulative + AFTER_LAST);
+    act2Timers.push(doorTimer);
+  }
+
+  function resetActTwo() {
+    clearAct2Timers();
+    act2Launched = false;
+    if (!actTwo) return;
+    actTwo.classList.remove('rising');
+    actTwo.setAttribute('aria-hidden', 'true');
+    const allWords = actTwo.querySelectorAll('.act2-word');
+    allWords.forEach(w => w.classList.remove('visible'));
+    if (act2Door) {
+      act2Door.classList.remove('risen');
+      act2Door.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  // Reset Act 2 and veil on story close
+  const _origCloseStory = closeStory;
+
+  
+
+  storyInvite.addEventListener('click', openStory);
+
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    _origCloseStory();
+    resetVeil();
+    resetActTwo();
+  });
+
+  scene.addEventListener('click', (e) => {
+    if (e.target.closest('.story-close') || e.target.closest('.threshold-door') || e.target.closest('.act-two') || e.target.closest('.act-veil')) return;
+    advance();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!storyMode.classList.contains('active')) return;
+    if (e.key === 'Escape') { _origCloseStory(); resetVeil(); resetActTwo(); }
+    else if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (!act2Launched && !actVeil.classList.contains('visible')) advance();
+    }
+  });
+})();
+</script>
+
+<!-- Tab Menu -->
+<a href="/tab-menu.html" style="position:fixed;bottom:28px;right:24px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:rgba(8,8,8,0.9);border:1px solid rgba(201,168,76,0.3);border-radius:50%;text-decoration:none;color:#C9A84C;font-size:16px;z-index:9999;transition:border-color 0.3s,box-shadow 0.3s;" onmouseover="this.style.borderColor='#C9A84C';this.style.boxShadow='0 0 16px rgba(201,168,76,0.3)'" onmouseout="this.style.borderColor='rgba(201,168,76,0.3)';this.style.boxShadow='none'" title="All Experiences">◈</a>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bindu Mandala — Design Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ground: #0D0508;
+    --surface: #160A0E;
+    --gold: #C9963F;
+    --gold-deep: #A07830;
+    --gold-warm: #CF9443;
+    --cream: #F2E8D9;
+    --accent-red: #8B1A2A;
+    --inner: #D4A017;
+    --sense: #C4725A;
+    --citta: #2A7A7A;
+    --stability: #4A7A5A;
+    --self: #7A5A9A;
+
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+    --measure: 660px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--cream);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* Warm light emerging from within — the spec's core mood */
+  .ambient {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% -5%, rgba(201,150,63,0.10), transparent 60%),
+      radial-gradient(ellipse 60% 45% at 50% 105%, rgba(139,26,42,0.12), transparent 60%);
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: 0 28px 160px;
+  }
+
+  /* ---- Shared type ---- */
+  .kicker {
+    font-family: var(--sans);
+    font-size: 10.5px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.82;
+  }
+
+  .voice {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold);
+  }
+
+  p {
+    font-size: 16.5px;
+    line-height: 1.78;
+    color: rgba(242,232,217,0.74);
+    margin: 0 0 1.15em;
+    text-wrap: pretty;
+  }
+
+  strong { color: rgba(242,232,217,0.95); font-weight: 600; }
+  em { color: var(--gold); font-style: italic; }
+
+  a.jump { color: var(--gold); text-decoration: none; border-bottom: 1px solid rgba(201,150,63,0.3); }
+
+  /* ---- Bindu glyph (section marker) ---- */
+  .bindu {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, var(--cream) 0 18%, var(--accent-red) 30%, rgba(139,26,42,0.0) 72%);
+    box-shadow: 0 0 9px rgba(139,26,42,0.6);
+    flex: 0 0 auto;
+  }
+
+  /* ---- Masthead ---- */
+  header.masthead {
+    padding: 120px 0 56px;
+    border-bottom: 0.5px solid rgba(201,150,63,0.18);
+    margin-bottom: 64px;
+  }
+  .masthead .kicker { display: block; margin-bottom: 26px; }
+  .masthead h1 {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(52px, 11vw, 86px);
+    line-height: 0.98;
+    letter-spacing: 0.02em;
+    margin: 0;
+    color: var(--cream);
+  }
+  .masthead h1 .glow { color: var(--gold); }
+  .masthead .sub {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(20px, 4.4vw, 27px);
+    color: rgba(242,232,217,0.6);
+    margin: 22px 0 0;
+    line-height: 1.4;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 26px;
+    margin-top: 40px;
+  }
+  .meta div { min-width: 0; }
+  .meta dt {
+    font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: rgba(242,232,217,0.4); margin-bottom: 5px;
+  }
+  .meta dd { margin: 0; font-family: var(--serif); font-size: 17px; color: rgba(242,232,217,0.82); }
+
+  /* ---- Verdict ---- */
+  .verdict {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(24px, 5.2vw, 33px);
+    line-height: 1.42;
+    color: rgba(242,232,217,0.9);
+    margin: 0 0 16px;
+    text-wrap: pretty;
+  }
+  .verdict em { font-style: italic; color: var(--gold); }
+
+  /* ---- Section ---- */
+  section { margin-top: 92px; }
+  .sec-head { display: flex; align-items: center; gap: 13px; margin-bottom: 30px; }
+  .sec-head .num {
+    font-family: var(--serif); font-size: 15px; font-style: italic;
+    color: var(--gold); opacity: 0.7; letter-spacing: 0.05em;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(30px, 6.5vw, 44px);
+    line-height: 1.08;
+    letter-spacing: 0.01em;
+    margin: 8px 0 22px;
+    color: var(--cream);
+  }
+  .lead { font-size: 17.5px; color: rgba(242,232,217,0.82); }
+
+  /* ---- Strength / concern blocks ---- */
+  .item { margin: 0 0 38px; padding-left: 22px; border-left: 1.5px solid rgba(201,150,63,0.2); }
+  .item.warm { border-left-color: rgba(196,114,90,0.4); }
+  .item h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 23px;
+    letter-spacing: 0.01em;
+    color: var(--cream);
+    margin: 0 0 10px;
+  }
+  .item h3 .tag {
+    display: inline-block;
+    font-family: var(--sans);
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    vertical-align: middle;
+    color: var(--gold);
+    border: 0.5px solid rgba(201,150,63,0.4);
+    border-radius: 2px;
+    padding: 3px 7px;
+    margin-left: 10px;
+    opacity: 0.8;
+  }
+  .item p:last-child { margin-bottom: 0; }
+
+  .call {
+    margin-top: 14px;
+    padding: 13px 0 0;
+    border-top: 0.5px solid rgba(201,150,63,0.16);
+  }
+  .call .label {
+    font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--gold); opacity: 0.85; display: block; margin-bottom: 6px;
+  }
+  .call p { font-family: var(--serif); font-style: italic; font-size: 17.5px; color: rgba(242,232,217,0.82); margin: 0; line-height: 1.55; }
+  .call p em { font-style: italic; color: var(--gold); }
+
+  /* ---- Pull quote ---- */
+  .pull {
+    margin: 54px 0;
+    padding: 0 0 0 26px;
+    border-left: 2px solid var(--accent-red);
+  }
+  .pull p {
+    font-family: var(--serif); font-style: italic; font-weight: 300;
+    font-size: clamp(23px, 5vw, 30px); line-height: 1.4;
+    color: var(--gold); margin: 0;
+  }
+
+  /* ---- Legibility table ---- */
+  .tbl { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-size: 14px; }
+  .tbl th {
+    text-align: left; font-family: var(--sans);
+    font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(242,232,217,0.45); font-weight: 400;
+    padding: 0 12px 12px 0; border-bottom: 0.5px solid rgba(201,150,63,0.18);
+  }
+  .tbl td {
+    padding: 13px 12px 13px 0;
+    border-bottom: 0.5px solid rgba(242,232,217,0.07);
+    color: rgba(242,232,217,0.72);
+    vertical-align: top;
+  }
+  .tbl td.where { font-family: var(--serif); font-style: italic; font-size: 16px; color: rgba(242,232,217,0.85); }
+  .tbl td.val { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--sense); }
+  .tbl tr:last-child td { border-bottom: none; }
+
+  /* ---- Closing ---- */
+  .closing {
+    margin-top: 100px;
+    padding-top: 56px;
+    border-top: 0.5px solid rgba(201,150,63,0.2);
+  }
+  .closing p { font-family: var(--serif); font-size: clamp(19px, 4vw, 23px); line-height: 1.6; color: rgba(242,232,217,0.84); }
+  .closing p em { color: var(--gold); }
+  .sign {
+    margin-top: 40px;
+    font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: rgba(242,232,217,0.4);
+  }
+
+  .divider { display: flex; justify-content: center; margin: 14px 0; opacity: 0.5; }
+
+  ul.clean { margin: 0 0 1.1em; padding: 0; list-style: none; }
+  ul.clean li {
+    position: relative; padding-left: 20px; margin-bottom: 12px;
+    font-size: 16px; line-height: 1.7; color: rgba(242,232,217,0.72);
+  }
+  ul.clean li::before {
+    content: ""; position: absolute; left: 0; top: 11px;
+    width: 5px; height: 5px; border-radius: 50%; background: var(--gold-deep);
+  }
+
+  @media (max-width: 480px) {
+    .wrap { padding: 0 20px 110px; }
+    header.masthead { padding-top: 76px; }
+  }
+</style>
+</head>
+<body>
+  <div class="ambient"></div>
+  <div class="wrap">
+
+    <header class="masthead">
+      <span class="kicker">Design Audit · From My Eyes</span>
+      <h1>Bindu <span class="glow">Mandala</span></h1>
+      <p class="sub">A reading of the live build — what the design is doing,<br />where the craft is real, and the few calls worth making.</p>
+      <dl class="meta">
+        <div><dt>Scope</dt><dd>The shipped iOS app</dd></div>
+        <div><dt>Build</dt><dd>main · 0bd9542</dd></div>
+        <div><dt>Read</dt><dd>Theme · navigation · 9-ring yantra · worlds</dd></div>
+        <div><dt>Date</dt><dd>May 2026</dd></div>
+      </dl>
+    </header>
+
+    <!-- VERDICT -->
+    <p class="verdict">The danger with a project like this was never that it would come out <em>soulless</em>. It was that it might stay <em>small</em>.</p>
+    <p>It didn't. The spec described one avaraṇa, sixteen petals, three tabs, and a single daily gesture. The build in front of me is the whole nine-ring Śrī Yantra — a hundred and two Śaktis, an entire navigable cosmology — and it kept its soul doing it. So this audit judges the app on its larger terms, and almost everything I'd push on is the problem of <em>abundance</em>, not of thinness.</p>
+
+    <div class="divider"><span class="bindu"></span></div>
+
+    <!-- 1 — WHAT IT IS NOW -->
+    <section id="evolution">
+      <div class="sec-head"><span class="bindu"></span><span class="num">i</span></div>
+      <h2>Where it started, where it is</h2>
+      <p class="lead">It's worth naming the gap before grading against it. The design source-of-truth describes a tight loop: <span class="voice">Today → I feel her → Recognition → done.</span> Three tabs. One avaraṇa.</p>
+      <p>The shipped app has grown a body around that spine. Navigation is now a whispered hamburger plus a <strong>Veil</strong> you pull up from below to descend the nine avaraṇas. Each ring opens its own immersive <strong>world</strong> with bespoke geometry and audio. There's a directory of all 102, a Portrait Mandala that mirrors your own attention, the Well, the Silence. None of this betrays the original — the bones are all still here, faithfully. The growth is additive. But it's a different, bigger animal than the spec, and that's the animal I'm auditing.</p>
+    </section>
+
+    <!-- 2 — THE SOUL IS INTACT -->
+    <section id="soul">
+      <div class="sec-head"><span class="bindu"></span><span class="num">ii</span></div>
+      <h2>The soul is intact</h2>
+      <p class="lead">This is the part most builds fail, and the one this one nails. The emotional register survived the engineering.</p>
+
+      <div class="item">
+        <h3>The tokens are exact</h3>
+        <p>Every color in the build maps to the spec hex-for-hex — <span style="color:var(--gold)">#C9963F</span> gold, <span style="color:var(--cream)">#F2E8D9</span> cream, the crimson-black ground, the five cluster colors. No drift, no "close enough." The discipline holds all the way down.</p>
+      </div>
+
+      <div class="item">
+        <h3>The type system is honored, not just imported</h3>
+        <p>Cormorant Garamond Light carries the sacred; its italic is consistently the <em>voice</em> — somatic prompts, captions, the codex portrait; and the hushed tracked caps in system sans do the labelling. That's exactly the three-register system the spec asked for, applied with judgment rather than by rote.</p>
+      </div>
+
+      <div class="item">
+        <h3>It never once becomes a wellness app</h3>
+        <p>No streaks. No badges. No "you're on fire." The promise — <span class="voice">she is felt, not measured</span> — held the line across a dozen screens. Even the recognition log reads like an archive of devotion, not a dashboard. Holding that tone through this much surface area is the single rarest achievement in the build.</p>
+      </div>
+    </section>
+
+    <!-- 3 — WHERE THE CRAFT IS REAL -->
+    <section id="craft">
+      <div class="sec-head"><span class="bindu"></span><span class="num">iii</span></div>
+      <h2>Where the craft is real</h2>
+      <p class="lead">Four things in here go well beyond competent. They're the reasons the app feels alive rather than assembled.</p>
+
+      <div class="item">
+        <h3>The time-of-day variant system<span class="tag">best move</span></h3>
+        <p>The whole yantra reads from real time and lunar phase across five atmospheric states — dawn, noon, dusk, night, new moon. Background, petal saturation and brightness, triangle stroke color, the bindu's <em>size</em>, even the number of dust motes all shift. At new moon the petals desaturate to 30% and the bindu swells to 1.6×. This is what makes the object feel like it has weather — it's the same instrument you left, changed by the hour you returned. Very few apps commit to this completely. This one does.</p>
+      </div>
+
+      <div class="item">
+        <h3>The Veil as navigation</h3>
+        <p>Pulling a veil up from below to descend the nine <em>āvaraṇas</em> — coverings, veils — is thematically exact. The metaphor and the mechanism are the same word. Two quiet truths make it sing: the held yantra dims behind the rising sheet, and the closed handle breathes a single chevron so the door announces itself. This is conceptual integrity made physical, not decoration bolted on.</p>
+      </div>
+
+      <div class="item">
+        <h3>The ring worlds</h3>
+        <p>Each ring is its own contemplative room — Ring 1 alone has twenty-eight lights laid on three nested squares, four T-gates that "flood the world" when tapped, a family legend that illumines a band at a time, and a ground-drone you can switch on. It's a complete small meditation by itself. That you built nine of these, each distinct, is the depth I didn't expect to find.</p>
+      </div>
+
+      <div class="item">
+        <h3>The writing, and the Portrait Mandala</h3>
+        <p>The voice — second-person, embodied, devotional — never wobbles. <span class="voice">"The ground you have walked, before you knew it was hers."</span> And the Portrait Mandala is quietly the cleverest idea in the app: the yantra rendered as a mirror of your own attention, each petal glowing by how often you've felt her, warmer if it was this week. The practice draws your own face in the instrument. That's a real idea, not a feature.</p>
+      </div>
+    </section>
+
+    <div class="pull"><p>The work from here is editing, not adding. Everything hard to get right, you already have.</p></div>
+
+    <!-- 4 — WHERE I'D PUSH -->
+    <section id="push">
+      <div class="sec-head"><span class="bindu"></span><span class="num">iv</span></div>
+      <h2>Where I'd push</h2>
+      <p class="lead">Five things. None are failures — they're the tradeoffs that came in with the scope, and each has a clear call to make.</p>
+
+      <div class="item warm">
+        <h3>The daily spine, versus the museum</h3>
+        <p>In the spec, <strong>Today</strong> was the home and the entire point — open the app, meet her, make the gesture. In the build, Today is the second item inside a hidden menu, and the <strong>Mandala</strong> is what you land on. The app now has six destinations and nine worlds to wander. Each is lovely. Together they risk turning a daily intimacy into a place you <em>browse</em>.</p>
+        <div class="call"><span class="label">The call</span><p>Decide, on purpose, what opening the app should put in front of you — <em>her</em> (today's Śakti, the gesture) or <em>the whole cosmos</em>. Either is valid. But right now the most intimate surface is the hardest to reach, and that's drift, not a decision.</p></div>
+      </div>
+
+      <div class="item warm">
+        <h3>The status ceremony quietly disappeared</h3>
+        <p>The spec made status a small rite: tap the pill to advance mapped → exploring → active → embodied, <span class="voice">"a held breath."</span> In the build the pill is display-only — status now advances on recognition-count thresholds. The organic version may genuinely be better. But the pill still <em>looks</em> like a button (it has a capsule stroke) and does nothing when pressed. That's an affordance writing a cheque the interaction won't cash.</p>
+        <div class="call"><span class="label">The call</span><p>Pick one: strip the button-ness so it reads plainly as a <em>state</em>, or give the practitioner back a deliberate gesture for crossing the threshold. Don't leave it dressed as a control.</p></div>
+      </div>
+
+      <div class="item warm">
+        <h3>The detail screen is tipping toward encyclopedia</h3>
+        <p>The reading screen has grown to roughly twelve stacked sections — devanāgarī, quality, somatic, appreciation, bīja, iconography, codex portrait, lineage, cosmic function, tattva, field, moments. The codex portrait is commented in the source as <span class="voice">"the soul of the screen,"</span> yet it sits seventh, flat-weighted against the scholarly material around it. The screen is starting to read like a wiki entry rather than a devotion.</p>
+        <div class="call"><span class="label">The call</span><p>Build a hierarchy. Lead with the soul — portrait and somatic — and tuck the reference matter (lineage, cosmic function, tattva, iconography) behind a single <em>"go deeper"</em> disclosure. Let this screen breathe like every other one does.</p></div>
+      </div>
+
+      <div class="item warm">
+        <h3>Two hidden doors, no signpost</h3>
+        <p>Navigation lives in two separate concealed systems — the hamburger top-right (three gold lines at 0.45 opacity) and the Veil you pull from the bottom. The Veil at least breathes its chevron. The hamburger gives no hint that it holds the <em>only</em> path to Today, the Well, the 102, Memory, and Settings. A first-time hand on the Mandala may never find them.</p>
+        <div class="call"><span class="label">The call</span><p>Give the hamburger the same courtesy the Veil already has — one faint first-run breath, or a single reveal-on-launch — so the door gets found once, then forgotten. The intimacy is right; total invisibility is a step too far.</p></div>
+      </div>
+
+      <div class="item warm">
+        <h3>The legibility floor</h3>
+        <p>The intent is real and good: barely-there text for a settled eye. But several elements have crossed from <em>quiet</em> into <em>gone</em> — most pointedly the Ring 2 petal labels, which name your primary navigation in type effectively no one can read.</p>
+        <table class="tbl">
+          <thead><tr><th>Where</th><th>Size</th><th>Alpha</th></tr></thead>
+          <tbody>
+            <tr><td class="where">Petal labels (home lotus)</td><td class="val">~7.5pt</td><td class="val">0.38</td></tr>
+            <tr><td class="where">Silence name-stars</td><td class="val">10–11pt</td><td class="val">0.11–0.16</td></tr>
+            <tr><td class="where">Ring 1 hint line</td><td class="val">8.5pt</td><td class="val">0.40</td></tr>
+            <tr><td class="where">Assorted tracked captions</td><td class="val">9pt</td><td class="val">0.4–0.55</td></tr>
+          </tbody>
+        </table>
+        <div class="call"><span class="label">The call</span><p>For each, decide one word — <em>label</em> or <em>texture</em>. If it's texture, perfect; leave it exactly as is. If it's meant to be read, lift it to ≥11pt and ≥0.3 alpha. The petal labels especially deserve a real decision, not an accident of scale.</p></div>
+      </div>
+    </section>
+
+    <!-- 5 — SMALLER NOTES -->
+    <section id="small">
+      <div class="sec-head"><span class="bindu"></span><span class="num">v</span></div>
+      <h2>Smaller notes</h2>
+      <ul class="clean">
+        <li><strong>The bindu's breath isn't unified.</strong> The signature glyph breathes at 4s on the yantra, 2.25s in the Veil footer, 6s in Silence, and holds still in the Portrait. Mostly context-right — but consider a deliberate rhythm language (slower the deeper you descend, say) instead of per-screen values.</li>
+        <li><strong>The navigation plumbing is straining.</strong> The Mandala screen's own source comments wrestle with sheet-versus-cover-versus-push collapsing the Veil. That friction is a small smell worth resolving before more entries pile onto it.</li>
+        <li><strong>Housekeeping: the committed UX-AUDIT is stale.</strong> It audits <code style="font-family:var(--sans);color:var(--sense)">LotusMandalaView</code>, a <code style="font-family:var(--sans);color:var(--sense)">CustomTabBar</code>, and <code style="font-family:var(--sans);color:var(--sense)">TodayView</code> — none of which exist in this build. Retire or re-run it so it doesn't misdirect the next reader.</li>
+      </ul>
+    </section>
+
+    <!-- CLOSING -->
+    <div class="closing">
+      <span class="kicker">My perspective, in one breath</span>
+      <p style="margin-top:24px;">You set out to build a temple you enter through a side door, and you did — then you kept building, and it became a temple with <em>nine</em> rooms. The achievement is that none of them feel like additions; they feel like they were always there, waiting to be descended into.</p>
+      <p>So protect the daily gesture before anything else — make sure the app still knows how to put <em>her</em> in front of you, not just the map of everything. Bring hierarchy to the places that have grown dense. Let the practitioner find the few doors that are currently hidden a touch too well. That's the whole list. Tone, restraint, devotion, a living object that breathes with the moon — the things that take years to learn and can't be retrofitted — are already, unmistakably, here.</p>
+      <div class="sign">A design reading · held lightly · yours to weigh</div>
+    </div>
+
+  </div>
+</body>
+</html>

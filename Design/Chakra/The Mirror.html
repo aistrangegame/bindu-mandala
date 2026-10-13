@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>The Mirror</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#020204;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.06);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes whisper{0%{opacity:0}18%{opacity:.55}82%{opacity:.55}100%{opacity:0}}
+@keyframes recog-in{from{opacity:0;letter-spacing:.2em}to{opacity:1;letter-spacing:.04em}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0A0A10;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#16161E;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #16161E,0 108px 0 #16161E;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#16161E;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#050508;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+input{font-family:inherit;outline:none;}
+input::placeholder{color:rgba(240,232,220,.20);}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const STORE = 'mirror_sessions_v1';
+const getSessions = () => { try { return JSON.parse(localStorage.getItem(STORE)||'[]'); } catch { return []; } };
+const addSession = (s) => {
+  localStorage.setItem(STORE, JSON.stringify([...getSessions(), s].slice(-60)));
+};
+
+const SILVER = '#C8CCD8', SILVER_DIM = 'rgba(200,204,216,';
+const DURATION = 60;
+
+// ─── Intro ────────────────────────────────────────────
+function IntroView({ onBegin, count }) {
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 34px', textAlign:'center',
+      background:'radial-gradient(ellipse at 50% 30%, #0C0C14, #030306)' }}>
+      <svg width="70" height="70" viewBox="0 0 70 70" style={{ marginBottom:'30px', opacity:.6 }}>
+        <ellipse cx="35" cy="35" rx="30" ry="30" fill="none" stroke={SILVER_DIM+'.4)'} strokeWidth="1"/>
+        <ellipse cx="35" cy="35" rx="21" ry="30" fill="none" stroke={SILVER_DIM+'.22)'} strokeWidth=".8"/>
+        <ellipse cx="35" cy="35" rx="10" ry="30" fill="none" stroke={SILVER_DIM+'.12)'} strokeWidth=".7"/>
+      </svg>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'32px', fontWeight:300,
+        color:'rgba(240,240,245,.90)', letterSpacing:'.12em', marginBottom:'16px' }}>The Mirror</p>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'17px',
+        color:SILVER_DIM+'.45)', lineHeight:1.85, marginBottom:'8px', maxWidth:'260px' }}>
+        You will look at your own eyes<br/>for sixty seconds.
+      </p>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'15px',
+        color:SILVER_DIM+'.30)', lineHeight:1.8, marginBottom:'44px', maxWidth:'250px' }}>
+        Not to fix anything.<br/>Only to witness. Only to stay.
+      </p>
+      <button onClick={onBegin} style={{ padding:'16px 48px', borderRadius:'32px', cursor:'pointer',
+        background:SILVER_DIM+'.06)', border:`1px solid ${SILVER_DIM}.28)`,
+        fontFamily:"'Cormorant Garamond',serif", fontSize:'18px', letterSpacing:'.22em',
+        textTransform:'uppercase', color:'rgba(240,240,245,.80)' }}>Begin</button>
+      {count > 0 && (
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.24em',
+          textTransform:'uppercase', color:SILVER_DIM+'.22)', marginTop:'30px' }}>
+          you have met yourself {count} time{count!==1?'s':''}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Mirror ───────────────────────────────────────────
+function MirrorView({ onComplete }) {
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const [mode, setMode] = useState('asking');   // asking | camera | dark
+  const [secs, setSecs] = useState(DURATION);
+  const [started, setStarted] = useState(false);
+
+  // Try camera
+  useEffect(() => {
+    let cancelled = false;
+    async function boot() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' }, audio: false });
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        streamRef.current = stream;
+        setMode('camera');
+      } catch {
+        if (!cancelled) setMode('dark');
+      }
+    }
+    boot();
+    return () => {
+      cancelled = true;
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    };
+  }, []);
+
+  // Attach stream once video element exists
+  useEffect(() => {
+    if (mode === 'camera' && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [mode]);
+
+  // Timer — starts 2s after mode resolves
+  useEffect(() => {
+    if (mode === 'asking') return;
+    const startDelay = setTimeout(() => setStarted(true), 2000);
+    return () => clearTimeout(startDelay);
+  }, [mode]);
+
+  useEffect(() => {
+    if (!started) return;
+    const id = setInterval(() => {
+      setSecs(s => {
+        if (s <= 1) { clearInterval(id); setTimeout(() => onComplete(mode), 800); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [started, mode]);
+
+  const progress = 1 - secs / DURATION;
+  const R = 175, circ = 2 * Math.PI * R;
+
+  if (mode === 'asking') return (
+    <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center',
+      background:'#030306' }}>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'16px',
+        color:SILVER_DIM+'.38)', animation:'breathe 3s ease-in-out infinite' }}>
+        the mirror is opening…
+      </p>
+    </div>
+  );
+
+  return (
+    <div style={{ height:'100%', position:'relative', background:'#000', overflow:'hidden' }}>
+
+      {mode === 'camera' ? (
+        <video ref={videoRef} muted playsInline
+          style={{ position:'absolute', inset:0, width:'100%', height:'100%',
+            objectFit:'cover', transform:'scaleX(-1)', filter:'brightness(.85) contrast(1.02)' }}></video>
+      ) : (
+        /* Dark mirror — the black screen itself reflects */
+        <div style={{ position:'absolute', inset:0,
+          background:'radial-gradient(ellipse at 50% 42%, #101018 0%, #000 78%)' }}></div>
+      )}
+
+      {/* Vignette */}
+      <div style={{ position:'absolute', inset:0, pointerEvents:'none',
+        background:'radial-gradient(ellipse at 50% 44%, transparent 42%, rgba(0,0,0,.82) 100%)' }}></div>
+
+      {/* Progress ring */}
+      <svg style={{ position:'absolute', left:'50%', top:'44%',
+        transform:'translate(-50%,-50%)', pointerEvents:'none' }} width="370" height="370">
+        <circle cx="185" cy="185" r={R} fill="none" stroke={SILVER_DIM+'.10)'} strokeWidth="1"/>
+        <circle cx="185" cy="185" r={R} fill="none" stroke={SILVER_DIM+'.45)'} strokeWidth="1.2"
+          strokeDasharray={circ} strokeDashoffset={circ*(1-progress)}
+          strokeLinecap="round" transform="rotate(-90 185 185)"
+          style={{ transition:'stroke-dashoffset 1s linear' }}/>
+      </svg>
+
+      {/* Opening whisper */}
+      {started && secs > DURATION - 8 && (
+        <p style={{ position:'absolute', left:0, right:0, top:'12%', textAlign:'center',
+          fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'18px',
+          color:'rgba(240,240,245,.0)', animation:'whisper 7s ease forwards',
+          pointerEvents:'none', textShadow:'0 1px 8px rgba(0,0,0,.8)' }}>
+          {mode === 'camera' ? 'find your eyes' : 'the screen is dark — look. you are already there.'}
+        </p>
+      )}
+      {/* Midpoint whisper */}
+      {started && secs <= 32 && secs > 24 && (
+        <p style={{ position:'absolute', left:0, right:0, top:'12%', textAlign:'center',
+          fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'18px',
+          color:'rgba(240,240,245,.0)', animation:'whisper 7s ease forwards',
+          pointerEvents:'none', textShadow:'0 1px 8px rgba(0,0,0,.8)' }}>stay</p>
+      )}
+
+      {/* Time remaining — very faint */}
+      {started && secs > 0 && (
+        <p style={{ position:'absolute', bottom:'26px', left:0, right:0, textAlign:'center',
+          fontFamily:"'Cormorant Garamond',serif", fontSize:'14px',
+          color:SILVER_DIM+'.25)', pointerEvents:'none' }}>{secs}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Recognition ──────────────────────────────────────
+function RecognitionView({ mode, onDone }) {
+  const [word, setWord] = useState('');
+  const [phase, setPhase] = useState('ask');   // ask | receiving | seen
+  const [line, setLine] = useState('');
+
+  async function offer(skip) {
+    setPhase('receiving');
+    const w = skip ? '' : word.trim();
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:
+        `Someone just spent sixty seconds looking into their own eyes ${mode==='camera' ? 'in a mirror' : 'in a dark screen, meeting their faint reflection'} — no task, no fixing, only witnessing themselves.${w ? ` Afterward, when asked what they saw, they said: "${w}".` : ' They chose not to name what they saw.'}\n\nOffer one single sentence of recognition. Not feedback, not advice, not interpretation — recognition, the way an elder acknowledges someone who has done something quietly difficult. Warm, specific, complete in itself. Do not begin with "You saw". Do not use markdown. Do not use the word "journey".`
+      }]});
+      setLine(r.trim().split('\n')[0]);
+    } catch {
+      setLine('Most people never stay that long. You stayed.');
+    }
+    addSession({ ts: Date.now(), word: w, mode });
+    setPhase('seen');
+  }
+
+  if (phase === 'seen') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 34px', textAlign:'center', gap:'30px',
+      background:'radial-gradient(ellipse at 50% 35%, #0C0C14, #030306)' }}>
+      <div style={{ width:'36px', height:'1px', background:SILVER_DIM+'.35)' }}></div>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'21px',
+        color:'rgba(240,240,245,.82)', lineHeight:1.8, maxWidth:'280px',
+        animation:'emerge .9s ease' }}>{line}</p>
+      <div style={{ width:'36px', height:'1px', background:SILVER_DIM+'.35)' }}></div>
+      <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.4em',
+        textTransform:'uppercase', color:SILVER_DIM+'.35)',
+        animation:'recog-in 1.4s .8s ease both' }}>you were here</p>
+      <button onClick={onDone} style={{ marginTop:'12px', padding:'13px 36px', borderRadius:'28px',
+        cursor:'pointer', background:SILVER_DIM+'.05)', border:`1px solid ${SILVER_DIM}.22)`,
+        fontFamily:"'Cormorant Garamond',serif", fontSize:'15px', letterSpacing:'.2em',
+        textTransform:'uppercase', color:'rgba(240,240,245,.65)' }}>Return</button>
+    </div>
+  );
+
+  if (phase === 'receiving') return (
+    <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center',
+      background:'radial-gradient(ellipse at 50% 35%, #0C0C14, #030306)' }}>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'16px',
+        color:SILVER_DIM+'.38)', animation:'breathe 2.5s ease-in-out infinite' }}>…</p>
+    </div>
+  );
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 32px', gap:'22px',
+      background:'radial-gradient(ellipse at 50% 30%, #0C0C14, #030306)', animation:'fade-in 1s ease' }}>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'25px',
+        color:'rgba(240,240,245,.85)', textAlign:'center', lineHeight:1.4 }}>What did you see?</p>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'14px',
+        color:SILVER_DIM+'.35)', textAlign:'center', marginTop:'-10px' }}>a word is enough — or nothing</p>
+      <input value={word} onChange={e => setWord(e.target.value)} autoFocus
+        placeholder="…"
+        style={{ width:'100%', maxWidth:'260px', background:SILVER_DIM+'.04)',
+          border:`1px solid ${SILVER_DIM}.20)`, borderRadius:'16px', padding:'15px 18px',
+          color:'rgba(240,240,245,.88)', fontFamily:"'Cormorant Garamond',serif",
+          fontSize:'21px', textAlign:'center' }}/>
+      <div style={{ display:'flex', gap:'10px', marginTop:'6px' }}>
+        <button onClick={() => offer(true)} style={{ padding:'12px 22px', borderRadius:'24px',
+          cursor:'pointer', background:'none', border:`1px solid ${SILVER_DIM}.14)`,
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:SILVER_DIM+'.35)' }}>keep it unnamed</button>
+        {word.trim() && (
+          <button onClick={() => offer(false)} style={{ padding:'12px 28px', borderRadius:'24px',
+            cursor:'pointer', background:SILVER_DIM+'.07)', border:`1px solid ${SILVER_DIM}.30)`,
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'15px', letterSpacing:'.16em',
+            textTransform:'uppercase', color:'rgba(240,240,245,.78)',
+            animation:'emerge .4s ease' }}>Offer it</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── App ──────────────────────────────────────────────
+function App() {
+  const [view, setView] = useState('intro');
+  const [mirrorMode, setMirrorMode] = useState('camera');
+  return (
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"></div>
+          <div className="ph-content">
+            {view === 'intro' && <IntroView count={getSessions().length} onBegin={() => setView('mirror')}/>}
+            {view === 'mirror' && <MirrorView onComplete={m => { setMirrorMode(m); setView('recognition'); }}/>}
+            {view === 'recognition' && <RecognitionView mode={mirrorMode} onDone={() => setView('intro')}/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

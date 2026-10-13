@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Homes — Rooms in 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<style>
+:root{--gold:#C9963F;--cream:#F2E8D9;--serif:'Cormorant Garamond',Georgia,serif;--mono:ui-monospace,'SF Mono',Menlo,monospace}
+*{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:var(--serif)}
+a{color:var(--gold)}a:hover{color:var(--cream)}
+#stage{position:fixed;inset:0}
+canvas{display:block;width:100%;height:100%}
+.ui{position:fixed;inset:0;pointer-events:none;z-index:5}
+/* her identity, cut into the room */
+.id{position:absolute;top:38px;left:0;right:0;text-align:center;transition:opacity 1400ms linear}
+.id .dev{font-size:34px;color:var(--cream);opacity:.72;letter-spacing:.02em;text-shadow:0 0 40px rgba(0,0,0,.9),0 0 90px rgba(0,0,0,.7)}
+.id .q{margin-top:7px;font-family:var(--serif);font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);opacity:.8;text-shadow:0 2px 20px #000}
+/* what the room does */
+.mech{position:absolute;left:50%;transform:translateX(-50%);bottom:132px;width:min(560px,84vw);text-align:center;
+  font-size:19px;line-height:1.5;color:var(--cream);opacity:.9;text-wrap:pretty;text-shadow:0 2px 26px rgba(0,0,0,.95),0 0 60px rgba(0,0,0,.8);transition:opacity 1200ms linear}
+.lbl{position:absolute;left:0;right:0;bottom:104px;text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--cream);opacity:.44;text-shadow:0 2px 14px #000}
+/* the doors */
+.rail{position:absolute;left:0;right:0;bottom:34px;display:flex;justify-content:center;gap:10px;pointer-events:auto;flex-wrap:wrap;padding:0 20px;align-items:center}
+.rail .sep{width:1px;height:26px;background:rgba(242,232,217,.16);margin:0 6px}
+.rail button.sm{font-size:10.5px;letter-spacing:.16em;padding:11px 12px;opacity:.8}
+.rail button{appearance:none;cursor:pointer;background:rgba(10,7,10,.5);border:1px solid rgba(242,232,217,.16);
+  color:var(--cream);font-family:var(--serif);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+  padding:11px 17px;border-radius:2px;backdrop-filter:blur(8px);transition:border-color 340ms,color 340ms,background 340ms;min-height:44px}
+.rail button:hover{border-color:rgba(201,150,63,.6);color:#fff}
+.rail button[aria-current="true"]{border-color:rgba(201,150,63,.9);background:rgba(201,150,63,.14);color:#fff}
+.meta{position:absolute;top:40px;right:26px;text-align:right;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--cream);opacity:.42;line-height:1.9;text-shadow:0 2px 14px #000}
+.hint{position:absolute;top:40px;left:26px;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--cream);opacity:.3;text-shadow:0 2px 14px #000}
+.fade{opacity:0!important}
+#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;z-index:20;
+  font-family:var(--serif);font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--cream);opacity:.5;transition:opacity 900ms}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div class="ui">
+  <div class="id"><div class="dev" id="devName"></div><div class="q" id="quality"></div></div>
+  <div class="mech" id="mech"></div>
+  <div class="lbl" id="label"></div>
+  <div class="meta" id="meta"></div>
+  <div class="hint">drag to look · scroll to move</div>
+  <div class="rail" id="rail"></div>
+</div>
+<div id="boot">entering</div>
+<script type="module">
+import * as THREE from 'three';
+import { ROOMS_1 } from './homes-3d-rooms.js?v=11';
+import { ROOMS_2 } from './homes-3d-rooms-2.js?v=11';
+const ROOMS = [...ROOMS_1, ...ROOMS_2];
+
+const DEV = { anima: 'अणिमा', mahima: 'महिमा', vasitva: 'वशित्व', bindu: 'महात्रिपुरसुन्दरी',
+  laghima: 'लघिमा', garima: 'गरिमा', yoni: 'सर्वयोनि', trikhanda: 'सर्वत्रिखण्डा' };
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const host = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.06;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+host.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 400);
+
+let current = null, t0 = performance.now(), zOff = 0, clock = 0, last = performance.now();
+const look = new THREE.Vector3(), basePos = new THREE.Vector3();
+let yaw = 0, pitch = 0, tYaw = 0, tPitch = 0;
+
+function enter(i) {
+  if (current) {
+    scene.remove(current.group);
+    current.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    if (current.dispose) current.dispose();
+    renderer.setRenderTarget(null);
+  }
+  const def = ROOMS[i];
+  const room = def.build();
+  current = room; current.def = def; current.index = i;
+  scene.add(room.group);
+  scene.fog = room.scene.fog;
+  scene.background = new THREE.Color(room.scene.bg);
+  basePos.set(...room.camera.pos);
+  look.set(...room.camera.look);
+  camera.position.copy(basePos);
+  camera.lookAt(look);
+  zOff = 0; yaw = pitch = tYaw = tPitch = 0;
+  t0 = performance.now(); clock = 0; last = performance.now();
+
+  document.getElementById('devName').textContent = DEV[def.id] || def.name;
+  document.getElementById('quality').textContent = `${def.name} · ${def.quality}`;
+  document.getElementById('mech').textContent = def.mech;
+  document.getElementById('label').textContent = room.label;
+  document.getElementById('meta').innerHTML = `ring ${def.ring}<br>real 3d · live`;
+  [...document.querySelectorAll('#rail button:not(.sm)')].forEach((b, k) => b.setAttribute('aria-current', String(k === i)));
+}
+
+const rail = document.getElementById('rail');
+ROOMS.forEach((r, i) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = r.name;
+  b.addEventListener('click', () => enter(i));
+  rail.appendChild(b);
+});
+
+// Each mechanism runs over about a minute — real adaptation, not a loop. This lets
+// you watch a full closing in seconds without changing what the room is.
+let speed = 1;
+const sep = document.createElement('div'); sep.className = 'sep'; rail.appendChild(sep);
+[['1×', 1], ['6×', 6], ['20×', 20]].forEach(([lab, v]) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'sm'; b.textContent = lab;
+  b.setAttribute('aria-current', String(v === 1));
+  b.addEventListener('click', () => {
+    speed = v;
+    [...rail.querySelectorAll('button.sm')].forEach((x) => x.setAttribute('aria-current', String(x.textContent === lab)));
+  });
+  rail.appendChild(b);
+});
+
+// looking around, and moving in
+let dragging = false, px = 0, py = 0;
+renderer.domElement.addEventListener('pointerdown', (e) => { dragging = true; px = e.clientX; py = e.clientY; });
+addEventListener('pointerup', () => { dragging = false; });
+addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  tYaw -= (e.clientX - px) * 0.0022; tPitch -= (e.clientY - py) * 0.0016;
+  tPitch = Math.max(-0.42, Math.min(0.42, tPitch));
+  px = e.clientX; py = e.clientY;
+});
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  zOff = Math.max(-9, Math.min(6, zOff - e.deltaY * 0.006));
+}, { passive: false });
+
+// the text recedes while you look, so the room is never behind writing
+const ui = [document.querySelector('.id'), document.getElementById('mech')];
+let idle = 0;
+addEventListener('pointerdown', () => { idle = 0; });
+
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+function frame(now) {
+  try {
+  clock += Math.min(0.05, (now - last) / 1000) * speed; last = now;
+  const t = clock;
+  if (current) {
+    current.update(reduced ? Math.min(t, 62) : t);
+    yaw += (tYaw - yaw) * 0.06; pitch += (tPitch - pitch) * 0.06;
+    const sway = reduced ? 0 : Math.sin(t * 0.11) * 0.13;
+    camera.position.set(basePos.x + sway, basePos.y + Math.sin(t * 0.08) * 0.09, basePos.z + zOff);
+    const d = look.clone().sub(basePos).normalize();
+    const target = new THREE.Vector3(
+      camera.position.x + Math.sin(yaw) * 8 + d.x * 8,
+      camera.position.y + Math.sin(pitch) * 8 + d.y * 8,
+      camera.position.z + Math.cos(yaw) * d.z * 8
+    );
+    camera.lookAt(target);
+    idle += 1;
+    const hide = dragging || idle < 0;
+    ui.forEach((el) => el.classList.toggle('fade', hide));
+  }
+  if (current.render) current.render(renderer, scene, camera);
+  else renderer.render(scene, camera);
+  } catch (e) { /* keep the last good frame rather than stopping */ }
+  requestAnimationFrame(frame);
+}
+
+enter(0);
+requestAnimationFrame(frame);
+const boot = document.getElementById('boot');
+boot.style.opacity = '0';
+setTimeout(() => boot.remove(), 1000);
+</script>
+<template id="__bundler_thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#060301"/><g transform="translate(50 50)"><rect x="-22" y="-22" width="44" height="44" fill="none" stroke="#C9963F" stroke-width="1.2" opacity=".7"/><rect x="-11" y="-11" width="22" height="22" fill="#FFE1A4" opacity=".5"/><circle r="2.6" fill="#fff"/></g></svg>
+</template>
+</body>
+</html>

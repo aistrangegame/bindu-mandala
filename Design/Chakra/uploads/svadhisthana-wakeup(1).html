@@ -1,0 +1,2001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Tree of Life · Svadhisthana</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sacral-deep: #8B4513;
+  --sacral-mid: #D4722A;
+  --sacral-light: #E8943A;
+  --sacral-glow: rgba(232, 148, 58, 0.5);
+  --sacral-warm: #FFF0E0;
+  --sacral-womb: #5A2E0A;
+  --sacral-water: rgba(212, 114, 42, 0.25);
+  --text-primary: #FFF0E0;
+  --text-soft: rgba(255, 240, 224, 0.7);
+  --text-whisper: rgba(255, 240, 224, 0.45);
+}
+
+html, body {
+  width: 100%; min-height: 100vh; min-height: 100dvh;
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  background: var(--sacral-deep);
+  color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════
+   PHASE CONTAINERS
+   ═══════════════════════════════════════════ */
+
+.phase {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh; min-height: 100dvh;
+  width: 100%;
+  padding: 0 28px;
+  padding-bottom: env(safe-area-inset-bottom, 24px);
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.phase.active {
+  display: flex;
+  animation: phaseIn 1.5s ease forwards;
+}
+
+@keyframes phaseIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY
+   ═══════════════════════════════════════════ */
+
+.chakra-label {
+  font: 600 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0;
+  margin-top: 48px;
+  margin-bottom: 4px;
+  transition: opacity 0.8s ease;
+}
+.chakra-label.visible { opacity: 0.5; }
+
+.step {
+  max-width: 320px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  margin-bottom: 20px;
+  width: 100%;
+}
+.step.visible { opacity: 1; transform: translateY(0); }
+
+.step-learn {
+  font: 400 1rem/1.75 'DM Sans', sans-serif;
+}
+
+.step-reflect {
+  font: italic 400 1.125rem/1.6 'Lora', serif;
+}
+
+.step-instruct {
+  font: 300 0.9375rem/1.65 'DM Sans', sans-serif;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.step-instruct.visible { opacity: 0.85; transform: translateY(0); }
+
+.step-release {
+  font: italic 500 1.125rem/1.5 'Lora', serif;
+  text-align: center;
+  max-width: 320px;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.step-release.visible { opacity: 1; }
+
+.step-sacred {
+  font: italic 400 1.0625rem/1.6 'Lora', serif;
+}
+
+.step-spacer { height: 32px; margin: 0; }
+.step-spacer-deep { height: 56px; margin: 0; }
+
+/* ═══════════════════════════════════════════
+   GATE (Phase 1 — FOLLOW)
+   ═══════════════════════════════════════════ */
+
+.gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; min-height: 100dvh;
+  width: 100%;
+  position: relative;
+  gap: 32px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+.gate.active { display: flex; }
+.gate.completed {
+  pointer-events: none;
+  animation: gateOut 1.5s ease forwards;
+}
+@keyframes gateOut {
+  to { opacity: 0; height: 0; min-height: 0; overflow: hidden; }
+}
+
+.seed-text {
+  font: italic 400 1.375rem/1.4 'Lora', serif;
+  text-align: center;
+  max-width: 300px;
+  animation: seedBreath 4s ease-in-out infinite;
+  position: relative;
+  z-index: 10;
+  padding: 24px 16px;
+}
+@keyframes seedBreath {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.01); }
+}
+
+.hold-instruction {
+  font: 300 0.75rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-whisper, rgba(255,255,255,0.35));
+  margin-top: 16px;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+.hold-instruction.visible { opacity: 1; }
+
+.gate-progress {
+  width: 60px;
+  height: 2px;
+  background: rgba(255,240,224,0.15);
+  border-radius: 1px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.gate-progress.visible { opacity: 1; }
+.gate-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--text-primary);
+  border-radius: 1px;
+  transition: width 0.05s linear;
+}
+
+/* Water ripple growth during gate hold */
+.gate-ripples {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.gate-ripples.growing { opacity: 1; }
+.gate-ripples svg {
+  width: 280px;
+  height: 280px;
+}
+.gate-ripple-ring {
+  fill: none;
+  stroke: var(--sacral-light);
+  stroke-width: 0.6;
+  opacity: 0;
+  transform-origin: center;
+}
+
+/* ═══════════════════════════════════════════
+   HEADPHONE PROMPT (Gate)
+   ═══════════════════════════════════════════ */
+
+.headphone-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 300 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  margin-bottom: 24px;
+}
+.headphone-prompt.visible { opacity: 0.4; }
+
+.headphone-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════
+   DRIFTING LIGHTS (Phase 2 — FOLLOW)
+   ═══════════════════════════════════════════ */
+
+.lights-container {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  height: min(340px, 50vh);
+  margin: 16px auto;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  touch-action: none;
+}
+.lights-container.visible { opacity: 1; }
+
+.lights-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.drift-light {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--sacral-light);
+  box-shadow: 0 0 16px var(--sacral-glow), 0 0 32px rgba(232,148,58,0.2);
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.drift-light.active { opacity: 1; }
+.drift-light.followed {
+  background: var(--sacral-warm);
+  box-shadow: 0 0 20px var(--sacral-glow), 0 0 40px rgba(232,148,58,0.35);
+}
+.drift-light.atma {
+  background: var(--sacral-warm);
+  box-shadow: 0 0 24px rgba(255,240,224,0.4), 0 0 48px rgba(232,148,58,0.3);
+}
+
+.shakti-trail {
+  position: absolute;
+  font: italic 400 0.6875rem/1 'Lora', serif;
+  color: var(--text-primary);
+  opacity: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 4;
+  transition: opacity 1.5s ease;
+}
+.shakti-trail.visible { opacity: 0.55; }
+.shakti-trail.bright { opacity: 0.85; }
+
+.follow-instruct {
+  font: 300 0.75rem/1 'DM Sans', sans-serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  margin-top: 8px;
+}
+.follow-instruct.visible { opacity: 0.35; }
+
+/* ═══════════════════════════════════════════
+   DESIRE WORD INPUT (Phase 3)
+   ═══════════════════════════════════════════ */
+
+.word-input-container {
+  width: 100%;
+  max-width: 280px;
+  margin: 24px auto;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.word-input-container.visible { opacity: 1; }
+
+.word-input {
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(232,148,58,0.3);
+  outline: none;
+  color: var(--text-primary);
+  font: italic 400 1.25rem/1.4 'Lora', serif;
+  text-align: center;
+  width: 100%;
+  padding: 12px 4px;
+  caret-color: var(--sacral-light);
+  letter-spacing: 0.5px;
+}
+.word-input::placeholder {
+  color: var(--text-whisper);
+  font-style: italic;
+}
+.word-input:focus {
+  border-bottom-color: var(--sacral-light);
+  box-shadow: 0 1px 0 0 rgba(232,148,58,0.3);
+}
+
+.word-submit {
+  font: 300 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  margin-top: 12px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+.word-submit.visible { opacity: 0.45; }
+.word-submit:active { opacity: 0.7; }
+
+/* Desire word floating after submission */
+.desire-word-float {
+  font: italic 500 1.375rem/1 'Lora', serif;
+  color: var(--sacral-warm);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 2s ease, transform 2s ease;
+  text-shadow: 0 0 20px var(--sacral-glow);
+  margin: 16px auto;
+}
+.desire-word-float.visible {
+  opacity: 1;
+  transform: translateY(-8px);
+}
+
+/* ═══════════════════════════════════════════
+   CURRENT FLOW (Phase 4)
+   ═══════════════════════════════════════════ */
+
+.current-container {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  height: min(260px, 40vh);
+  margin: 16px auto;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.current-container.visible { opacity: 1; }
+
+.current-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* ═══════════════════════════════════════════
+   BODY SILHOUETTE (Phase 5 — desire point)
+   ═══════════════════════════════════════════ */
+
+.body-container {
+  width: 100%;
+  max-width: 180px;
+  margin: 24px auto;
+  position: relative;
+  opacity: 0;
+  transition: opacity 1s ease;
+  cursor: pointer;
+}
+.body-container.visible { opacity: 1; }
+
+.body-svg {
+  width: 100%;
+  height: auto;
+}
+.body-svg .body-outline {
+  fill: rgba(255, 240, 224, 0.06);
+  stroke: var(--text-primary);
+  stroke-width: 1;
+  opacity: 0.4;
+}
+
+.body-point {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sacral-glow);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  box-shadow: 0 0 20px var(--sacral-glow), 0 0 40px rgba(232,148,58,0.25);
+}
+.body-point.placed {
+  opacity: 1;
+  animation: desireGlow 3s ease-in-out infinite;
+}
+
+@keyframes desireGlow {
+  0%, 100% { box-shadow: 0 0 20px var(--sacral-glow), 0 0 40px rgba(232,148,58,0.25); }
+  50% { box-shadow: 0 0 30px var(--sacral-glow), 0 0 60px rgba(232,148,58,0.35); }
+}
+
+/* Water ripples from body point */
+.body-ripples {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.body-ripples.visible { opacity: 1; }
+
+.ripple-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--sacral-light);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+.ripple-ring.animate {
+  animation: waterRipple 3s ease-out infinite;
+}
+.ripple-ring:nth-child(2) { animation-delay: 0.8s; }
+.ripple-ring:nth-child(3) { animation-delay: 1.6s; }
+
+@keyframes waterRipple {
+  0% { width: 20px; height: 20px; opacity: 0.5; }
+  100% { width: 120px; height: 120px; opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════
+   CONTINUE ELEMENT (press-and-hold gates)
+   ═══════════════════════════════════════════ */
+
+.continue-el {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 0;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+.continue-el.visible { display: flex; opacity: 1; }
+
+.continue-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  opacity: 0.5;
+  animation: continuePulse 3s ease-in-out infinite;
+}
+@keyframes continuePulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.3); }
+}
+
+.continue-label {
+  font: 300 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.35;
+}
+
+.continue-progress {
+  width: 40px;
+  height: 2px;
+  background: rgba(255,240,224,0.12);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.continue-progress.active { opacity: 1; }
+.continue-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--text-primary);
+  opacity: 0.6;
+  border-radius: 1px;
+  transition: width 0.05s linear;
+}
+
+/* ═══════════════════════════════════════════
+   TAP CUE
+   ═══════════════════════════════════════════ */
+
+.tap-cue {
+  position: fixed;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+.tap-cue.visible { opacity: 1; }
+
+.tap-cue-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  animation: tapCuePulse 2.5s ease-in-out infinite;
+}
+
+.tap-cue-label {
+  font: 300 0.5625rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  opacity: 0.4;
+}
+
+@keyframes tapCuePulse {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+
+/* ═══════════════════════════════════════════
+   BREATH (Phase 6)
+   ═══════════════════════════════════════════ */
+
+.breath-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 1px solid var(--text-primary);
+  opacity: 0;
+  margin: 32px auto;
+  transition: opacity 1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.breath-circle.visible { opacity: 0.4; }
+.breath-circle.breathing {
+  animation: sacralBreath 10s ease-in-out infinite;
+  opacity: 0.6;
+}
+.breath-circle.complete {
+  animation: none;
+  transform: scale(1);
+  opacity: 0.3;
+  transition: opacity 1.5s ease, transform 1s ease;
+}
+
+.breath-label {
+  font: 300 0.625rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.5;
+  transition: opacity 0.6s ease;
+}
+
+/* Svadhisthana: 4s in (40%), 6s out (60%) — flow, longer release */
+@keyframes sacralBreath {
+  0% { transform: scale(1); opacity: 0.4; }
+  5% { opacity: 0.6; }
+  40% { transform: scale(1.5); opacity: 0.6; }
+  95% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 0.4; }
+}
+
+/* ═══════════════════════════════════════════
+   TRANSITION BLEED (Panel 3 yellow/gold)
+   ═══════════════════════════════════════════ */
+
+.yellow-bleed {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 25vh;
+  background: linear-gradient(to top, rgba(200,170,50,0.25), transparent);
+  pointer-events: none;
+  z-index: 30;
+  opacity: 0;
+  transition: opacity 3s ease;
+}
+.yellow-bleed.visible { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   ZOOM CONTROLS
+   ═══════════════════════════════════════════ */
+
+.zoom-controls {
+  position: fixed;
+  bottom: 16px; left: 16px;
+  display: flex; gap: 6px;
+  z-index: 200;
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
+}
+.zoom-controls:hover, .zoom-controls:active { opacity: 0.8; }
+.zoom-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,245,224,0.2);
+  background: rgba(0,0,0,0.3);
+  color: var(--text-primary);
+  font: 500 0.75rem/1 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ═══════════════════════════════════════════
+   CLOSURE (Phase 7 ending)
+   ═══════════════════════════════════════════ */
+
+.closure-divider {
+  width: 1px;
+  height: 0;
+  background: var(--text-primary);
+  opacity: 0;
+  margin: 16px auto;
+  transition: height 3s ease, opacity 2s ease;
+}
+.closure-divider.visible {
+  height: 40px;
+  opacity: 0.2;
+}
+
+.seed-return {
+  font: italic 400 1.125rem/1.4 'Lora', serif;
+  text-align: center;
+  max-width: 280px;
+  opacity: 0;
+  transition: opacity 4s ease;
+}
+.seed-return.visible { opacity: 0.5; }
+
+.closure-dim {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 6s ease;
+  z-index: 35;
+}
+.closure-dim.visible { opacity: 0.4; }
+
+/* ═══════════════════════════════════════════
+   BACKGROUND TRANSITIONS
+   ═══════════════════════════════════════════ */
+
+body.current-phase {
+  background: #6B3410;
+  transition: background-color 3s ease;
+}
+body.deep-phase {
+  background: var(--sacral-womb);
+  transition: background-color 2s ease;
+}
+body.release-phase {
+  transition: background-color 2s ease;
+  background: var(--sacral-deep);
+}
+
+
+/* ═══════════════════════════════════════════
+   PERSISTENT BINDU — present in every panel, never explained
+   ═══════════════════════════════════════════ */
+
+.persistent-bindu {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #C0392B;
+  opacity: 0.3;
+  z-index: 150;
+  pointer-events: none;
+}
+
+
+/* ═══════════════════════════════════════════
+   CLOSING ARCHITECTURE
+   ═══════════════════════════════════════════ */
+
+.activation-text {
+  font: 500 clamp(15px, 4vw, 19px)/1.4 'Lora', serif;
+  text-align: center;
+  max-width: 300px;
+  letter-spacing: 0.5px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 2s ease, transform 1s ease;
+  margin-bottom: 20px;
+}
+.activation-text.visible { opacity: 1; transform: translateY(0); }
+
+.mini-reveal-text {
+  font: 300 clamp(12px, 3vw, 14px)/1.6 'DM Sans', sans-serif;
+  text-align: center;
+  max-width: 280px;
+  opacity: 0;
+  transition: opacity 3s ease;
+  margin-top: 16px;
+}
+.mini-reveal-text.visible { opacity: 0.5; }
+
+.closure-luminance {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 6s ease;
+}
+.closure-luminance.visible { opacity: 1; }
+
+.bindu-invite {
+  position: fixed;
+  top: 16px; right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 3s ease;
+  z-index: 160;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.bindu-invite.visible { opacity: 1; }
+
+.bindu-invite-label {
+  font: italic 300 0.5625rem/1 'Lora', serif;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.35);
+}
+
+.persistent-bindu.awakened {
+  opacity: 0.8 !important;
+  animation: binduAwaken 3s ease-in-out infinite !important;
+}
+@keyframes binduAwaken {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.8); opacity: 1; }
+}
+
+</style>
+</head>
+<body>
+<!-- PERSISTENT BINDU — the red dot, always watching -->
+<div class="persistent-bindu" id="persistentBindu"></div>
+
+
+<!-- Transition bleed for Panel 3 -->
+<div class="yellow-bleed" id="yellowBleed"></div>
+
+<!-- Zoom Controls -->
+<div class="zoom-controls" id="zoomControls">
+  <button class="zoom-btn" id="zoomOut" aria-label="Decrease font size">A−</button>
+  <button class="zoom-btn" id="zoomIn" aria-label="Increase font size">A+</button>
+</div>
+
+<!-- Tap cue -->
+<div class="tap-cue" id="tapCue">
+  <div class="tap-cue-dot"></div>
+  <div class="tap-cue-label">tap to continue</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     GATE — Phase 1 — FOLLOW
+     ═══════════════════════════════════════════ -->
+
+<div class="gate active" id="gate">
+  <div class="gate-ripples" id="gateRipples">
+    <svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg">
+      <circle class="gate-ripple-ring" cx="140" cy="140" r="20" />
+      <circle class="gate-ripple-ring" cx="140" cy="140" r="45" />
+      <circle class="gate-ripple-ring" cx="140" cy="140" r="70" />
+      <circle class="gate-ripple-ring" cx="140" cy="140" r="95" />
+      <circle class="gate-ripple-ring" cx="140" cy="140" r="120" />
+    </svg>
+  </div>
+  <div class="headphone-prompt" id="headphonePrompt">
+    <svg class="headphone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 18v-6a9 9 0 0118 0v6"/>
+      <path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3v5zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3v5z"/>
+    </svg>
+    headphones on
+  </div>
+  <div class="seed-text" id="seedText">Every desire was drawing you toward yourself.</div>
+  <div class="gate-progress" id="gateProgress"><div class="gate-progress-fill" id="gateProgressFill"></div></div>
+  <div class="hold-instruction" id="holdInst">press and hold</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 2 — THE FOLLOW (drifting lights)
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase2">
+  <div class="chakra-label" data-step>Svadhisthana · The Sacral</div>
+
+  <div class="step step-learn" data-step>This is the part of you that was pulled. Before reason. Before choice. The magnetic force that drew you toward what you could not yet name.</div>
+
+  <div class="step step-instruct" data-step>Six lights are drifting. Follow the ones that call to you.</div>
+
+  <div class="lights-container" data-step="interaction" id="lightsContainer">
+    <canvas class="lights-canvas" id="lightsCanvas"></canvas>
+    <div class="drift-light" id="light-kama" data-shakti="kama"></div>
+    <div class="drift-light" id="light-shabda" data-shakti="shabda"></div>
+    <div class="drift-light" id="light-sparsha" data-shakti="sparsha"></div>
+    <div class="drift-light" id="light-rupa" data-shakti="rupa"></div>
+    <div class="drift-light" id="light-smritya" data-shakti="smritya"></div>
+    <div class="drift-light atma" id="light-atma" data-shakti="atma"></div>
+    <!-- Shakti name trails -->
+    <div class="shakti-trail" id="trail-kama">Kāmākarshini</div>
+    <div class="shakti-trail" id="trail-shabda">Shabdākarshini</div>
+    <div class="shakti-trail" id="trail-sparsha">Sparshākarshini</div>
+    <div class="shakti-trail" id="trail-rupa">Rūpākarshini</div>
+    <div class="shakti-trail" id="trail-smritya">Smṛtyākarshini</div>
+    <div class="shakti-trail" id="trail-atma">Ātmākarshini</div>
+    <div class="follow-instruct" id="followInstruct">trace with your finger</div>
+  </div>
+
+  <div class="continue-el" id="continue2">
+    <div class="continue-dot"></div>
+    <div class="continue-label">the current</div>
+    <div class="hold-instruction visible" style="margin-top:8px">press and hold</div>
+    <div class="continue-progress" id="continueProgress2"><div class="continue-progress-fill" id="continueFill2"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 3 — THE MEMORY CURRENT
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase3">
+  <div class="step-spacer-deep"></div>
+
+  <div class="step step-reflect" data-step>Those lights were not random. Neither was what found you.</div>
+
+  <div class="step step-reflect" data-step>Between 11 and 20, something found you. Not something you chose. Something that chose you.</div>
+
+  <div class="step step-reflect" data-step style="font-weight:500; text-align:center">What was it?</div>
+
+  <div class="step step-instruct" data-step>One word. The thing that pulled you.</div>
+
+  <div class="word-input-container" data-step="interaction" id="wordInputContainer">
+    <input type="text" class="word-input" id="wordInput" placeholder="..." maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="word-submit" id="wordSubmit">offer</button>
+  </div>
+
+  <div class="desire-word-float" id="desireWordFloat"></div>
+
+  <div class="step step-reflect" data-step="after-word" id="afterWordText" style="text-align:center">It joined the current. It was always part of it.</div>
+
+  <div class="continue-el" id="continue3">
+    <div class="continue-dot"></div>
+    <div class="continue-label">where it was taking you</div>
+    <div class="hold-instruction visible" style="margin-top:8px">press and hold</div>
+    <div class="continue-progress" id="continueProgress3"><div class="continue-progress-fill" id="continueFill3"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 4 — THE CURRENT (where it was taking you)
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase4">
+  <div class="step-spacer-deep"></div>
+
+  <div class="step step-reflect" data-step>That pull — you may have called it obsession. Or distraction. Or being too much.</div>
+
+  <div class="step step-reflect" data-step>It was a Shakti — a living force — using the only language you could hear at that age: longing.</div>
+
+  <div class="current-container" data-step="interaction" id="currentContainer">
+    <canvas class="current-canvas" id="currentCanvas"></canvas>
+  </div>
+
+  <div class="step step-reflect" data-step>The current flows toward your word. Your desire was the destination all along.</div>
+
+  <div class="continue-el" id="continue4">
+    <div class="continue-dot"></div>
+    <div class="continue-label">the body</div>
+    <div class="hold-instruction visible" style="margin-top:8px">press and hold</div>
+    <div class="continue-progress" id="continueProgress4"><div class="continue-progress-fill" id="continueFill4"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 5 — THE BODY (desire point)
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase5">
+  <div class="step-spacer-deep"></div>
+
+  <div class="step step-reflect" data-step>Where in your body does desire live? Not a specific desire. The capacity for desire itself.</div>
+
+  <div class="step step-instruct" data-step>Tap where it lives.</div>
+
+  <div class="body-container" data-step="interaction" id="bodyContainer">
+    <svg class="body-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
+      <path class="body-outline" d="
+        M60,4
+        C73,4 82,15 82,28
+        C82,41 73,50 60,50
+        C47,50 38,41 38,28
+        C38,15 47,4 60,4 Z
+      "/>
+      <path class="body-outline" d="
+        M48,54 C35,58 22,70 20,88
+        L16,138 C14,146 20,152 28,150 L32,148 L35,108
+        L44,72 L52,56 Z
+      "/>
+      <path class="body-outline" d="
+        M72,54 C85,58 98,70 100,88
+        L104,138 C106,146 100,152 92,150 L88,148 L85,108
+        L76,72 L68,56 Z
+      "/>
+      <path class="body-outline" d="
+        M44,72 L48,54 L72,54 L76,72
+        Q80,110 78,148
+        L76,180 Q74,210 72,240 L70,270
+        C68,276 62,278 60,278
+        L58,278 C56,278 52,276 50,270
+        L48,240 Q46,210 44,180
+        L42,148 Q40,110 44,72 Z
+      "/>
+      <line x1="60" y1="178" x2="60" y2="270" stroke="var(--sacral-deep)" stroke-width="3"/>
+    </svg>
+    <div class="body-point" id="bodyPoint"></div>
+    <div class="body-ripples" id="bodyRipples">
+      <div class="ripple-ring"></div>
+      <div class="ripple-ring"></div>
+      <div class="ripple-ring"></div>
+    </div>
+  </div>
+
+  <div class="step step-reflect" data-step="after-body" id="afterBodyText" style="text-align:center">That place knows what it wants. It always has.</div>
+
+  <div class="continue-el" id="continue5">
+    <div class="continue-dot"></div>
+    <div class="continue-label">breathe</div>
+    <div class="hold-instruction visible" style="margin-top:8px">press and hold</div>
+    <div class="continue-progress" id="continueProgress5"><div class="continue-progress-fill" id="continueFill5"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 6 — THE PRACTICE (one breath)
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase6">
+  <div class="step-spacer-deep"></div>
+
+  <div class="step step-instruct" data-step style="text-align:center">Breathe. Into the place where desire lives.</div>
+
+  <div class="breath-circle" data-step="breath" id="breathCircle">
+    <div class="breath-label">breathe</div>
+  </div>
+
+  <div class="step step-sacred" data-step="after-breath" id="afterBreathText">The word you offered was already moving.</div>
+
+  <div class="continue-el" id="continue6">
+    <div class="continue-dot"></div>
+    <div class="hold-instruction visible" style="margin-top:8px">press and hold</div>
+    <div class="continue-progress" id="continueProgress6"><div class="continue-progress-fill" id="continueFill6"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 7 — RELEASE
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase7">
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:24px; width:100%;">
+    <div class="activation-text" id="activationText" style="color:#E67E22">Your Svadhisthana Chakra is now Breathing.</div>
+
+
+    <div class="step-release" data-step>The force that pulled you toward everything you loved — it was pulling you toward yourself.</div>
+    <div class="step-release" data-step>It still is.</div>
+
+    <div class="closure-divider" id="closureDivider"></div>
+    <div class="seed-return" id="seedReturn">Every desire was drawing you toward yourself.</div>
+    <div class="mini-reveal-text" id="miniReveal" style="color:#E67E22">The lights you couldn't catch were leading too.</div>
+  </div>
+
+    <div class="closure-luminance" id="closureLuminance" style="background:radial-gradient(ellipse at 50% 40%,rgba(255,252,245,0.1) 0%,rgba(255,252,245,0) 100%)"></div>
+  <div class="closure-dim" id="closureDim"></div>
+  <div class="bindu-invite" id="binduInvite" onclick="window.open('https://aistrangegame.com/tree-of-life/svadhisthana-dance.html','_blank')">
+    <div class="bindu-invite-label">watch</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+
+<script>
+// ═══════════════════════════════════════════
+// PANEL 2 V2 — SVADHISTHANA — FOLLOW
+// Six drifting lights, touch-trace, desire-word,
+// body silhouette with water ripples, binaural 144 Hz
+// ═══════════════════════════════════════════
+
+const HOLD_DURATION = 4000;
+const CONTINUE_HOLD = 2000;
+const CONTINUE_HOLD_BREATH = 2500;
+
+const SHAKTI_DATA = {
+  kama:    { name: 'Kāmākarshini',  desc: 'desire itself' },
+  shabda:  { name: 'Shabdākarshini', desc: 'sound' },
+  sparsha: { name: 'Sparshākarshini', desc: 'touch' },
+  rupa:    { name: 'Rūpākarshini',  desc: 'form' },
+  smritya: { name: 'Smṛtyākarshini', desc: 'memory' },
+  atma:    { name: 'Ātmākarshini',  desc: 'the Self' }
+};
+
+let fontScale = 1;
+let holdProgress = 0;
+let isHolding = false;
+let holdTimer = null;
+let currentPhase = 'gate';
+let bodyPointPlaced = false;
+let desireWord = '';
+let lightsFollowed = 0;
+let wordSubmitted = false;
+
+// ─── TRANSITION LOCK ───
+let transitioning = false;
+function lockTransition() { transitioning = true; }
+function unlockTransition() { transitioning = false; }
+function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {} }
+
+// ─── LISTENER MANAGEMENT ───
+let phaseAbort = null;
+function cleanupPhaseListeners() { if (phaseAbort) { phaseAbort.abort(); phaseAbort = null; } }
+
+// ─── BINAURAL SOUND SYSTEM (144 Hz / D3) ───
+let audioCtx = null;
+let oscLeft = null;
+let oscRight = null;
+let masterGain = null;
+let soundStarted = false;
+let audioFailed = false;
+
+function initAudio() {
+  if (audioCtx || audioFailed) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(audioCtx.destination);
+
+    oscLeft = audioCtx.createOscillator();
+    oscLeft.type = 'sine';
+    oscLeft.frequency.value = 144;
+
+    oscRight = audioCtx.createOscillator();
+    oscRight.type = 'sine';
+    oscRight.frequency.value = 144;
+
+    if (typeof audioCtx.createStereoPanner === 'function') {
+      const panL = audioCtx.createStereoPanner();
+      panL.pan.value = -1;
+      const panR = audioCtx.createStereoPanner();
+      panR.pan.value = 1;
+      oscLeft.connect(panL); panL.connect(masterGain);
+      oscRight.connect(panR); panR.connect(masterGain);
+    } else {
+      const merger = audioCtx.createChannelMerger(2);
+      const gL = audioCtx.createGain(); gL.gain.value = 1;
+      const gR = audioCtx.createGain(); gR.gain.value = 1;
+      oscLeft.connect(gL); gL.connect(merger, 0, 0);
+      oscRight.connect(gR); gR.connect(merger, 0, 1);
+      merger.connect(masterGain);
+    }
+
+    oscLeft.start();
+    oscRight.start();
+  } catch(e) {
+    console.warn('Audio init failed:', e.message);
+    audioFailed = true;
+    audioCtx = null;
+  }
+}
+
+function soundPhase2() {
+  if (!audioCtx) initAudio();
+  if (!audioCtx) return;
+  try { if (audioCtx.state === 'suspended') audioCtx.resume(); } catch(e) {}
+  soundStarted = true;
+  oscRight.frequency.value = 144;
+  const t = audioCtx.currentTime;
+  masterGain.gain.cancelScheduledValues(t);
+  masterGain.gain.setValueAtTime(0, t);
+  masterGain.gain.linearRampToValueAtTime(0.10, t + 3);
+}
+
+function soundDeepen() {
+  if (!audioCtx || !soundStarted) return;
+  try {
+    const t = audioCtx.currentTime;
+    const c = masterGain.gain.value;
+    if (c < 0.18) {
+      masterGain.gain.cancelScheduledValues(t);
+      masterGain.gain.setValueAtTime(c, t);
+      masterGain.gain.linearRampToValueAtTime(Math.min(c + 0.015, 0.18), t + 1);
+    }
+  } catch(e) {}
+}
+
+function soundPhase3() {
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    oscRight.frequency.cancelScheduledValues(t);
+    oscRight.frequency.setValueAtTime(144, t);
+    oscRight.frequency.linearRampToValueAtTime(150, t + 4);
+  } catch(e) {}
+}
+
+function soundPhase4() {
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    oscRight.frequency.cancelScheduledValues(t);
+    oscRight.frequency.setValueAtTime(150, t);
+    oscRight.frequency.linearRampToValueAtTime(148, t + 8);
+  } catch(e) {}
+}
+
+function soundPhase5() {
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    oscRight.frequency.cancelScheduledValues(t);
+    oscRight.frequency.setValueAtTime(148, t);
+    oscRight.frequency.linearRampToValueAtTime(148, t + 2);
+  } catch(e) {}
+}
+
+function soundBreath() {
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(t);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, t);
+    masterGain.gain.linearRampToValueAtTime(0.22, t + 5);
+    masterGain.gain.linearRampToValueAtTime(0.18, t + 15);
+    masterGain.gain.linearRampToValueAtTime(0.10, t + 22);
+    masterGain.gain.linearRampToValueAtTime(0.08, t + 26);
+  } catch(e) {}
+}
+
+function soundFade() {
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(t);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, t);
+    masterGain.gain.linearRampToValueAtTime(0, t + 6);
+  } catch(e) {}
+}
+
+// ─── GATE MECHANIC ───
+
+
+// ─── WAKE LOCK ───
+// Prevents screen from sleeping during the experience
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    }
+  } catch(e) {}
+}
+// Re-acquire on visibility change (tab switch back)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !wakeLock) requestWakeLock();
+});
+
+
+// --- AWAKENING SOUND ---
+function soundAwakening() {
+  if (!audioCtx) return;
+  var actx = audioCtx, now = actx.currentTime;
+  var FREQ=210, HARM=[1, 0.6, 0.3, 0.15], ATK=0.02, SUS=0.3, DCY=2.8;
+  var master = actx.createGain(); master.gain.value=0; master.connect(actx.destination);
+  master.gain.setValueAtTime(0,now);
+  master.gain.linearRampToValueAtTime(0.25,now+ATK);
+  master.gain.setValueAtTime(0.25,now+ATK+SUS);
+  master.gain.exponentialRampToValueAtTime(0.001,now+ATK+SUS+DCY);
+  HARM.forEach(function(g,i) {
+    var osc=actx.createOscillator(), oscG=actx.createGain();
+    var freq=FREQ*(i===0?1:(i+1));
+    osc.type='sine'; osc.frequency.value=freq; oscG.gain.value=g;
+    if(i>0) { oscG.gain.setValueAtTime(g,now); oscG.gain.exponentialRampToValueAtTime(0.001,now+DCY*(1-i*0.15)); }
+    osc.connect(oscG).connect(master); osc.start(now); osc.stop(now+ATK+SUS+DCY+0.5);
+  });
+  var rd=actx.createDelay(); rd.delayTime.value=0.08;
+  var rg=actx.createGain(); rg.gain.value=0.15;
+  rg.gain.exponentialRampToValueAtTime(0.001,now+DCY+1);
+  master.connect(rd).connect(rg).connect(actx.destination);
+  setTimeout(function() { master.disconnect(); rg.disconnect(); }, (ATK+SUS+DCY+2)*1000);
+}
+
+function initGate() {
+  const gate = document.getElementById('gate');
+  const seedText = document.getElementById('seedText');
+  const holdInst = document.getElementById('holdInst');
+  const progressBar = document.getElementById('gateProgress');
+  const ripples = document.getElementById('gateRipples');
+  const headphonePrompt = document.getElementById('headphonePrompt');
+
+  setTimeout(() => headphonePrompt.classList.add('visible'), 1200);
+  setTimeout(() => holdInst.classList.add('visible'), 2500);
+  setTimeout(() => progressBar.classList.add('visible'), 3000);
+
+  const startHold = (e) => {
+    if (transitioning) return;
+    e.preventDefault(); e.stopPropagation();
+    isHolding = true;
+    ripples.classList.add('growing');
+    seedText.style.animation = 'none';
+    seedText.style.opacity = '1';
+    initAudio();
+    try { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); } catch(e2) {}
+    requestWakeLock();
+    animateGateHold();
+  };
+
+  const endHold = (e) => {
+    e.preventDefault();
+    isHolding = false;
+    if (holdTimer) cancelAnimationFrame(holdTimer);
+    if (holdProgress < 1) seedText.style.animation = '';
+  };
+
+  gate.addEventListener('touchstart', startHold, { passive: false });
+  gate.addEventListener('mousedown', startHold);
+  gate.addEventListener('touchend', endHold, { passive: false });
+  gate.addEventListener('mouseup', endHold);
+  gate.addEventListener('touchcancel', endHold, { passive: false });
+  gate.addEventListener('mouseleave', endHold);
+}
+
+function animateGateHold() {
+  if (!isHolding) return;
+  holdProgress += (16 / HOLD_DURATION);
+  if (holdProgress > 1) holdProgress = 1;
+  document.getElementById('gateProgressFill').style.width = (holdProgress * 100) + '%';
+  updateGateRipples(holdProgress);
+  if (holdProgress >= 1) { completeGate(); return; }
+  holdTimer = requestAnimationFrame(animateGateHold);
+}
+
+function updateGateRipples(progress) {
+  const rings = document.querySelectorAll('.gate-ripple-ring');
+  rings.forEach((ring, i) => {
+    const threshold = i * 0.18;
+    if (progress > threshold) {
+      const p = Math.min((progress - threshold) / 0.25, 1);
+      ring.style.opacity = 0.15 + (p * 0.2);
+      ring.style.transform = `scale(${1 + p * 0.1})`;
+    }
+  });
+}
+
+function completeGate() {
+  haptic(80);
+  soundAwakening();
+  lockTransition();
+  const gate = document.getElementById('gate');
+  gate.classList.add('completed');
+  setTimeout(() => {
+    gate.style.display = 'none';
+    enterPhase('phase2');
+    setTimeout(unlockTransition, 200);
+  }, 1500);
+}
+
+// ─── PRESS-AND-HOLD CONTINUE ───
+
+function setupContinueHold(phaseId, continueId, fillId, progressId, duration, onComplete) {
+  const phase = document.getElementById(phaseId);
+  const el = document.getElementById(continueId);
+  const fill = document.getElementById(fillId);
+  const progress = document.getElementById(progressId);
+  let holding = false;
+  let prog = 0;
+  let raf = null;
+  let completed = false;
+
+  const ac = new AbortController();
+  const sig = ac.signal;
+
+  const start = (e) => {
+    if (transitioning || completed) return;
+    if (!el.classList.contains('visible')) return;
+    if (e.target.closest('.zoom-btn')) return;
+    holding = true;
+    progress.classList.add('active');
+    animate();
+  };
+
+  const end = () => {
+    if (!holding) return;
+    holding = false;
+    if (raf) cancelAnimationFrame(raf);
+    if (prog < 1 && !completed) {
+      prog = 0;
+      fill.style.width = '0%';
+      progress.classList.remove('active');
+    }
+  };
+
+  const animate = () => {
+    if (!holding) return;
+    prog += (16 / duration);
+    if (prog > 1) prog = 1;
+    fill.style.width = (prog * 100) + '%';
+    if (prog >= 1) {
+      completed = true;
+      haptic(40);
+      onComplete();
+      return;
+    }
+    raf = requestAnimationFrame(animate);
+  };
+
+  phase.addEventListener('touchstart', start, { passive: true, signal: sig });
+  phase.addEventListener('mousedown', start, { signal: sig });
+  document.addEventListener('touchend', end, { passive: true, signal: sig });
+  document.addEventListener('mouseup', end, { signal: sig });
+  document.addEventListener('touchcancel', end, { passive: true, signal: sig });
+
+  if (!phase._holdAborts) phase._holdAborts = [];
+  phase._holdAborts.push(ac);
+}
+
+function transitionPhase(fromId, toId) {
+  if (transitioning) return;
+  lockTransition();
+  hideTapCue();
+
+  const from = document.getElementById(fromId);
+  if (from._holdAborts) { from._holdAborts.forEach(ac => ac.abort()); from._holdAborts = []; }
+
+  from.style.transition = 'opacity 1.2s ease';
+  from.style.opacity = '0';
+  setTimeout(() => {
+    from.classList.remove('active');
+    from.style.opacity = '';
+    enterPhase(toId);
+    setTimeout(unlockTransition, 200);
+  }, 1200);
+}
+
+// ─── PHASE MANAGEMENT ───
+
+function enterPhase(phaseId) {
+  currentPhase = phaseId;
+  const phaseEl = document.getElementById(phaseId);
+  phaseEl.classList.add('active');
+  phaseEl.scrollTop = 0;
+  window.scrollTo(0, 0);
+  hideTapCue();
+  cleanupPhaseListeners();
+  phaseAbort = new AbortController();
+
+  if (phaseId === 'phase2') soundPhase2();
+  if (phaseId === 'phase3') soundPhase3();
+  if (phaseId === 'phase4') { soundPhase4(); document.body.classList.add('current-phase'); }
+  if (phaseId === 'phase5') { soundPhase5(); document.body.classList.remove('current-phase'); document.body.classList.add('deep-phase'); }
+  if (phaseId === 'phase6') { document.body.classList.remove('deep-phase'); }
+  if (phaseId === 'phase7') {
+    document.body.classList.add('release-phase');
+    document.getElementById('zoomControls').style.display = 'none';
+    soundFade();
+    initPhase7();
+  }
+
+  if (phaseId !== 'phase7') setupPhaseSteps(phaseEl);
+  if (phaseId === 'phase2') initDriftingLights();
+  if (phaseId === 'phase3') initWordInput();
+  if (phaseId === 'phase4') initCurrentFlow();
+  if (phaseId === 'phase5') initBodySilhouette();
+}
+
+// ─── PHASE STEPS (tap anywhere to advance) ───
+
+let advanceLocked = false;
+
+function setupPhaseSteps(phaseEl) {
+  const steps = Array.from(phaseEl.querySelectorAll('[data-step]'));
+  let idx = 0;
+
+  setTimeout(() => {
+    if (steps.length > 0) {
+      revealStep(steps[0]);
+      idx = 1;
+      scheduleTabCue(steps[0], steps, idx, true);
+    }
+  }, 600);
+
+  const isExcluded = (target) => {
+    return target.closest('.body-container') ||
+           target.closest('.lights-container') ||
+           target.closest('.continue-el') ||
+           target.closest('.zoom-btn') ||
+           target.closest('.breath-circle') ||
+           target.closest('.word-input-container');
+  };
+
+  const doAdvance = () => {
+    if (advanceLocked || transitioning) return;
+
+    hideTapCue();
+    if (idx >= steps.length) return;
+
+    const step = steps[idx];
+    const stepType = step.dataset.step;
+
+    if (stepType === 'interaction') { revealStep(step); idx++; lock(); return; }
+    if (stepType === 'after-body' || stepType === 'after-breath' || stepType === 'after-word') return;
+    if (stepType === 'breath') { revealStep(step); idx++; startBreath(); lock(); return; }
+
+    revealStep(step);
+    idx++;
+
+    if (idx < steps.length && steps[idx].dataset.step === 'interaction') {
+      const interactionIdx = idx;
+      idx++;
+      setTimeout(() => { revealStep(steps[interactionIdx]); }, 800);
+    } else {
+      scheduleTabCue(step, steps, idx, false);
+    }
+
+    lock();
+  };
+
+  function lock() {
+    advanceLocked = true;
+    setTimeout(() => { advanceLocked = false; }, 300);
+  }
+
+  // touchend for mobile (fires reliably even with slight finger movement)
+  phaseEl.addEventListener('touchend', (e) => {
+    if (isExcluded(e.target)) return;
+    doAdvance();
+  }, { passive: true, signal: phaseAbort.signal });
+
+  // click as desktop fallback
+  phaseEl.addEventListener('click', (e) => {
+    if (isExcluded(e.target)) return;
+    doAdvance();
+  }, { signal: phaseAbort.signal });
+}
+
+// ─── TAP CUE ───
+
+let tapCueTimer = null;
+
+function scheduleTabCue(currentStep, allSteps, nextIdx, isFirst) {
+  clearTimeout(tapCueTimer);
+  hideTapCue();
+  if (nextIdx >= allSteps.length) return;
+  const nextType = allSteps[nextIdx].dataset.step;
+  if (nextType === 'interaction' || nextType === 'after-body' || nextType === 'after-breath' || nextType === 'after-word') return;
+
+  const delay = isFirst ? 900 : Math.max(currentStep.textContent.trim().split(/\s+/).length * 220, 1800);
+  tapCueTimer = setTimeout(() => showTapCue(), delay);
+}
+
+function showTapCue() { document.getElementById('tapCue').classList.add('visible'); }
+function hideTapCue() { clearTimeout(tapCueTimer); document.getElementById('tapCue').classList.remove('visible'); }
+function revealStep(el) { el.classList.add('visible'); setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100); }
+
+// ─── DRIFTING LIGHTS (Phase 2) ───
+
+let lightsAnimFrame = null;
+let lights = [];
+
+function initDriftingLights() {
+  const container = document.getElementById('lightsContainer');
+  const canvas = document.getElementById('lightsCanvas');
+  const ctx = canvas.getContext('2d');
+  const followInst = document.getElementById('followInstruct');
+  const continueEl = document.getElementById('continue2');
+
+  const rect = container.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = rect.height * 2;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(2, 2);
+
+  const W = rect.width;
+  const H = rect.height;
+  const cx = W / 2;
+  const cy = H / 2;
+
+  lights = [
+    { id: 'kama',    el: document.getElementById('light-kama'),    trail: document.getElementById('trail-kama'),    x: cx, y: cy, followed: false,
+      move: (t) => ({ x: cx + Math.sin(t * 2.3) * (W * 0.35) + Math.cos(t * 3.7) * 20, y: cy + Math.cos(t * 1.9) * (H * 0.3) + Math.sin(t * 4.1) * 15 }) },
+    { id: 'shabda',  el: document.getElementById('light-shabda'),  trail: document.getElementById('trail-shabda'),  x: cx, y: cy, followed: false,
+      move: (t) => ({ x: cx + Math.sin(t * 1.1) * (W * 0.3), y: cy + Math.sin(t * 2.2) * (H * 0.25) }) },
+    { id: 'sparsha', el: document.getElementById('light-sparsha'), trail: document.getElementById('trail-sparsha'), x: cx, y: cy, followed: false,
+      move: (t) => { const a = t * 0.7; const r = Math.min(W, H) * 0.42; return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r * 0.7 }; } },
+    { id: 'rupa',    el: document.getElementById('light-rupa'),    trail: document.getElementById('trail-rupa'),    x: cx, y: cy, followed: false,
+      move: (t) => ({ x: cx + Math.sin(t * 0.5) * (W * 0.22), y: cy + Math.cos(t * 0.4) * (H * 0.2) - 20 }) },
+    { id: 'smritya', el: document.getElementById('light-smritya'), trail: document.getElementById('trail-smritya'), x: cx, y: cy, followed: false,
+      move: (t) => { const a = t * 0.8; const r = 40 + Math.sin(t * 0.3) * 30; return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r }; } },
+    { id: 'atma',    el: document.getElementById('light-atma'),    trail: document.getElementById('trail-atma'),    x: cx, y: cy, followed: false,
+      move: (t) => ({ x: cx + Math.sin(t * 0.3) * 15, y: cy + Math.cos(t * 0.25) * 12 }) }
+  ];
+
+  let startTime = performance.now();
+  let touchX = -1, touchY = -1;
+  let trailPoints = [];
+
+  setTimeout(() => followInst.classList.add('visible'), 1500);
+
+  lights.forEach((l, i) => {
+    setTimeout(() => l.el.classList.add('active'), 800 + i * 400);
+  });
+
+  const animateLights = () => {
+    const elapsed = (performance.now() - startTime) / 1000;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw finger trail
+    if (trailPoints.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+      for (let i = 1; i < trailPoints.length; i++) {
+        ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+      }
+      ctx.strokeStyle = 'rgba(232,148,58,0.15)';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Decay trail
+    if (trailPoints.length > 60) trailPoints = trailPoints.slice(-60);
+
+    lights.forEach(l => {
+      const pos = l.move(elapsed);
+      l.x = pos.x;
+      l.y = pos.y;
+      l.el.style.left = (pos.x - 6) + 'px';
+      l.el.style.top = (pos.y - 6) + 'px';
+      l.trail.style.left = (pos.x + 14) + 'px';
+      l.trail.style.top = (pos.y - 6) + 'px';
+
+      // Check proximity to touch — only for visible lights
+      if (touchX >= 0 && !l.followed && l.el.classList.contains('active')) {
+        const dx = pos.x - touchX;
+        const dy = pos.y - touchY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 35) {
+          l.followed = true;
+          l.el.classList.add('followed');
+          l.trail.classList.add('visible');
+          if (l.id === 'atma') l.trail.classList.add('bright');
+          lightsFollowed++;
+          soundDeepen();
+          haptic(25);
+          if (lightsFollowed >= 2) {
+            setTimeout(() => { continueEl.classList.add('visible'); setTimeout(() => continueEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }, 2000);
+          }
+        }
+      }
+    });
+
+    lightsAnimFrame = requestAnimationFrame(animateLights);
+  };
+
+  const onTouchStart = (e) => {
+    if (!container.classList.contains('visible')) return;
+    e.preventDefault();
+  };
+
+  const onTouchMove = (e) => {
+    if (!container.classList.contains('visible')) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const r = container.getBoundingClientRect();
+    touchX = touch.clientX - r.left;
+    touchY = touch.clientY - r.top;
+    trailPoints.push({ x: touchX, y: touchY });
+  };
+
+  const onTouchEnd = () => {
+    touchX = -1;
+    touchY = -1;
+  };
+
+  container.addEventListener('touchstart', onTouchStart, { passive: false, signal: phaseAbort.signal });
+  container.addEventListener('touchmove', onTouchMove, { passive: false, signal: phaseAbort.signal });
+  container.addEventListener('mousemove', (e) => {
+    const r = container.getBoundingClientRect();
+    touchX = e.clientX - r.left;
+    touchY = e.clientY - r.top;
+    trailPoints.push({ x: touchX, y: touchY });
+  }, { signal: phaseAbort.signal });
+  container.addEventListener('touchend', onTouchEnd, { signal: phaseAbort.signal });
+  container.addEventListener('mouseleave', onTouchEnd, { signal: phaseAbort.signal });
+
+  animateLights();
+
+  setupContinueHold('phase2', 'continue2', 'continueFill2', 'continueProgress2', CONTINUE_HOLD, () => {
+    if (lightsAnimFrame) cancelAnimationFrame(lightsAnimFrame);
+    transitionPhase('phase2', 'phase3');
+  });
+}
+
+// ─── WORD INPUT (Phase 3) ───
+
+function initWordInput() {
+  const container = document.getElementById('wordInputContainer');
+  const input = document.getElementById('wordInput');
+  const submitBtn = document.getElementById('wordSubmit');
+  const floatWord = document.getElementById('desireWordFloat');
+  const afterText = document.getElementById('afterWordText');
+  const continueEl = document.getElementById('continue3');
+
+  const submitWord = () => {
+    const word = input.value.trim();
+    if (!word || wordSubmitted) return;
+    wordSubmitted = true;
+    desireWord = word;
+
+    try { localStorage.setItem('tol-word-2', JSON.stringify({ word: desireWord })); } catch(e2) {}
+
+    input.style.opacity = '0';
+    submitBtn.style.opacity = '0';
+    setTimeout(() => {
+      container.style.display = 'none';
+      floatWord.textContent = desireWord;
+      floatWord.classList.add('visible');
+      floatWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      setTimeout(() => {
+        afterText.classList.add('visible');
+        afterText.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 2500);
+
+      setTimeout(() => { continueEl.classList.add('visible'); setTimeout(() => continueEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }, 4500);
+    }, 800);
+    haptic(30);
+  };
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); submitWord(); }
+  }, { signal: phaseAbort.signal });
+
+  submitBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    submitWord();
+  }, { signal: phaseAbort.signal });
+
+  // Show submit button when they start typing
+  input.addEventListener('input', () => {
+    if (input.value.trim().length > 0 && !wordSubmitted) {
+      submitBtn.classList.add('visible');
+    } else {
+      submitBtn.classList.remove('visible');
+    }
+  }, { signal: phaseAbort.signal });
+
+  setupContinueHold('phase3', 'continue3', 'continueFill3', 'continueProgress3', CONTINUE_HOLD, () => {
+    transitionPhase('phase3', 'phase4');
+  });
+}
+
+// ─── CURRENT FLOW (Phase 4) ───
+
+let currentAnimFrame = null;
+
+function initCurrentFlow() {
+  const container = document.getElementById('currentContainer');
+  const canvas = document.getElementById('currentCanvas');
+  const ctx = canvas.getContext('2d');
+  const continueEl = document.getElementById('continue4');
+
+  const rect = container.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = rect.height * 2;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(2, 2);
+
+  const W = rect.width;
+  const H = rect.height;
+
+  // Particles flowing toward center where the word lives
+  const particles = [];
+  for (let i = 0; i < 40; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      speed: 0.3 + Math.random() * 0.5,
+      size: 1.5 + Math.random() * 2.5,
+      opacity: 0.2 + Math.random() * 0.4
+    });
+  }
+
+  const targetX = W / 2;
+  const targetY = H * 0.45;
+  const startTime = performance.now();
+
+  const animate = () => {
+    const elapsed = (performance.now() - startTime) / 1000;
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw desire word at target
+    if (desireWord) {
+      ctx.font = 'italic 18px Lora, serif';
+      ctx.fillStyle = `rgba(255,240,224,${0.5 + Math.sin(elapsed * 0.8) * 0.15})`;
+      ctx.textAlign = 'center';
+      ctx.fillText(desireWord, targetX, targetY);
+    }
+
+    // Animate particles flowing toward word
+    particles.forEach(p => {
+      const dx = targetX - p.x;
+      const dy = targetY - p.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 10) {
+        p.x = Math.random() * W;
+        p.y = H + 10;
+      } else {
+        p.x += (dx / dist) * p.speed;
+        p.y += (dy / dist) * p.speed;
+        p.x += Math.sin(elapsed * 2 + p.y * 0.02) * 0.3;
+      }
+
+      const a = p.opacity * Math.min(dist / 50, 1);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(232,148,58,${a})`;
+      ctx.fill();
+    });
+
+    // Draw Shakti names flowing
+    ctx.font = 'italic 10px Lora, serif';
+    ctx.textAlign = 'center';
+    const names = Object.values(SHAKTI_DATA).map(s => s.name);
+    names.forEach((name, i) => {
+      const yy = ((elapsed * 15 + i * 50) % (H + 40)) - 20;
+      const xx = W * 0.2 + (i % 3) * (W * 0.3) + Math.sin(elapsed + i) * 15;
+      const op = Math.max(0, 0.15 - Math.abs(yy - targetY) / H * 0.3);
+      ctx.fillStyle = `rgba(255,240,224,${op})`;
+      ctx.fillText(name, xx, yy);
+    });
+
+    currentAnimFrame = requestAnimationFrame(animate);
+  };
+
+  animate();
+
+  // Show continue after the text steps + viewing time
+  const steps = document.getElementById('phase4').querySelectorAll('[data-step]');
+  const observer = new MutationObserver(() => {
+    const allVisible = Array.from(steps).every(s =>
+      s.classList.contains('visible') || s.classList.contains('step-spacer') || s.dataset.step === 'interaction'
+    );
+    if (allVisible) {
+      setTimeout(() => { continueEl.classList.add('visible'); setTimeout(() => continueEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }, 3000);
+      observer.disconnect();
+    }
+  });
+  steps.forEach(s => observer.observe(s, { attributes: true, attributeFilter: ['class'] }));
+
+  setupContinueHold('phase4', 'continue4', 'continueFill4', 'continueProgress4', CONTINUE_HOLD, () => {
+    if (currentAnimFrame) cancelAnimationFrame(currentAnimFrame);
+    transitionPhase('phase4', 'phase5');
+  });
+}
+
+// ─── BODY SILHOUETTE (Phase 5) ───
+
+function initBodySilhouette() {
+  const container = document.getElementById('bodyContainer');
+  const point = document.getElementById('bodyPoint');
+  const ripples = document.getElementById('bodyRipples');
+  const afterText = document.getElementById('afterBodyText');
+  const continueEl = document.getElementById('continue5');
+
+  container.addEventListener('click', (e) => {
+    if (transitioning || bodyPointPlaced) return;
+    if (!container.classList.contains('visible')) return;
+    e.stopPropagation();
+
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    point.style.left = x + 'px';
+    point.style.top = y + 'px';
+    point.classList.add('placed');
+    bodyPointPlaced = true;
+
+    // Position ripples at body point
+    ripples.style.left = x + 'px';
+    ripples.style.top = y + 'px';
+    const rings = ripples.querySelectorAll('.ripple-ring');
+    rings.forEach(ring => {
+      ring.style.left = '0';
+      ring.style.top = '0';
+      ring.classList.add('animate');
+    });
+    setTimeout(() => ripples.classList.add('visible'), 300);
+    haptic(40);
+
+    try { localStorage.setItem('tol-bodypoint-2', JSON.stringify({ x: x / rect.width, y: y / rect.height, label: 'desire' })); } catch(e2) {}
+
+    setTimeout(() => { afterText.classList.add('visible'); afterText.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 1500);
+    setTimeout(() => { continueEl.classList.add('visible'); setTimeout(() => continueEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }, 3500);
+  });
+
+  setupContinueHold('phase5', 'continue5', 'continueFill5', 'continueProgress5', CONTINUE_HOLD_BREATH, () => {
+    transitionPhase('phase5', 'phase6');
+  });
+}
+
+// ─── BREATH (Phase 6) ───
+
+function startBreath() {
+  const circle = document.getElementById('breathCircle');
+  const label = circle.querySelector('.breath-label');
+  circle.classList.add('visible');
+
+  // 2 cycles of 4-in, 6-release = 20 seconds
+  const CYCLE_MS = 10000;
+  const CYCLES = 2;
+  let cycleCount = 0;
+
+  setTimeout(() => {
+    circle.classList.add('breathing');
+    soundBreath();
+
+    // Cycle breath labels: in → release, repeating
+    function runLabelCycle() {
+      if (cycleCount >= CYCLES) return;
+      label.textContent = 'in';
+      setTimeout(() => { label.textContent = 'release'; }, 4000);
+      setTimeout(() => {
+        cycleCount++;
+        if (cycleCount < CYCLES) {
+          runLabelCycle();
+        } else {
+          // 2 cycles complete
+          circle.classList.remove('breathing');
+          circle.classList.add('complete');
+          label.textContent = '';
+          haptic(50);
+
+          setTimeout(() => {
+            const afterText = document.getElementById('afterBreathText');
+            afterText.classList.add('visible');
+            afterText.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => { const _c = document.getElementById('continue6'); _c.classList.add('visible'); setTimeout(() => _c.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }, 3000);
+          }, 1500);
+        }
+      }, CYCLE_MS);
+    }
+
+    runLabelCycle();
+  }, 1000);
+}
+
+function initPhase6Continue() {
+  setupContinueHold('phase6', 'continue6', 'continueFill6', 'continueProgress6', CONTINUE_HOLD, () => {
+    if (transitioning) return;
+    lockTransition();
+    hideTapCue();
+    const phase6 = document.getElementById('phase6');
+    if (phase6._holdAborts) { phase6._holdAborts.forEach(ac => ac.abort()); phase6._holdAborts = []; }
+    phase6.style.transition = 'opacity 1.5s ease';
+    phase6.style.opacity = '0';
+    setTimeout(() => {
+      phase6.classList.remove('active');
+      phase6.style.opacity = '';
+      enterPhase('phase7');
+      setTimeout(unlockTransition, 200);
+    }, 1500);
+  });
+}
+
+// ─── PHASE 7 RELEASE ───
+
+function initPhase7() {
+  const steps = document.getElementById('phase7').querySelectorAll('[data-step]');
+  steps.forEach((step, i) => { setTimeout(() => step.classList.add('visible'), 1500 + (i * 2500)); });
+  // Activation declaration
+  setTimeout(() => { document.getElementById('activationText').classList.add('visible'); }, 500);
+
+  setTimeout(() => document.getElementById('closureDivider').classList.add('visible'), 9000);
+  setTimeout(() => document.getElementById('seedReturn').classList.add('visible'), 12000);
+
+  // Mini-reveal
+  setTimeout(() => document.getElementById('miniReveal').classList.add('visible'), 15000);
+
+  // Progressive luminance
+  setTimeout(() => document.getElementById('closureLuminance').classList.add('visible'), 18000);
+
+  setTimeout(() => document.getElementById('closureDim').classList.add('visible'), 21000);
+  setTimeout(() => document.getElementById('yellowBleed').classList.add('visible'), 24000);
+
+  // Bindu wakes — patience reward
+  setTimeout(() => { document.getElementById('persistentBindu').classList.add('awakened'); }, 32000);
+  setTimeout(() => { document.getElementById('binduInvite').classList.add('visible'); }, 35000);
+}
+
+// ─── ZOOM ───
+
+document.getElementById('zoomIn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fontScale = Math.min(fontScale + 0.1, 1.45);
+  document.documentElement.style.fontSize = (fontScale * 100) + '%';
+});
+document.getElementById('zoomOut')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fontScale = Math.max(fontScale - 0.1, 0.85);
+  document.documentElement.style.fontSize = (fontScale * 100) + '%';
+});
+
+// ─── INIT ───
+
+document.addEventListener('DOMContentLoaded', () => {
+  initGate();
+  initPhase6Continue();
+});
+
+</script>
+
+</body>
+</html>

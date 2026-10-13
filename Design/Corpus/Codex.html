@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Living Yantra — Codex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ground:      #060104;
+      --surface:     #0E0509;
+      --gold:        #C9963F;
+      --gold-deep:   #A07830;
+      --gold-faint:  rgba(201,150,63,0.18);
+      --cream:       #F2E8D9;
+      --cream-mid:   rgba(242,232,217,0.65);
+      --cream-faint: rgba(242,232,217,0.35);
+      --cream-dim:   rgba(242,232,217,0.22);
+      --accent:      #8B1A2A;
+      --hairline:    rgba(201,150,63,0.14);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--ground);
+      color: var(--cream);
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── ambient background ─────────────────────────── */
+    .ambient {
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 30%, rgba(139,26,42,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 70% at 50% 100%, rgba(201,150,63,0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── layout ────────────────────────────────────── */
+    .scroll { position: relative; z-index: 1; }
+    .section {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 120px 56px;
+    }
+    .section--wide { max-width: 1100px; }
+    .section--full {
+      max-width: none;
+      padding: 120px 56px;
+    }
+    .anchor-rule {
+      width: 1px; height: 64px;
+      background: linear-gradient(to bottom, transparent, var(--gold-faint), transparent);
+      margin: 0 auto;
+    }
+
+    /* ── type ──────────────────────────────────────── */
+    h1, h2, h3, h4 { font-weight: 300; letter-spacing: 0.03em; }
+    h1 {
+      font-size: 88px; line-height: 1;
+      color: var(--cream);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    h2 {
+      font-size: 44px; line-height: 1.1;
+      color: var(--gold);
+      margin-bottom: 14px;
+      letter-spacing: 0.02em;
+    }
+    h3 {
+      font-size: 26px; line-height: 1.2;
+      color: var(--cream);
+      margin-bottom: 12px;
+    }
+    h4 {
+      font-size: 18px; line-height: 1.3;
+      color: var(--gold);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 400;
+      margin-bottom: 18px;
+    }
+    .eyebrow {
+      font-family: -apple-system, sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.7;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .subtitle {
+      font-size: 24px;
+      font-style: italic;
+      color: var(--cream-mid);
+      text-align: center;
+      letter-spacing: 0.02em;
+      line-height: 1.5;
+    }
+    p {
+      font-size: 18px;
+      color: var(--cream-mid);
+      letter-spacing: 0.01em;
+      margin-bottom: 22px;
+    }
+    p.lead {
+      font-size: 21px;
+      color: rgba(242,232,217,0.78);
+      font-style: italic;
+      line-height: 1.7;
+    }
+    p strong, em.gold {
+      color: var(--gold);
+      font-weight: 400;
+      font-style: italic;
+    }
+    .sanskrit {
+      font-style: italic;
+      color: var(--gold);
+    }
+    .footnote {
+      font-size: 13px;
+      color: var(--cream-dim);
+      letter-spacing: 0.06em;
+      font-style: italic;
+      margin-top: 8px;
+    }
+
+    /* ── divider ──────────────────────────────────────── */
+    .divider {
+      display: flex; align-items: center; justify-content: center;
+      gap: 18px; margin: 56px auto;
+      max-width: 600px;
+    }
+    .divider .line {
+      flex: 1; height: 0.5px;
+      background: linear-gradient(to right, transparent, var(--gold-faint), transparent);
+    }
+    .divider .glyph {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--gold);
+      opacity: 0.55;
+      box-shadow: 0 0 12px rgba(201,150,63,0.5);
+    }
+
+    /* ── opening Sri Yantra ─────────────────────────── */
+    .opening-yantra {
+      width: 320px; height: 320px;
+      margin: 80px auto 48px;
+      position: relative;
+    }
+    .opening-yantra svg { overflow: visible; }
+
+    @keyframes binduBreath {
+      0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 0.85; }
+      50%      { transform: translate(-50%,-50%) scale(1.15); opacity: 1; }
+    }
+    .opening-bindu {
+      position: absolute; top: 50%; left: 50%;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: radial-gradient(circle, var(--accent) 0%, rgba(139,26,42,0.6) 60%, transparent 100%);
+      animation: binduBreath 5s ease-in-out infinite;
+      box-shadow: 0 0 24px 6px rgba(139,26,42,0.4);
+    }
+    .opening-bindu::after {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--cream);
+      box-shadow: 0 0 10px var(--cream);
+    }
+
+    /* ── tables / grids ─────────────────────────────── */
+    .dim-grid, .mode-grid, .ring-grid, .gesture-grid {
+      display: grid; gap: 1px;
+      background: var(--hairline);
+      border: 0.5px solid var(--hairline);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .dim-grid > div, .mode-grid > div, .ring-grid > div, .gesture-grid > div {
+      background: var(--ground);
+      padding: 32px 30px;
+    }
+    .dim-grid    { grid-template-columns: repeat(5, 1fr); }
+    .mode-grid   { grid-template-columns: repeat(4, 1fr); }
+    .gesture-grid{ grid-template-columns: repeat(3, 1fr); }
+    .ring-grid   { grid-template-columns: 1fr; }
+
+    /* ── dimension cell ─────────────────────────────── */
+    .dim-cell .icon {
+      width: 56px; height: 56px;
+      margin-bottom: 22px;
+      opacity: 0.85;
+    }
+    .dim-cell h4 { margin-bottom: 8px; font-size: 13px; }
+    .dim-cell .axis {
+      font-style: italic;
+      color: var(--cream-faint);
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    .dim-cell p { font-size: 15px; line-height: 1.65; margin: 0; color: var(--cream-mid); }
+
+    /* ── mode cell ──────────────────────────────────── */
+    .mode-cell { padding: 28px 26px !important; }
+    .mode-cell .deva {
+      font-size: 28px;
+      color: var(--gold);
+      font-style: italic;
+      letter-spacing: 0.04em;
+      margin-bottom: 2px;
+    }
+    .mode-cell .name {
+      font-size: 14px;
+      color: var(--cream);
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+      font-weight: 400;
+    }
+    .mode-cell .meta {
+      font-family: -apple-system, sans-serif;
+      font-size: 10px;
+      color: var(--cream-dim);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .mode-cell p {
+      font-size: 14px;
+      line-height: 1.65;
+      margin: 0;
+      color: rgba(242,232,217,0.55);
+    }
+
+    /* ── gesture cell ───────────────────────────────── */
+    .gesture-cell .icon {
+      width: 44px; height: 44px;
+      margin-bottom: 16px;
+      opacity: 0.8;
+    }
+    .gesture-cell h4 {
+      font-size: 13px; margin-bottom: 4px;
+    }
+    .gesture-cell .verb {
+      font-style: italic;
+      color: var(--gold);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .gesture-cell p {
+      font-size: 14px; line-height: 1.6; margin: 0;
+      color: var(--cream-mid);
+    }
+
+    /* ── ring world ─────────────────────────────────── */
+    .ring-world {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 44px;
+      padding: 40px 36px !important;
+      align-items: start;
+    }
+    .ring-world .glyph-box {
+      width: 180px; height: 180px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .ring-world .num {
+      font-size: 13px;
+      color: var(--gold);
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-family: -apple-system, sans-serif;
+    }
+    .ring-world h3 {
+      font-size: 30px;
+      color: var(--cream);
+      margin-bottom: 4px;
+    }
+    .ring-world .role {
+      font-style: italic;
+      color: var(--gold);
+      font-size: 17px;
+      margin-bottom: 16px;
+      letter-spacing: 0.02em;
+    }
+    .ring-world .atmos {
+      display: flex; gap: 22px; flex-wrap: wrap;
+      margin-bottom: 16px;
+      font-family: -apple-system, sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+    }
+    .ring-world .atmos span strong {
+      color: var(--gold);
+      font-weight: 400;
+      font-style: normal;
+      margin-left: 6px;
+    }
+    .ring-world p {
+      font-size: 16px;
+      line-height: 1.7;
+      margin: 0;
+      color: var(--cream-mid);
+    }
+
+    /* ── home variants ──────────────────────────────── */
+    .home-variants {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
+      background: var(--hairline);
+      border: 0.5px solid var(--hairline);
+    }
+    .home-variants > div {
+      background: var(--ground);
+      padding: 28px 18px;
+      text-align: center;
+    }
+    .home-variants .mini {
+      width: 100%; aspect-ratio: 1;
+      margin-bottom: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .home-variants h4 {
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      margin-bottom: 6px;
+    }
+    .home-variants p {
+      font-size: 13px;
+      font-style: italic;
+      color: var(--cream-faint);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* ── path ───────────────────────────────────────── */
+    .path-list { list-style: none; counter-reset: phase; }
+    .path-list li {
+      counter-increment: phase;
+      position: relative;
+      padding: 18px 0 18px 80px;
+      border-bottom: 0.5px solid var(--hairline);
+      font-size: 18px;
+      color: var(--cream-mid);
+    }
+    .path-list li::before {
+      content: 'Phase ' counter(phase);
+      position: absolute; left: 0; top: 18px;
+      font-family: -apple-system, sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.7;
+    }
+    .path-list li.now {
+      color: var(--gold);
+      font-style: italic;
+    }
+    .path-list li.now::after {
+      content: '— you are here';
+      margin-left: 14px;
+      font-family: -apple-system, sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+      font-style: normal;
+    }
+    .path-list li.next {
+      color: var(--cream);
+    }
+
+    /* ── closing ────────────────────────────────────── */
+    .closing {
+      text-align: center;
+      padding: 140px 56px 180px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .closing p {
+      font-size: 22px;
+      font-style: italic;
+      line-height: 1.7;
+      color: var(--cream-mid);
+    }
+
+    /* ── breathing ring helpers ─────────────────────── */
+    @keyframes breath1 { 0%,100% { opacity: 0.85; } 50% { opacity: 1; } }
+    @keyframes breath2 { 0%,100% { opacity: 0.5; } 50% { opacity: 0.7; } }
+    @keyframes breath3 { 0%,100% { opacity: 0.25; } 50% { opacity: 0.4; } }
+    .b1 { animation: breath1 4s ease-in-out infinite; }
+    .b2 { animation: breath2 7s ease-in-out infinite; }
+    .b3 { animation: breath3 11s ease-in-out infinite; }
+
+    /* ── responsive guardrails ──────────────────────── */
+    @media (max-width: 900px) {
+      .section { padding: 80px 28px; }
+      h1 { font-size: 56px; }
+      h2 { font-size: 32px; }
+      .dim-grid, .mode-grid, .gesture-grid, .home-variants { grid-template-columns: repeat(2, 1fr); }
+      .ring-world { grid-template-columns: 1fr; gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="ambient"></div>
+
+<div class="scroll">
+
+  <!-- ─────────────────────────────────────────────────────────────
+       I. OPENING
+  ─────────────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="eyebrow">Codex · Phase I of VIII</div>
+    <h1>The Living Yantra</h1>
+    <p class="subtitle">An instrument for recognizing the Mother<br/>through the 102 forces of the Sri Yantra</p>
+
+    <div class="opening-yantra">
+      <svg viewBox="0 0 320 320" width="320" height="320">
+        <g transform="translate(160,160)" fill="none" stroke="#C9963F">
+          <!-- bhupura -->
+          <rect x="-145" y="-145" width="290" height="290" stroke-width="0.5" opacity="0.22"/>
+          <rect x="-132" y="-132" width="264" height="264" stroke-width="0.5" opacity="0.22"/>
+          <!-- 16-petal indication -->
+          <circle r="118" stroke-width="0.5" opacity="0.18"/>
+          <g class="b1">
+            <!-- simplified yantra triangles -->
+            <path d="M 0,-95 L 82,47 L -82,47 Z" stroke-width="0.6" opacity="0.65"/>
+            <path d="M 0,95 L 82,-47 L -82,-47 Z" stroke-width="0.6" opacity="0.65"/>
+          </g>
+          <g class="b2">
+            <path d="M 0,-72 L 62,36 L -62,36 Z" stroke-width="0.5" opacity="0.55"/>
+            <path d="M 0,72 L 62,-36 L -62,-36 Z" stroke-width="0.5" opacity="0.55"/>
+          </g>
+          <g class="b3">
+            <path d="M 0,-50 L 43,25 L -43,25 Z" stroke-width="0.5" opacity="0.45"/>
+            <path d="M 0,50 L 43,-25 L -43,-25 Z" stroke-width="0.5" opacity="0.45"/>
+          </g>
+          <path d="M 0,-30 L 26,15 L -26,15 Z" stroke-width="0.45" opacity="0.35"/>
+        </g>
+      </svg>
+      <div class="opening-bindu"></div>
+    </div>
+
+    <p class="lead">This is not an app. It is a temple compressed into glass — a living yantra you carry, breathe with, return to. Every interaction is a moment of <em class="gold">recognition</em>: of her, in her many forms, present in the texture of your day. The interface is not a wrapper around the practice. The interface <em class="gold">is</em> the practice.</p>
+
+    <div class="divider"><div class="line"></div><div class="glyph"></div><div class="line"></div></div>
+
+    <h4>What this document is</h4>
+    <p>A codex — the architectural manual of the system before any screen is designed. It establishes the ontology so the design has somewhere to stand. Five dimensions. Eight modes. No menu. Nine ring-worlds, each with its own atmosphere. The home as a living state, not a screen. A phased path that lets the instrument emerge slowly, with care.</p>
+
+    <p>Read it slowly. Then we begin.</p>
+  </section>
+
+  <div class="anchor-rule"></div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       II. THE REFRAME
+  ─────────────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="eyebrow">§ I · The Reframe</div>
+    <h2>The yantra is the ontology.</h2>
+    <p class="lead">A content app has tabs because its world is flat — items arranged in categories, each a peer to the next. A consciousness instrument cannot be flat. The structure of awareness is not peer; it is <em class="gold">centered</em>. Everything radiates from a center. So this app radiates from the yantra.</p>
+
+    <p>The Sri Yantra is not a feature inside the app. It is the world the app lives inside. It has presence, mood, time, depth, memory, and relationship. It is not the same yantra at dawn and dusk. It is not the same yantra after a hundred recognitions and zero. It is alive.</p>
+
+    <p>Which means the architecture is not a list of screens. The architecture is the set of <em class="gold">dimensions through which you relate to the yantra</em>. There are five of them.</p>
+  </section>
+
+  <div class="anchor-rule"></div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       III. THE FIVE DIMENSIONS
+  ─────────────────────────────────────────────────────────────── -->
+  <section class="section section--wide">
+    <div class="eyebrow">§ II · The Five Dimensions</div>
+    <h2 style="text-align:center;">Five axes of relationship</h2>
+    <p class="subtitle" style="margin-bottom:64px;">The yantra is not a single object — it is a five-dimensional field. Each dimension is a way the instrument moves, and a way you move within it.</p>
+
+    <div class="dim-grid">
+      <div class="dim-cell">
+        <svg class="icon" viewBox="0 0 56 56" fill="none" stroke="#C9963F" stroke-width="0.8">
+          <circle cx="28" cy="28" r="24" opacity="0.25"/>
+          <circle cx="28" cy="28" r="18" opacity="0.4"/>
+          <circle cx="28" cy="28" r="12" opacity="0.6"/>
+          <circle cx="28" cy="28" r="6"  opacity="0.85"/>
+          <circle cx="28" cy="28" r="2"  fill="#8B1A2A" stroke="none"/>
+        </svg>
+        <h4>Depth</h4>
+        <div class="axis">the inward axis</div>
+        <p>Nine avaraṇas as nine depths of consciousness. You move inward, not sideways. Each ring is its own world. You can rest at any depth.</p>
+      </div>
+
+      <div class="dim-cell">
+        <svg class="icon" viewBox="0 0 56 56" fill="none" stroke="#C9963F" stroke-width="0.8">
+          <circle cx="28" cy="28" r="22" opacity="0.4"/>
+          <path d="M28,6 A22,22 0 0,1 28,50" stroke-width="1.5" opacity="0.9"/>
+          <circle cx="14" cy="28" r="3" fill="#C9963F" stroke="none"/>
+          <circle cx="42" cy="28" r="3" fill="#C9963F" opacity="0.5" stroke="none"/>
+          <circle cx="28" cy="6"  r="2" fill="#C9963F" opacity="0.7" stroke="none"/>
+        </svg>
+        <h4>Time</h4>
+        <div class="axis">the cyclical axis</div>
+        <p>The yantra breathes with cosmic time. Different shaktis ascend at different hours, moons, seasons. Dawn-yantra is not dusk-yantra. The app pulls you into temporal awareness.</p>
+      </div>
+
+      <div class="dim-cell">
+        <svg class="icon" viewBox="0 0 56 56" fill="none" stroke="#C9963F" stroke-width="0.8">
+          <circle cx="28" cy="28" r="22" opacity="0.3"/>
+          <circle cx="14" cy="20" r="2.5" fill="#C9963F" opacity="0.9" stroke="none"/>
+          <circle cx="40" cy="14" r="2"   fill="#C9963F" opacity="0.7" stroke="none"/>
+          <circle cx="36" cy="42" r="2.5" fill="#C9963F" opacity="0.95" stroke="none"/>
+          <circle cx="18" cy="40" r="1.8" fill="#C9963F" opacity="0.6" stroke="none"/>
+          <circle cx="46" cy="30" r="1.5" fill="#C9963F" opacity="0.4" stroke="none"/>
+          <circle cx="26" cy="10" r="1.3" fill="#C9963F" opacity="0.3" stroke="none"/>
+        </svg>
+        <h4>Memory</h4>
+        <div class="axis">the accumulation axis</div>
+        <p>Every recognition leaves a luminous trace. Over months and years, the yantra becomes uniquely yours — bright where you have met her, mystery where you haven't.</p>
+      </div>
+
+      <div class="dim-cell">
+        <svg class="icon" viewBox="0 0 56 56" fill="none" stroke="#C9963F" stroke-width="0.8">
+          <circle cx="28" cy="28" r="5" fill="#C9963F" stroke="none"/>
+          <line x1="28" y1="28" x2="10" y2="14" opacity="0.5"/>
+          <line x1="28" y1="28" x2="46" y2="14" opacity="0.5"/>
+          <line x1="28" y1="28" x2="46" y2="42" opacity="0.5"/>
+          <line x1="28" y1="28" x2="10" y2="42" opacity="0.5"/>
+          <circle cx="10" cy="14" r="3" fill="#C9963F" opacity="0.7" stroke="none"/>
+          <circle cx="46" cy="14" r="3" fill="#C9963F" opacity="0.7" stroke="none"/>
+          <circle cx="46" cy="42" r="3" fill="#C9963F" opacity="0.7" stroke="none"/>
+          <circle cx="10" cy="42" r="3" fill="#C9963F" opacity="0.7" stroke="none"/>
+        </svg>
+        <h4>Relationship</h4>
+        <div class="axis">the radial axis</div>
+        <p>Shaktis cluster around the people in your life. Ram is Ātmā's frequency. Ashrey is Nāma. Gaia is Ahaṅkāra. The work of recognition is inseparable from the work of love.</p>
+      </div>
+
+      <div class="dim-cell">
+        <svg class="icon" viewBox="0 0 56 56" fill="none" stroke="#C9963F" stroke-width="0.8">
+          <circle cx="28" cy="28" r="4" fill="#C9963F" stroke="none"/>
+          <g opacity="0.7">
+            <circle cx="28" cy="10" r="2.5" stroke-width="0.8"/>
+            <circle cx="46" cy="28" r="2.5" stroke-width="0.8"/>
+            <circle cx="28" cy="46" r="2.5" stroke-width="0.8"/>
+            <circle cx="10" cy="28" r="2.5" stroke-width="0.8"/>
+            <circle cx="41" cy="15" r="2.5" stroke-width="0.8"/>
+            <circle cx="41" cy="41" r="2.5" stroke-width="0.8"/>
+            <circle cx="15" cy="41" r="2.5" stroke-width="0.8"/>
+            <circle cx="15" cy="15" r="2.5" stroke-width="0.8"/>
+          </g>
+        </svg>
+        <h4>Practice</h4>
+        <div class="axis">the modal axis</div>
+        <p>Eight modes of engagement — not screens, but practices. Each has its own duration, posture, intention. The mode is determined by the moment, not a menu.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="anchor-rule"></div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       IV. THE EIGHT MODES
+  ─────────────────────────────────────────────────────────────── -->
+  <section class="section section--wide">
+    <div class="eyebrow">§ III · The Eight Modes</div>
+    <h2 style="text-align:center;">Eight ways of being with her</h2>
+    <p class="subtitle" style="margin-bottom:64px;">These are not features. They are practices. The yantra is the same; the way you meet it changes by the hour and by the heart.</p>
+
+    <div class="mode-grid">
+      <div class="mode-cell">
+        <div class="deva">दर्शन</div>
+        <div class="name">Darśana — Beholding</div>
+        <div class="meta">1–10 min · hold phone vertical</div>
+        <p>To be with the yantra without doing anything. The breath finds it. The eye softens. The mind comes home.</p>
+      </div>
+      <div class="mode-cell">
+        <div class="deva">प्रत्यभिज्ञा</div>
+        <div class="name">Recognition — The Catch</div>
+        <div class="meta">~5 sec · long-press anywhere</div>
+        <p>A shakti has just arrived in life. You name her, you receive her, she receives you. The net deployed and retrieved.</p>
+      </div>
+      <div class="mode-cell">
+        <div class="deva">साधना</div>
+        <div class="name">Sādhana — The Recitation</div>
+        <div class="meta">20–30 min · pinch outward</div>
+        <p>The Khaḍgamāla — sword-garland — sequential walking through all 102 names with their bījas. The full ceremony.</p>
+      </div>
+      <div class="mode-cell">
+        <div class="deva">स्मृति</div>
+        <div class="name">Smṛti — The Memory</div>
+        <div class="meta">open · long-press a ring</div>
+        <p>The constellation of past recognitions. When have you been here? With whom? The yantra remembers.</p>
+      </div>
+      <div class="mode-cell">
+        <div class="deva">मौन</div>
+        <div class="name">Mauna — The Silence</div>
+        <div class="meta">open · tap the bindu</div>
+        <p>The undifferentiated point. All of her, here, always. The place no name reaches. Rest.</p>
+      </div>
+      <div class="mode-cell">
+        <div class="deva">स्वप्न</div>
+        <div class="name">Svapna — The Dream</div>
+        <div class="meta">3 min · morning opening</div>
+        <p>What arrived in the night? Which shakti walked through the dream? The morning has its own recognitions.</p>
+      </div>
+      <div class="mode-cell">
+        <div class="deva">पूजा</div>
+        <div class="name">Pūjā — The Offering</div>
+        <div class="meta">5 min · evening opening</div>
+        <p>End of day: the catches of the day witnessed together. A small offering. The day given back.</p>
+      </div>
+      <div class="mode-cell">
+        <div class="deva">सङ्घ</div>
+        <div class="name">Saṅgha — The Field</div>
+        <div class="meta">ambient · always on</div>
+        <p>Awareness — anonymous, soft — of other practitioners walking the same yantra. Not alone in this.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:48px; text-align:center; font-style: italic; color: var(--cream-faint);">The mode is read from the moment. The moment determines the mode. There is no menu to choose from — only the gesture that fits.</p>
+  </section>
+
+  <div class="anchor-rule"></div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       V. THE NAVIGATION VOCABULARY
+  ─────────────────────────────────────────────────────────────── -->
+  <section class="section section--wide">
+    <div class="eyebrow">§ IV · Navigation Vocabulary</div>
+    <h2 style="text-align:center;">There is no menu.</h2>
+    <p class="subtitle" style="margin-bottom:64px;">The yantra is the navigation. Every move is a movement of attention — inward, outward, around. Nine gestures form the entire grammar.</p>
+
+    <div class="gesture-grid">
+      <div class="gesture-cell">
+        <svg class="icon" viewBox="0 0 44 44" fill="none" stroke="#C9963F" stroke-width="1">
+          <circle cx="22" cy="22" r="6" fill="#C9963F" opacity="0.4" stroke="none"/>
+          <circle cx="22" cy="22" r="10" opacity="0.5"/>
+          <circle cx="22" cy="22" r="16" opacity="0.25"/>
+        </svg>
+        <h4>Tap a ring</h4>
+        <div class="verb">descend</div>
+        <p>Enter that avaraṇa's world. The ring expands; the others fall away.</p>
+      </div>
+      <div class="gesture-cell">
+        <svg class="icon" viewBox="0 0 44 44" fill="none" stroke="#C9963F" stroke-width="1">
+          <circle cx="22" cy="22" r="6" fill="#8B1A2A" stroke="none"/>
+          <circle cx="22" cy="22" r="14" opacity="0.3" stroke-dasharray="2 4"/>
+        </svg>
+        <h4>Tap the bindu</h4>
+        <div class="verb">silence</div>
+        <p>Mauna. The undifferentiated point. All names gone.</p>
+      </div>
+      <div class="gesture-cell">
+        <svg class="icon" viewBox="0 0 44 44" fill="none" stroke="#C9963F" stroke-width="1">
+          <circle cx="22" cy="22" r="6" stroke-width="1.4"/>
+          <circle cx="22" cy="22" r="12" opacity="0.5"/>
+          <circle cx="22" cy="22" r="18" opacity="0.2" stroke-dasharray="1 3"/>
+        </svg>
+        <h4>Long-press a ring</h4>
+        <div class="verb">remember</div>
+        <p>Smṛti. The constellation of every recognition you've made in this ring.</p>
+      </div>
+      <div class="gesture-cell">
+        <svg class="icon" viewBox="0 0 44 44" fill="none" stroke="#C9963F" stroke-width="1">
+          <circle cx="22" cy="22" r="4" stroke="none" fill="#C9963F"/>
+          <path d="M22,8 L22,4 M22,40 L22,36 M8,22 L4,22 M40,22 L36,22" stroke-width="1.2"/>
+        </svg>
+        <h4>Pinch outward</h4>
+        <div class="verb">recite</div>
+        <p>Sādhana. The Khaḍgamāla begins. All 102 names, sequential.</p>
+      </div>
+      <div class="gesture-cell">
+        <svg class="icon" viewBox="0 0 44 44" fill="none" stroke="#C9963F" stroke-width="1">
+          <rect x="12" y="6" width="20" height="32" rx="3" stroke-width="1" opacity="0.7"/>
+          <circle cx="22" cy="22" r="3" fill="#C9963F" stroke="none"/>
+        </svg>
+        <h4>Hold vertical, still</h4>
+        <div class="verb">behold</div>
+        <p>Darśana. The phone becomes a window. No interaction needed.</p>
+      </div>
+      <div class="gesture-cell">
+        <svg class="icon" viewBox="0 0 44 44" fill="none" stroke="#C9963F" stroke-width="1">
+          <path d="M22,34 L22,10 M14,18 L22,10 L30,18" stroke-width="1.4"/>
+        </svg>
+        <h4>Swipe up from edge</h4>
+        <div class="verb">today's pull</div>
+        <p>Today's shakti rises. Her name, her bīja, her somatic prompt.</p>
+      </div>
+      <div class="gesture-cell">
+        <svg class="icon" viewBox="0 0 44 44" fill="none" stroke="#C9963F" stroke-width="1">
+          <path d="M22,10 L22,34 M14,26 L22,34 L30,26" stroke-width="1.4"/>
+        </svg>
+        <h4>Swipe down from top</h4>
+        <div class="verb">offer</div>
+        <p>Pūjā. Evening only. The catches of the day are offered.</p>
+      </div>
+      <div class="gesture-cell">
+        <svg class="icon" viewBox="0 0 44 44" fill="none" stroke="#C9963F" stroke-width="1">
+          <circle cx="16" cy="22" r="4" fill="#C9963F" opacity="0.6" stroke="none"/>
+          <circle cx="28" cy="22" r="4" fill="#C9963F" opacity="0.6" stroke="none"/>
+          <path d="M22,30 L22,38" opacity="0.4"/>
+        </svg>
+        <h4>Two-finger hold</h4>
+        <div class="verb">invoke</div>
+        <p>Bring a specific shakti into live presence. Bīja-tone plays. She is here.</p>
+      </div>
+      <div class="gesture-cell">
+        <svg class="icon" viewBox="0 0 44 44" fill="none" stroke="#C9963F" stroke-width="1">
+          <circle cx="22" cy="22" r="14" opacity="0.4"/>
+          <circle cx="22" cy="22" r="3" fill="#C9963F" stroke="none"/>
+          <path d="M22,8 L22,4" opacity="0.5"/>
+          <path d="M22,40 L22,36" opacity="0.5"/>
+        </svg>
+        <h4>Long-press anywhere</h4>
+        <div class="verb">catch</div>
+        <p>Freeze the moment. Recognition. The shakti you just felt is logged.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="anchor-rule"></div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       VI. THE NINE RING-WORLDS
+  ─────────────────────────────────────────────────────────────── -->
+  <section class="section section--wide">
+    <div class="eyebrow">§ V · The Nine Ring-Worlds</div>
+    <h2 style="text-align:center;">Nine worlds, nine atmospheres.</h2>
+    <p class="subtitle" style="margin-bottom:64px;">Each avaraṇa is not a sub-page. It is its own world — with its own geometry, light, breath rate, sound, and gravity. A practitioner who has entered Ring 4 knows it by feel.</p>
+
+    <div class="ring-grid">
+
+      <!-- Ring 1 -->
+      <div class="ring-world">
+        <div class="glyph-box">
+          <svg viewBox="0 0 180 180" width="180" height="180" fill="none" stroke="#CF9443" stroke-width="0.7">
+            <rect x="20" y="20" width="140" height="140" opacity="0.4"/>
+            <rect x="34" y="34" width="112" height="112" opacity="0.35"/>
+            <path d="M82,34 L82,20 M98,34 L98,20 M82,160 L82,146 M98,160 L98,146 M34,82 L20,82 M34,98 L20,98 M160,82 L146,82 M160,98 L146,98" stroke-width="0.6" opacity="0.5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="num">Ring 1 · Bhūpura</div>
+          <h3>Trailokyamohana</h3>
+          <div class="role">She Who Enchants the Three Worlds — the ancient ground</div>
+          <div class="atmos">
+            <span>Atmosphere: <strong>warm amber, still</strong></span>
+            <span>Geometry: <strong>square with T-gates</strong></span>
+            <span>Breath: <strong>none</strong></span>
+            <span>Shaktis: <strong>28</strong></span>
+          </div>
+          <p>The world you have already walked through. Earth, surface, the territory of ordinary life. The Bhūpura does not breathe — the ground underfoot is held, not moving. Entering Ring 1 is entering the recognition that the everyday has always been her.</p>
+        </div>
+      </div>
+
+      <!-- Ring 2 -->
+      <div class="ring-world">
+        <div class="glyph-box">
+          <svg viewBox="0 0 180 180" width="180" height="180" fill="none" stroke="#C9963F" stroke-width="0.7">
+            <g transform="translate(90,90)">
+              <g opacity="0.85">
+                <!-- 16 petals -->
+                <g>
+                  <path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#C4725A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(0)"/>
+                </g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#D4A017" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(22.5)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#7A5A9A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(45)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#2A7A7A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(67.5)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#C4725A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(90)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#4A7A5A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(112.5)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#D4A017" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(135)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#7A5A9A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(157.5)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#C4725A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(180)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#2A7A7A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(202.5)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#D4A017" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(225)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#4A7A5A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(247.5)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#C4725A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(270)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#7A5A9A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(292.5)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#D4A017" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(315)"/></g>
+                <g><path d="M 0,-30 C 7,-58 7,-78 0,-86 C -7,-78 -7,-58 0,-30 Z" fill="#2A7A7A" fill-opacity="0.5" stroke="#C9963F" stroke-width="0.4" transform="rotate(337.5)"/></g>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="num">Ring 2 · Home · Sarvāśā-Paripūraka</div>
+          <h3>The Sixteen-Petal Lotus</h3>
+          <div class="role">She Who Fulfills All Hopes — the current field of play</div>
+          <div class="atmos">
+            <span>Atmosphere: <strong>warm cream &amp; cluster colors</strong></span>
+            <span>Geometry: <strong>16-petal lotus, full-screen</strong></span>
+            <span>Breath: <strong>3s wave</strong></span>
+            <span>Shaktis: <strong>16 Karṣiṇīs</strong></span>
+          </div>
+          <p>The world the practitioner currently inhabits. Petals bloom in a slow wave, each cluster a different color — inner instrument, sense streams, citta, stability, self. Tapping a petal opens her detail. The home ring is wide, generous, with room between everything.</p>
+        </div>
+      </div>
+
+      <!-- Ring 3 -->
+      <div class="ring-world">
+        <div class="glyph-box">
+          <svg viewBox="0 0 180 180" width="180" height="180" fill="none" stroke="#C9963F" stroke-width="0.7">
+            <g transform="translate(90,90)">
+              <g opacity="0.7">
+                <path d="M 0,-30 C 14,-58 14,-78 0,-86 C -14,-78 -14,-58 0,-30 Z" stroke-width="0.7" fill="rgba(201,150,63,0.08)" transform="rotate(0)"/>
+                <path d="M 0,-30 C 14,-58 14,-78 0,-86 C -14,-78 -14,-58 0,-30 Z" stroke-width="0.7" fill="rgba(201,150,63,0.08)" transform="rotate(45)"/>
+                <path d="M 0,-30 C 14,-58 14,-78 0,-86 C -14,-78 -14,-58 0,-30 Z" stroke-width="0.7" fill="rgba(201,150,63,0.08)" transform="rotate(90)"/>
+                <path d="M 0,-30 C 14,-58 14,-78 0,-86 C -14,-78 -14,-58 0,-30 Z" stroke-width="0.7" fill="rgba(201,150,63,0.08)" transform="rotate(135)"/>
+                <path d="M 0,-30 C 14,-58 14,-78 0,-86 C -14,-78 -14,-58 0,-30 Z" stroke-width="0.7" fill="rgba(201,150,63,0.08)" transform="rotate(180)"/>
+                <path d="M 0,-30 C 14,-58 14,-78 0,-86 C -14,-78 -14,-58 0,-30 Z" stroke-width="0.7" fill="rgba(201,150,63,0.08)" transform="rotate(225)"/>
+                <path d="M 0,-30 C 14,-58 14,-78 0,-86 C -14,-78 -14,-58 0,-30 Z" stroke-width="0.7" fill="rgba(201,150,63,0.08)" transform="rotate(270)"/>
+                <path d="M 0,-30 C 14,-58 14,-78 0,-86 C -14,-78 -14,-58 0,-30 Z" stroke-width="0.7" fill="rgba(201,150,63,0.08)" transform="rotate(315)"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="num">Ring 3 · Sarvasaṅkṣobhaṇa</div>
+          <h3>The Eight Anaṅga Lotuses</h3>
+          <div class="role">She Who Agitates All — the bodiless desires</div>
+          <div class="atmos">
+            <span>Atmosphere: <strong>translucent, smoke-like</strong></span>
+            <span>Geometry: <strong>8 wide petals</strong></span>
+            <span>Breath: <strong>8s slow pulse</strong></span>
+            <span>Shaktis: <strong>8 Anaṅgas</strong></span>
+          </div>
+          <p>Bodiless longing — the felt-before-it-is-known. Petals appear translucent, edges soft, like smoke catching light. The visual is intentionally less solid than Ring 2. You feel her without quite seeing her. Tapping a petal: she names herself in italics and dissolves back into the field.</p>
+        </div>
+      </div>
+
+      <!-- Ring 4 -->
+      <div class="ring-world">
+        <div class="glyph-box">
+          <svg viewBox="0 0 180 180" width="180" height="180" fill="none" stroke="#9AB4C9" stroke-width="0.7">
+            <g transform="translate(90,90)" opacity="0.8">
+              <path d="M 0,-72 L 62,36 L -62,36 Z" stroke-width="0.7"/>
+              <path d="M 0,72 L 62,-36 L -62,-36 Z" stroke-width="0.7"/>
+              <path d="M 0,-58 L 50,29 L -50,29 Z" stroke-width="0.6" opacity="0.8"/>
+              <path d="M 0,58 L 50,-29 L -50,-29 Z" stroke-width="0.6" opacity="0.8"/>
+              <path d="M 0,-44 L 38,22 L -38,22 Z" stroke-width="0.5" opacity="0.7"/>
+              <path d="M 0,44 L 38,-22 L -38,-22 Z" stroke-width="0.5" opacity="0.7"/>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="num">Ring 4 · Sarvasaubhāgyadāyaka</div>
+          <h3>The Fourteen Triangles</h3>
+          <div class="role">She Who Grants All Auspiciousness — synchronicity-intelligence</div>
+          <div class="atmos">
+            <span>Atmosphere: <strong>cool blue-violet, crystalline</strong></span>
+            <span>Geometry: <strong>14 interlocked triangles</strong></span>
+            <span>Breath: <strong>9s deep, geometric</strong></span>
+            <span>Shaktis: <strong>14</strong></span>
+          </div>
+          <p>The atmosphere shifts. Cooler. Sharper. More angular. The lotus softness is gone — this is geometry as direct revelation. Triangles interlock and pulse in nested rhythm. Each shakti is a vertex; tapping reveals her place in the geometric weave.</p>
+        </div>
+      </div>
+
+      <!-- Ring 5 -->
+      <div class="ring-world">
+        <div class="glyph-box">
+          <svg viewBox="0 0 180 180" width="180" height="180" fill="none" stroke="#B4C99A" stroke-width="0.7">
+            <g transform="translate(90,90)" opacity="0.85">
+              <path d="M 0,-66 L 57,33 L -57,33 Z" stroke-width="0.6"/>
+              <path d="M 0,66 L 57,-33 L -57,-33 Z" stroke-width="0.6"/>
+              <path d="M 0,-50 L 43,25 L -43,25 Z" stroke-width="0.55"/>
+              <path d="M 0,50 L 43,-25 L -43,-25 Z" stroke-width="0.55"/>
+              <path d="M 0,-36 L 31,18 L -31,18 Z" stroke-width="0.5"/>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="num">Ring 5 · Sarvārthasādhaka</div>
+          <h3>The Ten Outer Triangles</h3>
+          <div class="role">She Who Accomplishes All Goals — completion-without-force</div>
+          <div class="atmos">
+            <span>Atmosphere: <strong>luminous green-gold</strong></span>
+            <span>Geometry: <strong>10 outer triangles</strong></span>
+            <span>Breath: <strong>11s steady</strong></span>
+            <span>Shaktis: <strong>10</strong></span>
+          </div>
+          <p>The intelligence of accomplishment-without-effort. The geometry deepens; the field narrows. Things complete themselves through you here. Recognition feels different: less catching, more witnessing the work being done.</p>
+        </div>
+      </div>
+
+      <!-- Ring 6 -->
+      <div class="ring-world">
+        <div class="glyph-box">
+          <svg viewBox="0 0 180 180" width="180" height="180" fill="none" stroke="#C99AB4" stroke-width="0.7">
+            <g transform="translate(90,90)" opacity="0.85">
+              <path d="M 0,-54 L 47,27 L -47,27 Z" stroke-width="0.6"/>
+              <path d="M 0,54 L 47,-27 L -47,-27 Z" stroke-width="0.6"/>
+              <path d="M 0,-40 L 35,20 L -35,20 Z" stroke-width="0.55"/>
+              <path d="M 0,40 L 35,-20 L -35,-20 Z" stroke-width="0.55"/>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="num">Ring 6 · Sarvarakṣākara</div>
+          <h3>The Ten Inner Triangles</h3>
+          <div class="role">She Who Protects All — sovereign grace</div>
+          <div class="atmos">
+            <span>Atmosphere: <strong>rose-violet, deep</strong></span>
+            <span>Geometry: <strong>10 inner triangles</strong></span>
+            <span>Breath: <strong>13s deep</strong></span>
+            <span>Shaktis: <strong>10</strong></span>
+          </div>
+          <p>The field of unasked-for grace. The visual is the most introspective of the rings — narrow, deep, the geometry feels held. Recognition here is the recognition of what protected you when nothing should have worked.</p>
+        </div>
+      </div>
+
+      <!-- Ring 7 -->
+      <div class="ring-world">
+        <div class="glyph-box">
+          <svg viewBox="0 0 180 180" width="180" height="180" fill="none" stroke="#C9C29A" stroke-width="0.7">
+            <g transform="translate(90,90)" opacity="0.85">
+              <path d="M 0,-42 L 37,21 L -37,21 Z" stroke-width="0.6"/>
+              <path d="M 0,42 L 37,-21 L -37,-21 Z" stroke-width="0.6"/>
+              <path d="M 0,-30 L 26,15 L -26,15 Z" stroke-width="0.5"/>
+              <!-- sound rings -->
+              <circle r="50" stroke-width="0.4" opacity="0.4" stroke-dasharray="2 4"/>
+              <circle r="62" stroke-width="0.3" opacity="0.3" stroke-dasharray="2 4"/>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="num">Ring 7 · Sarvarogahara</div>
+          <h3>The Vāk Ring — Eight Speech Goddesses</h3>
+          <div class="role">She Who Removes All Disease — sound that heals</div>
+          <div class="atmos">
+            <span>Atmosphere: <strong>resonant gold, sonic</strong></span>
+            <span>Geometry: <strong>8 triangles + tone rings</strong></span>
+            <span>Breath: <strong>15s, with tone pulse</strong></span>
+            <span>Shaktis: <strong>8 Vāk-devatās</strong></span>
+          </div>
+          <p>The world where language and life have not yet separated. The screen actually <em>resonates</em> — subtle haptic on every breath, a barely-audible bīja tone. Tapping a Vāk-devatā plays her syllable in long, slow attack. This world is a sound chamber as much as a visual one.</p>
+        </div>
+      </div>
+
+      <!-- Ring 8 -->
+      <div class="ring-world">
+        <div class="glyph-box">
+          <svg viewBox="0 0 180 180" width="180" height="180" fill="none" stroke="#F2E8D9" stroke-width="1">
+            <g transform="translate(90,90)" opacity="0.85">
+              <path d="M 0,-58 L 50,29 L -50,29 Z" stroke-width="1" stroke-linejoin="round"/>
+              <circle cx="0" cy="-58" r="4" fill="#C9963F" stroke="none"/>
+              <circle cx="50" cy="29" r="4" fill="#C9963F" stroke="none"/>
+              <circle cx="-50" cy="29" r="4" fill="#C9963F" stroke="none"/>
+              <text x="0" y="-64" font-family="Cormorant Garamond" font-size="10" fill="#C9963F" text-anchor="middle" font-style="italic" opacity="0.7">icchā</text>
+              <text x="58" y="40" font-family="Cormorant Garamond" font-size="10" fill="#C9963F" text-anchor="start" font-style="italic" opacity="0.7">kriyā</text>
+              <text x="-58" y="40" font-family="Cormorant Garamond" font-size="10" fill="#C9963F" text-anchor="end" font-style="italic" opacity="0.7">jñāna</text>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="num">Ring 8 · Sarvasiddhiprada</div>
+          <h3>The Mūla Trikoṇa — The Root Triangle</h3>
+          <div class="role">She Who Grants All Perfections — will, knowledge, action as one</div>
+          <div class="atmos">
+            <span>Atmosphere: <strong>pure cream against black</strong></span>
+            <span>Geometry: <strong>three points</strong></span>
+            <span>Breath: <strong>18s, almost still</strong></span>
+            <span>Shaktis: <strong>3 — Icchā, Jñāna, Kriyā</strong></span>
+          </div>
+          <p>The entire world is three points. The simplicity is staggering. No ornament. Just the triangle, the three shaktis as luminous vertices. Tapping any vertex collapses the other two into it — recognition that they were never three. The visual minimalism is the teaching.</p>
+        </div>
+      </div>
+
+      <!-- Ring 9 -->
+      <div class="ring-world">
+        <div class="glyph-box" style="background: radial-gradient(circle, rgba(139,26,42,0.10) 0%, transparent 70%);">
+          <div style="width:40px; height:40px; border-radius:50%; background: radial-gradient(circle, #8B1A2A 0%, rgba(139,26,42,0.4) 60%, transparent 100%); position: relative; box-shadow: 0 0 30px 8px rgba(139,26,42,0.5);">
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:14px; height:14px; border-radius:50%; background:#F2E8D9; box-shadow: 0 0 16px #F2E8D9;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="num">Ring 9 · Sarvanandamaya</div>
+          <h3>The Bindu</h3>
+          <div class="role">She Who Is Made of All Bliss — the undivided</div>
+          <div class="atmos">
+            <span>Atmosphere: <strong>everything &amp; nothing</strong></span>
+            <span>Geometry: <strong>a single point</strong></span>
+            <span>Breath: <strong>your own</strong></span>
+            <span>Shaktis: <strong>1 — Lalitā</strong></span>
+          </div>
+          <p>There is nothing else. The whole screen is the point. This is not a destination — it is what the practice is made of. Every other ring is breathing outward from here. Entering Ring 9 is not arriving; it is realizing you have not left.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="anchor-rule"></div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       VII. THE HOME AS LIVING STATE
+  ─────────────────────────────────────────────────────────────── -->
+  <section class="section section--wide">
+    <div class="eyebrow">§ VI · The Home as Living State</div>
+    <h2 style="text-align:center;">The yantra is alive with time.</h2>
+    <p class="subtitle" style="margin-bottom:64px;">The home you return to at dawn is not the home you find at dusk. The yantra answers to the hour, the moon, the season, and your own recent practice.</p>
+
+    <div class="home-variants">
+      <div>
+        <div class="mini">
+          <svg viewBox="0 0 100 100" width="92" height="92" fill="none" stroke="#E8C97A" stroke-width="0.6">
+            <g transform="translate(50,50)" opacity="0.85">
+              <path d="M 0,-32 L 28,16 L -28,16 Z" opacity="0.8"/>
+              <path d="M 0,32 L 28,-16 L -28,-16 Z" opacity="0.8"/>
+              <path d="M 0,-22 L 19,11 L -19,11 Z" opacity="0.6"/>
+              <circle r="3" fill="#E8C97A" stroke="none"/>
+            </g>
+          </svg>
+        </div>
+        <h4>Dawn</h4>
+        <p>warm, ascending</p>
+      </div>
+      <div>
+        <div class="mini">
+          <svg viewBox="0 0 100 100" width="92" height="92" fill="none" stroke="#F2E8D9" stroke-width="0.6">
+            <g transform="translate(50,50)" opacity="0.95">
+              <path d="M 0,-32 L 28,16 L -28,16 Z"/>
+              <path d="M 0,32 L 28,-16 L -28,-16 Z"/>
+              <path d="M 0,-22 L 19,11 L -19,11 Z"/>
+              <path d="M 0,22 L 19,-11 L -19,-11 Z" opacity="0.8"/>
+              <circle r="3" fill="#8B1A2A" stroke="none"/>
+            </g>
+          </svg>
+        </div>
+        <h4>Noon</h4>
+        <p>vivid, full</p>
+      </div>
+      <div>
+        <div class="mini">
+          <svg viewBox="0 0 100 100" width="92" height="92" fill="none" stroke="#C9963F" stroke-width="0.6">
+            <g transform="translate(50,50)" opacity="0.85">
+              <path d="M 0,-32 L 28,16 L -28,16 Z" opacity="0.8"/>
+              <path d="M 0,32 L 28,-16 L -28,-16 Z" opacity="0.7"/>
+              <path d="M 0,-22 L 19,11 L -19,11 Z" opacity="0.6"/>
+              <circle r="3" fill="#C9963F" stroke="none"/>
+            </g>
+          </svg>
+        </div>
+        <h4>Dusk</h4>
+        <p>amber, descending</p>
+      </div>
+      <div>
+        <div class="mini">
+          <svg viewBox="0 0 100 100" width="92" height="92" fill="none" stroke="#9AB4C9" stroke-width="0.5">
+            <g transform="translate(50,50)" opacity="0.6">
+              <path d="M 0,-32 L 28,16 L -28,16 Z"/>
+              <path d="M 0,32 L 28,-16 L -28,-16 Z"/>
+              <circle r="5" fill="#C9963F" opacity="0.5" stroke="none"/>
+              <circle r="2" fill="#F2E8D9" stroke="none"/>
+            </g>
+          </svg>
+        </div>
+        <h4>Night</h4>
+        <p>silver, deep</p>
+      </div>
+      <div>
+        <div class="mini">
+          <svg viewBox="0 0 100 100" width="92" height="92" fill="none" stroke="#6A4A5A" stroke-width="0.4">
+            <g transform="translate(50,50)" opacity="0.4">
+              <path d="M 0,-32 L 28,16 L -28,16 Z"/>
+              <path d="M 0,32 L 28,-16 L -28,-16 Z"/>
+            </g>
+            <g transform="translate(50,50)">
+              <circle r="7" fill="#8B1A2A" opacity="0.85" stroke="none"/>
+              <circle r="3" fill="#F2E8D9" stroke="none"/>
+            </g>
+          </svg>
+        </div>
+        <h4>New Moon</h4>
+        <p>Bindu rises</p>
+      </div>
+    </div>
+
+    <div class="divider" style="margin-top:64px;"><div class="line"></div><div class="glyph"></div><div class="line"></div></div>
+
+    <p style="text-align:center; font-style: italic; font-size: 18px; max-width: 600px; margin: 0 auto;">
+      And one petal — today's pull — always glows a little warmer than the rest. <br/>You will learn to see her without a label.
+    </p>
+  </section>
+
+  <div class="anchor-rule"></div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       VIII. THE PATH
+  ─────────────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="eyebrow">§ VII · The Path</div>
+    <h2 style="text-align:center;">Eight phases. We build slowly.</h2>
+    <p class="subtitle" style="margin-bottom:48px;">An instrument like this is not designed in a sprint. Each phase is reviewed and felt into before the next is begun. The yantra emerges at the pace of recognition itself.</p>
+
+    <ol class="path-list">
+      <li class="now">The Codex — establish the ontology in writing &amp; sacred diagram</li>
+      <li class="next">The Home Mandala — pure geometry, no labels, time-responsive</li>
+      <li>Three Ring-Worlds — Ring 2, Ring 7, Ring 8 fully realized</li>
+      <li>The Eight Modes — each as its own atmosphere</li>
+      <li>The Temporal Layer — yantra responding to dawn, dusk, moon, season</li>
+      <li>The Memory Layer — recognition history accumulating as light</li>
+      <li>The Relationship Field — people-as-nodes around the yantra</li>
+      <li>The Initiation — first-time ceremony, not onboarding</li>
+    </ol>
+
+    <p style="margin-top:48px; text-align:center; font-style:italic; color: var(--cream-faint);">
+      The remaining six ring-worlds (Rings 1, 3, 4, 5, 6, 9) we build as you approach them in practice.
+    </p>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       CLOSING
+  ─────────────────────────────────────────────────────────────── -->
+  <div class="closing">
+    <div class="divider"><div class="line"></div><div class="glyph"></div><div class="line"></div></div>
+    <p>
+      This is not a product to ship.<br/>
+      It is an instrument to live with.<br/><br/>
+      The work of the next eight phases<br/>
+      is to make sure each interaction<br/>
+      is worthy of the recognition<br/>
+      it is asking for.
+    </p>
+    <div class="divider"><div class="line"></div><div class="glyph"></div><div class="line"></div></div>
+
+    <div class="eyebrow" style="margin-top:48px;">End of Codex · Phase I complete</div>
+    <p class="footnote">When you are ready, we begin Phase II — the new Home Mandala.</p>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>The Body as Scripture</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#030108;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.06);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes point-pulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.8);opacity:0}}
+@keyframes verse-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes translating{0%,100%{opacity:.4}50%{opacity:.9}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0C0A12;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#181620;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #181620,0 108px 0 #181620;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#181620;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#06040A;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+textarea,input{font-family:inherit;outline:none;}
+input::placeholder{color:rgba(240,232,220,.20);}
+.scroll{overflow-y:auto;}.scroll::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ═══ A · DATA + REGIONS ═══ -->
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const STORE = 'body_scripture_v1';
+function getVerses() { try { return JSON.parse(localStorage.getItem(STORE)||'[]'); } catch { return []; } }
+function addVerse(v) {
+  const ls = [...getVerses(), { ...v, id: Date.now().toString(36) }];
+  localStorage.setItem(STORE, JSON.stringify(ls.slice(-108)));
+  return ls;
+}
+
+// Region from normalized tap position (0..1 within body svg box)
+function regionAt(nx, ny) {
+  const dx = Math.abs(nx - 0.5);
+  if (ny < 0.085) return REGIONS.crown;
+  if (ny < 0.135) return REGIONS.brow;
+  if (ny < 0.185) return REGIONS.throat;
+  if (ny < 0.34 && dx > 0.22) return REGIONS.hands;
+  if (ny < 0.30) return REGIONS.heart;
+  if (ny < 0.40) return REGIONS.belly;
+  if (ny < 0.48) return REGIONS.sacrum;
+  if (ny < 0.56) return REGIONS.root;
+  return REGIONS.feet;
+}
+
+const REGIONS = {
+  crown:  { id:'crown',  name:'the crown',  color:'#8A3AB5', accent:'#E0B8F8' },
+  brow:   { id:'brow',   name:'the brow',   color:'#4A3AAB', accent:'#C0B0F8' },
+  throat: { id:'throat', name:'the throat', color:'#1E6EA0', accent:'#80C8F0' },
+  heart:  { id:'heart',  name:'the heart',  color:'#1A8060', accent:'#80E5BC' },
+  hands:  { id:'hands',  name:'the hands',  color:'#1A8060', accent:'#80E5BC' },
+  belly:  { id:'belly',  name:'the belly',  color:'#C49B17', accent:'#F5DC80' },
+  sacrum: { id:'sacrum', name:'the sacrum', color:'#C45A18', accent:'#F0A870' },
+  root:   { id:'root',   name:'the base',   color:'#A83232', accent:'#E89080' },
+  feet:   { id:'feet',   name:'the legs',   color:'#A83232', accent:'#E89080' },
+};
+
+const SENSATIONS = [
+  'tightness', 'warmth', 'ache', 'tingling',
+  'numbness', 'heaviness', 'lightness', 'hollowness',
+];
+
+const FALLBACKS = {
+  tightness: ['1. What holds this tightly was once the only way to keep something safe.', '2. Ask it what it guards — then thank it, and breathe one breath wider than its walls.'],
+  warmth:    ['1. Warmth is the body saying yes before the mind has found the words.', '2. Stay here a moment longer. Let it spread one inch further than usual.'],
+  ache:      ['1. An ache is a letter that has been waiting a long time to be read.', '2. You do not need to fix it. You only need to stop leaving the room.'],
+  tingling:  ['1. Something is waking here that was asleep.', '2. Do not name it too quickly. Let it arrive at its own speed.'],
+  numbness:  ['1. Numbness is not absence. It is a door the body closed to survive a weather that has passed.', '2. Knock gently. It opens from the inside.'],
+  heaviness: ['1. What is heavy is being carried — which means something in you is strong enough to carry it.', '2. Ask: is this mine to hold? Set down what is not.'],
+  lightness: ['1. Lightness is what remains when the body stops bracing.', '2. Notice it fully — this is what trust feels like from the inside.'],
+  hollowness:['1. The hollow is not empty. It is room that has been made.', '2. Do not rush to fill it. Ask what wants to live there.'],
+};
+
+Object.assign(window, { getVerses, addVerse, regionAt, REGIONS, SENSATIONS, FALLBACKS });
+</script>
+
+<!-- ═══ B · THE BODY ═══ -->
+<script type="text/babel">
+const { useState:useB, useRef:useBR } = React;
+const { regionAt:RA, getVerses:GV } = window;
+
+// Abstract standing figure, front view — viewBox 0 0 200 400
+const BODY_PATH = "M100 14 C112 14 121 23 121 36 C121 45 117 53 111 58 C113 62 116 64 122 66 C136 71 144 78 147 92 L152 148 C153 156 149 160 144 159 C140 158 138 154 137 148 L132 108 L131 150 C131 170 128 190 126 210 L124 260 C124 290 122 320 121 348 C121 358 116 364 108 364 C102 364 99 359 99 350 L100 250 L101 350 C101 359 98 364 92 364 C84 364 79 358 79 348 C78 320 76 290 76 260 L74 210 C72 190 69 170 69 150 L68 108 L63 148 C62 154 60 158 56 159 C51 160 47 156 48 148 L53 92 C56 78 64 71 78 66 C84 64 87 62 89 58 C83 53 79 45 79 36 C79 23 88 14 100 14 Z";
+
+const CHAKRA_POINTS = [
+  { cy: 34,  c:'#8A3AB5' }, { cy: 48,  c:'#4A3AAB' }, { cy: 70,  c:'#1E6EA0' },
+  { cy: 105, c:'#1A8060' }, { cy: 140, c:'#C49B17' }, { cy: 172, c:'#C45A18' },
+  { cy: 205, c:'#A83232' },
+];
+
+function BodyView({ onPoint, onBook }) {
+  const svgRef = useBR(null);
+  const [ripple, setRipple] = useB(null);
+  const verseCount = GV().length;
+
+  function tap(e) {
+    const svg = svgRef.current; if (!svg) return;
+    const r = svg.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    const nx = (src.clientX - r.left) / r.width;
+    const ny = (src.clientY - r.top) / r.height;
+    const region = RA(nx, ny);
+    setRipple({ x: src.clientX - r.left, y: src.clientY - r.top, c: region.accent });
+    setTimeout(() => onPoint({ region, nx, ny }), 420);
+  }
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:'radial-gradient(ellipse at 50% 30%, #0A0716, #040209)' }}>
+
+      <div style={{ padding:'10px 22px 2px', flexShrink:0, display:'flex',
+        justifyContent:'space-between', alignItems:'baseline' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'20px',
+          color:'rgba(240,232,220,.82)', letterSpacing:'.1em' }}>The Body as Scripture</p>
+        {verseCount > 0 && (
+          <button onClick={onBook} style={{ background:'none', border:'none', cursor:'pointer',
+            fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.2em',
+            textTransform:'uppercase', color:'rgba(180,160,240,.42)' }}>
+            the book · {verseCount}
+          </button>
+        )}
+      </div>
+      <p style={{ padding:'0 22px', fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+        fontSize:'13px', color:'rgba(180,160,240,.32)', flexShrink:0, lineHeight:1.6 }}>
+        The body speaks in sensation.<br/>Touch the place that is speaking.
+      </p>
+
+      <div style={{ flex:1, position:'relative', display:'flex',
+        alignItems:'center', justifyContent:'center', padding:'6px 0 0' }}>
+        <div style={{ position:'relative', height:'100%', aspectRatio:'200/400', maxHeight:'560px' }}>
+          <svg ref={svgRef} viewBox="0 0 200 400" onClick={tap}
+            style={{ height:'100%', width:'100%', cursor:'pointer', display:'block' }}>
+            <defs>
+              <radialGradient id="bodyfill" cx="50%" cy="40%" r="70%">
+                <stop offset="0%" stopColor="rgba(180,160,240,.10)"/>
+                <stop offset="100%" stopColor="rgba(180,160,240,.02)"/>
+              </radialGradient>
+            </defs>
+            <path d={BODY_PATH} fill="url(#bodyfill)" stroke="rgba(180,160,240,.35)"
+              strokeWidth="1.1" strokeLinejoin="round"/>
+            {CHAKRA_POINTS.map((p, i) => (
+              <circle key={i} cx="100" cy={p.cy} r="3" fill={p.c} opacity=".55">
+                <animate attributeName="opacity" values=".35;.75;.35" dur={`${3.5+i*.4}s`} repeatCount="indefinite"/>
+              </circle>
+            ))}
+          </svg>
+          {ripple && (
+            <div key={ripple.x+'-'+ripple.y} style={{ position:'absolute',
+              left: ripple.x-16, top: ripple.y-16, width:'32px', height:'32px',
+              borderRadius:'50%', border:`1.5px solid ${ripple.c}`,
+              animation:'point-pulse .8s ease-out forwards', pointerEvents:'none' }}></div>
+          )}
+        </div>
+      </div>
+
+      <p style={{ padding:'8px 0 16px', textAlign:'center', flexShrink:0,
+        fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'12px',
+        color:'rgba(180,160,240,.22)' }}>where is something happening right now?</p>
+    </div>
+  );
+}
+Object.assign(window, { BodyView });
+</script>
+
+<!-- ═══ C · SENSATION + TRANSLATION ═══ -->
+<script type="text/babel">
+const { useState:useS, useEffect:useSE } = React;
+const { SENSATIONS:SEN, FALLBACKS:FB, addVerse:AV } = window;
+
+function SensationView({ point, onDone, onBack }) {
+  const { region } = point;
+  const [sensation, setSensation] = useS(null);
+  const [word, setWord] = useS('');
+  const [phase, setPhase] = useS('pick');   // pick | translating | verse
+  const [verse, setVerse] = useS(null);
+
+  async function translate() {
+    setPhase('translating');
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:
+        `You are the translator between the body and language. The body does not speak in words — it speaks in sensation, and every sensation is a sentence in a language older than thought.\n\nSomeone has placed their attention on ${region.name} and found ${sensation} there.${word.trim() ? ` They added one word of their own: "${word.trim()}".` : ''}\n\nTranslate what the body may be saying, as two short numbered verses of scripture:\n1. What this sensation is doing — protecting, holding, asking, opening. Frame it as loving recognition, possibly ending in a question addressed to them.\n2. The invitation — one small, concrete, embodied thing to do or notice right now.\n\nEach verse is 1-2 sentences. Tender, specific, zero diagnosis, zero cliché. Do not use markdown or asterisks. Do not use the word "journey". Format exactly as:\n1. …\n2. …`
+      }]});
+      const lines = r.trim().split(/\n+/).filter(l => /^\d\./.test(l.trim()));
+      setVerse(lines.length >= 2 ? lines.slice(0,2) : [r.trim()]);
+    } catch {
+      setVerse(FB[sensation] || FB.tightness);
+    }
+    setPhase('verse');
+  }
+
+  function keep() {
+    AV({ region: region.id, regionName: region.name, color: region.color,
+      accent: region.accent, sensation, word: word.trim(),
+      verse: verse.join('\n'), ts: Date.now() });
+    onDone();
+  }
+
+  if (phase === 'translating') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', gap:'22px',
+      background:`radial-gradient(ellipse at 50% 40%, ${region.color}14, #040209)` }}>
+      <div style={{ width:'52px', height:'52px', borderRadius:'50%',
+        background:`radial-gradient(circle at 36% 36%, ${region.accent}40, ${region.color}60)`,
+        boxShadow:`0 0 26px ${region.color}45`, animation:'breathe 3.5s ease-in-out infinite' }}></div>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'17px',
+        color:'rgba(240,232,220,.50)', animation:'translating 2s ease-in-out infinite' }}>
+        the body is being translated…
+      </p>
+    </div>
+  );
+
+  if (phase === 'verse') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:`radial-gradient(ellipse at 50% 20%, ${region.color}12, #040209)` }}>
+      <div className="scroll" style={{ flex:1, overflowY:'auto', display:'flex',
+        flexDirection:'column', justifyContent:'center', padding:'40px 32px', gap:'26px' }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.32em',
+          textTransform:'uppercase', color:`${region.accent}55`, textAlign:'center' }}>
+          {region.name} · {sensation}
+        </p>
+        {verse.map((v, i) => (
+          <p key={i} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px',
+            color:'rgba(240,232,220,.86)', lineHeight:1.8, textAlign:'center',
+            animation:`verse-in .8s ${i*.5}s ease both` }}>{v.replace(/^\d\.\s*/,'')}</p>
+        ))}
+        <div style={{ width:'32px', height:'1px', background:`${region.accent}38`, margin:'0 auto' }}></div>
+      </div>
+      <div style={{ padding:'12px 26px 26px', flexShrink:0, display:'flex', gap:'10px' }}>
+        <button onClick={onBack} style={{ flex:1, padding:'14px', borderRadius:'22px', cursor:'pointer',
+          background:'none', border:`1px solid ${region.accent}20`,
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:`${region.accent}40` }}>Release</button>
+        <button onClick={keep} style={{ flex:2, padding:'14px', borderRadius:'22px', cursor:'pointer',
+          background:`${region.color}14`, border:`1px solid ${region.accent}38`,
+          fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', letterSpacing:'.14em',
+          textTransform:'uppercase', color:'rgba(240,232,220,.80)' }}>Write it in the book</button>
+      </div>
+    </div>
+  );
+
+  // pick
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:`radial-gradient(ellipse at 50% 20%, ${region.color}12, #040209)` }}>
+      <div style={{ padding:'14px 22px 0', flexShrink:0 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${region.accent}42`,
+          textTransform:'uppercase' }}>← Back</button>
+      </div>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center',
+        padding:'16px 26px', gap:'18px' }}>
+        <div>
+          <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.32em',
+            textTransform:'uppercase', color:`${region.accent}55`, marginBottom:'8px' }}>{region.name}</p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'26px',
+            color:'rgba(240,232,220,.88)', lineHeight:1.35 }}>What is the quality<br/>of what you find there?</p>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' }}>
+          {SEN.map(s => (
+            <button key={s} onClick={() => setSensation(s)} style={{
+              padding:'13px 8px', borderRadius:'15px', cursor:'pointer',
+              background: sensation===s ? `${region.color}18` : 'rgba(255,255,255,.02)',
+              border:`1px solid ${sensation===s ? region.accent+'55' : region.accent+'1A'}`,
+              fontFamily:"'Cormorant Garamond',serif", fontSize:'16px',
+              color: sensation===s ? region.accent : 'rgba(240,232,220,.55)',
+              transition:'all .2s' }}>{s}</button>
+          ))}
+        </div>
+        {sensation && (
+          <input value={word} onChange={e => setWord(e.target.value)}
+            placeholder="one word of your own — optional"
+            style={{ width:'100%', background:`${region.color}08`,
+              border:`1px solid ${region.accent}22`, borderRadius:'14px',
+              padding:'13px 16px', color:'rgba(240,232,220,.85)',
+              fontFamily:"'Cormorant Garamond',serif", fontSize:'17px', textAlign:'center',
+              animation:'emerge .4s ease' }}/>
+        )}
+        {sensation && (
+          <button onClick={translate} style={{ padding:'15px', borderRadius:'22px', cursor:'pointer',
+            background:`${region.color}14`, border:`1px solid ${region.accent}38`,
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'17px', letterSpacing:'.14em',
+            textTransform:'uppercase', color:'rgba(240,232,220,.80)',
+            animation:'emerge .5s ease' }}>Translate</button>
+        )}
+      </div>
+    </div>
+  );
+}
+Object.assign(window, { SensationView });
+</script>
+
+<!-- ═══ D · THE BOOK + APP ═══ -->
+<script type="text/babel">
+const { useState:useBk } = React;
+const { getVerses:GVB, BodyView:BV, SensationView:SV, REGIONS:RG } = window;
+
+function BookView({ onBack }) {
+  const verses = [...GVB()].reverse();
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:'radial-gradient(ellipse at 50% 0%, #0A0716, #040209)' }}>
+      <div style={{ padding:'14px 22px 4px', flexShrink:0 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:'rgba(180,160,240,.38)',
+          textTransform:'uppercase' }}>← Back</button>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px',
+          color:'rgba(240,232,220,.85)', letterSpacing:'.08em', marginTop:'8px' }}>The Book of the Body</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'12px',
+          color:'rgba(180,160,240,.30)', marginTop:'2px' }}>everything it has said, kept</p>
+      </div>
+      <div className="scroll" style={{ flex:1, overflowY:'auto', padding:'12px 22px 30px',
+        display:'flex', flexDirection:'column', gap:'22px' }}>
+        {verses.length === 0 && (
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'15px',
+            color:'rgba(180,160,240,.28)', textAlign:'center', padding:'40px 20px', lineHeight:1.8 }}>
+            The book is empty.<br/>The body is not silent — it is waiting to be asked.
+          </p>
+        )}
+        {verses.map(v => (
+          <div key={v.id} style={{ borderLeft:`2px solid ${v.color}55`, paddingLeft:'16px' }}>
+            <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.22em',
+              textTransform:'uppercase', color:`${v.accent}50`, marginBottom:'7px' }}>
+              {v.regionName} · {v.sensation}{v.word ? ` · "${v.word}"` : ''} · {new Date(v.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+            </p>
+            {v.verse.split('\n').map((line, i) => (
+              <p key={i} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'17px',
+                color:'rgba(240,232,220,.76)', lineHeight:1.75, marginBottom:'6px' }}>
+                {line.replace(/^\d\.\s*/,'')}
+              </p>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [view, setView] = useBk('body');
+  const [point, setPoint] = useBk(null);
+  return (
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"></div>
+          <div className="ph-content">
+            {view === 'body' && <BV onPoint={p => { setPoint(p); setView('sense'); }} onBook={() => setView('book')}/>}
+            {view === 'sense' && point && <SV point={point} onBack={() => setView('body')} onDone={() => setView('book')}/>}
+            {view === 'book' && <BookView onBack={() => setView('body')}/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

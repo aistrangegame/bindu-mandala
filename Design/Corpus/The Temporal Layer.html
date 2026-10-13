@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phase 5 — The Temporal Layer</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #060104; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
+    #root { width: 100vw; height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,150,63,0.22); border-radius: 2px; }
+
+    @keyframes moteRise {
+      0%   { transform: translate(0,0); opacity: 0; }
+      8%   { opacity: 1; }
+      50%  { transform: translate(calc(var(--drift)*.5), -420px); }
+      92%  { opacity: 0.5; }
+      100% { transform: translate(var(--drift), -880px); opacity: 0; }
+    }
+
+    /* LUNAR — Bindu in new-moon state */
+    @keyframes lunarBinduBreath {
+      0%, 100% { transform: translate(-50%, -50%) scale(1);    }
+      50%      { transform: translate(-50%, -50%) scale(1.18); }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="temporal.jsx"></script>
+
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function App() {
+  return (
+    <DesignCanvas background="#060104" title="Phase V · The Temporal Layer">
+
+      {/* ═══════════════════════════════════════════════════════════════
+          INSTRUMENT 1 — THE COSMIC NOW
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="cosmic-now" title="① The Cosmic Now"
+        subtitle="Five concentric wheels · hour · tithi · nakṣatra · season · solar · the practitioner sees, at a glance, where they are inside time itself">
+
+        <DCArtboard id="cosmic-now-screen" label="The Cosmic Now · 6:42 PM · Trayodaśī · Anurādhā · Śarad" width={390} height={844}>
+          <CosmicNowScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          INSTRUMENT 2 — THE LUNAR YANTRA
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="lunar" title="② The Lunar Yantra"
+        subtitle="The instrument across one lunar cycle · Amāvasyā → Śukla → Pūrṇimā → Kṛṣṇa · the same yantra in four atmospheres">
+
+        <DCArtboard id="lunar-new" label="① Amāvasyā · dark moon · the Bindu rises" width={390} height={844}>
+          <LunarYantraScreen phase="new"/>
+        </DCArtboard>
+        <DCArtboard id="lunar-waxing" label="② Śukla Pakṣa · the moon waxes" width={390} height={844}>
+          <LunarYantraScreen phase="waxing"/>
+        </DCArtboard>
+        <DCArtboard id="lunar-full" label="③ Pūrṇimā · full moon · the yantra is most alive" width={390} height={844}>
+          <LunarYantraScreen phase="full"/>
+        </DCArtboard>
+        <DCArtboard id="lunar-waning" label="④ Kṛṣṇa Pakṣa · the moon wanes" width={390} height={844}>
+          <LunarYantraScreen phase="waning"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          INSTRUMENT 3 — THE SANDHYAS
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="sandhya" title="③ The Three Sandhyās · The Twilight Junctions"
+        subtitle="Sacred hinge moments · the app opens to these by default at dawn, noon, and dusk · each its own micro-practice">
+
+        <DCArtboard id="sandhya-pratah" label="Prātaḥ · the morning junction · Brāhmī" width={390} height={844}>
+          <SandhyaScreen which="pratah"/>
+        </DCArtboard>
+        <DCArtboard id="sandhya-madhyahna" label="Madhyāhna · the noon junction · Vaiṣṇavī" width={390} height={844}>
+          <SandhyaScreen which="madhyahna"/>
+        </DCArtboard>
+        <DCArtboard id="sandhya-sayam" label="Sāyam · the evening junction · Rudrāṇī" width={390} height={844}>
+          <SandhyaScreen which="sayam"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          INSTRUMENT 4 — THE SEASONAL YANTRA
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="seasonal" title="④ The Seasonal Yantra"
+        subtitle="The instrument across the four seasons of practice · she breathes differently in each one">
+
+        <DCArtboard id="seasonal-vasanta" label="Vasanta · spring · the petals begin again" width={390} height={844}>
+          <SeasonalYantraScreen season="vasanta"/>
+        </DCArtboard>
+        <DCArtboard id="seasonal-grishma" label="Grīṣma · summer · she is in full sun" width={390} height={844}>
+          <SeasonalYantraScreen season="grishma"/>
+        </DCArtboard>
+        <DCArtboard id="seasonal-sharad" label="Śarad · autumn · she becomes clear" width={390} height={844}>
+          <SeasonalYantraScreen season="sharad"/>
+        </DCArtboard>
+        <DCArtboard id="seasonal-hemanta" label="Hemanta · winter · she goes quiet" width={390} height={844}>
+          <SeasonalYantraScreen season="hemanta"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          INSTRUMENT 5 — THE GREAT WHEEL
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="great-wheel" title="⑤ The Great Wheel"
+        subtitle="365 days · radially arranged · recognition density as luminosity · navigate years to see your whole arc">
+
+        <DCArtboard id="great-wheel-current" label="Year 5 · 2026 · this year (1,418 recognitions)" width={390} height={844}>
+          <GreatWheelScreen year={2026} yearOfPractice={5}/>
+        </DCArtboard>
+        <DCArtboard id="great-wheel-y3" label="Year 3 · 2024 · 814 recognitions" width={390} height={844}>
+          <GreatWheelScreen year={2024} yearOfPractice={3}/>
+        </DCArtboard>
+        <DCArtboard id="great-wheel-y1" label="Year 1 · 2022 · the beginning (268 recognitions)" width={390} height={844}>
+          <GreatWheelScreen year={2022} yearOfPractice={1}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          INSTRUMENT 6 — TODAY'S TITHI
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="tithi-today" title="⑥ Today's Tithi · Her Nitya Form"
+        subtitle="Each lunar day has a presiding goddess from the canonical 15 Nityā Devīs · names sourced from tradition · qualities flow from Airtable">
+
+        <DCArtboard id="tithi-trayodashi" label="Trayodaśī · Sarvamaṅgalā · the 13th Nitya" width={390} height={844}>
+          <TithiTodayScreen tithiIdx={13}/>
+        </DCArtboard>
+        <DCArtboard id="tithi-pratipada" label="Pratipadā · Kāmeśvarī · the 1st Nitya" width={390} height={844}>
+          <TithiTodayScreen tithiIdx={1}/>
+        </DCArtboard>
+        <DCArtboard id="tithi-purnima" label="Pūrṇimā · Citrā · the 15th Nitya" width={390} height={844}>
+          <TithiTodayScreen tithiIdx={15}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          DATA & TIME CONTRACTS — the architectural decisions
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="contracts" title="◇ Data & Time Contracts"
+        subtitle="Decisions that bind the visual layer to the live world · these flow into the codex">
+
+        <DCArtboard id="contracts-screen" label="Architecture · what comes from where" width={520} height={844}>
+          <div style={{
+            width: 520, height: 844, background: '#060104',
+            padding: '56px 44px',
+            display: 'flex', flexDirection: 'column',
+            color: 'rgba(242,232,217,0.7)',
+            fontFamily: "'Cormorant Garamond', serif",
+            fontWeight: 300, lineHeight: 1.7,
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              fontFamily: '-apple-system, sans-serif', fontSize: 10,
+              letterSpacing: '0.30em', textTransform: 'uppercase',
+              color: '#C9963F', opacity: 0.7, marginBottom: 14,
+            }}>The Living Architecture</div>
+
+            <h2 style={{
+              fontSize: 32, lineHeight: 1.1, color: '#F2E8D9',
+              fontWeight: 300, letterSpacing: '0.02em', marginBottom: 24,
+            }}>What flows from where.</h2>
+
+            {[
+              {
+                src: 'Device',
+                lines: [
+                  'local time — for every screen, every breath',
+                  'location (with permission) — for sun-relative sandhyās, hemisphere-aware seasons',
+                  'fallback: home location set during initiation',
+                ],
+              },
+              {
+                src: 'Ephemeris',
+                lines: [
+                  'tithi · nakṣatra · moon phase · solar position',
+                  'same on the whole earth at the same moment',
+                  'computed from device-UTC + astronomical tables',
+                ],
+              },
+              {
+                src: 'Airtable',
+                lines: [
+                  '102 Khaḍgamāla Shaktis — name, bīja, quality, somatic, lineage',
+                  '15 Nityā Devīs — quality, bīja, dhyāna for each tithi',
+                  '9 Avaraṇas — form, presiding goddess, chakra, geometry',
+                  'all sacred content. no invention. the app renders only.',
+                ],
+              },
+              {
+                src: 'Practitioner',
+                lines: [
+                  'recognition log — every catch, time-stamped, on-device',
+                  'dream entries (Svapna) — voice + text',
+                  'beloved-ones map (outer Saṅgha)',
+                  'tweaks, preferences, the home location',
+                ],
+              },
+            ].map((row, i) => (
+              <div key={i} style={{
+                marginBottom: 20,
+                padding: '14px 16px',
+                background: 'rgba(201,150,63,0.04)',
+                borderLeft: '2px solid rgba(201,150,63,0.4)',
+                borderRadius: 6,
+              }}>
+                <div style={{
+                  fontFamily: '-apple-system, sans-serif', fontSize: 10,
+                  letterSpacing: '0.28em', textTransform: 'uppercase',
+                  color: '#C9963F', opacity: 0.75, marginBottom: 8,
+                }}>{row.src}</div>
+                {row.lines.map((l, k) => (
+                  <div key={k} style={{
+                    fontSize: 14, lineHeight: 1.65,
+                    color: 'rgba(242,232,217,0.68)',
+                    fontStyle: k === row.lines.length - 1 && row.src === 'Airtable' ? 'italic' : 'normal',
+                    marginBottom: 3,
+                  }}>· {l}</div>
+                ))}
+              </div>
+            ))}
+
+            <div style={{
+              marginTop: 'auto', paddingTop: 24,
+              borderTop: '0.5px solid rgba(201,150,63,0.18)',
+              fontSize: 13, fontStyle: 'italic',
+              color: 'rgba(242,232,217,0.45)', lineHeight: 1.7,
+            }}>
+              Every ring-world, lunar phase, seasonal yantra, and sandhyā <em style={{color:'#C9963F'}}>is the live home under a different sky.</em> All petals stay interactive. All gestures still work. Time and atmosphere modulate the visual — they do not remove the instrument.
+            </div>
+          </div>
+        </DCArtboard>
+
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bindu Mandala — Refinement & Fix Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ground: #0D0508;
+    --surface: #160A0E;
+    --gold: #C9963F;
+    --gold-deep: #A07830;
+    --cream: #F2E8D9;
+    --accent-red: #8B1A2A;
+    --rose: #C4725A;
+    --violet: #9A86C4;
+    --amber: #E8C97A;
+    --green: #5A9A8B;
+
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    --measure: 700px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--ground); color: var(--cream);
+    font-family: var(--sans); -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility; line-height: 1.5; overflow-x: hidden;
+  }
+  .ambient {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% -5%, rgba(201,150,63,0.10), transparent 60%),
+      radial-gradient(ellipse 60% 45% at 50% 105%, rgba(139,26,42,0.12), transparent 60%);
+  }
+  .wrap { position: relative; z-index: 1; max-width: var(--measure); margin: 0 auto; padding: 0 28px 160px; }
+
+  .kicker { font-size: 10.5px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--gold); opacity: 0.82; }
+  .voice { font-family: var(--serif); font-style: italic; font-weight: 400; color: var(--gold); }
+  p { font-size: 16.5px; line-height: 1.78; color: rgba(242,232,217,0.74); margin: 0 0 1.15em; text-wrap: pretty; }
+  strong { color: rgba(242,232,217,0.95); font-weight: 600; }
+  em { color: var(--gold); font-style: italic; }
+
+  .bindu {
+    width: 13px; height: 13px; border-radius: 50%; flex: 0 0 auto;
+    background: radial-gradient(circle at 50% 50%, var(--cream) 0 18%, var(--accent-red) 30%, rgba(139,26,42,0.0) 72%);
+    box-shadow: 0 0 9px rgba(139,26,42,0.6);
+  }
+
+  /* Masthead */
+  header.masthead { padding: 116px 0 52px; border-bottom: 0.5px solid rgba(201,150,63,0.18); margin-bottom: 56px; }
+  .masthead .kicker { display: block; margin-bottom: 26px; }
+  .masthead h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(46px, 9vw, 74px); line-height: 1.0; letter-spacing: 0.02em; margin: 0; color: var(--cream); }
+  .masthead h1 .glow { color: var(--gold); }
+  .masthead .sub { font-family: var(--serif); font-style: italic; font-size: clamp(19px, 4vw, 25px); color: rgba(242,232,217,0.6); margin: 22px 0 0; line-height: 1.4; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 36px; }
+  .meta dt { font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(242,232,217,0.4); margin-bottom: 5px; }
+  .meta dd { margin: 0; font-family: var(--serif); font-size: 16px; color: rgba(242,232,217,0.82); }
+
+  /* Part divider */
+  .part { margin-top: 96px; }
+  .part:first-of-type { margin-top: 8px; }
+  .part-label { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; }
+  .part-label .pn { font-family: var(--serif); font-style: italic; font-size: 20px; color: var(--gold); opacity: 0.8; }
+  .part-label .pt { font-family: var(--serif); font-weight: 300; font-size: clamp(28px, 6vw, 40px); color: var(--cream); line-height: 1.05; }
+  .part-intro { font-size: 17px; color: rgba(242,232,217,0.8); border-left: 1.5px solid rgba(201,150,63,0.25); padding-left: 20px; margin: 24px 0 44px; }
+
+  /* Point / issue card */
+  .card { margin: 0 0 30px; border: 0.5px solid rgba(201,150,63,0.16); border-radius: 3px; background: linear-gradient(180deg, rgba(34,16,20,0.5), rgba(13,5,8,0.2)); overflow: hidden; }
+  .card-head { display: flex; align-items: baseline; gap: 13px; padding: 22px 26px 0; }
+  .card-head .idx { font-family: var(--serif); font-style: italic; font-size: 17px; color: var(--gold); opacity: 0.75; flex: 0 0 auto; }
+  .card-head h3 { font-family: var(--serif); font-weight: 500; font-size: 25px; letter-spacing: 0.01em; color: var(--cream); margin: 0; line-height: 1.15; }
+  .card-body { padding: 14px 26px 24px; }
+  .card-body p:last-child { margin-bottom: 0; }
+
+  .row { margin-top: 16px; padding-top: 15px; border-top: 0.5px solid rgba(242,232,217,0.08); }
+  .row .label { display: block; font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 7px; }
+  .row.symptom .label { color: var(--rose); }
+  .row.cause .label { color: rgba(242,232,217,0.5); }
+  .row.call .label, .row.fix .label { color: var(--gold); }
+  .row p { margin: 0; font-size: 15.5px; line-height: 1.7; }
+  .row.call p, .row.fix p { font-family: var(--serif); font-style: italic; font-size: 17px; color: rgba(242,232,217,0.84); line-height: 1.55; }
+  .row.call p em, .row.fix p em { color: var(--gold); }
+
+  code { font-family: var(--mono); font-size: 12.5px; color: var(--amber); background: rgba(232,201,122,0.08); padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
+  .codeblock { font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: rgba(242,232,217,0.82); background: #07030522; border: 0.5px solid rgba(201,150,63,0.14); border-radius: 4px; padding: 14px 16px; margin: 12px 0 0; overflow-x: auto; white-space: pre; }
+  .codeblock .c { color: rgba(242,232,217,0.4); }
+  .codeblock .del { color: var(--rose); }
+  .codeblock .add { color: var(--green); }
+
+  .pull { margin: 50px 0; padding: 0 0 0 26px; border-left: 2px solid var(--accent-red); }
+  .pull p { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(22px, 4.6vw, 28px); line-height: 1.42; color: var(--gold); margin: 0; }
+
+  /* Priority list */
+  .prio { display: grid; gap: 14px; margin-top: 8px; }
+  .prio-item { display: flex; gap: 16px; align-items: baseline; padding: 16px 20px; border: 0.5px solid rgba(201,150,63,0.16); border-radius: 3px; }
+  .prio-item .when { font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); flex: 0 0 96px; padding-top: 3px; }
+  .prio-item .what { font-size: 15.5px; color: rgba(242,232,217,0.8); line-height: 1.6; }
+  .prio-item .what b { color: var(--cream); font-weight: 600; }
+
+  .closing { margin-top: 92px; padding-top: 52px; border-top: 0.5px solid rgba(201,150,63,0.2); }
+  .closing p { font-family: var(--serif); font-size: clamp(18px, 3.6vw, 22px); line-height: 1.6; color: rgba(242,232,217,0.84); }
+  .closing p em { color: var(--gold); }
+  .sign { margin-top: 36px; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(242,232,217,0.4); }
+
+  .divider { display: flex; justify-content: center; margin: 8px 0; opacity: 0.5; }
+  .tag { display:inline-block; font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); border: 0.5px solid rgba(201,150,63,0.4); border-radius: 2px; padding: 3px 7px; margin-left: 8px; vertical-align: middle; opacity: 0.85; }
+
+  @media (max-width: 480px) {
+    .wrap { padding: 0 18px 110px; }
+    header.masthead { padding-top: 72px; }
+    .card-head, .card-body { padding-left: 18px; padding-right: 18px; }
+    .prio-item { flex-direction: column; gap: 6px; }
+    .prio-item .when { flex-basis: auto; }
+  }
+</style>
+</head>
+<body>
+  <div class="ambient"></div>
+  <div class="wrap">
+
+    <header class="masthead">
+      <span class="kicker">Refinement &amp; Fix Brief · For Claude Code</span>
+      <h1>The Five Points,<br /><span class="glow">and the Five Rings</span></h1>
+      <p class="sub">What the audit meant, in plain language —<br />and exactly what is wrong in the rings you walked, with the fix.</p>
+      <dl class="meta">
+        <div><dt>Source read</dt><dd>main · 0bd9542 · live Swift</dd></div>
+        <div><dt>Part I</dt><dd>The 5 design calls, expanded</dd></div>
+        <div><dt>Part II</dt><dd>Rings 1 · 3 · 6 · 8 · 9 — root cause + fix</dd></div>
+      </dl>
+    </header>
+
+    <!-- ════════════════ PART I ════════════════ -->
+    <div class="part">
+      <div class="part-label"><span class="pn">Part I</span><span class="pt">The five points, explained</span></div>
+      <p class="part-intro">These are the five calls from the audit. None are bugs — they're decisions the app has drifted into without anyone choosing them on purpose. Here's what each one means, why it matters, and the single decision it asks of you.</p>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">1</span><h3>The daily spine, versus the museum</h3></div>
+        <div class="card-body">
+          <p>The app was designed around one small daily loop: open it, meet today's Śakti, make a gesture of recognition, close it. That loop was the <strong>home screen</strong> — the first thing you saw. In the build today, you land on the <strong>Mandala</strong> instead, and "Today" is the second item inside a menu you have to open. The app has also grown six destinations and nine worlds to wander through.</p>
+          <p>Each of those is lovely. But together they quietly change what the app <em>is</em> — from a daily intimacy you return to, into a place you browse when you happen to think of it. The most habit-forming, most personal surface is now the hardest one to reach.</p>
+          <div class="row call"><span class="label">The decision</span><p>Choose, deliberately, what opening the app puts in front of you — <em>her</em> (today's Śakti and the gesture) or <em>the whole cosmos</em> (the Mandala). Both are valid. One idea: keep the Mandala as home, but let today's pull always be visible on it and tap straight through to her — so the daily rite survives even inside the bigger world.</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">2</span><h3>The status pill lost its ceremony</h3></div>
+        <div class="card-body">
+          <p>Originally, a Śakti's status — <span class="voice">mapped → exploring → active → embodied</span> — advanced when <em>you</em> tapped the pill and chose to deepen the relationship. It was meant to feel like a held breath: a small, conscious rite. In the build, status now advances on its own, once you've recognized her enough times.</p>
+          <p>That automatic version may genuinely be better — it's earned, not declared. The problem is only that the pill <strong>still looks like a button</strong> (it has the capsule outline of something tappable) but does nothing when pressed. It promises an action it no longer delivers.</p>
+          <div class="row call"><span class="label">The decision</span><p>Pick one: strip the button styling so it plainly reads as a <em>state</em> she has reached — or give the practitioner back a deliberate gesture for crossing the threshold. Just don't leave it dressed as a control that does nothing.</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">3</span><h3>The detail screen is becoming an encyclopedia</h3></div>
+        <div class="card-body">
+          <p>The screen you reach by tapping a petal — her reading — has grown to roughly <strong>twelve stacked sections</strong>: name, quality, somatic line, appreciation, bīja, iconography, codex portrait, lineage, cosmic function, tattva, field, moments. The codex portrait is described in your own code as <span class="voice">"the soul of the screen"</span> — yet it sits seventh, given no more weight than the scholarly reference around it.</p>
+          <p>The result reads like a wiki entry rather than a devotion. Everything is present; nothing is foregrounded.</p>
+          <div class="row call"><span class="label">The decision</span><p>Build a hierarchy. Lead with the soul — the <em>portrait</em> and the <em>somatic line</em> — and tuck the reference matter (lineage, cosmic function, tattva, iconography) behind a single <em>"go deeper"</em> disclosure. Let this screen breathe like the worlds do.</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">4</span><h3>Two hidden doors, and no signpost</h3></div>
+        <div class="card-body">
+          <p>All navigation lives in two concealed places: the hamburger at the top-right (three faint gold lines at under half-opacity), and the Veil you pull up from the bottom. The Veil at least <em>breathes a chevron</em> so you know it's there. The hamburger gives no hint at all — yet it is the <strong>only</strong> path to Today, the Well, the 102, Memory, and Settings.</p>
+          <p>A first-time hand resting on the Mandala may simply never discover half the app exists. Intimate restraint is right; total invisibility is one step past it.</p>
+          <div class="row call"><span class="label">The decision</span><p>Give the hamburger the same courtesy the Veil already has — a single faint first-run breath, or a one-time reveal on launch — so the door is <em>found once, then forgotten</em>. It never has to shout; it just has to be seen the first time.</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">5</span><h3>The legibility floor</h3></div>
+        <div class="card-body">
+          <p>The instinct — barely-there text for a settled, contemplative eye — is good and worth protecting. But several elements have crossed from <em>quiet</em> into <em>genuinely unreadable</em>. The most important offender: the <strong>home lotus petal labels</strong>, at roughly 7.5pt and 38% opacity — that's the type <em>naming your primary navigation</em>. Others: the Silence name-stars (10–11pt at 11–16% opacity), the Ring 1 hint line, assorted tracked captions.</p>
+          <div class="row call"><span class="label">The decision</span><p>For each faint element, decide one word: <em>label</em> or <em>texture</em>. If it's texture — atmosphere never meant to be read — leave it exactly as is. If it's meant to be read, lift it to at least 11pt and 30% opacity. The petal labels especially deserve a real decision, not an accident of scale.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pull"><p>Part I is yours to decide. Part II is just broken, and can be fixed today.</p></div>
+
+    <!-- ════════════════ PART II ════════════════ -->
+    <div class="part">
+      <div class="part-label"><span class="pn">Part II</span><span class="pt">The five rings you walked</span></div>
+      <p class="part-intro">Two threads run through everything you found: the <strong>energies are too small to touch</strong> (most use 26–32pt tap areas; iOS wants 44pt minimum), and the <strong>figures sit small in a tall screen</strong> with a lot of dead space. The good news — fixing both at once is the same move: enlarge each energy's hit area to ≥44pt <em>and</em> scale the ring figures up to fill more of the screen. Bigger figures spread the energies apart, which makes them easier to hit for free. Below, each ring's exact cause and fix.</p>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">Ring 1</span><h3>The Earth-City — hard to touch the energies <span class="tag">touch</span></h3></div>
+        <div class="card-body">
+          <div class="row symptom"><span class="label">What you felt</span><p>The 28 lights are very hard to land on — the tap area is too precise.</p></div>
+          <div class="row cause"><span class="label">Root cause · <code>RingOneWorldView.swift</code></span><p>Each light is built with <code>.frame(width: 26, height: 26)</code> and <code>.contentShape(Circle())</code> — a 26pt target, well under the 44pt minimum. And 28 of them are packed onto three nested squares; the inner square is only ~144pt wide but carries 10 lights, so the targets are both tiny and crowded.</p></div>
+          <div class="row fix"><span class="label">Fix</span><p>Grow each light's invisible hit area to <em>≥44pt</em> while keeping the visible dot small — only the <code>contentShape</code> frame grows. Because 28 × 44pt would overlap, also enlarge the whole figure (raise the square half-sizes <code>150 / 110 / 72</code> and the breathing room) so the lights spread out. If crowding remains, resolve a tap to the <em>nearest</em> light within range rather than requiring a direct hit.</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">Ring 3</span><h3>The Smoke Lotus — a poor version of the craft <span class="tag">rendering</span></h3></div>
+        <div class="card-body">
+          <div class="row symptom"><span class="label">What you felt</span><p>The current image feels like a much weaker version of what was originally crafted.</p></div>
+          <div class="row cause"><span class="label">Root cause · three regressions from <code>ring-worlds-3.jsx</code> → <code>RingThreeWorldView.swift</code></span><p><strong>1 · The glow died.</strong> The original lit each plume with CSS <code>filter: brightness(1.5)</code> — a true <em>multiply</em> of light. The Swift port uses <code>.brightness(0.15)</code>, which only <em>adds</em> a faint amount. So the plumes never light up; active and resting look nearly the same, flat and dim.<br /><strong>2 · The air went still.</strong> The original carried <code>DustMotes count=7</code> drifting through the scene. The Swift Ring 3 has no dust motes at all — the atmosphere is gone.<br /><strong>3 · The smoke reads muddy.</strong> The warm gradient stops at <code>endRadius: 92</code> but the plume shape reaches <code>outerR: 116</code>, so the tip fades to nothing; combined with the dead brightness it looks like a blurred shape, not glowing smoke.</p></div>
+          <div class="row fix"><span class="label">Fix</span><p>Restore the glow with a real luminance lift — raise the gradient's warm-stop opacity and layer a soft white-warm overlay on the active/unified plume (not <code>.brightness()</code>), matching the original ladder: <em>active brightest → scattered dimmest</em>. Add <code>DustMotesView(count: 7)</code>. Extend the gradient to the plume tip so the smoke holds its shape.</p>
+          <div class="codeblock"><span class="c">// the regression — additive, barely visible</span>
+<span class="del">let brightness: Double = isActive ? 0.15 : (gather ? 0.05 : -0.10)</span>
+<span class="del">.brightness(brightness)</span>
+
+<span class="c">// restore a true glow: drive opacity + a warm overlay instead</span>
+<span class="add">let glow: Double = isActive ? 1.0 : unified ? 0.9 : gather ? 0.55 : 0.30</span>
+<span class="add">// raise gradient warm-stop to ~0.95, add .blendMode(.screen) overlay,</span>
+<span class="add">// and add DustMotesView(count: 7) to the ZStack</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">Ring 6</span><h3>The Concealed — can't find the shaktis <span class="tag">touch</span></h3></div>
+        <div class="card-body">
+          <div class="row symptom"><span class="label">What you felt</span><p>Very hard to find and tap the shaktis — the tap area is far too precise.</p></div>
+          <div class="row cause"><span class="label">Root cause · <code>RingSixWorldView.swift</code></span><p>A double-precision trap. Each triangle is a <code>.frame(width: 32, height: 32)</code> target (under 44pt), <em>and</em> tapping is gated by <code>guard distance &lt;= revealRadius</code> — you can only name what the moving light has already reached. Since the light follows your finger, the target is small <em>and</em> conditional <em>and</em> nearly invisible until the light is right on it. Three things fighting you at once.</p></div>
+          <div class="row fix"><span class="label">Fix</span><p>Grow each triangle's <code>contentShape</code> to <em>≥44pt</em>; widen the orbit (currently radius 96) so the ten spread apart; and relax the gate — let a tap land on anything currently lit, or grow <code>revealRadius</code>, so the user isn't also fighting the light's reach. The concealment should be <em>poetic</em>, not a precision test.</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">Ring 8</span><h3>The Vāk Chamber — four names superimposed <span class="tag">layout bug</span></h3></div>
+        <div class="card-body">
+          <div class="row symptom"><span class="label">What you felt</span><p>Multiple names stacked on the right — like 8 originals, with 4 more laid on top of some of them instead of added outside the structure.</p></div>
+          <div class="row cause"><span class="label">Root cause · <code>RingSevenWorldView.swift</code> (Sarvarogahara · the Vāk Chamber)</span><p>Exactly right, and exactly findable. The chamber was extended from <strong>8 voices to 12</strong> (the code even comments <span class="voice">"extended from Phase 3's eight"</span>), but the angular spacing was left at 45°: <code>theta = i * 45 - 90</code>. Since 360° ÷ 45° = exactly <strong>8</strong> positions, voices 9–12 — Vāṅmayī, Onmādinī, Mantreśī, Śaktimayī — land precisely on top of voices 1–4. Those are your four superimposed names.</p></div>
+          <div class="row fix"><span class="label">Fix</span><p>Two clean options. Simplest: space all twelve evenly at 30°. Or — matching your instinct that the new four should sit <em>"outside the current structure"</em> — keep eight on the inner orbit and place the extra four on a larger outer ring.</p>
+          <div class="codeblock"><span class="c">// 12 voices at 45° spacing → 4 collide with the first 4</span>
+<span class="del">let theta = (Double(i) * 45 - 90) * .pi / 180</span>
+
+<span class="c">// even twelve around the circle (and widen orbitR a touch)</span>
+<span class="add">let theta = (Double(i) * 30 - 90) * .pi / 180</span></div>
+          <p style="margin-top:14px; font-size:14px; color:rgba(242,232,217,0.55);">Note on the number: this file is <code>RingSeven</code> internally, but its content (the Vāk syllables, "12 voices sounded") is unmistakably the chamber you described as Ring 8 — worth confirming the world↔number mapping while you're in here, since the stale comment <code>// 8 Vāk circles</code> now iterates twelve.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="idx">Ring 9</span><h3>The Descent — a stray field at the end <span class="tag">content</span></h3></div>
+        <div class="card-body">
+          <div class="row symptom"><span class="label">What you felt</span><p>When you hold to the end, an Airtable field appears — too long, and it takes away from the experience.</p></div>
+          <div class="row cause"><span class="label">Root cause · <code>RingNineDescentView.swift</code></span><p>In the recognition caption, once you hold past the threshold (<code>r &gt; 0.6</code>), the view appends the avaraṇa's Airtable <code>personalConnection</code> field beneath the benediction. It was meant as a quiet undertone, but the field's length breaks the stillness of the arrival.</p></div>
+          <div class="row fix"><span class="label">Fix</span><p>Remove that block entirely. The descent should land on <span class="voice">"You did not arrive. You were the arriving."</span> and the single gold benediction line — and then nothing. The silence after is the point.</p>
+          <div class="codeblock"><span class="c">// delete this entire block from captionStack</span>
+<span class="del">if let conn = ring9Avarana?.personalConnection?...,</span>
+<span class="del">   !conn.isEmpty, r &gt; 0.6 {</span>
+<span class="del">    Text(conn) ...</span>
+<span class="del">}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRIORITY -->
+    <div class="part">
+      <div class="part-label"><span class="pn">·</span><span class="pt">A suggested order for Claude Code</span></div>
+      <div class="prio">
+        <div class="prio-item"><span class="when">Minutes</span><span class="what"><b>Ring 9</b> — delete the trailing <code>personalConnection</code> block. &nbsp;·&nbsp; <b>Ring 8 / Vāk</b> — change <code>45</code> → <code>30</code> in the angle. Two tiny edits, two real wins.</span></div>
+        <div class="prio-item"><span class="when">An afternoon</span><span class="what"><b>Rings 1 &amp; 6</b> — raise every energy's <code>contentShape</code> to ≥44pt and scale the figures up to fill the screen. One shared touch-target pass covers both.</span></div>
+        <div class="prio-item"><span class="when">A focused session</span><span class="what"><b>Ring 3</b> — restore the glow (real luminance, not additive brightness), add the dust motes, fix the gradient. Bring the smoke back to life.</span></div>
+        <div class="prio-item"><span class="when">Your call first</span><span class="what"><b>Part I</b> — the five design points. These need <em>your</em> decision before code: each one asks you to choose, not to fix. Worth a conversation before Claude Code touches them.</span></div>
+      </div>
+    </div>
+
+    <div class="closing">
+      <span class="kicker">In one breath</span>
+      <p style="margin-top:22px;">The rings are the easy part — four are small, exact bugs and one is a rendering regression, all fixable this week. <em>Yes, I can see all of it through the code</em> — the superimposed Vāk names, the dead brightness in the smoke, the 26-point targets, the stray field. The five points are the harder, better questions: they're about what the app is becoming as it grows, and those are yours to answer. Fix the rings, then let's sit with the five.</p>
+      <div class="sign">Refinement brief · grounded in the live source · ready for Claude Code</div>
+    </div>
+
+  </div>
+</body>
+</html>

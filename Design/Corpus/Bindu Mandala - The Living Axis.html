@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bindu Mandala — The Living Axis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ground:#0D0508; --ground-deep:#070205; --veil:#080307; --silence:#040104;
+    --gold:#C9963F; --gold-bright:#E8C97A; --cream:#F2E8D9; --accent-red:#8B1A2A;
+    --serif:'Cormorant Garamond',Georgia,serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:#050203;color:var(--cream);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;
+    background:radial-gradient(ellipse 90% 70% at 50% 40%,#0c0609,#040103 70%);}
+  .desk{display:flex;flex-direction:column;align-items:center;gap:16px;padding:22px}
+  .device{position:relative;width:390px;height:844px;border-radius:52px;background:#000;
+    box-shadow:0 0 0 11px #17110e,0 0 0 13px #241a13,0 40px 120px rgba(0,0,0,.7),0 0 90px rgba(201,150,63,.05);}
+  .screen{position:absolute;inset:11px;border-radius:42px;overflow:hidden;background:var(--ground)}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#000;border-radius:0 0 18px 18px;z-index:60}
+  .caption{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,232,217,.32)}
+  #root{position:absolute;inset:0}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+  <div class="desk">
+    <div class="device">
+      <div class="notch"></div>
+      <div class="screen"><div id="root"></div></div>
+    </div>
+    <div class="caption">Bindu Mandala · The Living Axis — concept</div>
+  </div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel">
+const {useState,useEffect,useRef,useCallback} = React;
+
+/* ---------- Atmosphere engine (ported from Atmosphere.swift) ---------- */
+const CLUSTER_HUE = {                      // LR_CLUSTER_HUES
+  inner:    [43,78,52],  tanmatra:[13,47,56], citta:[180,49,32],
+  stability:[140,24,38], selfBody:[270,26,48],
+};
+const RING_HUE = {1:[35,58,54],2:[43,78,52],3:[341,45,58],4:[353,55,48],5:[18,62,55],6:[194,42,46],7:[322,38,50],8:[2,68,50],9:[46,72,66]};
+const hsl=(h,s,l,a=1)=>`hsla(${((h%360)+360)%360},${s}%,${l}%,${a})`;
+function jitter(kp,range){return (((kp*2654435761)%1000)/1000-0.5)*range}   // lrJitter
+function atmosphere(seed){
+  const base = seed.cluster ? CLUSTER_HUE[seed.cluster] : RING_HUE[seed.ring];
+  const h = base[0]+jitter(seed.kp,14), s=base[1], l=base[2];
+  return {
+    h,s,l,
+    accent:hsl(h,s,l), accentBright:hsl(h,Math.min(s+10,88),Math.min(l+18,78)),
+    accentSoft:hsl(h,s,l,.62), accentFaint:hsl(h,s,l,.24),
+    glow:hsl(h,s,Math.min(l+6,70),.36),
+    ground:mix([13,5,8],hslRgb(h,s,l),.20), groundDeep:mix([7,2,5],hslRgb(h,s,l),.12),
+  };
+}
+function hslRgb(h,s,l){h=((h%360)+360)%360;s/=100;l/=100;const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;let r,g,b;
+  if(h<60)[r,g,b]=[c,x,0];else if(h<120)[r,g,b]=[x,c,0];else if(h<180)[r,g,b]=[0,c,x];else if(h<240)[r,g,b]=[0,x,c];else if(h<300)[r,g,b]=[x,0,c];else[r,g,b]=[c,0,x];
+  return [(r+m)*255,(g+m)*255,(b+m)*255];}
+function mix(a,b,t){return `rgb(${a.map((v,i)=>Math.round(v*(1-t)+b[i]*t)).join(',')})`}
+
+/* ---------- The 16 Karṣiṇīs (Ring 2 · Sarvāśāparipūraka) ---------- */
+/* Names & cluster grouping are canonical; grammar values tag each to the
+   modular iconography grammar (silhouette · attribute · surface · motion). */
+const RING2 = [
+  ["Kāmākarṣiṇī","kaa-maa","Desire","inner","fire","open","lotus","radiant","pull","Aṃ"],
+  ["Buddhyākarṣiṇī","buddh-yaa","Intellect","inner","air","crowned","mirror","luminous","drift","Āṃ"],
+  ["Ahaṅkārākarṣiṇī","a-hang-kaa","The I-maker","inner","fire","enthroned","sceptre","golden","still","Iṃ","Gaia"],
+  ["Śabdākarṣiṇī","shab-daa","Sound","tanmatra","ether","dissolving","rosary","translucent","drift","Īṃ"],
+  ["Sparśākarṣiṇī","spar-shaa","Touch","tanmatra","air","open","noose","pale","drift","Uṃ"],
+  ["Rūpākarṣiṇī","roo-paa","Form · sight","tanmatra","fire","crowned","mirror","radiant","still","Ūṃ"],
+  ["Rasākarṣiṇī","ra-saa","Taste","tanmatra","water","dissolving","lotus","translucent","drift","Ṛṃ"],
+  ["Gandhākarṣiṇī","gan-dhaa","Scent","tanmatra","earth","rooted","lotus","deep","still","Ṝṃ"],
+  ["Cittākarṣiṇī","chit-taa","Mind-stuff","citta","ether","dissolving","rosary","translucent","drift","Ḷṃ"],
+  ["Dhairyākarṣiṇī","dhai-ryaa","Fortitude","stability","earth","rooted","sceptre","deep","still","Ḹṃ"],
+  ["Smṛtyākarṣiṇī","smrit-yaa","Memory","stability","water","enthroned","rosary","pale","drift","Eṃ"],
+  ["Nāmākarṣiṇī","naa-maa","Name","stability","air","crowned","blade","luminous","still","Aiṃ","Ashrey"],
+  ["Bījākarṣiṇī","bee-jaa","Seed","stability","fire","enthroned","lotus","golden","pull","Oṃ","bridge"],
+  ["Ātmākarṣiṇī","aat-maa","Self","selfBody","light","crowned","mirror","luminous","still","Auṃ","Ram"],
+  ["Amṛtākarṣiṇī","am-ri-taa","Nectar","selfBody","water","open","lotus","translucent","drift","Aṃ"],
+  ["Śarīrākarṣiṇī","sha-ree-raa","Body","selfBody","earth","rooted","sceptre","deep","still","Aḥ"],
+].map((r,i)=>({pos:i+1,kp:i+29,name:r[0],phon:r[1],quality:r[2],cluster:r[3],element:r[4],
+  sil:r[5],attr:r[6],surface:r[7],motion:r[8],bija:r[9],field:r[10]||null}));
+
+/* The nine rings — signature table (Subtle Body Chakra / verb / element). */
+const RINGS = [
+  [1,"Trailokyamohana","Mūlādhāra","earth","AGITATE","Tripurā"],
+  [2,"Sarvāśāparipūraka","Svādhiṣṭhāna","·","LIQUEFY","Tripureśī"],
+  [3,"Sarvasaṅkṣobhaṇa","Maṇipūra","air","DRAW","Tripurasundarī"],
+  [4,"Sarvasaubhāgya","Anāhata","water","OPEN","Tripuravāsinī"],
+  [5,"Sarvārthasādhaka","Viśuddha","fire","VOICE","Tripuraśrī"],
+  [6,"Sarvarakṣākara","Ājñā","ether","STILL","Tripuramālinī"],
+  [7,"Sarvarogahara","Sahasrāra","air","WITNESS","Tripurasiddhā"],
+  [8,"Sarvasiddhiprada","Bindu-Visarga","fire","SEED","Tripurāmbā"],
+  [9,"Sarvānandamaya","Beyond","light","ARRIVE","Mahātripurasundarī"],
+];
+
+/* ---------- Iconography grammar → geometric body ---------- */
+function surfaceStyle(surface,atmo){
+  switch(surface){
+    case "radiant": return {fill:atmo.accentBright,op:.95,glow:22,blur:0};
+    case "golden": return {fill:hsl(atmo.h,Math.min(atmo.s+6,85),Math.min(atmo.l+12,72)),op:.92,glow:16,blur:0};
+    case "luminous": return {fill:atmo.accent,op:.85,glow:14,blur:.3};
+    case "pale": return {fill:hsl(atmo.h,Math.max(atmo.s-24,8),Math.min(atmo.l+22,80)),op:.8,glow:8,blur:.4};
+    case "translucent": return {fill:atmo.accentSoft,op:.55,glow:10,blur:1.1};
+    case "deep": return {fill:hsl(atmo.h,atmo.s,Math.max(atmo.l-16,20)),op:.9,glow:6,blur:0};
+    default: return {fill:atmo.accent,op:.85,glow:12,blur:0};
+  }
+}
+// small held-attribute glyph
+function Attribute({attr,color}){
+  const s={stroke:color,strokeWidth:1.4,fill:"none",opacity:.9};
+  switch(attr){
+    case "lotus": return <g>{[-16,0,16].map((a,i)=><path key={i} d="M0,4 C-4,-6 -2,-11 0,-13 C2,-11 4,-6 0,4Z" transform={`rotate(${a})`} fill={color} opacity=".8"/>)}</g>;
+    case "mirror": return <g><circle r="8" {...s}/><line x1="0" y1="8" x2="0" y2="17" {...s}/></g>;
+    case "noose": return <ellipse rx="8" ry="6" {...s}/>;
+    case "sceptre": return <g><line x1="0" y1="-11" x2="0" y2="12" {...s}/><circle cy="-12" r="3.2" fill={color} opacity=".85"/></g>;
+    case "rosary": return <g>{Array.from({length:9}).map((_,i)=>{const a=i/9*Math.PI*2;return <circle key={i} cx={Math.cos(a)*9} cy={Math.sin(a)*9} r="1.5" fill={color} opacity=".8"/>})}</g>;
+    case "blade": return <path d="M0,-14 L4,10 L-4,10 Z" fill={color} opacity=".85"/>;
+    default: return null;
+  }
+}
+// postural silhouette, built from primitives
+function Silhouette({sil,ss}){
+  const f={fill:ss.fill,opacity:ss.op};
+  switch(sil){
+    case "enthroned": return <g><path d="M-32,44 L32,44 L18,-14 L-18,-14 Z" {...f}/><circle cy="-30" r="15" {...f}/></g>;
+    case "open": return <g><circle cy="-26" r="14" {...f}/><path d="M0,-12 C-40,-4 -46,20 -40,40 C-20,26 -8,10 0,10 C8,10 20,26 40,40 C46,20 40,-4 0,-12Z" {...f}/></g>;
+    case "crowned": return <g><path d="M0,-46 L9,-28 L-9,-28 Z" {...f}/><circle cy="-18" r="13" {...f}/><path d="M-16,44 L16,44 L9,-6 L-9,-6 Z" {...f}/></g>;
+    case "rooted": return <g><circle cy="-24" r="14" {...f}/><path d="M0,46 L34,-8 L-34,-8 Z" {...f}/></g>;
+    case "dissolving": return <g><circle cy="-28" r="13" fill={ss.fill} opacity={ss.op*.7}/>{[0,1,2,3].map(i=><path key={i} d="M-26,44 L26,44 L14,-12 L-14,-12 Z" fill={ss.fill} opacity={ss.op*(.5-i*.11)} transform={`translate(${i*3-4},${-i*4}) scale(${1-i*.06})`}/>)}</g>;
+    case "dancing": return <g><circle cx="6" cy="-28" r="13" {...f}/><path d="M-30,44 L20,40 L22,-10 L-6,-8 Z" {...f}/><path d="M18,-4 L40,18 L30,26 L10,6 Z" fill={ss.fill} opacity={ss.op*.8}/></g>;
+    default: return <circle r="18" {...f}/>;
+  }
+}
+function Body({s,atmo,size=210,active=true}){
+  const ss=surfaceStyle(s.surface,atmo);
+  const id="g"+s.kp;
+  const anim = s.motion==="drift"?"axDrift 7s ease-in-out infinite":s.motion==="pull"?"axPull 4.5s ease-in-out infinite":"axStill 9s ease-in-out infinite";
+  return (
+    <svg width={size} height={size*1.18} viewBox="-60 -70 120 140" style={{overflow:"visible",filter:`drop-shadow(0 0 ${ss.glow}px ${atmo.glow})`}}>
+      <defs>
+        <radialGradient id={id} cx="50%" cy="38%" r="65%">
+          <stop offset="0%" stopColor={atmo.accentBright} stopOpacity={ss.op}/>
+          <stop offset="70%" stopColor={ss.fill} stopOpacity={ss.op*.85}/>
+          <stop offset="100%" stopColor={ss.fill} stopOpacity={ss.op*.4}/>
+        </radialGradient>
+      </defs>
+      <g style={{animation:active?anim:"none",transformOrigin:"center",filter:ss.blur?`blur(${ss.blur}px)`:"none"}}>
+        <g fill={`url(#${id})`}><Silhouette sil={s.sil} ss={{fill:`url(#${id})`,op:1}}/></g>
+        <g transform="translate(30,6)"><Attribute attr={s.attr} color={atmo.accentBright}/></g>
+      </g>
+    </svg>
+  );
+}
+
+/* ---------- The watching point — Bindu, on every level ---------- */
+function Bindu({scale=1,intensity=1,onHold,holding,progress}){
+  return (
+    <div style={{position:"absolute",left:"50%",top:"50%",transform:`translate(-50%,-50%) scale(${scale})`,
+      transition:"transform 1.1s cubic-bezier(.4,0,.2,1)",pointerEvents:onHold?"auto":"none",zIndex:20}}
+      onPointerDown={onHold} onPointerUp={onHold&&(()=>onHold(null))} onPointerLeave={onHold&&(()=>onHold(null))}>
+      {holding&&<svg width="120" height="120" style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)"}}>
+        <circle cx="60" cy="60" r="40" fill="none" stroke="var(--gold)" strokeWidth="1.5" opacity=".5"
+          strokeDasharray={2*Math.PI*40} strokeDashoffset={2*Math.PI*40*(1-progress)} transform="rotate(-90 60 60)"/>
+      </svg>}
+      <div style={{width:26,height:26,borderRadius:"50%",
+        background:`radial-gradient(circle at 50% 45%, rgba(242,232,217,${.9*intensity}) 0%, ${hsl(46,72,66,.8*intensity)} 22%, ${hsl(2,68,50,.5*intensity)} 46%, rgba(139,26,42,0) 72%)`,
+        filter:`blur(${.6/scale}px)`,boxShadow:`0 0 ${18*intensity}px ${hsl(46,72,60,.6*intensity)}`,
+        animation:"axBreath 4s ease-in-out infinite"}}/>
+    </div>
+  );
+}
+
+/* ---------- Dust motes ---------- */
+function Motes({n=14,color}){
+  const motes=useRef(Array.from({length:n},()=>({x:Math.random()*100,y:Math.random()*100,d:6+Math.random()*8,s:.1+Math.random()*.3,del:Math.random()*6})));
+  return <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+    {motes.current.map((m,i)=><div key={i} style={{position:"absolute",left:m.x+"%",top:m.y+"%",width:2,height:2,borderRadius:"50%",
+      background:color,opacity:m.s,animation:`axFloat ${m.d}s ease-in-out ${m.del}s infinite`}}/>)}
+  </div>;
+}
+
+/* ---------- Faint yantra geometry (cosmos backdrop) ---------- */
+function Yantra({op=.14}){
+  const c=200;
+  return <svg viewBox="0 0 400 400" width="100%" height="100%" style={{position:"absolute",inset:0,opacity:op}}>
+    <rect x="34" y="34" width="332" height="332" fill="none" stroke="var(--gold)" strokeWidth=".8"/>
+    <rect x="48" y="48" width="304" height="304" fill="none" stroke="var(--gold)" strokeWidth=".5" opacity=".6"/>
+    {Array.from({length:16}).map((_,i)=>{const a=i/16*Math.PI*2-Math.PI/2;return <circle key={i} cx={c+Math.cos(a)*150} cy={c+Math.sin(a)*150} r="3" fill="var(--gold)" opacity=".5"/>})}
+    {Array.from({length:8}).map((_,i)=>{const a=i/8*Math.PI*2-Math.PI/2;return <circle key={i} cx={c+Math.cos(a)*120} cy={c+Math.sin(a)*120} r="2.4" fill="var(--gold)" opacity=".5"/>})}
+    {[0,1,2,3].map(i=><path key={i} d={`M${c},${90+i*8} L${315-i*20},${300-i*6} L${85+i*20},${300-i*6} Z`} fill="none" stroke="var(--gold)" strokeWidth=".5" opacity=".55"/>)}
+    {[0,1,2].map(i=><path key={i} d={`M${c},${300-i*6} L${315-i*22},${100+i*8} L${85+i*22},${100+i*8} Z`} fill="none" stroke="var(--gold)" strokeWidth=".5" opacity=".55"/>)}
+    <circle cx={c} cy={c} r="1.6" fill="var(--cream)"/>
+  </svg>;
+}
+
+/* ---------- Depth gauge (the axis, made visible — recedes with depth) ---------- */
+const LEVELS=["cosmos","ring","seat","felt","bindu"];
+const LEVEL_LABEL={cosmos:"COSMOS",ring:"THE RING",seat:"THE SEAT",felt:"FELT",bindu:"BINDU"};
+function Gauge({alt,fade}){
+  const idx=LEVELS.indexOf(alt);
+  return <div style={{position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",display:"flex",flexDirection:"column",gap:14,alignItems:"center",zIndex:30,opacity:fade,transition:"opacity 1s",pointerEvents:"none"}}>
+    {LEVELS.map((l,i)=><div key={l} style={{display:"flex",alignItems:"center",gap:8,flexDirection:"row-reverse"}}>
+      <div style={{width:i===idx?7:4,height:i===idx?7:4,borderRadius:"50%",background:i<=idx?"var(--gold)":"rgba(242,232,217,.18)",boxShadow:i===idx?"0 0 8px var(--gold)":"none",transition:"all .6s"}}/>
+      {i===idx&&<span style={{fontFamily:"var(--mono)",fontSize:8,letterSpacing:".18em",color:"rgba(242,232,217,.4)"}}>{LEVEL_LABEL[l]}</span>}
+    </div>)}
+  </div>;
+}
+
+/* ---------- Cluster legend colour ---------- */
+const CLUSTER_LABEL={inner:"Inner Instrument",tanmatra:"Sense Streams",citta:"Citta",stability:"Stability",selfBody:"Self · Body · Immortality"};
+
+/* ==================== THE APP ==================== */
+function App(){
+  const [alt,setAlt]=useState("cosmos");       // cosmos · ring · seat · felt · bindu
+  const [focus,setFocus]=useState(RING2[12]);  // default Bīja (bridge)
+  const [felt,setFelt]=useState(()=>new Set());
+  const [pulse,setPulse]=useState(0);          // collective ring pulse tick
+  const [arrivalName,setArrivalName]=useState(true);
+  const [enter,setEnter]=useState(false);
+  const [hold,setHold]=useState(false); const [holdP,setHoldP]=useState(0);
+  const holdRef=useRef();
+
+  const atmo=atmosphere(focus);
+  const now=new Date();const t=`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+
+  useEffect(()=>{setEnter(false);const r=requestAnimationFrame(()=>setEnter(true));return()=>cancelAnimationFrame(r)},[alt,focus]);
+  // ring arrival beat — presiding form named once, then recedes
+  useEffect(()=>{if(alt==="ring"){setArrivalName(true);const id=setTimeout(()=>setArrivalName(false),2600);return()=>clearTimeout(id)}},[alt]);
+
+  // press-and-hold Bindu → fall to the source (crossing is chosen)
+  const startHold=useCallback((e)=>{
+    if(e===null){setHold(false);setHoldP(0);clearInterval(holdRef.current);return}
+    setHold(true);let p=0;
+    holdRef.current=setInterval(()=>{p+=1/45;setHoldP(p);if(p>=1){clearInterval(holdRef.current);setHold(false);setHoldP(0);setAlt("bindu")}},20);
+  },[]);
+
+  const descend=()=>{if(alt==="cosmos")setAlt("ring");else if(alt==="ring")setAlt("seat")};
+  const rise=()=>{setAlt(a=>a==="bindu"?"cosmos":a==="felt"?"seat":a==="seat"?"ring":a==="ring"?"cosmos":a)};
+
+  // chrome density recedes with depth (Zero-Gap)
+  const chrome={cosmos:1,ring:.8,seat:.6,felt:.25,bindu:0}[alt];
+  const bg=`radial-gradient(ellipse 120% 90% at 50% 42%, ${atmo.ground}, ${atmo.groundDeep} 68%, var(--ground-deep) 100%)`;
+
+  return (
+    <div style={{position:"absolute",inset:0,background:alt==="bindu"?"var(--silence)":alt==="felt"?"var(--veil)":bg,transition:"background 1.2s",overflow:"hidden",fontFamily:"var(--sans)"}}>
+      <Motes n={alt==="bindu"?6:14} color={atmo.accentBright}/>
+      <Gauge alt={alt} fade={.15+chrome*.85}/>
+
+      {/* persistent watching point */}
+      <Bindu
+        scale={alt==="bindu"?26:alt==="felt"?1.4:alt==="seat"?.7:1}
+        intensity={alt==="bindu"?1:alt==="felt"?1:.55}
+        onHold={(alt==="ring"||alt==="seat")?startHold:null} holding={hold} progress={holdP}/>
+
+      {/* ============ COSMOS ============ */}
+      {alt==="cosmos"&&<Level key="cosmos" enter={enter}>
+        <Yantra op={.16}/>
+        <div style={{position:"absolute",inset:0}}>
+          {RING2.map((s,i)=>{const a=i/16*Math.PI*2-Math.PI/2;const R=118;const A=atmosphere(s);
+            return <button key={s.kp} onClick={()=>{setFocus(s);setAlt("ring")}}
+              style={{position:"absolute",left:`calc(50% + ${Math.cos(a)*R}px)`,top:`calc(41% + ${Math.sin(a)*R}px)`,
+                transform:"translate(-50%,-50%)",width:44,height:44,borderRadius:"50%",border:"none",background:"transparent",cursor:"pointer",padding:0}}>
+              <span style={{display:"block",width:felt.has(s.kp)?9:6,height:felt.has(s.kp)?9:6,margin:"auto",borderRadius:"50%",
+                background:A.accentBright,boxShadow:`0 0 ${felt.has(s.kp)?14:7}px ${A.glow}`,animation:`axDot ${3+i%4}s ease-in-out ${i*.1}s infinite`}}/>
+            </button>})}
+        </div>
+        <TopCap chrome={chrome} eyebrow="the whole instrument" title="Śrī Yantra" sub="102 presences · nine āvaraṇas" />
+        <BottomHint chrome={chrome}>Touch a light to fall inward · <b>hold Bindu</b> to reach the source</BottomHint>
+      </Level>}
+
+      {/* ============ RING ============ */}
+      {alt==="ring"&&<Level key="ring" enter={enter}>
+        <RingSpace focus={focus} felt={felt} pulse={pulse} onSeat={s=>{setFocus(s);setAlt("seat")}} onPulse={()=>setPulse(p=>p+1)} />
+        <div style={{position:"absolute",top:78,left:0,right:0,textAlign:"center",opacity:arrivalName?1:0,transform:arrivalName?"none":"translateY(-6px)",transition:"opacity 1.6s, transform 1.6s",pointerEvents:"none"}}>
+          <div style={{fontFamily:"var(--serif)",fontStyle:"italic",fontWeight:300,fontSize:30,color:atmo.accentBright,letterSpacing:".02em"}}>{RINGS[1][5]}</div>
+        </div>
+        <BackArc onClick={rise} chrome={chrome}/>
+        <TopCap chrome={chrome} eyebrow={`2nd āvaraṇa · ${RINGS[1][2]}`} title="The Sixteen" sub="LIQUEFY · she who fills all longing" small/>
+        <BottomHint chrome={chrome}>Touch a seat to meet her · touch the empty field for the ring's own breath · <b>hold Bindu</b> to fall</BottomHint>
+      </Level>}
+
+      {/* ============ SEAT ============ */}
+      {alt==="seat"&&<Level key="seat" enter={enter}>
+        <SeatView s={focus} atmo={atmo} felt={felt.has(focus.kp)} onFeel={()=>setAlt("felt")} onBack={rise} chrome={chrome}/>
+      </Level>}
+
+      {/* ============ FELT — recognition ceremony ============ */}
+      {alt==="felt"&&<Recognition key="felt" s={focus} atmo={atmo} t={t}
+        onDone={()=>{setFelt(f=>new Set(f).add(focus.kp));setAlt("seat")}}/>}
+
+      {/* ============ BINDU — the source ============ */}
+      {alt==="bindu"&&<Level key="bindu" enter={enter}>
+        <Arrival onBack={()=>setAlt("cosmos")}/>
+      </Level>}
+    </div>
+  );
+}
+
+function Level({children,enter}){
+  return <div style={{position:"absolute",inset:0,opacity:enter?1:0,transform:enter?"scale(1)":"scale(1.12)",
+    transition:"opacity 1s ease, transform 1.2s cubic-bezier(.2,.7,.2,1)"}}>{children}</div>;
+}
+function TopCap({eyebrow,title,sub,chrome,small}){
+  return <div style={{position:"absolute",top:46,left:0,right:0,textAlign:"center",opacity:chrome,transition:"opacity 1s",pointerEvents:"none",padding:"0 40px"}}>
+    <div style={{fontFamily:"var(--mono)",fontSize:9.5,letterSpacing:".26em",textTransform:"uppercase",color:"var(--gold)",opacity:.7}}>{eyebrow}</div>
+    {!small&&<div style={{fontFamily:"var(--serif)",fontWeight:300,fontSize:34,marginTop:8,color:"var(--cream)"}}>{title}</div>}
+    {sub&&<div style={{fontFamily:"var(--serif)",fontStyle:"italic",fontSize:14,marginTop:6,color:"rgba(242,232,217,.5)"}}>{sub}</div>}
+  </div>;
+}
+function BottomHint({children,chrome}){
+  return <div style={{position:"absolute",bottom:40,left:0,right:0,textAlign:"center",padding:"0 46px",opacity:chrome*.9,transition:"opacity 1s",pointerEvents:"none"}}>
+    <p style={{fontSize:11.5,lineHeight:1.7,letterSpacing:".02em",color:"rgba(242,232,217,.5)",textWrap:"pretty"}}>{children}</p>
+  </div>;
+}
+function BackArc({onClick,chrome}){
+  return <button onClick={onClick} style={{position:"absolute",top:44,left:20,width:44,height:44,borderRadius:"50%",border:"none",background:"transparent",color:"var(--cream)",fontSize:20,cursor:"pointer",opacity:chrome*.7,zIndex:40}}>‹</button>;
+}
+
+/* ---------- Ring interior ---------- */
+function RingSpace({focus,felt,pulse,onSeat,onPulse}){
+  const [ripple,setRipple]=useState(0);
+  useEffect(()=>{if(pulse){setRipple(r=>r+1)}},[pulse]);
+  return <div style={{position:"absolute",inset:0}} onClick={e=>{if(e.target===e.currentTarget)onPulse()}}>
+    {ripple>0&&<div key={ripple} style={{position:"absolute",left:"50%",top:"46%",width:20,height:20,borderRadius:"50%",transform:"translate(-50%,-50%)",
+      border:`1px solid ${atmosphere(focus).accentBright}`,animation:"axRipple 1.8s ease-out forwards",pointerEvents:"none"}}/>}
+    {RING2.map((s,i)=>{const a=i/16*Math.PI*2-Math.PI/2;const R=120;const A=atmosphere(s);const on=focus.kp===s.kp;
+      return <button key={s.kp} onClick={()=>onSeat(s)}
+        style={{position:"absolute",left:`calc(50% + ${Math.cos(a)*R}px)`,top:`calc(46% + ${Math.sin(a)*R}px)`,transform:"translate(-50%,-50%)",
+          width:52,height:52,border:"none",background:"transparent",cursor:"pointer",padding:0}}>
+        <span style={{position:"absolute",inset:0,margin:"auto",width:on?18:felt.has(s.kp)?13:11,height:on?18:felt.has(s.kp)?13:11,borderRadius:"50%",
+          background:A.accentBright,boxShadow:`0 0 ${on?18:felt.has(s.kp)?12:8}px ${A.glow}`,
+          animation:pulse?`axShimmer 1.4s ease-out`:`axDot ${3+i%4}s ease-in-out ${i*.08}s infinite`,transition:"width .5s,height .5s"}}/>
+        <span style={{position:"absolute",top:"100%",left:"50%",transform:"translateX(-50%)",marginTop:2,fontFamily:"var(--serif)",fontStyle:"italic",fontSize:11,whiteSpace:"nowrap",color:on?"var(--cream)":`rgba(242,232,217,.4)`}}>{s.name.replace("ākarṣiṇī","")}</span>
+      </button>})}
+  </div>;
+}
+
+/* ---------- Seat: one Śakti, her grammar-built body ---------- */
+function SeatView({s,atmo,felt,onFeel,onBack,chrome}){
+  return <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center"}}>
+    <BackArc onClick={onBack} chrome={chrome}/>
+    <div style={{position:"absolute",top:52,left:0,right:0,textAlign:"center",opacity:chrome,transition:"opacity 1s"}}>
+      <div style={{display:"inline-flex",alignItems:"center",gap:7,fontFamily:"var(--mono)",fontSize:9,letterSpacing:".2em",textTransform:"uppercase",color:atmo.accentBright}}>
+        <span style={{width:6,height:6,borderRadius:"50%",background:atmo.accent}}/>{CLUSTER_LABEL[s.cluster]} · {s.element}
+      </div>
+    </div>
+    <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",marginTop:20}}>
+      <Body s={s} atmo={atmo} size={230}/>
+    </div>
+    <div style={{textAlign:"center",padding:"0 34px",marginBottom:8}}>
+      <div style={{fontFamily:"var(--serif)",fontWeight:300,fontSize:46,lineHeight:1,color:"var(--cream)"}}>{s.name}</div>
+      <div style={{fontFamily:"var(--mono)",fontSize:10,letterSpacing:".18em",color:"rgba(242,232,217,.42)",marginTop:10}}>{s.phon}{s.field?`  ·  ${s.field}`:""}</div>
+      <div style={{fontFamily:"var(--serif)",fontStyle:"italic",fontSize:21,color:atmo.accentBright,marginTop:12}}>{s.quality}</div>
+      <div style={{width:40,height:1,background:atmo.accentFaint,margin:"16px auto"}}/>
+      <div style={{fontSize:13.5,lineHeight:1.6,color:"rgba(242,232,217,.62)",maxWidth:290,margin:"0 auto",textWrap:"pretty"}}>
+        She is the drawing-in of <em style={{color:atmo.accentBright,fontStyle:"italic"}}>{s.quality.toLowerCase()}</em> — already running in you before the app was opened.
+      </div>
+    </div>
+    <button onClick={onFeel} style={{margin:"14px 0 34px",width:280,height:58,borderRadius:30,border:"none",cursor:"pointer",
+      fontFamily:"var(--serif)",fontSize:22,letterSpacing:".1em",color:"var(--cream)",
+      background:`linear-gradient(135deg,var(--accent-red),${hsl(348,60,30)})`,boxShadow:`0 0 34px ${atmo.glow},0 0 24px rgba(139,26,42,.4)`}}>
+      {felt?"felt her again":"I feel her"}
+    </button>
+  </div>;
+}
+
+/* ---------- Recognition ceremony — ripples converge to Bindu ---------- */
+function Recognition({s,atmo,t,onDone}){
+  const [phase,setPhase]=useState(0); // 0 first line, 1 second line, 2 dismissible
+  useEffect(()=>{const a=setTimeout(()=>setPhase(1),2400);const b=setTimeout(()=>setPhase(2),4100);return()=>{clearTimeout(a);clearTimeout(b)}},[]);
+  return <div onClick={()=>phase>=2&&onDone()} style={{position:"absolute",inset:0,background:"var(--veil)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:phase>=2?"pointer":"default"}}>
+    {[0,1,2].map(i=><div key={i} style={{position:"absolute",left:"50%",top:"50%",width:40,height:40,borderRadius:"50%",transform:"translate(-50%,-50%)",
+      border:`1px solid ${atmo.accentBright}`,opacity:0,animation:`axConverge 3.4s ease-in ${i*.9}s infinite`,pointerEvents:"none"}}/>)}
+    <div style={{textAlign:"center",padding:"0 44px",zIndex:5}}>
+      <div style={{fontSize:15,letterSpacing:".04em",color:"rgba(242,232,217,.7)",opacity:phase>=0?1:0,transition:"opacity 1.4s"}}>she was felt here · {t}</div>
+      <div style={{fontFamily:"var(--serif)",fontStyle:"italic",fontWeight:400,fontSize:27,color:"var(--gold)",marginTop:26,opacity:phase>=1?1:0,transform:phase>=1?"none":"translateY(8px)",transition:"opacity 1.8s, transform 1.8s"}}>and she felt you back · {t}</div>
+      <div style={{fontFamily:"var(--mono)",fontSize:9.5,letterSpacing:".2em",textTransform:"uppercase",color:"rgba(242,232,217,.3)",marginTop:52,opacity:phase>=2?1:0,transition:"opacity 1.4s"}}>her point is lit · touch to return</div>
+    </div>
+  </div>;
+}
+
+/* ---------- Bindu arrival — Zero-Gap, chrome gone ---------- */
+function Arrival({onBack}){
+  const [show,setShow]=useState(false);
+  useEffect(()=>{const id=setTimeout(()=>setShow(true),2600);return()=>clearTimeout(id)},[]);
+  return <div onClick={()=>show&&onBack()} style={{position:"absolute",inset:0,background:"var(--silence)",display:"flex",alignItems:"center",justifyContent:"center",cursor:show?"pointer":"default"}}>
+    <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 50% 50%, rgba(232,201,122,.16), transparent 55%)",animation:"axBreath 6s ease-in-out infinite"}}/>
+    <div style={{textAlign:"center",zIndex:5,opacity:show?1:0,transition:"opacity 2.4s",padding:"0 44px"}}>
+      <div style={{fontFamily:"var(--serif)",fontWeight:300,fontSize:24,color:"var(--gold-bright)",letterSpacing:".03em"}}>Lalitā Mahātripurasundarī</div>
+      <div style={{fontFamily:"var(--serif)",fontStyle:"italic",fontSize:19,color:"rgba(242,232,217,.66)",marginTop:22,lineHeight:1.5}}>You did not arrive.<br/>You were the arriving.</div>
+    </div>
+  </div>;
+}
+
+/* keyframes */
+const kf=document.createElement("style");
+kf.textContent=`
+@keyframes axBreath{0%,100%{opacity:.72;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
+@keyframes axDot{0%,100%{opacity:.68;transform:scale(1)}50%{opacity:1;transform:scale(1.14)}}
+@keyframes axFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(6px,-12px)}}
+@keyframes axDrift{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(2deg)}}
+@keyframes axPull{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}
+@keyframes axStill{0%,100%{transform:scale(1)}50%{transform:scale(1.015)}}
+@keyframes axRipple{0%{width:20px;height:20px;opacity:.7}100%{width:320px;height:320px;opacity:0}}
+@keyframes axShimmer{0%{transform:scale(1)}40%{transform:scale(1.5);filter:brightness(1.5)}100%{transform:scale(1)}}
+@keyframes axConverge{0%{width:320px;height:320px;opacity:0}30%{opacity:.6}100%{width:24px;height:24px;opacity:0}}`;
+document.head.appendChild(kf);
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>

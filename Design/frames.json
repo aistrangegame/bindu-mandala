@@ -1,0 +1,1015 @@
+{
+  "title": "The forty frames — parity references",
+  "measuredOn": "2026-10-13",
+  "spec": "waves/upgrade/worlds/verification.md §1.4",
+  "method": "Inside the crop rect (x0,y0,x1,y1 in source pixels; null = whole image): resample to a 64x64 grid, Rec.709 luminance 0-255 (min/p5/mean/p95/max); hue = chroma-weighted circular mean over pixels with V > .12 and S > .25 (null when no chromatic pixels); chromaPercent = share of such pixels. Crop rects are provisional until the first parity run overlays them (V03). duplicateOf = byte-identical (md5) to that frame; comparedAs = the frame it is compared through.",
+  "rules": {
+    "geometry": "3-6 anchors within 3 % (or Design DOM .geom at 375/402/440 within 2 %)",
+    "light": "app mean in [0.8, 1.6] x frame mean; p95 >= frame p95 - 10 %; max >= frame max - 15; blown share <= frame + 1 % (Design is the floor)",
+    "hue": "within 15 degrees (or the Atmosphere hue where Mandala/Map colours win)",
+    "words": "every in-phone Design line verbatim in the accessibility tree, except canvas chrome and any quantity of his practice"
+  },
+  "frames": [
+    {
+      "id": "F01",
+      "world": "rings",
+      "what": "Ring 2 lotus close-up, Sparsa today",
+      "source": "Design/Corpus/uploads/Screenshot 2026-05-27 at 6.58.14 PM.png",
+      "corpusPath": "uploads/Screenshot 2026-05-27 at 6.58.14 PM.png",
+      "crop": null,
+      "luminance": {
+        "min": 2.0,
+        "p5": 4.0,
+        "mean": 36.0,
+        "p95": 136.0,
+        "max": 235.0
+      },
+      "hue": 27,
+      "chromaPercent": 23.4,
+      "comparison": "petal count 16; today petal halo; cluster colour order gold/amber/rose-copper/terracotta/teal/sage/violet clockwise from 12; Nama and Bija petals darkest (mapped status)",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "73af563fb9e9fbc714e60744ce92abfd"
+    },
+    {
+      "id": "F02",
+      "world": "rings",
+      "what": "Ring 8 Mula Trikona three vertex states",
+      "source": "Design/Corpus/uploads/Screenshot 2026-05-27 at 6.58.45 PM.png",
+      "corpusPath": "uploads/Screenshot 2026-05-27 at 6.58.45 PM.png",
+      "crop": null,
+      "luminance": {
+        "min": 2.0,
+        "p5": 3.0,
+        "mean": 24.9,
+        "p95": 191.0,
+        "max": 238.0
+      },
+      "hue": 337,
+      "chromaPercent": 2.5,
+      "comparison": "three vertices Iccha red ~#C45050 / Jnana lavender / Kriya sea-green; tapped vertex glows; name ~60 px Cormorant italic; gloss lines verbatim",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "7854870ad82cdfbb0603f72f2125b171"
+    },
+    {
+      "id": "F03",
+      "world": "time",
+      "what": "Temporal Layer, The Cosmic Now",
+      "source": "Design/Corpus/uploads/Screenshot 2026-05-27 at 7.59.20 PM.png",
+      "corpusPath": "uploads/Screenshot 2026-05-27 at 7.59.20 PM.png",
+      "crop": null,
+      "luminance": {
+        "min": 0.0,
+        "p5": 1.0,
+        "mean": 6.9,
+        "p95": 31.0,
+        "max": 109.0
+      },
+      "hue": 18,
+      "chromaPercent": 0.9,
+      "comparison": "five concentric wheels; five gold bodies; header and THIS MOMENT block verbatim forms; ring labels must NOT collide (Design defect, do not copy)",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "4a7960829a5427c22c2d69d9af7042fd"
+    },
+    {
+      "id": "F04",
+      "world": "climb",
+      "what": "Axis seat state, THE SEAT",
+      "source": "Design/Corpus/screenshots/01-axis-states.png",
+      "corpusPath": "screenshots/01-axis-states.png",
+      "crop": [
+        278,
+        0,
+        646,
+        540
+      ],
+      "luminance": {
+        "min": 17.0,
+        "p5": 18.0,
+        "mean": 21.9,
+        "p95": 26.0,
+        "max": 65.0
+      },
+      "hue": 30,
+      "chromaPercent": 0.3,
+      "comparison": "one coral point at centre; right-edge rail of gold dots; label THE SEAT beside lit dot",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "ea64adc13fc92e4e7b543f88f35fbca0"
+    },
+    {
+      "id": "F05",
+      "world": "climb",
+      "what": "Axis ring state, THE RING",
+      "source": "Design/Corpus/screenshots/02-axis-states.png",
+      "corpusPath": "screenshots/02-axis-states.png",
+      "crop": [
+        278,
+        0,
+        646,
+        540
+      ],
+      "luminance": {
+        "min": 17.0,
+        "p5": 18.0,
+        "mean": 22.0,
+        "p95": 26.0,
+        "max": 95.0
+      },
+      "hue": 30,
+      "chromaPercent": 0.6,
+      "comparison": "as F04, point brighter, rail THE RING",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "f101eaf20af2d39d386bb2334454a34a"
+    },
+    {
+      "id": "F06",
+      "world": "climb",
+      "what": "duplicate of F05",
+      "source": "Design/Corpus/screenshots/03-axis-states.png",
+      "corpusPath": "screenshots/03-axis-states.png",
+      "crop": [
+        278,
+        0,
+        646,
+        540
+      ],
+      "luminance": {
+        "min": 17.0,
+        "p5": 18.0,
+        "mean": 22.0,
+        "p95": 26.0,
+        "max": 95.0
+      },
+      "hue": 30,
+      "chromaPercent": 0.6,
+      "comparison": "byte-identical to F05 (md5 f101eaf2): compared once as F05",
+      "duplicateOf": "F05",
+      "comparedAs": "F05",
+      "md5": "f101eaf20af2d39d386bb2334454a34a"
+    },
+    {
+      "id": "F07",
+      "world": "her-home",
+      "what": "Rooms in 3D, Anima (black WebGL capture)",
+      "source": "Design/Corpus/screenshots/3d-01-anima.png",
+      "corpusPath": "screenshots/3d-01-anima.png",
+      "crop": null,
+      "luminance": {
+        "min": 0.0,
+        "p5": 0.0,
+        "mean": 0.0,
+        "p95": 0.0,
+        "max": 9.0
+      },
+      "hue": null,
+      "chromaPercent": 0.0,
+      "comparison": "NOT a look reference (mean 0.0): Anima parity uses Design readPixels range 128-240 (G1-0408), measured in the app by screen capture",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "e3da56cc95b2a56c62cb6864780508a1"
+    },
+    {
+      "id": "F08",
+      "world": "mandala",
+      "what": "Living Mandala, cosmic tier on indigo",
+      "source": "Design/Corpus/screenshots/01-mandala-chime.png",
+      "corpusPath": "screenshots/01-mandala-chime.png",
+      "crop": [
+        261,
+        0,
+        663,
+        540
+      ],
+      "luminance": {
+        "min": 0.0,
+        "p5": 3.0,
+        "mean": 21.1,
+        "p95": 49.0,
+        "max": 179.0
+      },
+      "hue": 220,
+      "chromaPercent": 29.9,
+      "comparison": "indigo ground hue ~220 (measured 220); full yantra; title + sub verbatim; menu control top-right",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "b0e8c59a9f7a721f2bda7e5f418e529a"
+    },
+    {
+      "id": "F09",
+      "world": "mandala",
+      "what": "Living Mandala, mid tier",
+      "source": "Design/Corpus/screenshots/02-mandala-chime.png",
+      "corpusPath": "screenshots/02-mandala-chime.png",
+      "crop": [
+        261,
+        0,
+        663,
+        540
+      ],
+      "luminance": {
+        "min": 0.0,
+        "p5": 3.0,
+        "mean": 21.6,
+        "p95": 50.0,
+        "max": 179.0
+      },
+      "hue": 223,
+      "chromaPercent": 26.3,
+      "comparison": "bhupura band fills width; 16-loop petal ring; red glow; indigo ground hue ~223",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "1d757d8a5b9d6f74da17ac513fae43ec"
+    },
+    {
+      "id": "F10",
+      "world": "home",
+      "what": "Bindu to Lalita finale, red bloom",
+      "source": "Design/Corpus/screenshots/chime-flash.png",
+      "corpusPath": "screenshots/chime-flash.png",
+      "crop": [
+        261,
+        0,
+        663,
+        540
+      ],
+      "luminance": {
+        "min": 1.0,
+        "p5": 10.0,
+        "mean": 29.5,
+        "p95": 106.0,
+        "max": 223.0
+      },
+      "hue": 356,
+      "chromaPercent": 86.4,
+      "comparison": "crimson bloom hue ~356 with 86% chroma pixels; gold-white glow; Lalita name ~70 px; caption lines verbatim",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "5b3231977426424444507e20cf908a05"
+    },
+    {
+      "id": "F11",
+      "world": "climb",
+      "what": "Axis Ring 2 tier, 16 seats",
+      "source": "Design/Corpus/screenshots/01-ring.png",
+      "corpusPath": "screenshots/01-ring.png",
+      "crop": [
+        278,
+        0,
+        646,
+        540
+      ],
+      "luminance": {
+        "min": 19.0,
+        "p5": 21.0,
+        "mean": 27.6,
+        "p95": 35.0,
+        "max": 179.0
+      },
+      "hue": 9,
+      "chromaPercent": 99.0,
+      "comparison": "16 seat dots in circle, cluster colours; today seat larger and white-labelled; labels ON their dots (Design offset defect not copied)",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "162b3d69b8c7a16c58d2efd06895eb9a"
+    },
+    {
+      "id": "F12",
+      "world": "climb",
+      "what": "F11 + harness overlay",
+      "source": "Design/Corpus/screenshots/02-ring.png",
+      "corpusPath": "screenshots/02-ring.png",
+      "crop": [
+        278,
+        0,
+        646,
+        540
+      ],
+      "luminance": {
+        "min": 19.0,
+        "p5": 21.0,
+        "mean": 27.6,
+        "p95": 35.0,
+        "max": 179.0
+      },
+      "hue": 9,
+      "chromaPercent": 99.0,
+      "comparison": "same pixels as F11 apart from debug overlay: compared once as F11",
+      "duplicateOf": null,
+      "comparedAs": "F11",
+      "md5": "a9ea5457d0d64d9aac99456edf0cde0d"
+    },
+    {
+      "id": "F13",
+      "world": "climb",
+      "what": "Axis seat tier entering a room",
+      "source": "Design/Corpus/screenshots/01-seat.png",
+      "corpusPath": "screenshots/01-seat.png",
+      "crop": [
+        278,
+        0,
+        646,
+        540
+      ],
+      "luminance": {
+        "min": 23.0,
+        "p5": 27.0,
+        "mean": 30.9,
+        "p95": 37.0,
+        "max": 72.0
+      },
+      "hue": 28,
+      "chromaPercent": 100.0,
+      "comparison": "umber wash, darker vertical shaft, single coral point, rail THE SEAT",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "c51eacb2a1001ddda9d83d3b8bfe499c"
+    },
+    {
+      "id": "F14",
+      "world": "her-presence",
+      "what": "Recognition at the seat: the two lines + FELT",
+      "source": "Design/Corpus/screenshots/02-seat.png",
+      "corpusPath": "screenshots/02-seat.png",
+      "crop": [
+        278,
+        0,
+        646,
+        540
+      ],
+      "luminance": {
+        "min": 4.0,
+        "p5": 5.0,
+        "mean": 6.5,
+        "p95": 13.0,
+        "max": 154.0
+      },
+      "hue": 24,
+      "chromaPercent": 2.2,
+      "comparison": "'she was felt here' ~15 px cream sans above 'and she felt you back' ~24 px gold italic Cormorant, light between, rail FELT; lines verbatim",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "b2275cdcd9cf0cdc65d3787c0c5b103a"
+    },
+    {
+      "id": "F15",
+      "world": "rings",
+      "what": "Ring 4 Lineage resting",
+      "source": "Design/Corpus/scratch/01-r3-gather.png",
+      "corpusPath": "scratch/01-r3-gather.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 5.0,
+        "p5": 6.0,
+        "mean": 15.0,
+        "p95": 31.0,
+        "max": 78.0
+      },
+      "hue": 133,
+      "chromaPercent": 2.2,
+      "comparison": "14-station garland of triangles joined by inward-bowing arcs; green radial ground hue ~133; resting line verbatim",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "75ec3436e07d843f99c0d35ce9993594"
+    },
+    {
+      "id": "F16",
+      "world": "rings",
+      "what": "duplicate of F15",
+      "source": "Design/Corpus/scratch/02-r3-gather.png",
+      "corpusPath": "scratch/02-r3-gather.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 5.0,
+        "p5": 6.0,
+        "mean": 15.0,
+        "p95": 31.0,
+        "max": 78.0
+      },
+      "hue": 133,
+      "chromaPercent": 2.2,
+      "comparison": "md5 75ec3436 = F15",
+      "duplicateOf": "F15",
+      "comparedAs": "F15",
+      "md5": "75ec3436e07d843f99c0d35ce9993594"
+    },
+    {
+      "id": "F17",
+      "world": "rings",
+      "what": "duplicate of F15",
+      "source": "Design/Corpus/scratch/03-r3-gather.png",
+      "corpusPath": "scratch/03-r3-gather.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 5.0,
+        "p5": 6.0,
+        "mean": 15.0,
+        "p95": 31.0,
+        "max": 78.0
+      },
+      "hue": 133,
+      "chromaPercent": 2.2,
+      "comparison": "md5 75ec3436 = F15",
+      "duplicateOf": "F15",
+      "comparedAs": "F15",
+      "md5": "75ec3436e07d843f99c0d35ce9993594"
+    },
+    {
+      "id": "F18",
+      "world": "rings",
+      "what": "six worlds dropdown",
+      "source": "Design/Corpus/scratch/01-r3-states.png",
+      "corpusPath": "scratch/01-r3-states.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 5.0,
+        "p5": 6.0,
+        "mean": 15.0,
+        "p95": 31.0,
+        "max": 78.0
+      },
+      "hue": 132,
+      "chromaPercent": 2.1,
+      "comparison": "inventory only (canvas chrome): the six Handoff II worlds must each exist in the app",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "e2bb0f56ff924112ae3f0cc4b6d8cd52"
+    },
+    {
+      "id": "F19",
+      "world": "rings",
+      "what": "Ring 3 Smoke Lotus gathered",
+      "source": "Design/Corpus/scratch/02-r3-states.png",
+      "corpusPath": "scratch/02-r3-states.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 2.0,
+        "p5": 2.0,
+        "mean": 12.6,
+        "p95": 57.0,
+        "max": 88.0
+      },
+      "hue": 7,
+      "chromaPercent": 13.2,
+      "comparison": "eight blurred rose-copper plumes in a ring (hue ~7); centre hsaum; the Ring Worlds II Ring 3 comparison target (MBB-05)",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "853f2ebfe64939dd65522331460efa32"
+    },
+    {
+      "id": "F20",
+      "world": "rings",
+      "what": "duplicate of F19",
+      "source": "Design/Corpus/scratch/03-r3-states.png",
+      "corpusPath": "scratch/03-r3-states.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 2.0,
+        "p5": 2.0,
+        "mean": 12.6,
+        "p95": 57.0,
+        "max": 88.0
+      },
+      "hue": 7,
+      "chromaPercent": 13.2,
+      "comparison": "md5 853f2ebf = F19",
+      "duplicateOf": "F19",
+      "comparedAs": "F19",
+      "md5": "853f2ebfe64939dd65522331460efa32"
+    },
+    {
+      "id": "F21",
+      "world": "rings",
+      "what": "Ring 3 one plume touched",
+      "source": "Design/Corpus/scratch/r3-live.png",
+      "corpusPath": "scratch/r3-live.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 2.0,
+        "p5": 2.0,
+        "mean": 10.9,
+        "p95": 36.0,
+        "max": 163.0
+      },
+      "hue": 4,
+      "chromaPercent": 12.7,
+      "comparison": "touched plume bright cream-gold (max 163 vs gathered 88); others dim",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "71e347fca1f9583d8faf6f7847012cfe"
+    },
+    {
+      "id": "F22",
+      "world": "rings",
+      "what": "Ring 4 transmission in flight",
+      "source": "Design/Corpus/scratch/r3-r4-v2.png",
+      "corpusPath": "scratch/r3-r4-v2.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 5.0,
+        "p5": 6.0,
+        "mean": 13.4,
+        "p95": 25.0,
+        "max": 123.0
+      },
+      "hue": 133,
+      "chromaPercent": 1.8,
+      "comparison": "one comet light travelling; arcs not yet drawn; max 123",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "00a1a23740a301daa3901494598786f2"
+    },
+    {
+      "id": "F23",
+      "world": "rings",
+      "what": "Ring 4 transmission partway",
+      "source": "Design/Corpus/scratch/r4-live.png",
+      "corpusPath": "scratch/r4-live.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 5.0,
+        "p5": 6.0,
+        "mean": 13.4,
+        "p95": 25.0,
+        "max": 93.0
+      },
+      "hue": 134,
+      "chromaPercent": 1.9,
+      "comparison": "arcs drawn clockwise to the receiving station, which glows",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "c4e0f8b7c2c5b3a1fc2f0a510ec721d0"
+    },
+    {
+      "id": "F24",
+      "world": "rings",
+      "what": "Ring 5 Overflow, all ten flooding",
+      "source": "Design/Corpus/scratch/r5-flood.png",
+      "corpusPath": "scratch/r5-flood.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 3.0,
+        "p5": 9.0,
+        "mean": 23.0,
+        "p95": 41.0,
+        "max": 75.0
+      },
+      "hue": 40,
+      "chromaPercent": 31.3,
+      "comparison": "ten outlined gold triangles; long rays spill past, no boundary circle; amber hue ~40, chroma 31%",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "475a5bdac9fe0b69c00e0c6eacace4ae"
+    },
+    {
+      "id": "F25",
+      "world": "rings",
+      "what": "Ring 6 Concealed, the light reaching one",
+      "source": "Design/Corpus/scratch/r6-one.png",
+      "corpusPath": "scratch/r6-one.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 2.0,
+        "p5": 3.0,
+        "mean": 5.5,
+        "p95": 14.0,
+        "max": 68.0
+      },
+      "hue": 254,
+      "chromaPercent": 0.9,
+      "comparison": "near-black (mean 5.5); a moving glow reveals only near marks; hue from Atmosphere teal 194, not Design violet (Mandala/Map colours win)",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "1fdd5bbaf17d8efda24eada0df438da4"
+    },
+    {
+      "id": "F26",
+      "world": "rings",
+      "what": "Ring 7 Vak chamber, twelve voices at 30 deg",
+      "source": "Design/Corpus/scratch/r7-twelve.png",
+      "corpusPath": "scratch/r7-twelve.png",
+      "crop": [
+        597,
+        119,
+        885,
+        700
+      ],
+      "luminance": {
+        "min": 3.0,
+        "p5": 3.0,
+        "mean": 13.6,
+        "p95": 33.0,
+        "max": 106.0
+      },
+      "hue": 34,
+      "chromaPercent": 10.8,
+      "comparison": "12 circles evenly at 30 deg with bija + name; centre chord; voices from Airtable Ring 7 (not Design name set); the n-of-12 counter is not carried (floor)",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "83c8d0dc369154b1932ccc6e9966f3ee"
+    },
+    {
+      "id": "F27",
+      "world": "rings",
+      "what": "Ring 8 Mula Trikona resting",
+      "source": "Design/Corpus/scratch/r8-check.png",
+      "corpusPath": "scratch/r8-check.png",
+      "crop": [
+        597,
+        119,
+        885,
+        700
+      ],
+      "luminance": {
+        "min": 1.0,
+        "p5": 2.0,
+        "mean": 8.5,
+        "p95": 28.0,
+        "max": 106.0
+      },
+      "hue": 0,
+      "chromaPercent": 1.9,
+      "comparison": "Iccha apex red, Jnana bottom-left violet, Kriya bottom-right teal; centre red point; line verbatim",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "0b0e3a9214644812e323819fa0539c5a"
+    },
+    {
+      "id": "F28",
+      "world": "rings",
+      "what": "Ring 9 Pravesa start",
+      "source": "Design/Corpus/scratch/r9-descent.png",
+      "corpusPath": "scratch/r9-descent.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 1.0,
+        "p5": 1.0,
+        "mean": 3.9,
+        "p95": 10.0,
+        "max": 54.0
+      },
+      "hue": 347,
+      "chromaPercent": 0.4,
+      "comparison": "indigo-violet vertical glow, small red point white core (mean 3.9, max 54); hold to fall inward",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "f6eefd72f1be0396dc8c3769293c259d"
+    },
+    {
+      "id": "F29",
+      "world": "home",
+      "what": "Ring 9 Spanda full bloom = G17 centre bloom",
+      "source": "Design/Corpus/scratch/r9-full.png",
+      "corpusPath": "scratch/r9-full.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 0.0,
+        "p5": 1.0,
+        "mean": 7.2,
+        "p95": 33.0,
+        "max": 123.0
+      },
+      "hue": 360,
+      "chromaPercent": 6.8,
+      "comparison": "16 petal loops + nested red triangles + white Bindu, drawn outward from the point while held; two lines verbatim",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "01e9404f75ff97a6730909dced8e1980"
+    },
+    {
+      "id": "F30",
+      "world": "rings",
+      "what": "Ring 1 Earth-City v1",
+      "source": "Design/Corpus/scratch/ring1-overview.png",
+      "corpusPath": "scratch/ring1-overview.png",
+      "crop": [
+        62,
+        152,
+        445,
+        894
+      ],
+      "luminance": {
+        "min": 4.0,
+        "p5": 7.0,
+        "mean": 12.6,
+        "p95": 27.0,
+        "max": 121.0
+      },
+      "hue": 33,
+      "chromaPercent": 3.8,
+      "comparison": "superseded by F32 for composition; lines verbatim",
+      "duplicateOf": null,
+      "comparedAs": "F32",
+      "md5": "c789e82da1c94bf548761ad1627770b1"
+    },
+    {
+      "id": "F31",
+      "world": "rings",
+      "what": "Ring 1 v2 iteration",
+      "source": "Design/Corpus/scratch/ring1-v2.png",
+      "corpusPath": "scratch/ring1-v2.png",
+      "crop": [
+        62,
+        152,
+        445,
+        894
+      ],
+      "luminance": {
+        "min": 4.0,
+        "p5": 7.0,
+        "mean": 12.6,
+        "p95": 27.0,
+        "max": 121.0
+      },
+      "hue": 33,
+      "chromaPercent": 4.0,
+      "comparison": "iteration of F30: compared via F32",
+      "duplicateOf": null,
+      "comparedAs": "F32",
+      "md5": "23c76ba117aa19562ebcad302a4e1103"
+    },
+    {
+      "id": "F32",
+      "world": "rings",
+      "what": "Ring 1 v3 latest composition (target)",
+      "source": "Design/Corpus/scratch/ring1-v3.png",
+      "corpusPath": "scratch/ring1-v3.png",
+      "crop": [
+        62,
+        152,
+        445,
+        894
+      ],
+      "luminance": {
+        "min": 4.0,
+        "p5": 7.0,
+        "mean": 12.6,
+        "p95": 29.0,
+        "max": 121.0
+      },
+      "hue": 33,
+      "chromaPercent": 4.3,
+      "comparison": "three nested gold squares with T-gates; 28 gold lights; tiny crimson Bindu; text block clear of the bottom edge",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "fbc2412b2d71cacd6d52a4b208145236"
+    },
+    {
+      "id": "F33",
+      "world": "rings",
+      "what": "Ring 1 Matrka focus + family legend",
+      "source": "Design/Corpus/scratch/ring1-focus.png",
+      "corpusPath": "scratch/ring1-focus.png",
+      "crop": [
+        552,
+        118,
+        848,
+        758
+      ],
+      "luminance": {
+        "min": 3.0,
+        "p5": 6.0,
+        "mean": 10.9,
+        "p95": 19.0,
+        "max": 72.0
+      },
+      "hue": 34,
+      "chromaPercent": 1.7,
+      "comparison": "family band lit (8 lights); legend Siddhi / Matrka / Mudra",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "7dba9fa9ec591a18b604689b583edee8"
+    },
+    {
+      "id": "F34",
+      "world": "rings",
+      "what": "Ring 2 Inhabited Lotus + invocation",
+      "source": "Design/Corpus/scratch/ring2-fix.png",
+      "corpusPath": "scratch/ring2-fix.png",
+      "crop": [
+        500,
+        152,
+        881,
+        838
+      ],
+      "luminance": {
+        "min": 2.0,
+        "p5": 3.0,
+        "mean": 13.6,
+        "p95": 45.0,
+        "max": 166.0
+      },
+      "hue": 22,
+      "chromaPercent": 5.4,
+      "comparison": "long-press today petal: others to ~18%, name + bija + gloss verbatim",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "81037e18925442904a7351c0ead5b7dd"
+    },
+    {
+      "id": "F35",
+      "world": "rings",
+      "what": "mislabelled ring8-fix shows Ring 2",
+      "source": "Design/Corpus/scratch/ring8-fix.png",
+      "corpusPath": "scratch/ring8-fix.png",
+      "crop": [
+        500,
+        152,
+        881,
+        838
+      ],
+      "luminance": {
+        "min": 2.0,
+        "p5": 3.0,
+        "mean": 13.9,
+        "p95": 47.0,
+        "max": 166.0
+      },
+      "hue": 22,
+      "chromaPercent": 5.8,
+      "comparison": "later pass of F34: stronger halo; compared as F34 alternate",
+      "duplicateOf": null,
+      "comparedAs": "F34",
+      "md5": "e258100b93e7f97b9f3ac2f4823db462"
+    },
+    {
+      "id": "F36",
+      "world": "mandala",
+      "what": "May-era shipped Mandala with tab bar (NOT a target)",
+      "source": "Design/Corpus/scratch/current-mandala.png",
+      "corpusPath": "scratch/current-mandala.png",
+      "crop": [
+        68,
+        42,
+        457,
+        826
+      ],
+      "luminance": {
+        "min": 6.0,
+        "p5": 7.0,
+        "mean": 15.1,
+        "p95": 46.0,
+        "max": 148.0
+      },
+      "hue": 25,
+      "chromaPercent": 13.7,
+      "comparison": "negative reference: no progress line (5 of 16 Active), no tab bar laid over the Mandala",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "54c0010f6d73b7181cf755d01d7864e6"
+    },
+    {
+      "id": "F37",
+      "world": "mandala",
+      "what": "the Veil closed (held yantra)",
+      "source": "Design/Corpus/scratch/veil-rest.png",
+      "corpusPath": "scratch/veil-rest.png",
+      "crop": null,
+      "luminance": {
+        "min": 1.0,
+        "p5": 1.0,
+        "mean": 6.2,
+        "p95": 20.0,
+        "max": 113.0
+      },
+      "hue": 24,
+      "chromaPercent": 3.7,
+      "comparison": "full held yantra; bottom handle THE NINE AVARANAS; ground near-black (mean 6.2)",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "9fc25089aded534950f9b27d0094404b"
+    },
+    {
+      "id": "F38",
+      "world": "mandala",
+      "what": "the Veil sheet rising",
+      "source": "Design/Corpus/scratch/veil-open.png",
+      "corpusPath": "scratch/veil-open.png",
+      "crop": null,
+      "luminance": {
+        "min": 1.0,
+        "p5": 1.0,
+        "mean": 7.3,
+        "p95": 31.0,
+        "max": 112.0
+      },
+      "hue": 15,
+      "chromaPercent": 5.8,
+      "comparison": "sheet title + DESCEND; yantra dims behind; caption verbatim",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "f3357a5a2628f459b7b5683a82530ec6"
+    },
+    {
+      "id": "F39",
+      "world": "mandala",
+      "what": "the Veil descending",
+      "source": "Design/Corpus/scratch/veil-descent.png",
+      "corpusPath": "scratch/veil-descent.png",
+      "crop": null,
+      "luminance": {
+        "min": 1.0,
+        "p5": 1.0,
+        "mean": 6.9,
+        "p95": 26.0,
+        "max": 111.0
+      },
+      "hue": 13,
+      "chromaPercent": 5.3,
+      "comparison": "larger diffuse red Bindu glow, motes",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "da0be542e6c62be863c6a29090b238bc"
+    },
+    {
+      "id": "F40",
+      "world": "climb",
+      "what": "Homes Axis desktop thumbnail (climb chrome)",
+      "source": "Design/Frames/F40-claude-designs-thumbnail.webp",
+      "corpusPath": null,
+      "crop": null,
+      "luminance": {
+        "min": 1.0,
+        "p5": 16.0,
+        "mean": 218.7,
+        "p95": 239.0,
+        "max": 240.0
+      },
+      "hue": null,
+      "chromaPercent": 0.0,
+      "comparison": "word inventory only (desktop canvas, 320x304): rail of nine body regions, weather sentence, SHE PRESIDES TODAY, control vocabulary; hint must not overlap ENTER HER",
+      "duplicateOf": null,
+      "comparedAs": null,
+      "md5": "8dcdb4f4085a37fa32af233498ce6373",
+      "origin": "Claude Designs/.thumbnail (repo copy of the first Design export; 320x304 RGBA WEBP). The Design upload's own .thumbnail (Design/Corpus/.thumbnail, 640x631) is a different image and does not match the measured numbers."
+    }
+  ]
+}

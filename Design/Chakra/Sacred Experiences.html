@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Sacred Experiences</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#020205;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.07);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.6);opacity:0}}
+@keyframes aurora-pulse{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.9;transform:scale(1.25)}}
+@keyframes whole-bloom{0%{opacity:0;transform:scale(.6)}60%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+@keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+textarea,input{font-family:inherit;outline:none;}
+textarea::placeholder,input::placeholder{color:rgba(240,232,220,.22);}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0C0A12;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#181620;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #181620,0 108px 0 #181620;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#181620;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#06040A;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ═══ A: CORE ═══ -->
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+function Starfield({ count = 100, opacity = 0.44 }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const c = ref.current; if (!c) return;
+    const ctx = c.getContext('2d');
+    c.width = c.offsetWidth; c.height = c.offsetHeight;
+    const stars = Array.from({ length: count }, () => ({
+      x: Math.random() * c.width, y: Math.random() * c.height,
+      r: Math.random() * 1.1 + .2, ph: Math.random() * Math.PI * 2,
+    }));
+    let raf, t = 0;
+    function draw() {
+      ctx.clearRect(0, 0, c.width, c.height);
+      stars.forEach(s => {
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff'; ctx.globalAlpha = opacity * (.4 + .6 * Math.sin(s.ph + t * .4));
+        ctx.fill();
+      });
+      t += .016; raf = requestAnimationFrame(draw);
+    }
+    draw(); return () => cancelAnimationFrame(raf);
+  }, []);
+  return <canvas ref={ref} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />;
+}
+
+function Aurora({ active }) {
+  if (!active) return null;
+  const layers = [
+    ['#A83232','5s','0s','30%','25%'],['#C45A18','6s','.4s','70%','35%'],
+    ['#C49B17','4s','.8s','50%','65%'],['#1A8060','7s','.2s','20%','75%'],
+    ['#1E6EA0','5s','.6s','80%','55%'],['#4A3AAB','6s','.3s','45%','28%'],
+    ['#8A3AB5','8s','.5s','55%','80%'],
+  ];
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      {layers.map(([color,dur,del,cx,cy], i) => (
+        <div key={i} style={{
+          position: 'absolute', inset: '-20%', width: '140%', height: '140%',
+          background: `radial-gradient(ellipse 65% 65% at ${cx} ${cy},${color}75 0%,transparent 65%)`,
+          animation: `aurora-pulse ${dur} ${del} ease-in-out infinite`, mixBlendMode: 'screen',
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function makeHeartbeat(ctx) {
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const o1 = ctx.createOscillator(), g1 = ctx.createGain();
+  o1.type = 'sine'; o1.frequency.value = 68;
+  o1.connect(g1); g1.connect(ctx.destination);
+  g1.gain.setValueAtTime(.45, now); g1.gain.exponentialRampToValueAtTime(.001, now + .2);
+  o1.start(now); o1.stop(now + .2);
+  const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+  o2.type = 'sine'; o2.frequency.value = 52;
+  o2.connect(g2); g2.connect(ctx.destination);
+  g2.gain.setValueAtTime(0, now + .13); g2.gain.setValueAtTime(.28, now + .15);
+  g2.gain.exponentialRampToValueAtTime(.001, now + .33);
+  o2.start(now + .13); o2.stop(now + .33);
+}
+
+function XCompletion({ color, accent, headline, text, onReturn }) {
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 36px', textAlign:'center', animation:'emerge .7s ease' }}>
+      <div style={{ width:'80px', height:'80px', borderRadius:'50%', marginBottom:'28px', background:`radial-gradient(circle at 38% 38%,${accent}45,${color}65)`, boxShadow:`0 0 36px ${color}60`, animation:'breathe 4s ease-in-out infinite' }} />
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px', color:'rgba(240,232,220,.92)', marginBottom:'16px', lineHeight:1.3 }}>{headline}</p>
+      {text && <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'16px', color:'rgba(240,232,220,.48)', lineHeight:1.75, marginBottom:'40px', maxWidth:'240px' }}>{text}</p>}
+      <button onClick={onReturn} style={{ padding:'13px 32px', borderRadius:'28px', cursor:'pointer', background:`${color}22`, border:`1px solid ${color}55`, fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', color:'rgba(240,232,220,.80)', letterSpacing:'.15em', textTransform:'uppercase' }}>Return</button>
+    </div>
+  );
+}
+
+Object.assign(window, { Starfield, Aurora, makeHeartbeat, XCompletion });
+</script>
+
+<!-- ═══ B: PULSE + SHADOW ═══ -->
+<script type="text/babel">
+const { useState: useSt, useEffect: useEf, useRef: useRf } = React;
+const { Starfield: SF, Aurora: AU, makeHeartbeat: MHB, XCompletion: XC } = window;
+
+// ─── PULSE ────────────────────────────────────────────
+function PulseExperience({ onReturn }) {
+  const [phase, setPhase] = useSt('intro');
+  const [taps, setTaps] = useSt([]);
+  const [rings, setRings] = useSt([]);
+  const audioRef = useRf(null);
+  const color = '#1A8060', accent = '#80E5BC';
+
+  useEf(() => {
+    if (phase !== 'intro') return;
+    const t = setTimeout(() => setPhase('find'), 3000);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  function initAudio() {
+    if (!audioRef.current) {
+      try { audioRef.current = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (audioRef.current?.state === 'suspended') audioRef.current.resume();
+  }
+
+  function handleTap(e) {
+    if (!['find','tap'].includes(phase)) return;
+    e.stopPropagation();
+    initAudio();
+    MHB(audioRef.current);
+    const now = Date.now();
+    setRings(r => [...r.slice(-3), { id: now }]);
+    setTaps(prev => {
+      const next = [...prev, now];
+      if (next.length === 1) setPhase('tap');
+      if (next.length >= 8) setTimeout(() => setPhase('rhythm'), 500);
+      return next;
+    });
+  }
+
+  const intervals = taps.length > 1 ? taps.slice(1).map((t,i) => t - taps[i]) : [];
+  const avgBPM = intervals.length > 0 ? Math.round(60000 / (intervals.reduce((a,b)=>a+b,0) / intervals.length)) : null;
+
+  if (phase === 'done') return (
+    <div style={{ height:'100%', background:'radial-gradient(ellipse at 50% 60%,#071812,#030A09)' }}>
+      <XC color={color} accent={accent} headline="The most reliable relationship you have ever been in." text="It was here before your first thought. It will be here after your last." onReturn={onReturn} />
+    </div>
+  );
+
+  return (
+    <div onClick={handleTap} style={{ height:'100%', background:'radial-gradient(ellipse at 50% 60%,#071812,#030A09)', position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'28px', cursor:['find','tap'].includes(phase)?'pointer':'default', userSelect:'none' }}>
+      <button onClick={e=>{e.stopPropagation();onReturn();}} style={{ position:'absolute', top:'14px', left:'22px', background:'none', border:'none', cursor:'pointer', fontSize:'11px', letterSpacing:'.2em', color:`${accent}50`, textTransform:'uppercase' }}>← Back</button>
+      <p style={{ position:'absolute', top:'18px', fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.3em', color:`${accent}45`, textTransform:'uppercase' }}>Pulse · Body</p>
+
+      {rings.map(ring => (
+        <div key={ring.id} style={{ position:'absolute', left:'50%', top:'50%', width:'120px', height:'120px', marginLeft:'-60px', marginTop:'-60px', borderRadius:'50%', border:`1px solid ${accent}`, animation:'pulse-ring 1.2s ease-out forwards', pointerEvents:'none' }} />
+      ))}
+
+      {phase !== 'rhythm' && (
+        <div style={{ width: phase==='intro'?'60px':'116px', height: phase==='intro'?'60px':'116px', borderRadius:'50%', transition:'all 1s ease', background:`radial-gradient(circle at 38% 38%,${accent}40,${color}60)`, boxShadow:`0 0 ${phase==='tap'?48:24}px ${color}50`, animation:'breathe 4s ease-in-out infinite', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          {taps.length > 0 && <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', color:'rgba(240,232,220,.6)' }}>{taps.length}</span>}
+        </div>
+      )}
+
+      {phase === 'intro' && <div key="i" style={{ textAlign:'center', animation:'emerge .8s ease' }}><p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px', color:'rgba(240,232,220,.85)', marginBottom:'12px' }}>Two fingers to your wrist.</p><p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'20px', color:'rgba(240,232,220,.42)' }}>Wait.</p></div>}
+      {phase === 'find' && <p key="f" style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'20px', color:'rgba(240,232,220,.55)', animation:'emerge .6s ease', textAlign:'center' }}>Tap when you feel the beat.</p>}
+      {phase === 'tap'  && taps.length < 8 && <p key="t" style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'17px', color:`${accent}55`, animation:'emerge .4s ease' }}>Keep tapping…</p>}
+
+      {phase === 'rhythm' && (
+        <div key="r" style={{ textAlign:'center', padding:'0 32px', animation:'emerge .8s ease' }}>
+          {avgBPM && <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'68px', fontWeight:300, color:accent, lineHeight:1, marginBottom:'4px' }}>{avgBPM}</p>}
+          <p style={{ fontSize:'10px', letterSpacing:'.25em', color:`${accent}50`, textTransform:'uppercase', marginBottom:'24px' }}>beats per minute</p>
+          <svg width="280" height="36" style={{ margin:'0 auto', display:'block', marginBottom:'24px', overflow:'visible' }}>
+            <line x1="10" y1="18" x2="270" y2="18" stroke={`${accent}18`} strokeWidth="1" />
+            {taps.map((_,i) => {
+              const total = intervals.reduce((a,b)=>a+b,0) || 1;
+              const cx = i===0 ? 10 : 10 + intervals.slice(0,i).reduce((a,b)=>a+b,0)/total * 260;
+              return <circle key={i} cx={cx} cy="18" r="5" fill={accent} opacity={.25+.75*(i/taps.length)} />;
+            })}
+          </svg>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'20px', color:'rgba(240,232,220,.80)', lineHeight:1.65, marginBottom:'28px' }}>This has been happening<br/>since before your first thought.</p>
+          <button onClick={e=>{e.stopPropagation();setPhase('done');}} style={{ padding:'12px 28px', borderRadius:'26px', cursor:'pointer', background:`${color}20`, border:`1px solid ${color}50`, fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', color:'rgba(240,232,220,.78)', letterSpacing:'.16em', textTransform:'uppercase' }}>Continue</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SHADOW ────────────────────────────────────────────
+const SCROLLS = [
+  "The creativity that was called impractical.",
+  "The sensitivity that was called weakness.",
+  "The anger that was called unacceptable.",
+  "The ambition that was called greedy.",
+  "The softness that was called liability.",
+  "The wildness that was called chaos.",
+  "None of it was wrong.",
+  "All of it was too large for the container.",
+  "So it went underground.",
+  "Not destroyed. Compressed. Stored.",
+  "Waiting for a bigger container.",
+  "You are a bigger container now."
+];
+const REVERSAL_WORDS = ['home','come','please','back'];
+
+function ShadowExperience({ onReturn }) {
+  const [phase,  setPhase]  = useSt('scrolls');
+  const [sIdx,   setSIdx]   = useSt(0);
+  const [hold,   setHold]   = useSt(0);
+  const holdRef = useRf(null);
+  const [word,   setWord]   = useSt('');
+  const [aiText, setAiText] = useSt('');
+  const [aiLoad, setAiLoad] = useSt(false);
+  const [revIdx, setRevIdx] = useSt(-1);
+  const [full,   setFull]   = useSt(false);
+  const c = { color:'#5A4AB5', accent:'#C0B0F8' };
+
+  // Scroll auto-advance
+  useEf(() => {
+    if (phase !== 'scrolls') return;
+    const t = setTimeout(() => {
+      if (sIdx < SCROLLS.length - 1) setSIdx(i => i+1); else setPhase('look');
+    }, 4200);
+    return () => clearTimeout(t);
+  }, [sIdx, phase]);
+
+  // Reversal sequence
+  useEf(() => {
+    if (phase !== 'reversal' || full) return;
+    if (revIdx >= REVERSAL_WORDS.length - 1) {
+      const t = setTimeout(() => setFull(true), 2400); return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setRevIdx(i => i+1), revIdx === -1 ? 400 : 2400);
+    return () => clearTimeout(t);
+  }, [revIdx, phase, full]);
+
+  function startHold() {
+    let p = 0;
+    holdRef.current = setInterval(() => {
+      p += 50/3000;
+      setHold(Math.min(p, 1));
+      if (p >= 1) { clearInterval(holdRef.current); setPhase('input'); }
+    }, 50);
+  }
+  function stopHold() { clearInterval(holdRef.current); setHold(0); }
+
+  async function offerWord() {
+    if (!word.trim()) return;
+    setPhase('mirror'); setAiLoad(true);
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:`You are the corridor — the threshold between what has been seen and what has not yet been seen. The walker has offered one word: "${word.trim()}". Respond as the corridor itself. Not as therapy or advice — as pure, loving recognition. The word is not broken. It is the place where the light has not yet been pointed. In exactly 2 sentences, reflect this word back as capacity waiting to arrive, as the future coming to find them. Begin with: "${word.trim()} —"` }] });
+      setAiText(r);
+    } catch {
+      setAiText(`${word.trim()} — The corridor receives what you have offered. The light has been pointed.`);
+    }
+    setAiLoad(false);
+    setTimeout(() => { setRevIdx(-1); setFull(false); setPhase('reversal'); }, 3800);
+  }
+
+  const circ = 2 * Math.PI * 38;
+
+  return (
+    <div style={{ height:'100%', background:'radial-gradient(ellipse at 50% 20%,#0E0A1E,#06040E)', position:'relative', overflow:'hidden', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <SF count={80} opacity={.32} />
+      <button onClick={onReturn} style={{ position:'absolute', top:'14px', left:'22px', background:'none', border:'none', cursor:'pointer', fontSize:'11px', letterSpacing:'.2em', color:`${c.accent}45`, textTransform:'uppercase', zIndex:10 }}>← Back</button>
+      <p style={{ position:'absolute', top:'18px', fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.3em', color:`${c.accent}45`, textTransform:'uppercase', zIndex:10 }}>Shadow · Threshold</p>
+
+      {phase === 'scrolls' && (
+        <div onClick={() => sIdx < SCROLLS.length-1 ? setSIdx(i=>i+1) : setPhase('look')} style={{ padding:'36px 40px', textAlign:'center', cursor:'pointer', position:'relative', zIndex:10 }}>
+          <p key={sIdx} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'26px', fontWeight:300, color:'rgba(240,232,220,.82)', lineHeight:1.5, animation:'emerge .7s ease' }}>{SCROLLS[sIdx]}</p>
+          <div style={{ display:'flex', gap:'5px', justifyContent:'center', marginTop:'32px' }}>
+            {SCROLLS.map((_,i) => <div key={i} style={{ width:'4px', height:'4px', borderRadius:'50%', background: i<=sIdx ? c.accent : `${c.accent}22` }} />)}
+          </div>
+        </div>
+      )}
+
+      {phase === 'look' && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'24px', position:'relative', zIndex:10, animation:'emerge .8s ease' }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'20px', color:'rgba(240,232,220,.50)', textAlign:'center', lineHeight:1.6 }}>Can I hold what I see<br/>without flinching?</p>
+          <div style={{ position:'relative', width:'100px', height:'100px' }}>
+            <svg width="100" height="100" style={{ position:'absolute', top:0, left:0 }}>
+              <circle cx="50" cy="50" r="38" fill="none" stroke={`${c.color}28`} strokeWidth="2" />
+              <circle cx="50" cy="50" r="38" fill="none" stroke={c.accent} strokeWidth="2"
+                strokeDasharray={circ} strokeDashoffset={circ*(1-hold)}
+                strokeLinecap="round" transform="rotate(-90 50 50)" style={{ transition:'stroke-dashoffset .05s' }} />
+            </svg>
+            <button onMouseDown={startHold} onMouseUp={stopHold}
+              onTouchStart={e=>{e.preventDefault();startHold();}} onTouchEnd={stopHold}
+              style={{ position:'absolute', inset:'12px', borderRadius:'50%', background:'none', border:`1px solid ${c.accent}25`, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'5px' }}>
+              <svg width="34" height="14" viewBox="0 0 34 14">
+                <ellipse cx="8" cy="7" rx="7" ry="5.5" fill="none" stroke={`${c.accent}70`} strokeWidth="1"/>
+                <circle cx="8" cy="7" r="2.5" fill={`${c.accent}70`}/>
+                <ellipse cx="26" cy="7" rx="7" ry="5.5" fill="none" stroke={`${c.accent}70`} strokeWidth="1"/>
+                <circle cx="26" cy="7" r="2.5" fill={`${c.accent}70`}/>
+              </svg>
+              <span style={{ fontSize:'8px', letterSpacing:'.2em', color:`${c.accent}50`, textTransform:'uppercase' }}>hold</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {phase === 'input' && (
+        <div style={{ padding:'20px 28px', width:'100%', position:'relative', zIndex:10, animation:'emerge .6s ease' }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', color:'rgba(240,232,220,.80)', lineHeight:1.5, marginBottom:'6px', textAlign:'center' }}>What are you afraid to look at?</p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'14px', color:'rgba(240,232,220,.35)', textAlign:'center', marginBottom:'22px' }}>Not the fear itself. What it is protecting.</p>
+          <textarea value={word} onChange={e=>setWord(e.target.value)} placeholder="a word, or a few…" rows={3}
+            style={{ width:'100%', background:`${c.color}0A`, border:`1px solid ${c.color}28`, borderRadius:'14px', padding:'16px', color:'rgba(240,232,220,.88)', fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', lineHeight:1.5, textAlign:'center', resize:'none' }} />
+          {word.trim() && (
+            <button onClick={offerWord} style={{ display:'block', margin:'14px auto 0', padding:'12px 32px', borderRadius:'26px', cursor:'pointer', background:`${c.color}22`, border:`1px solid ${c.color}55`, fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', color:'rgba(240,232,220,.80)', letterSpacing:'.15em', textTransform:'uppercase', animation:'emerge .4s ease' }}>Offer it</button>
+          )}
+        </div>
+      )}
+
+      {phase === 'mirror' && (
+        <div style={{ padding:'36px', textAlign:'center', position:'relative', zIndex:10, animation:'fade-in .8s ease', display:'flex', flexDirection:'column', alignItems:'center', gap:'24px' }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'44px', fontWeight:300, color:c.accent, letterSpacing:'.08em' }}>{word.trim()}</p>
+          {aiLoad
+            ? <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'15px', color:'rgba(240,232,220,.32)' }}>the corridor is receiving…</p>
+            : <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'18px', color:'rgba(240,232,220,.68)', lineHeight:1.75, maxWidth:'280px', animation:'emerge .8s ease' }}>{aiText}</p>
+          }
+        </div>
+      )}
+
+      {phase === 'reversal' && (
+        <div style={{ textAlign:'center', padding:'40px', position:'relative', zIndex:10 }}>
+          {!full ? (
+            <div style={{ minHeight:'80px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              {revIdx >= 0 && (
+                <p key={revIdx} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'54px', fontWeight:300, color:'rgba(240,232,220,.88)', letterSpacing:'.05em', animation:'emerge .6s ease' }}>{REVERSAL_WORDS[revIdx]}</p>
+              )}
+            </div>
+          ) : (
+            <div style={{ animation:'emerge .8s ease', display:'flex', flexDirection:'column', gap:'16px', alignItems:'center' }}>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px', color:'rgba(240,232,220,.88)', letterSpacing:'.04em' }}>please come back home.</p>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'16px', color:'rgba(240,232,220,.38)' }}>The corridor was never a dead end.</p>
+              <button onClick={() => setPhase('done')} style={{ marginTop:'16px', padding:'12px 28px', borderRadius:'26px', cursor:'pointer', background:`${c.color}22`, border:`1px solid ${c.color}50`, fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', color:'rgba(240,232,220,.78)', letterSpacing:'.16em', textTransform:'uppercase' }}>Continue</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {phase === 'done' && (
+        <div style={{ width:'100%', height:'100%', position:'relative', zIndex:10 }}>
+          <XC color={c.color} accent={c.accent} headline="The corridor was always leading somewhere." text="You have been home before. You left. You are returning." onReturn={onReturn} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { PulseExperience, ShadowExperience });
+</script>
+
+<!-- ═══ C: STILL + FLASH + ARRIVE ═══ -->
+<script type="text/babel">
+const { useState: useSt2, useEffect: useEf2, useRef: useRf2 } = React;
+const { Starfield: SF2, Aurora: AU2, XCompletion: XC2 } = window;
+
+// ─── STILL ────────────────────────────────────────────
+function StillExperience({ onReturn }) {
+  const [phase, setPhase] = useSt2('intro');
+  const [count, setCount] = useSt2(30);
+  const [text,  setText]  = useSt2('');
+  const c = { color:'#4A3AAB', accent:'#C0B0F8' };
+
+  useEf2(() => {
+    if (phase !== 'dark') return;
+    let n = 30;
+    const id = setInterval(() => { n--; setCount(n); if (n<=0) { clearInterval(id); setPhase('emerge'); } }, 1000);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  return (
+    <div style={{ height:'100%', background: phase==='dark' ? '#020108' : 'radial-gradient(ellipse at 50% 20%,#0E0A1E,#06040E)', transition:'background 2.5s ease', position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+      {phase !== 'dark' && <SF2 count={70} opacity={.30} />}
+      <button onClick={onReturn} style={{ position:'absolute', top:'14px', left:'22px', background:'none', border:'none', cursor:'pointer', fontSize:'11px', letterSpacing:'.2em', color:`${c.accent}45`, textTransform:'uppercase', zIndex:10 }}>← Back</button>
+      <p style={{ position:'absolute', top:'18px', fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.3em', color:`${c.accent}45`, textTransform:'uppercase', zIndex:10 }}>Still · Ajna</p>
+
+      {phase === 'intro' && (
+        <div style={{ textAlign:'center', padding:'40px 36px', animation:'emerge .8s ease', position:'relative', zIndex:10 }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px', color:'rgba(240,232,220,.88)', lineHeight:1.5, marginBottom:'12px' }}>What do I see<br/>when I stop looking?</p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'18px', color:'rgba(240,232,220,.42)', marginBottom:'40px', lineHeight:1.6 }}>The screen will wait.<br/>Close your eyes.</p>
+          <button onClick={() => setPhase('dark')} style={{ padding:'14px 36px', borderRadius:'30px', cursor:'pointer', background:`${c.color}18`, border:`1px solid ${c.color}48`, fontFamily:"'Cormorant Garamond',serif", fontSize:'17px', color:'rgba(240,232,220,.80)', letterSpacing:'.2em', textTransform:'uppercase' }}>Close your eyes</button>
+        </div>
+      )}
+
+      {phase === 'dark' && (
+        <p style={{ position:'relative', zIndex:10, fontFamily:"'Cormorant Garamond',serif", fontSize:'11px', letterSpacing:'.3em', color:'rgba(240,232,220,.07)', textTransform:'uppercase' }}>{count}</p>
+      )}
+
+      {phase === 'emerge' && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'28px', position:'relative', zIndex:10 }}>
+          <svg viewBox="0 0 200 200" style={{ width:'180px', height:'180px', animation:'emerge 3s ease both' }}>
+            {[22,48,74,96].map((r,i) => <circle key={i} cx="100" cy="100" r={r} fill="none" stroke={c.accent} strokeWidth=".6" opacity={.2+i*.1} />)}
+            {Array.from({length:8},(_,i)=>{const a=(i*45*Math.PI)/180;return <line key={i} x1="100" y1="100" x2={100+96*Math.cos(a)} y2={100+96*Math.sin(a)} stroke={c.accent} strokeWidth=".4" opacity=".25" />;} )}
+            <circle cx="100" cy="100" r="5" fill={c.accent} opacity=".7" style={{ animation:'breathe 3s ease-in-out infinite' }} />
+          </svg>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'20px', color:'rgba(240,232,220,.62)', textAlign:'center', animation:'emerge 1s 1s ease both', lineHeight:1.6 }}>Open your eyes.<br/>What appeared?</p>
+          <button onClick={() => setPhase('write')} style={{ padding:'11px 28px', borderRadius:'26px', cursor:'pointer', animation:'emerge .5s 2s ease both', background:`${c.color}20`, border:`1px solid ${c.color}50`, fontFamily:"'Cormorant Garamond',serif", fontSize:'15px', color:'rgba(240,232,220,.75)', letterSpacing:'.15em', textTransform:'uppercase' }}>Write it</button>
+        </div>
+      )}
+
+      {phase === 'write' && (
+        <div style={{ padding:'20px 28px', width:'100%', position:'relative', zIndex:10, animation:'emerge .5s ease' }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'18px', color:`${c.accent}68`, textAlign:'center', marginBottom:'18px' }}>What appeared when you stopped looking?</p>
+          <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Whatever arrived…" rows={5}
+            style={{ width:'100%', background:`${c.color}0A`, border:`1px solid ${c.color}28`, borderRadius:'14px', padding:'16px', color:'rgba(240,232,220,.88)', fontFamily:"'Cormorant Garamond',serif", fontSize:'19px', lineHeight:1.7, resize:'none' }} />
+          {text.trim() && <button onClick={() => setPhase('done')} style={{ display:'block', margin:'14px auto 0', padding:'11px 28px', borderRadius:'26px', cursor:'pointer', background:`${c.color}22`, border:`1px solid ${c.color}55`, fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', color:'rgba(240,232,220,.80)', letterSpacing:'.15em', textTransform:'uppercase', animation:'emerge .4s ease' }}>Complete</button>}
+        </div>
+      )}
+
+      {phase === 'done' && <div style={{ width:'100%', height:'100%', position:'relative', zIndex:10 }}><XC2 color={c.color} accent={c.accent} headline="The seeing was always there." text="You stopped looking long enough to find it." onReturn={onReturn} /></div>}
+    </div>
+  );
+}
+
+// ─── FLASH ────────────────────────────────────────────
+function FlashExperience({ onReturn }) {
+  const [phase,  setPhase]  = useSt2('breath');
+  const [breath, setBreath] = useSt2('in');
+  const [word,   setWord]   = useSt2('');
+  const [held,   setHeld]   = useSt2(0);
+  const c = { color:'#1E6EA0', accent:'#80C8F0' };
+
+  useEf2(() => {
+    if (phase !== 'breath') return;
+    const t1 = setTimeout(() => setBreath('out'), 4000);
+    const t2 = setTimeout(() => setPhase('waiting'), 9000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [phase]);
+
+  useEf2(() => {
+    if (phase !== 'waiting') return;
+    const t = setTimeout(() => setPhase('tap'), 3000);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  useEf2(() => {
+    if (phase !== 'hold') return;
+    const id = setInterval(() => setHeld(h => {
+      if (h >= 15) { clearInterval(id); setPhase('done'); return h; }
+      return h + 1;
+    }), 1000);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  return (
+    <div style={{ height:'100%', background:'radial-gradient(ellipse at 50% 20%,#060C18,#030608)', position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+      <SF2 count={60} opacity={.26} />
+      <button onClick={onReturn} style={{ position:'absolute', top:'14px', left:'22px', background:'none', border:'none', cursor:'pointer', fontSize:'11px', letterSpacing:'.2em', color:`${c.accent}45`, textTransform:'uppercase', zIndex:10 }}>← Back</button>
+      <p style={{ position:'absolute', top:'18px', fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.3em', color:`${c.accent}45`, textTransform:'uppercase', zIndex:10 }}>Flash · Intuition</p>
+
+      {(phase === 'breath' || phase === 'waiting') && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'28px', position:'relative', zIndex:10 }}>
+          <div style={{ width:breath==='in'?'140px':'80px', height:breath==='in'?'140px':'80px', borderRadius:'50%', transition:'all 4s ease-in-out', background:`radial-gradient(circle at 38% 38%,${c.accent}35,${c.color}55)`, boxShadow:`0 0 ${breath==='in'?48:20}px ${c.color}45` }} />
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', color:'rgba(240,232,220,.68)', textAlign:'center', letterSpacing:'.05em' }}>{phase==='breath' ? (breath==='in' ? 'One breath.' : '…') : 'Something already knows.'}</p>
+          {phase === 'waiting' && <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'17px', color:'rgba(240,232,220,.38)', textAlign:'center', animation:'emerge .6s ease' }}>Don't word it yet.</p>}
+        </div>
+      )}
+
+      {phase === 'tap' && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'32px', position:'relative', zIndex:10, animation:'emerge .7s ease' }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'20px', color:'rgba(240,232,220,.58)', textAlign:'center', lineHeight:1.6 }}>Is there something<br/>you already know?</p>
+          <button onClick={() => setPhase('word')} style={{ padding:'16px 40px', borderRadius:'32px', cursor:'pointer', background:`${c.color}20`, border:`1px solid ${c.color}55`, fontFamily:"'Cormorant Garamond',serif", fontSize:'20px', color:'rgba(240,232,220,.85)', letterSpacing:'.08em' }}>It's there.</button>
+        </div>
+      )}
+
+      {phase === 'word' && (
+        <div style={{ padding:'24px 32px', width:'100%', position:'relative', zIndex:10, animation:'emerge .5s ease', textAlign:'center' }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'20px', color:`${c.accent}70`, marginBottom:'28px' }}>Give it one word.</p>
+          <input value={word} onChange={e=>setWord(e.target.value)} onKeyDown={e=>e.key==='Enter'&&word.trim()&&setPhase('hold')}
+            placeholder="…" style={{ width:'100%', background:'none', border:'none', borderBottom:`1px solid ${c.color}40`, padding:'10px 0', color:c.accent, fontFamily:"'Cormorant Garamond',serif", fontSize:'38px', textAlign:'center', letterSpacing:'.1em' }} />
+          {word.trim() && <button onClick={()=>setPhase('hold')} style={{ marginTop:'24px', padding:'11px 28px', borderRadius:'26px', cursor:'pointer', background:`${c.color}22`, border:`1px solid ${c.color}55`, fontFamily:"'Cormorant Garamond',serif", fontSize:'15px', color:'rgba(240,232,220,.80)', letterSpacing:'.15em', textTransform:'uppercase', animation:'emerge .4s ease' }}>Let it be true.</button>}
+        </div>
+      )}
+
+      {phase === 'hold' && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'20px', position:'relative', zIndex:10, animation:'emerge .5s ease', textAlign:'center' }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'56px', fontWeight:300, color:c.accent, letterSpacing:'.1em' }}>{word}</p>
+          {held < 15 && <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'14px', color:'rgba(240,232,220,.30)' }}>Let it be true for {15-held} more {15-held===1?'second':'seconds'}…</p>}
+        </div>
+      )}
+
+      {phase === 'done' && <div style={{ width:'100%', height:'100%', position:'relative', zIndex:10 }}><XC2 color={c.color} accent={c.accent} headline="The knowing was already there." text="The word is just its body." onReturn={onReturn} /></div>}
+    </div>
+  );
+}
+
+// ─── ARRIVE ───────────────────────────────────────────
+const ARR = ['tat','tvam','asi','together','text1','text2','button','aurora','closing'];
+
+function ArriveExperience({ onReturn }) {
+  const [phase,   setPhase]   = useSt2('tat');
+  const [bloomed, setBloomed] = useSt2(false);
+  const c = { color:'#8A3AB5', accent:'#E0B8F8' };
+
+  useEf2(() => {
+    const delays = { tat:6000, tvam:6000, asi:4500, together:3200, text1:2600, text2:2600, button:0 };
+    const d = delays[phase]; if (!d) return;
+    const t = setTimeout(() => { const i = ARR.indexOf(phase); if (i < ARR.length-1) setPhase(ARR[i+1]); }, d);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  function tapWhole() { setBloomed(true); setPhase('aurora'); setTimeout(() => setPhase('closing'), 5000); }
+
+  return (
+    <div style={{ height:'100%', background:'radial-gradient(ellipse at 50% 10%,#120A1E,#07050E)', position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+      <AU2 active={bloomed} />
+      {!bloomed && <SF2 count={90} opacity={.40} />}
+      <button onClick={onReturn} style={{ position:'absolute', top:'14px', left:'22px', background:'none', border:'none', cursor:'pointer', fontSize:'11px', letterSpacing:'.2em', color:`${c.accent}45`, textTransform:'uppercase', zIndex:10 }}>← Back</button>
+      <p style={{ position:'absolute', top:'18px', fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.3em', color:`${c.accent}45`, textTransform:'uppercase', zIndex:10 }}>Arrive · Armin</p>
+
+      <div style={{ position:'relative', zIndex:10, textAlign:'center', padding:'40px' }}>
+        {['tat','tvam','asi'].includes(phase) && <p key={phase} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'76px', fontWeight:300, color:'rgba(240,232,220,.90)', letterSpacing:'.15em', animation:'emerge 1.2s ease both', lineHeight:1 }}>{phase.charAt(0).toUpperCase()+phase.slice(1)}</p>}
+
+        {phase === 'together' && <p key="tog" style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'40px', fontWeight:300, color:c.accent, letterSpacing:'.2em', animation:'emerge 1.2s ease both' }}>Tat Tvam Asi</p>}
+
+        {phase === 'text1' && <p key="t1" style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px', color:'rgba(240,232,220,.82)', animation:'emerge 1s ease both', lineHeight:1.5 }}>Nothing needed repair.</p>}
+
+        {phase === 'text2' && (
+          <div key="t2" style={{ animation:'emerge 1s ease both' }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'24px', color:'rgba(240,232,220,.48)', marginBottom:'8px' }}>Nothing needed repair.</p>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px', color:'rgba(240,232,220,.85)' }}>Only arrival.</p>
+          </div>
+        )}
+
+        {phase === 'button' && (
+          <div key="btn" style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'28px', animation:'emerge 1s ease both' }}>
+            <div>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'20px', color:'rgba(240,232,220,.42)', marginBottom:'6px' }}>Nothing needed repair.</p>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', color:'rgba(240,232,220,.62)' }}>Only arrival.</p>
+            </div>
+            <button onClick={tapWhole} style={{ padding:'18px 48px', borderRadius:'35px', cursor:'pointer', background:`${c.color}22`, border:`1px solid ${c.accent}50`, fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', color:'rgba(240,232,220,.90)', letterSpacing:'.15em' }}>I am whole.</button>
+          </div>
+        )}
+
+        {phase === 'aurora' && <p key="aur" style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px', color:'#fff', letterSpacing:'.1em', animation:'whole-bloom 1.2s ease both' }}>Tat Tvam Asi</p>}
+
+        {phase === 'closing' && (
+          <div style={{ animation:'emerge 1.5s ease both' }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'22px', color:'rgba(240,232,220,.82)', lineHeight:1.65, marginBottom:'36px' }}>That has been true<br/>the entire time.</p>
+            <button onClick={onReturn} style={{ padding:'13px 32px', borderRadius:'28px', cursor:'pointer', background:'rgba(255,255,255,.12)', border:'1px solid rgba(255,255,255,.28)', fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', color:'rgba(240,232,220,.85)', letterSpacing:'.15em', textTransform:'uppercase' }}>Return</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { StillExperience, FlashExperience, ArriveExperience });
+</script>
+
+<!-- ═══ D: APP ═══ -->
+<script type="text/babel">
+const { useState: useSt3 } = React;
+const { Starfield: SF3, PulseExperience: PE, ShadowExperience: SHE, StillExperience: STE, FlashExperience: FE, ArriveExperience: ARE } = window;
+
+const CARDS = [
+  { id:'pulse',  label:"When the mind won't land",       name:'Pulse',  sub:'Body · Rhythm',      color:'#1A8060', accent:'#80E5BC' },
+  { id:'shadow', label:"When something goes unseen",     name:'Shadow', sub:'Threshold · Look',    color:'#5A4AB5', accent:'#C0B0F8' },
+  { id:'still',  label:"When seeking is the obstacle",   name:'Still',  sub:'Ajna · Stillness',    color:'#4A3AAB', accent:'#A8A0F0' },
+  { id:'flash',  label:"When you doubt what you know",   name:'Flash',  sub:'Intuition · Trust',   color:'#1E6EA0', accent:'#80C8F0' },
+  { id:'arrive', label:"When something feels missing",   name:'Arrive', sub:'Armin · Wholeness',   color:'#8A3AB5', accent:'#E0B8F8' },
+];
+
+function SelectionCard({ card, idx, onSelect }) {
+  const [pr, setPr] = useSt3(false);
+  return (
+    <button onClick={() => onSelect(card.id)}
+      onMouseEnter={() => setPr(true)} onMouseLeave={() => setPr(false)}
+      onTouchStart={() => setPr(true)} onTouchEnd={() => setPr(false)}
+      style={{ background: pr ? `${card.color}0C` : 'none', border:'none', cursor:'pointer', width:'100%', display:'flex', alignItems:'center', gap:'14px', padding:'14px 24px', borderBottom:'1px solid rgba(255,255,255,.04)', textAlign:'left', transition:'background .2s', animation:`emerge .5s ${idx*.07}s ease both` }}>
+      <div style={{ width:'32px', height:'32px', borderRadius:'50%', flexShrink:0, background:`radial-gradient(circle at 36% 34%,${card.accent}60,${card.color}80)`, boxShadow:`0 0 12px ${card.color}50`, animation:`breathe ${4+idx*.4}s ease-in-out infinite` }} />
+      <div style={{ flex:1 }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'17px', color:'rgba(240,232,220,.80)', lineHeight:1.2 }}>{card.label}</p>
+        <p style={{ fontSize:'10px', letterSpacing:'.2em', color:`${card.accent}55`, textTransform:'uppercase', marginTop:'2px' }}>{card.sub}</p>
+      </div>
+      <span style={{ color:`${card.accent}40`, fontSize:'16px' }}>→</span>
+    </button>
+  );
+}
+
+function SelectionScreen({ onSelect }) {
+  return (
+    <div style={{ height:'100%', background:'linear-gradient(185deg,#060310,#090512 55%,#050308)', position:'relative', overflow:'hidden', display:'flex', flexDirection:'column' }}>
+      <SF3 count={110} opacity={.42} />
+      <div style={{ textAlign:'center', padding:'30px 0 22px', position:'relative', zIndex:10, animation:'emerge .8s ease' }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.38em', textTransform:'uppercase', color:'rgba(200,185,240,.30)', marginBottom:'8px' }}>what is calling you</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'38px', letterSpacing:'.15em', fontWeight:300, color:'rgba(240,232,222,.90)', lineHeight:1 }}>Right Now</p>
+      </div>
+      <div style={{ flex:1, position:'relative', zIndex:10, display:'flex', flexDirection:'column', justifyContent:'center' }}>
+        {CARDS.map((card, i) => <SelectionCard key={card.id} card={card} idx={i} onSelect={onSelect} />)}
+      </div>
+      <p style={{ textAlign:'center', padding:'14px 0 22px', fontFamily:"'Cormorant Garamond',serif", fontSize:'11px', letterSpacing:'.28em', color:'rgba(200,185,240,.18)', position:'relative', zIndex:10 }}>Love · Knowledge · Will · Action</p>
+    </div>
+  );
+}
+
+const EXP_MAP = { pulse: PE, shadow: SHE, still: STE, flash: FE, arrive: ARE };
+
+function App() {
+  const [active, setActive] = useSt3(null);
+  const Comp = active ? EXP_MAP[active] : null;
+  return (
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island" />
+          <div className="ph-content">
+            <div key={active||'sel'} style={{ width:'100%', height:'100%', animation:'fade-in .35s ease' }}>
+              {Comp ? <Comp onReturn={() => setActive(null)} /> : <SelectionScreen onSelect={setActive} />}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

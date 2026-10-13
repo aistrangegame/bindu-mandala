@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bindu Mandala — Master Build Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ground: #0D0508; --surface: #160A0E; --gold: #C9963F; --gold-deep: #A07830;
+    --cream: #F2E8D9; --accent-red: #8B1A2A; --rose: #C4725A; --violet: #9A86C4;
+    --amber: #E8C97A; --green: #5A9A8B;
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    --measure: 760px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--ground); color: var(--cream); font-family: var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; line-height: 1.5; overflow-x: hidden; }
+  .ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% -5%, rgba(201,150,63,0.10), transparent 60%), radial-gradient(ellipse 60% 45% at 50% 105%, rgba(139,26,42,0.12), transparent 60%); }
+  .wrap { position: relative; z-index: 1; max-width: var(--measure); margin: 0 auto; padding: 0 30px 170px; }
+
+  .kicker { font-size: 10.5px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--gold); opacity: 0.82; }
+  .voice { font-family: var(--serif); font-style: italic; color: var(--gold); }
+  p { font-size: 16px; line-height: 1.76; color: rgba(242,232,217,0.74); margin: 0 0 1.1em; text-wrap: pretty; }
+  strong { color: rgba(242,232,217,0.95); font-weight: 600; }
+  em { color: var(--gold); font-style: italic; }
+  a { color: var(--gold); text-decoration: none; border-bottom: 1px solid rgba(201,150,63,0.3); }
+
+  .bindu { width: 13px; height: 13px; border-radius: 50%; flex: 0 0 auto;
+    background: radial-gradient(circle at 50% 50%, var(--cream) 0 18%, var(--accent-red) 30%, rgba(139,26,42,0) 72%); box-shadow: 0 0 9px rgba(139,26,42,0.6); }
+
+  header.masthead { padding: 112px 0 46px; border-bottom: 0.5px solid rgba(201,150,63,0.18); margin-bottom: 20px; }
+  .masthead .kicker { display: block; margin-bottom: 24px; }
+  .masthead h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(44px, 8.5vw, 76px); line-height: 0.98; letter-spacing: 0.02em; margin: 0; color: var(--cream); }
+  .masthead h1 .glow { color: var(--gold); }
+  .masthead .sub { font-family: var(--serif); font-style: italic; font-size: clamp(19px, 4vw, 25px); color: rgba(242,232,217,0.6); margin: 22px 0 0; line-height: 1.42; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 34px; }
+  .meta dt { font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(242,232,217,0.4); margin-bottom: 5px; }
+  .meta dd { margin: 0; font-family: var(--serif); font-size: 16px; color: rgba(242,232,217,0.82); }
+
+  /* TOC */
+  .toc { margin: 40px 0 0; padding: 26px 28px; border: 0.5px solid rgba(201,150,63,0.18); border-radius: 4px; background: linear-gradient(180deg, rgba(34,16,20,0.4), rgba(13,5,8,0.15)); }
+  .toc h4 { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin: 0 0 16px; }
+  .toc ol { margin: 0; padding: 0; list-style: none; counter-reset: toc; }
+  .toc li { counter-increment: toc; padding: 9px 0; border-bottom: 0.5px solid rgba(242,232,217,0.06); display: flex; gap: 14px; align-items: baseline; font-size: 15px; }
+  .toc li:last-child { border-bottom: none; }
+  .toc li::before { content: counter(toc, upper-roman); font-family: var(--serif); font-style: italic; color: var(--gold); opacity: 0.7; flex: 0 0 38px; }
+  .toc li a { border: none; color: rgba(242,232,217,0.85); }
+  .toc li .when { margin-left: auto; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(242,232,217,0.42); }
+
+  .part { margin-top: 92px; scroll-margin-top: 20px; }
+  .part-label { display: flex; align-items: baseline; gap: 14px; margin-bottom: 12px; }
+  .part-label .pn { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--gold); opacity: 0.8; }
+  .part-label .pt { font-family: var(--serif); font-weight: 300; font-size: clamp(28px, 6vw, 42px); color: var(--cream); line-height: 1.04; }
+  .part-intro { font-size: 16.5px; color: rgba(242,232,217,0.8); border-left: 1.5px solid rgba(201,150,63,0.25); padding-left: 20px; margin: 22px 0 38px; }
+
+  h3.task { font-family: var(--serif); font-weight: 500; font-size: 23px; color: var(--cream); margin: 38px 0 4px; letter-spacing: 0.01em; }
+  h3.task .file { display: block; font-family: var(--mono); font-size: 12px; color: var(--amber); font-weight: 400; margin-top: 6px; letter-spacing: 0; }
+  .micro { font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); opacity: 0.8; margin: 30px 0 0; }
+
+  code { font-family: var(--mono); font-size: 12.5px; color: var(--amber); background: rgba(232,201,122,0.08); padding: 1px 5px; border-radius: 3px; }
+  .codeblock { font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: rgba(242,232,217,0.82); background: #07030533; border: 0.5px solid rgba(201,150,63,0.14); border-radius: 4px; padding: 14px 16px; margin: 12px 0; overflow-x: auto; white-space: pre; }
+  .codeblock .c { color: rgba(242,232,217,0.4); }
+  .codeblock .del { color: var(--rose); }
+  .codeblock .add { color: var(--green); }
+  .codeblock .k { color: var(--violet); }
+
+  ul.steps { list-style: none; margin: 14px 0 0; padding: 0; }
+  ul.steps li { position: relative; padding-left: 24px; margin-bottom: 12px; font-size: 15.5px; line-height: 1.65; color: rgba(242,232,217,0.76); }
+  ul.steps li::before { content: ""; position: absolute; left: 2px; top: 9px; width: 6px; height: 6px; border: 1px solid var(--gold-deep); border-radius: 50%; }
+  ul.steps li b { color: var(--cream); font-weight: 600; }
+  ul.steps li.done::before { background: var(--gold-deep); }
+
+  .accept { margin-top: 14px; padding: 13px 18px; border-left: 2px solid var(--green); background: rgba(90,154,139,0.05); border-radius: 0 3px 3px 0; }
+  .accept .label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); display: block; margin-bottom: 5px; }
+  .accept p { margin: 0; font-size: 14.5px; font-family: var(--serif); font-style: italic; color: rgba(242,232,217,0.82); line-height: 1.5; }
+
+  .why { margin-top: 12px; padding: 12px 18px; border-left: 2px solid rgba(201,150,63,0.3); background: rgba(201,150,63,0.04); border-radius: 0 3px 3px 0; }
+  .why .label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); display: block; margin-bottom: 5px; }
+  .why p { margin: 0; font-size: 14.5px; font-family: var(--serif); font-style: italic; color: rgba(242,232,217,0.8); line-height: 1.5; }
+
+  .pull { margin: 52px 0; padding: 0 0 0 26px; border-left: 2px solid var(--accent-red); }
+  .pull p { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(23px, 4.8vw, 31px); line-height: 1.38; color: var(--gold); margin: 0; }
+
+  .principle { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
+  .principle .p { border: 0.5px solid rgba(201,150,63,0.16); border-radius: 3px; padding: 18px 20px; }
+  .principle .p h5 { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 19px; color: var(--gold); margin: 0 0 7px; }
+  .principle .p p { margin: 0; font-size: 14px; line-height: 1.6; }
+
+  .screenspec { border: 0.5px solid rgba(201,150,63,0.18); border-radius: 4px; padding: 4px 24px 22px; margin-top: 18px; background: linear-gradient(180deg, rgba(34,16,20,0.4), rgba(13,5,8,0.12)); }
+
+  .closing { margin-top: 96px; padding-top: 52px; border-top: 0.5px solid rgba(201,150,63,0.2); }
+  .closing p { font-family: var(--serif); font-size: clamp(18px, 3.6vw, 22px); line-height: 1.6; color: rgba(242,232,217,0.84); }
+  .closing p em { color: var(--gold); }
+  .sign { margin-top: 34px; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(242,232,217,0.4); }
+  .divider { display: flex; justify-content: center; margin: 10px 0; opacity: 0.5; }
+  .tag { display:inline-block; font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); border: 0.5px solid rgba(201,150,63,0.4); border-radius: 2px; padding: 3px 7px; margin-left: 8px; vertical-align: middle; opacity: 0.85; }
+  .tag.new { color: var(--green); border-color: rgba(90,154,139,0.45); }
+  .tag.fix { color: var(--rose); border-color: rgba(196,114,90,0.45); }
+
+  @media (max-width: 560px) { .wrap { padding: 0 18px 120px; } header.masthead { padding-top: 72px; } .principle { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <div class="ambient"></div>
+  <div class="wrap">
+
+    <header class="masthead">
+      <span class="kicker">Master Build Brief · For Claude Code</span>
+      <h1>Become the practice,<br /><span class="glow">not the museum.</span></h1>
+      <p class="sub">Repair the five rings. Re-centre the daily rite. Open the descent.<br />Let the portrait become a years-long work. One brief, in order.</p>
+      <dl class="meta">
+        <div><dt>Practitioner</dt><dd>Single — Ash's own instrument</dd></div>
+        <div><dt>Source</dt><dd>main · live SwiftUI + SwiftData</dd></div>
+        <div><dt>Governing idea</dt><dd>Time is the medium</dd></div>
+        <div><dt>Governing rule</dt><dd>Readiness is sensed; crossing is chosen</dd></div>
+      </dl>
+
+      <div class="toc">
+        <h4>The order of work</h4>
+        <ol>
+          <li><a href="#principles">Operating principles — the bar</a><span class="when">Read first</span></li>
+          <li><a href="#repairs">The repairs — five rings</a><span class="when">Ship now</span></li>
+          <li><a href="#migration">The migration — recognition becomes 102-aware</a><span class="when">Unblocks II</span></li>
+          <li><a href="#rite">The Daily Rite — the heartbeat</a><span class="when">On the 16</span></li>
+          <li><a href="#calls">The five calls — woven in</a><span class="when">Alongside</span></li>
+          <li><a href="#descent">The Descent — the path</a><span class="when">Then</span></li>
+          <li><a href="#portrait">The Portrait — the artifact</a><span class="when">Then</span></li>
+        </ol>
+      </div>
+    </header>
+
+    <!-- I — PRINCIPLES -->
+    <div class="part" id="principles">
+      <div class="part-label"><span class="pn">I</span><span class="pt">Operating principles</span></div>
+      <p class="part-intro">Every change in this brief is held to the bar the app already set for itself. When a decision is unclear, these break the tie. Do not violate them for convenience.</p>
+      <div class="principle">
+        <div class="p"><h5>The interface is the teaching</h5><p>An interaction embodies what a thing <em>is</em> — it is never a screen of information about it. If a feature explains rather than enacts, redesign it.</p></div>
+        <div class="p"><h5>Atmosphere, not page</h5><p>Dark ground, warm light from within, dust motes, generous negative space, one quiet identity line. Ride the tokens — never introduce new colors.</p></div>
+        <div class="p"><h5>She is felt, not measured</h5><p>No streaks, no scores, no badges, no nags. Counts exist only to <em>sense readiness</em>, never to display achievement. The log is a private archive.</p></div>
+        <div class="p"><h5>Readiness is sensed; crossing is chosen</h5><p>The app may notice a Śakti is ripening, or a ring is ready — but the practitioner always makes the deliberate gesture to cross. Never auto-advance a threshold.</p></div>
+        <div class="p"><h5>The floor</h5><p>Every tap target ≥ <b>44pt</b>. Any text meant to be <em>read</em> ≥ <b>11pt</b> and ≥ <b>0.3 alpha</b>. Below that is texture, and must be deliberate, never accidental.</p></div>
+        <div class="p"><h5>Respect the breath</h5><p>Honor <code>prefers-reduced-motion</code> everywhere. Persist position/state so a refresh never loses the practitioner's place.</p></div>
+      </div>
+    </div>
+
+    <!-- II — REPAIRS -->
+    <div class="part" id="repairs">
+      <div class="part-label"><span class="pn">II</span><span class="pt">The repairs — five rings</span></div>
+      <p class="part-intro">Smallest, surest value. Two are one-line edits; three are a focused touch-and-render pass. Ship these before anything new — they raise every world to the same bar. A unifying note on touch: introduce a single constant <code>minHitTarget: CGFloat = 44</code> and use it for every energy's <code>contentShape</code> across all rings; keep the visible glyph small, grow only the invisible hit area.</p>
+
+      <h3 class="task">Ring 9 — remove the trailing field <span class="tag fix">minutes</span><span class="file">Views/Mandala/RingNineDescentView.swift</span></h3>
+      <p>The descent must end on the recognition and the gold benediction — then silence. Delete the appended Airtable field from <code>captionStack</code>.</p>
+      <div class="codeblock"><span class="c">// DELETE this block entirely (inside the recognition VStack)</span>
+<span class="del">if let conn = ring9Avarana?.personalConnection?.trimmingCharacters(...),</span>
+<span class="del">   !conn.isEmpty, r &gt; 0.6 {</span>
+<span class="del">    Text(conn) ... .padding(.top, 22)</span>
+<span class="del">}</span></div>
+      <div class="accept"><span class="label">Done when</span><p>Holding to recognition ends on "You did not arrive. You were the arriving." + the single gold line, and nothing follows.</p></div>
+
+      <h3 class="task">Ring 8 / the Vāk Chamber — un-stack the four voices <span class="tag fix">minutes</span><span class="file">Views/Mandala/RingSevenWorldView.swift</span></h3>
+      <p>Twelve voices are laid out at 45° spacing — which only has 8 slots — so voices 9–12 sit exactly on top of voices 1–4. Space all twelve evenly, and give the orbit a little more room so the 56pt circles don't crowd.</p>
+      <div class="codeblock"><span class="c">// vakPosition(at:cx:cy:)</span>
+<span class="del">let theta = (Double(i) * 45 - 90) * .pi / 180</span>
+<span class="add">let theta = (Double(i) * 30 - 90) * .pi / 180   // 360 / 12 = 30</span>
+
+<span class="c">// widen the orbit so twelve breathe (was 140)</span>
+<span class="del">private let orbitR: CGFloat = 140</span>
+<span class="add">private let orbitR: CGFloat = 158</span>
+<span class="c">// + update the stale comment "// 8 Vāk circles" → twelve</span></div>
+      <div class="why"><span class="label">Optional, your call</span><p>If you'd rather the new four sit <em>outside</em> the original eight (the practitioner's instinct): keep 8 at the inner orbit and place voices 9–12 on a second, larger ring. Either removes the overlap; even-twelve is the smaller change.</p></div>
+      <div class="accept"><span class="label">Done when</span><p>All twelve Vāk names are legible and distinct, none overlapping, evenly distributed around the chamber.</p></div>
+
+      <h3 class="task">Ring 1 — make the energies touchable <span class="tag fix">an afternoon</span><span class="file">Views/Mandala/RingOneWorldView.swift</span></h3>
+      <ul class="steps">
+        <li>In <code>lightView</code>, grow the hit area to the shared minimum: <code>.frame(width: 44, height: 44)</code> with <code>.contentShape(Circle())</code>. Keep the visible dot radii as-is — only the invisible frame grows.</li>
+        <li>Scale the whole figure up so 28 lights spread apart: raise the square halves (<code>outerHalf 150→170, midHalf 110→128, innerHalf 72→90</code>) and lower the center toward <code>geo.height * 0.44</code>. Re-check the encounter block and legend don't collide.</li>
+        <li>If any inner-square lights still sit closer than 44pt, resolve a tap to the <b>nearest</b> light within ~26pt of the touch rather than requiring a direct hit (a single hit-test helper over the 28 points).</li>
+      </ul>
+      <div class="accept"><span class="label">Done when</span><p>Every one of the 28 lights can be hit comfortably with a thumb on first try; the figure fills more of the screen; nothing overlaps the lower text.</p></div>
+
+      <h3 class="task">Ring 6 — stop the precision fight <span class="tag fix">an afternoon</span><span class="file">Views/Mandala/RingSixWorldView.swift</span></h3>
+      <ul class="steps">
+        <li><code>triangleStation</code>: hit area to <code>.frame(width: 44, height: 44)</code> + <code>.contentShape(Rectangle())</code>.</li>
+        <li>Widen the orbit (the 10 sit on radius 96 — raise to ~120) so they don't crowd at 44pt.</li>
+        <li>Relax the reveal gate. Today <code>tap()</code> requires <code>distance &lt;= revealRadius</code> <em>and</em> the light follows the finger — three precision tests at once. Allow a tap to name anything currently lit (any <code>near &gt; 0.3</code>), or grow <code>revealRadius</code>. The concealment should feel poetic, not like a test.</li>
+      </ul>
+      <div class="accept"><span class="label">Done when</span><p>Moving the light reveals the triangles, and tapping a revealed one names her reliably — without hunting for a pixel.</p></div>
+
+      <h3 class="task">Ring 3 — bring the smoke back to life <span class="tag fix">a session</span><span class="file">Views/Mandala/RingThreeWorldView.swift</span></h3>
+      <p>Three regressions from the original <code>ring-worlds-3.jsx</code>. Fix all three:</p>
+      <ul class="steps">
+        <li><b>The glow died.</b> SwiftUI <code>.brightness(0.15)</code> only <em>adds</em> a trace; the original CSS <code>brightness(1.5)</code> <em>multiplied</em>. Drive the plume's life through gradient opacity + a soft warm overlay (<code>.blendMode(.screen)</code>) keyed to state, not <code>.brightness()</code>. Keep the ladder: active brightest → unified → gathered → scattered dimmest.</li>
+        <li><b>The air is dead.</b> Add <code>DustMotesView(count: 7)</code> to the ZStack (it's missing here; every other world has it).</li>
+        <li><b>The smoke is muddy.</b> The warm gradient stops at <code>endRadius: 92</code> but the plume reaches <code>outerR: 116</code> — extend the gradient to the tip so the form holds.</li>
+      </ul>
+      <div class="accept"><span class="label">Done when</span><p>A touched plume visibly <em>glows</em> warm against the dim others; motes drift; the eight read as luminous smoke, not blurred petals. Compare side-by-side with <code>Ring Worlds II.html</code> → Ring 3.</p></div>
+    </div>
+
+    <!-- III — MIGRATION -->
+    <div class="part" id="migration">
+      <div class="part-label"><span class="pn">III</span><span class="pt">The migration — recognition becomes 102-aware</span></div>
+      <p class="part-intro">A prerequisite for the Portrait, and a quiet correctness fix. <code>RecognitionEntry.shaktiPosition</code> stores a <em>per-ring</em> index (1–16) — it cannot tell a Ring 1 Śakti from a Ring 2 one. The Portrait needs to light the correct point among all 102.</p>
+      <h3 class="task">Re-key recognition to the global position<span class="file">Models/RecognitionEntry.swift</span></h3>
+      <div class="codeblock"><span class="k">@Model final class</span> RecognitionEntry {
+    <span class="k">var</span> timestamp: Date
+    <span class="del">var shaktiPosition: Int          // 1–16, per-ring — ambiguous</span>
+    <span class="add">var khadgamalaPosition: Int      // 1–102, globally unique</span>
+    <span class="add">var ringNumber: Int              // denormalized for fast Portrait queries</span>
+    <span class="k">var</span> note: String?
+    <span class="k">var</span> gestureRaw: String
+}</div>
+      <ul class="steps">
+        <li><b>Lightweight migration.</b> Existing entries are all Ring 2 (only the 16 were live). Map each old <code>shaktiPosition</code> → its Khaḍgamālā position via the Ring 2 offset, set <code>ringNumber = 2</code>. Provide a one-time migration so no archived moment is lost — <em>the archive belongs to her</em>.</li>
+        <li>Update all writers (the "I feel her" gesture, the Silence dwell) and all readers (Detail recognition log, status-readiness count) to the new key.</li>
+        <li>Keep the model <b>local-only, never synced, never analyzed</b> — unchanged.</li>
+      </ul>
+      <div class="accept"><span class="label">Done when</span><p>A recognition logged for any Śakti in any ring is attributable to exactly one of the 102, and every pre-existing entry survives the migration intact.</p></div>
+    </div>
+
+    <!-- IV — THE DAILY RITE -->
+    <div class="part" id="rite">
+      <div class="part-label"><span class="pn">IV</span><span class="pt">The Daily Rite — the heartbeat</span></div>
+      <p class="part-intro">Direction III, built first. The small, returnable loop that gives the path and the portrait a pulse. Built on the 16 today — it works immediately with existing content (<code>somatic</code>, <code>recognitionPhrase</code>, <code>appreciationPhrase</code>, <code>bija</code>, <code>bodilyLocation</code>), and extends to each ring as the Descent opens it.</p>
+
+      <h3 class="task">The rite surface <span class="tag new">new view</span><span class="file">Views/Today/DailyRiteView.swift (new)</span></h3>
+      <p>The thing the app is <em>about</em>, restored to the centre of attention. Not a dashboard — a single held encounter.</p>
+      <div class="screenspec">
+        <ul class="steps">
+          <li><b>Today's Śakti</b> — drawn from the lunar-day assignment already in the app, scoped to the rings the practitioner has descended into (until the Descent opens, this is the 16). Moon phase + tithi at the top, hushed.</li>
+          <li><b>The encounter</b> — Sanskrit name (large, Cormorant Light) → phonetic → quality (gold) → hairline → <span class="voice">somatic prompt</span> (italic) → body location or bīja. Exactly the size scale in <code>DESIGN_SPEC.md</code> (name 44–48, quality 20–22, somatic 18–20).</li>
+          <li><b>The gesture</b> — one full-width pill, <span class="voice">"I feel her"</span> — deep red on cream. The core act. Medium haptic. Writes a <code>RecognitionEntry(gesture: .felt)</code> at the global position.</li>
+          <li><b>The reciprocity</b> — on the gesture, the Recognition Moment takeover (existing): "Logged · [time]" then, after a beat, <span class="voice">"And she felt you back · [time]"</span>. Then it lights one more point in the Portrait.</li>
+          <li><b>Optional noticing</b> — a quiet affordance to add a one-line note to the entry. Never required.</li>
+        </ul>
+      </div>
+      <div class="why"><span class="label">Coherence</span><p>This screen <em>is</em> the spine the audit said had gone missing. It doesn't replace the living Mandala — it sits at the front of it (see §V, the first call).</p></div>
+
+      <h3 class="task">The daily whisper <span class="tag new">new</span><span class="file">Services/ (new) + notification permission</span></h3>
+      <ul class="steps">
+        <li>A <b>single</b> gentle local notification per day, at a practitioner-chosen hour (default early evening). Copy in the voice: <span class="voice">"She is waiting."</span> / <span class="voice">"Someone in the field would like to be felt today."</span> — quiet, never urgent, no count, no streak.</li>
+        <li>One per day, ever. If the rite was already done, skip the next day's or soften it. <b>Never</b> a second nudge, never a badge number.</li>
+        <li>A toggle in Settings — <em>on</em> by default per the decision, but one tap to silence forever.</li>
+      </ul>
+      <div class="accept"><span class="label">Done when</span><p>Opening the app lands on (or one deliberate tap from) today's Śakti and the gesture; "I feel her" logs and lights a point; at most one tender summons arrives per day and can be turned off.</p></div>
+    </div>
+
+    <!-- V — THE FIVE CALLS -->
+    <div class="part" id="calls">
+      <div class="part-label"><span class="pn">V</span><span class="pt">The five calls — woven in</span></div>
+      <p class="part-intro">The audit's design decisions, now resolved by the choices made. Address them alongside the rite, not as a separate phase.</p>
+      <ul class="steps">
+        <li><b>The daily spine.</b> Resolved by §IV. Make the <b>Daily Rite the launch destination</b> (or a persistent "today's pull" on the Mandala that taps straight to it). The Mandala remains, one gesture away — home is now <em>her</em>, with the cosmos behind.</li>
+        <li><b>The status pill.</b> Apply the governing rule: status <em>readiness</em> is sensed from recognition count, but advancing is a <b>deliberate tap</b> from the Detail screen — a small ceremony, soft haptic, a held beat (as originally specced). If you keep auto-advance instead, strip the pill's button styling so it reads plainly as a state. Do not leave it a button that does nothing.</li>
+        <li><b>The detail screen.</b> Build hierarchy. Lead with the <b>codex portrait</b> and the <b>somatic line</b> (the soul). Collapse the reference matter — lineage, cosmic function, tattva, iconography, etymology — behind a single <span class="voice">"go deeper"</span> disclosure. The reading should open like a devotion, not a wiki.</li>
+        <li><b>The hidden doors.</b> Give the hamburger one faint <b>first-run breath</b> (a single pulse on first launch, or a one-time reveal), mirroring the Veil's chevron. Found once, then forgotten.</li>
+        <li><b>The legibility floor.</b> One pass: for each faint element decide <em>label</em> or <em>texture</em>. The home lotus <b>petal labels</b> (≈7.5pt / 0.38α naming the navigation) → lift to ≥11pt / ≥0.3α. Silence name-stars, Ring 1 hint, tracked captions — raise if read, leave if texture.</li>
+      </ul>
+    </div>
+
+    <div class="pull"><p>Everything above makes the app whole. Everything below makes it monumental.</p></div>
+
+    <!-- VI — THE DESCENT -->
+    <div class="part" id="descent">
+      <div class="part-label"><span class="pn">VI</span><span class="pt">The Descent — the path</span></div>
+      <p class="part-intro">Direction I. The nine āvaraṇas become a sequential pilgrimage from Bhūpura, the outer earth, to the Bindu at the centre — authentic to Śrī Vidyā's own inward worship. The worlds already exist; this gives them order, a destination, and a sense of where you are.</p>
+
+      <h3 class="task">Hold the practitioner's place <span class="tag new">new model</span><span class="file">Models/DescentState.swift (new)</span></h3>
+      <div class="codeblock"><span class="k">@Model final class</span> DescentState {
+    <span class="k">var</span> currentRing: Int            <span class="c">// 1 = Bhūpura … 9 = Bindu</span>
+    <span class="k">var</span> deepestReached: Int          <span class="c">// rings stay visitable once reached</span>
+    <span class="k">var</span> crossings: [Date]             <span class="c">// when each threshold was crossed</span>
+    <span class="k">var</span> enteredCurrentAt: Date        <span class="c">// for sensing readiness</span>
+}</div>
+      <ul class="steps">
+        <li><b>The Veil becomes the descent ladder.</b> Today it's a free menu of all nine. Reframe it: rings up to <code>deepestReached</code> are open to revisit; the <em>next</em> ring appears as a threshold — closed, breathing, named but not yet enterable.</li>
+        <li><b>Crossing is chosen.</b> Per the rule and the practitioner's decision: the next ring's threshold offers a <b>deliberate gesture</b> to cross (a press-and-hold, or a worded invitation — never a button that just advances). Readiness may be <em>hinted</em> — the threshold begins to glow once the practitioner has dwelt with the current ring (days passed, or its Śaktis felt) — but the app never crosses for them.</li>
+        <li><b>Content gates the path.</b> Per the decision, a ring only opens to enter once its content is authored. Until then its threshold reads as <span class="voice">"not yet — she is still becoming words."</span> This makes authoring and practice advance together.</li>
+        <li><b>The daily Śakti follows the descent</b> — today's encounter is drawn from the rings reached so far, deepening as you go.</li>
+      </ul>
+      <div class="accept"><span class="label">Done when</span><p>Opening the Veil shows where you are on the way in; the next ring is a threshold you cross by a deliberate act, only when its content is ready; reached rings remain open to return to.</p></div>
+    </div>
+
+    <!-- VII — THE PORTRAIT -->
+    <div class="part" id="portrait">
+      <div class="part-label"><span class="pn">VII</span><span class="pt">The Portrait — the artifact</span></div>
+      <p class="part-intro">Direction II. The Portrait Mandala — already the cleverest idea in the app — becomes the centre: a years-long living artwork that <em>is</em> the practice. Built on the 102-aware recognition from §III.</p>
+      <h3 class="task">Your own Śrī Yantra, assembling over months<span class="file">Views/Memory/PortraitMandalaView.swift (elevate)</span></h3>
+      <ul class="steps">
+        <li><b>Light by recognition.</b> Each of the 102 points begins nearly dark and brightens with the count of felt-moments for that Śakti (from the migrated <code>RecognitionEntry</code>); warmer/brighter when felt recently, cooling toward dim as time passes without her. The whole field fills in slowly toward a fully-alight yantra.</li>
+        <li><b>Make it a destination, not a side room.</b> Promote it: reachable in one gesture from the Daily Rite (e.g. the Recognition Moment settles <em>into</em> the Portrait, the newly-lit point glowing). Consider it the app's second home alongside the living Mandala.</li>
+        <li><b>The long arc.</b> No numbers, no percentages — the <em>image itself</em> is the only measure. A portrait you'd look at after a year and feel how far you'd come. <em>She is felt, not measured</em> — the Portrait honors this by showing, never counting.</li>
+        <li><b>Recency as warmth</b> — reuse the <code>TimeVariant</code> warmth language so the Portrait breathes with the same atmosphere as the living Mandala.</li>
+      </ul>
+      <div class="accept"><span class="label">Done when</span><p>Every felt-moment visibly lights its correct point among the 102; the Portrait is reachable in one gesture from the rite; over time it becomes a true mirror of where the practitioner's attention has lived — with not a single number on screen.</p></div>
+    </div>
+
+    <div class="closing">
+      <span class="kicker">To Claude Code, in one breath</span>
+      <p style="margin-top:22px;">Work top to bottom. <em>Repair</em> the five rings and ship — the app deserves to be whole before it grows. <em>Migrate</em> recognition to the 102. <em>Re-centre</em> the daily rite on the 16, with its one tender whisper. Weave the five calls in as you go. Then <em>open the descent</em> and let the <em>portrait</em> become the long work. Hold every step to the six principles — and when in doubt, remember the rule that governs the whole of it: <span class="voice">readiness is sensed; crossing is always chosen.</span> Nothing here is a feature for its own sake. Each piece exists to turn a beautiful object into a practice someone keeps for years.</p>
+      <div class="sign">Master build brief · grounded in the live source · approved direction · ready to execute</div>
+    </div>
+
+  </div>
+</body>
+</html>

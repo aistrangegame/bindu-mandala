@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Play</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#060402;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.07);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes ring-out{0%{transform:scale(1);opacity:.7}100%{transform:scale(3);opacity:0}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#100A06;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,220,160,.06),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,220,160,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#1A1208;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #1A1208,0 108px 0 #1A1208;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#1A1208;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#08050200;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+.scroll{overflow-y:auto;}.scroll::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ═══ A · SHARED ═══ -->
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// Session tracking → awards item to The Box
+function addSession(id) {
+  try {
+    const s = JSON.parse(localStorage.getItem('child_sessions_v1')||'{}');
+    s[id] = (s[id]||0) + 1;
+    localStorage.setItem('child_sessions_v1', JSON.stringify(s));
+    const b = JSON.parse(localStorage.getItem('child_box_v1')||'[]');
+    if (b.filter(i=>i.type===id).length < 8) {
+      b.push({ type:id, x:.1+Math.random()*.8, y:.1+Math.random()*.8, ts:Date.now() });
+      localStorage.setItem('child_box_v1', JSON.stringify(b));
+    }
+  } catch(e) {}
+}
+function getSessions() { try{return JSON.parse(localStorage.getItem('child_sessions_v1')||'{}');}catch{return{};} }
+
+// Shared audio
+let _actx = null;
+function getAudio() {
+  if (!_actx) _actx = new (window.AudioContext||window.webkitAudioContext)();
+  if (_actx.state==='suspended') _actx.resume();
+  return _actx;
+}
+function playTone(freq, vol=.12, dur=.35, type='sine') {
+  try {
+    const ctx = getAudio(), now = ctx.currentTime;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, now);
+    g.gain.exponentialRampToValueAtTime(.001, now+dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(now); o.stop(now+dur+.05);
+  } catch(e) {}
+}
+
+const GAMES = [
+  { id:'garden',  name:'The Finger Garden', desc:'Touch and things grow.',        icon:'✿', c:'#7AAA40', a:'#C8E870' },
+  { id:'colours', name:'Colour Rivers',     desc:'Drag. Watch them blend.',        icon:'◈', c:'#E08030', a:'#F8C060' },
+  { id:'rain',    name:'The Rain',          desc:'Press to call the rain.',        icon:'◎', c:'#4080C0', a:'#90C8F8' },
+  { id:'echo',    name:'The Echo',          desc:'Tap. Listen. It answers.',       icon:'◉', c:'#C09030', a:'#F8D870' },
+  { id:'box',     name:'Your Collection',  desc:'Everything you\'ve gathered.',    icon:'✦', c:'#8060B0', a:'#D8C8F8' },
+];
+
+Object.assign(window, { addSession, getSessions, getAudio, playTone, GAMES });
+</script>
+
+<!-- ═══ B · MENU ═══ -->
+<script type="text/babel">
+const{useState:useMe}=React;
+const{getSessions:GSe,GAMES:GM}=window;
+
+function MenuView({ onPlay, onBack }) {
+  const sessions = GSe();
+  return (
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'radial-gradient(ellipse at 50% 15%,#120A04,#06040A)'}}>
+      <div style={{padding:'10px 22px 4px',flexShrink:0,display:'flex',alignItems:'baseline',justifyContent:'space-between'}}>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'21px',color:'rgba(240,184,90,.88)',letterSpacing:'.12em'}}>Play</p>
+        {onBack && <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(240,184,90,.38)',textTransform:'uppercase'}}>← Back</button>}
+      </div>
+      <div className="scroll" style={{flex:1,overflowY:'auto',padding:'8px 18px 28px',display:'flex',flexDirection:'column',gap:'9px'}}>
+        {GM.map((g,i)=>{
+          const n = sessions[g.id]||0;
+          return(
+            <button key={g.id} onClick={()=>onPlay(g.id)} style={{
+              display:'flex',alignItems:'center',gap:'14px',padding:'16px 18px',
+              borderRadius:'18px',cursor:'pointer',textAlign:'left',
+              background:`${g.c}0A`,border:`1px solid ${g.c}2C`,transition:'all .2s',
+            }}>
+              <div style={{width:'42px',height:'42px',borderRadius:'50%',flexShrink:0,
+                background:`radial-gradient(circle at 36% 36%,${g.a}40,${g.c}55)`,
+                boxShadow:`0 0 ${n>0?18:8}px ${g.c}${n>0?'55':'22'}`,
+                animation:'breathe '+(3.5+i*.3)+'s ease-in-out infinite',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                fontSize:'18px',color:g.a}}>
+                {g.icon}
+              </div>
+              <div style={{flex:1}}>
+                <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'18px',color:'rgba(245,232,212,.82)'}}>{g.name}</p>
+                <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.16em',textTransform:'uppercase',color:`${g.a}45`,marginTop:'2px'}}>{g.desc}</p>
+              </div>
+              {n>0&&<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',color:`${g.a}55`,letterSpacing:'.14em',flexShrink:0}}>{n}×</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+Object.assign(window,{MenuView});
+</script>
+
+<!-- ═══ C · THE FINGER GARDEN ═══ -->
+<script type="text/babel">
+const{useState:useG,useEffect:useGE,useRef:useGR}=React;
+const{addSession:ASG}=window;
+
+function GardenGame({onBack}){
+  const canvasRef=useGR(null);
+  const stateRef=useGR({plants:[],active:new Map(),t:0,touches:0});
+  const startRef=useGR(Date.now());
+  const droneRef=useGR(null);
+
+  // Start a gentle ambient drone that swells with plant count
+  useGE(()=>{
+    let ctx2, master, osc1, osc2;
+    function startDrone(){
+      try{
+        ctx2=window.getAudio();
+        master=ctx2.createGain(); master.gain.value=0;
+        master.connect(ctx2.destination);
+        osc1=ctx2.createOscillator(); osc1.type='sine'; osc1.frequency.value=110;
+        const sub=ctx2.createGain(); sub.gain.value=0.04;
+        osc1.connect(sub); sub.connect(master);
+        osc2=ctx2.createOscillator(); osc2.type='sine'; osc2.frequency.value=220;
+        const sub2=ctx2.createGain(); sub2.gain.value=0.018;
+        osc2.connect(sub2); sub2.connect(master);
+        osc1.start(); osc2.start();
+        droneRef.current={master};
+      }catch(e){}
+    }
+    startDrone();
+    return()=>{ try{ osc1&&osc1.stop(); osc2&&osc2.stop(); }catch(e){} };
+  },[]);
+
+  // Update drone volume based on plant count
+  useGE(()=>{
+    const id=setInterval(()=>{
+      if(!droneRef.current) return;
+      const n=(stateRef.current.plants.length+stateRef.current.active.size);
+      const vol=Math.min(.18, n*.014);
+      try{ droneRef.current.master.gain.setTargetAtTime(vol,window.getAudio().currentTime,.8); }catch(e){}
+    },500);
+    return()=>clearInterval(id);
+  },[]);
+
+  useGE(()=>{
+    const cv=canvasRef.current; if(!cv) return;
+    const dpr=window.devicePixelRatio||1;
+    const resize=()=>{cv.width=cv.offsetWidth*dpr;cv.height=cv.offsetHeight*dpr;};
+    resize();
+    const W=()=>cv.offsetWidth, H=()=>cv.offsetHeight;
+    const st=stateRef.current;
+
+    function newPlant(x,y){
+      return{id:Math.random(),bx:x,by:y,pts:[{x,y}],leaves:[],
+        hue:75+Math.random()*50,maxH:55+Math.random()*65,
+        drift:(Math.random()-.5)*.55,active:true};
+    }
+
+    function growPlant(p){
+      if(p.pts.length>=p.maxH){p.active=false;return;}
+      const l=p.pts[p.pts.length-1];
+      p.pts.push({x:l.x+p.drift*.28+(Math.random()-.5)*.9,y:l.y-1.6-Math.random()*.7});
+      const n=p.pts.length;
+      if(n>10&&(n-10)%13===0) p.leaves.push({i:n-1,dir:p.leaves.length%2?1:-1,sz:5+Math.random()*5});
+    }
+
+    function drawPlant(ctx,p){
+      if(p.pts.length<2) return;
+      ctx.beginPath(); ctx.moveTo(p.pts[0].x*dpr,p.pts[0].y*dpr);
+      p.pts.forEach(pt=>ctx.lineTo(pt.x*dpr,pt.y*dpr));
+      ctx.strokeStyle=`hsla(${p.hue},52%,42%,.72)`;
+      ctx.lineWidth=Math.max(.8,1.8-p.pts.length*.01)*dpr;
+      ctx.lineCap='round'; ctx.stroke();
+      p.leaves.forEach(lf=>{
+        if(lf.i>=p.pts.length) return;
+        const pt=p.pts[lf.i];
+        ctx.save(); ctx.translate(pt.x*dpr,pt.y*dpr); ctx.rotate(lf.dir*.48);
+        ctx.beginPath(); ctx.ellipse(lf.dir*lf.sz*.55*dpr,-lf.sz*.25*dpr,lf.sz*.48*dpr,lf.sz*.2*dpr,0,0,Math.PI*2);
+        ctx.fillStyle=`hsla(${p.hue+15},48%,38%,.58)`; ctx.fill(); ctx.restore();
+      });
+      if(p.pts.length>p.maxH*.8){
+        const top=p.pts[p.pts.length-1];
+        const prog=Math.min(1,(p.pts.length-p.maxH*.8)/(p.maxH*.2));
+        const r=(5+Math.sin(st.t*1.5+p.hue)*.8)*prog*dpr;
+        if(r>1){
+          const grd=ctx.createRadialGradient(top.x*dpr,top.y*dpr,0,top.x*dpr,top.y*dpr,r*2);
+          grd.addColorStop(0,`hsla(${p.hue+25},82%,70%,${.85*prog})`);
+          grd.addColorStop(1,`hsla(${p.hue+25},82%,70%,0)`);
+          ctx.beginPath(); ctx.arc(top.x*dpr,top.y*dpr,r*2,0,Math.PI*2); ctx.fillStyle=grd; ctx.fill();
+          ctx.beginPath(); ctx.arc(top.x*dpr,top.y*dpr,r*.4,0,Math.PI*2); ctx.fillStyle=`hsla(${p.hue+40},90%,82%,.9)`; ctx.fill();
+        }
+      }
+    }
+
+    let raf;
+    function frame(){
+      const ctx=cv.getContext('2d');
+      ctx.clearRect(0,0,cv.width,cv.height);
+      // Bg
+      ctx.fillStyle=`rgba(8,5,2,.88)`; ctx.fillRect(0,0,cv.width,cv.height);
+      const gnd=ctx.createLinearGradient(0,cv.height*.8,0,cv.height);
+      gnd.addColorStop(0,'rgba(80,40,10,0)'); gnd.addColorStop(1,'rgba(80,40,10,.07)');
+      ctx.fillStyle=gnd; ctx.fillRect(0,cv.height*.8,cv.width,cv.height*.2);
+      // Grow active
+      st.active.forEach(p=>{if(p.active) growPlant(p);});
+      // Grow dormant
+      st.plants.forEach(p=>{if(p.active) growPlant(p);});
+      // Draw all
+      [...st.plants,...st.active.values()].forEach(p=>drawPlant(ctx,p));
+      st.t+=.016; raf=requestAnimationFrame(frame);
+    }
+    frame();
+
+    function getPos(e){const r=cv.getBoundingClientRect();const src=e.touches?e.touches[0]:e;return{x:(src.clientX-r.left),y:(src.clientY-r.top)};}
+    function onDown(e){e.preventDefault();st.touches++;const p=getPos(e);const pl=newPlant(p.x,p.y);st.active.set(e.pointerId??0,pl);}
+    function onMove(e){e.preventDefault();
+      const p=getPos(e);const pl=st.active.get(e.pointerId??0);
+      if(pl&&pl.active){const l=pl.pts[pl.pts.length-1];if(Math.hypot(p.x-l.x,p.y-l.y)>3) pl.pts.push({x:p.x,y:p.y});}
+    }
+    function onUp(e){e.preventDefault();const pl=st.active.get(e.pointerId??0);if(pl){st.plants.push(pl);st.active.delete(e.pointerId??0);if(st.plants.length>18) st.plants.shift();}}
+
+    cv.addEventListener('pointerdown',onDown,{passive:false});
+    cv.addEventListener('pointermove',onMove,{passive:false});
+    cv.addEventListener('pointerup',onUp,{passive:false});
+    cv.addEventListener('pointerleave',onUp,{passive:false});
+    return()=>{cancelAnimationFrame(raf);cv.removeEventListener('pointerdown',onDown);cv.removeEventListener('pointermove',onMove);cv.removeEventListener('pointerup',onUp);cv.removeEventListener('pointerleave',onUp);};
+  },[]);
+
+  function leave(){
+    const secs=(Date.now()-startRef.current)/1000;
+    if(secs>15&&stateRef.current.touches>2) ASG('garden');
+    onBack();
+  }
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'#08050200'}}>
+      <div style={{padding:'10px 18px 0',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <button onClick={leave} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(200,230,100,.45)',textTransform:'uppercase'}}>← Back</button>
+        <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.28em',textTransform:'uppercase',color:'rgba(200,230,100,.28)'}}>the finger garden</span>
+      </div>
+      <canvas ref={canvasRef} style={{flex:1,width:'100%',touchAction:'none',display:'block'}}/>
+      <div style={{padding:'8px 0 14px',textAlign:'center',flexShrink:0}}>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:'rgba(200,230,100,.22)'}}>touch the earth</p>
+      </div>
+    </div>
+  );
+}
+Object.assign(window,{GardenGame});
+</script>
+
+<!-- ═══ D · COLOUR RIVERS ═══ -->
+<script type="text/babel">
+const{useState:useCo,useEffect:useCoE,useRef:useCoR}=React;
+const{addSession:ASCo,playTone:PT}=window;
+
+const COLORS=[
+  {name:'fire',  hex:'#E85030', freq:396},
+  {name:'sun',   hex:'#E8C020', freq:528},
+  {name:'water', hex:'#3090D0', freq:639},
+];
+
+function ColoursGame({onBack}){
+  const canvasRef=useCoR(null);
+  const paintRef=useCoR(null);  // offscreen accumulator
+  const stateRef=useCoR({col:0,drawing:false,touches:0,t:0});
+  const startRef=useCoR(Date.now());
+
+  useCoE(()=>{
+    const cv=canvasRef.current; if(!cv) return;
+    const dpr=window.devicePixelRatio||1;
+    cv.width=cv.offsetWidth*dpr; cv.height=cv.offsetHeight*dpr;
+    const paint=document.createElement('canvas');
+    paint.width=cv.width; paint.height=cv.height;
+    paintRef.current=paint;
+    const pCtx=paint.getContext('2d');
+    const st=stateRef.current;
+    let lastPt=null;
+
+    function getPos(e){const r=cv.getBoundingClientRect();const src=e.touches?e.touches[0]:e;return{x:(src.clientX-r.left)*dpr,y:(src.clientY-r.top)*dpr};}
+
+    function onDown(e){
+      e.preventDefault(); st.drawing=true; st.touches++;
+      lastPt=getPos(e);
+      PT(COLORS[st.col].freq,.06,.4);
+    }
+    function onMove(e){
+      e.preventDefault(); if(!st.drawing||!lastPt) return;
+      const p=getPos(e);
+      pCtx.globalCompositeOperation='multiply';
+      pCtx.beginPath(); pCtx.moveTo(lastPt.x,lastPt.y); pCtx.lineTo(p.x,p.y);
+      pCtx.strokeStyle=COLORS[st.col].hex;
+      pCtx.lineWidth=30*dpr; pCtx.lineCap='round'; pCtx.globalAlpha=.22;
+      pCtx.stroke(); pCtx.globalAlpha=1; pCtx.globalCompositeOperation='source-over';
+      lastPt=p;
+    }
+    function onUp(e){e.preventDefault(); st.drawing=false; lastPt=null;}
+
+    cv.addEventListener('pointerdown',onDown,{passive:false});
+    cv.addEventListener('pointermove',onMove,{passive:false});
+    cv.addEventListener('pointerup',onUp,{passive:false});
+    cv.addEventListener('pointerleave',onUp,{passive:false});
+
+    let raf;
+    function frame(){
+      const ctx=cv.getContext('2d');
+      ctx.fillStyle='rgba(8,5,2,.92)'; ctx.fillRect(0,0,cv.width,cv.height);
+      if(paintRef.current) ctx.drawImage(paintRef.current,0,0);
+      st.t+=.016; raf=requestAnimationFrame(frame);
+    }
+    frame();
+    return()=>{cancelAnimationFrame(raf);cv.removeEventListener('pointerdown',onDown);cv.removeEventListener('pointermove',onMove);cv.removeEventListener('pointerup',onUp);cv.removeEventListener('pointerleave',onUp);};
+  },[]);
+
+  const[selCol,setSelCol]=useCo(0);
+  function pickCol(i){setSelCol(i);stateRef.current.col=i;PT(COLORS[i].freq,.08,.5);}
+
+  function leave(){
+    const secs=(Date.now()-startRef.current)/1000;
+    if(secs>15&&stateRef.current.touches>2) ASCo('colours');
+    onBack();
+  }
+  function clearCanvas(){
+    const paint=paintRef.current; if(!paint) return;
+    paint.getContext('2d').clearRect(0,0,paint.width,paint.height);
+  }
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'#060402'}}>
+      <div style={{padding:'10px 18px 0',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <button onClick={leave} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(248,192,96,.45)',textTransform:'uppercase'}}>← Back</button>
+        <button onClick={clearCanvas} style={{background:'none',border:'none',cursor:'pointer',fontSize:'9px',letterSpacing:'.22em',color:'rgba(248,192,96,.25)',textTransform:'uppercase'}}>clear</button>
+      </div>
+      <canvas ref={canvasRef} style={{flex:1,width:'100%',touchAction:'none',display:'block'}}/>
+      <div style={{padding:'10px 18px 16px',flexShrink:0,display:'flex',gap:'10px',justifyContent:'center'}}>
+        {COLORS.map((c,i)=>(
+          <button key={i} onClick={()=>pickCol(i)} style={{
+            width:'44px',height:'44px',borderRadius:'50%',cursor:'pointer',border:'none',
+            background:c.hex,opacity:selCol===i?1:.35,
+            boxShadow:selCol===i?`0 0 18px ${c.hex}`:'none',
+            transition:'all .2s',
+          }}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+Object.assign(window,{ColoursGame});
+</script>
+
+<!-- ═══ E · THE RAIN ═══ -->
+<script type="text/babel">
+const{useState:useRn,useEffect:useRnE,useRef:useRnR}=React;
+const{addSession:ASRn}=window;
+
+function RainGame({onBack}){
+  const canvasRef=useRnR(null);
+  const stateRef=useRnR({drops:[],ripples:[],ptrs:new Map(),wind:0,t:0,touches:0});
+  const startRef=useRnR(Date.now());
+
+  useRnE(()=>{
+    const cv=canvasRef.current; if(!cv) return;
+    const dpr=window.devicePixelRatio||1;
+    cv.width=cv.offsetWidth*dpr; cv.height=cv.offsetHeight*dpr;
+    const st=stateRef.current;
+    const W=cv.width, H=cv.height;
+
+    function spawnDrop(px){
+      st.drops.push({x:(px||Math.random()*W/dpr)*dpr+(Math.random()-.5)*40*dpr,y:-5*dpr,vy:(4+Math.random()*3)*dpr,len:(7+Math.random()*8)*dpr,a:.15+Math.random()*.35});
+    }
+
+    function getPos(e){const r=cv.getBoundingClientRect();const src=e.touches?e.touches[0]:e;return{x:(src.clientX-r.left)*dpr,y:(src.clientY-r.top)*dpr};}
+    function onDown(e){e.preventDefault();st.touches++;const p=getPos(e);st.ptrs.set(e.pointerId??0,p);}
+    function onMove(e){e.preventDefault();const p=getPos(e);
+      if(st.ptrs.has(e.pointerId??0)){
+        const prev=st.ptrs.get(e.pointerId??0);
+        st.wind+=(p.x-prev.x)/W*.08;
+        st.wind=Math.max(-.6,Math.min(.6,st.wind));
+        st.ptrs.set(e.pointerId??0,p);
+      }
+    }
+    function onUp(e){e.preventDefault();st.ptrs.delete(e.pointerId??0);}
+
+    cv.addEventListener('pointerdown',onDown,{passive:false});
+    cv.addEventListener('pointermove',onMove,{passive:false});
+    cv.addEventListener('pointerup',onUp,{passive:false});
+    cv.addEventListener('pointerleave',onUp,{passive:false});
+
+    let raf;
+    function frame(){
+      const ctx=cv.getContext('2d');
+      ctx.fillStyle='rgba(4,8,16,.88)'; ctx.fillRect(0,0,W,H);
+      // Ambient blue glow at bottom
+      const gnd=ctx.createLinearGradient(0,H*.7,0,H);
+      gnd.addColorStop(0,'rgba(20,60,120,0)'); gnd.addColorStop(1,'rgba(20,60,120,.06)');
+      ctx.fillStyle=gnd; ctx.fillRect(0,H*.7,W,H*.3);
+
+      // Spawn drops
+      const nBase=2, nExtra=st.ptrs.size*3;
+      for(let i=0;i<nBase+nExtra;i++){
+        if(Math.random()<.4+st.ptrs.size*.3){
+          let px=null;
+          if(st.ptrs.size>0&&Math.random()<.6){
+            const ptrs=[...st.ptrs.values()];
+            px=ptrs[Math.floor(Math.random()*ptrs.length)].x/dpr;
+          }
+          spawnDrop(px);
+        }
+      }
+
+      // Update + draw drops
+      st.drops=st.drops.filter(d=>{
+        d.x+=st.wind*d.vy; d.y+=d.vy;
+        if(d.y>H){
+          st.ripples.push({x:d.x,y:H-8*dpr,r:0,maxR:(10+Math.random()*10)*dpr,a:.45});
+          return false;
+        }
+        ctx.beginPath();
+        ctx.moveTo(d.x,d.y);
+        ctx.lineTo(d.x-st.wind*d.len*.5,d.y-d.len);
+        ctx.strokeStyle=`rgba(140,200,255,${d.a})`;
+        ctx.lineWidth=.8*dpr; ctx.stroke();
+        return true;
+      });
+      if(st.drops.length>400) st.drops.splice(0,100);
+
+      // Ripples
+      st.ripples=st.ripples.filter(r=>{
+        r.r+=.7*dpr; r.a-=.016;
+        if(r.a<=0) return false;
+        ctx.beginPath(); ctx.ellipse(r.x,r.y,r.r,r.r*.35,0,0,Math.PI*2);
+        ctx.strokeStyle=`rgba(140,200,255,${r.a})`; ctx.lineWidth=.7*dpr; ctx.stroke();
+        return true;
+      });
+
+      // Wind decay
+      st.wind*=.985;
+      st.t+=.016; raf=requestAnimationFrame(frame);
+    }
+    frame();
+    return()=>{cancelAnimationFrame(raf);cv.removeEventListener('pointerdown',onDown);cv.removeEventListener('pointermove',onMove);cv.removeEventListener('pointerup',onUp);cv.removeEventListener('pointerleave',onUp);};
+  },[]);
+
+  function leave(){
+    const secs=(Date.now()-startRef.current)/1000;
+    if(secs>15&&stateRef.current.touches>1) ASRn('rain');
+    onBack();
+  }
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'#040810'}}>
+      <div style={{padding:'10px 18px 0',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <button onClick={leave} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(144,200,248,.42)',textTransform:'uppercase'}}>← Back</button>
+        <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.28em',textTransform:'uppercase',color:'rgba(144,200,248,.25)'}}>the rain</span>
+      </div>
+      <canvas ref={canvasRef} style={{flex:1,width:'100%',touchAction:'none',display:'block'}}/>
+      <div style={{padding:'8px 0 14px',textAlign:'center',flexShrink:0}}>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:'rgba(144,200,248,.22)'}}>press to call the rain · swipe for wind</p>
+      </div>
+    </div>
+  );
+}
+Object.assign(window,{RainGame});
+</script>
+
+<!-- ═══ F · THE ECHO ═══ -->
+<script type="text/babel">
+const{useState:useE,useEffect:useEE,useRef:useER}=React;
+const{addSession:ASE,playTone:PTE}=window;
+
+const BASE_FREQ=396;
+
+function EchoGame({onBack}){
+  const[rings,setRings]=useE([]);
+  const[echoing,setEchoing]=useE(false);
+  const[pulseScale,setPulse]=useE(1);
+  const tapsRef=useER([]);
+  const timerRef=useER(null);
+  const startRef=useER(Date.now());
+  const touchRef=useER(0);
+
+  function tap(){
+    touchRef.current++;
+    const now=Date.now();
+    tapsRef.current=[...tapsRef.current.filter(t=>now-t<8000),now];
+    PTE(BASE_FREQ,.15,.5);
+    setRings(r=>[...r,{id:now}]);
+    setPulse(1.18);
+    setTimeout(()=>setPulse(1),300);
+    clearTimeout(timerRef.current);
+    setEchoing(false);
+    timerRef.current=setTimeout(()=>{
+      if(tapsRef.current.length>=2){
+        setEchoing(true);
+        playEcho();
+      }
+    },2200);
+  }
+
+  function playEcho(){
+    const t=tapsRef.current;
+    if(t.length<2) return;
+    const intervals=t.slice(1).map((x,i)=>x-t[i]);
+    const avg=intervals.reduce((a,b)=>a+b)/intervals.length;
+    [[.95,.1],[1.06,.07],[1.5,.045]].forEach(([mult,vol],layer)=>{
+      let offset=layer*avg*.7;
+      for(let rep=0;rep<Math.min(tapsRef.current.length,4);rep++){
+        const d=offset+rep*avg;
+        setTimeout(()=>{
+          PTE(BASE_FREQ*mult,vol,.45);
+          setRings(r=>[...r,{id:Date.now()+Math.random()}]);
+        },d);
+      }
+    });
+    setTimeout(()=>setEchoing(false),avg*4+2000);
+  }
+
+  function leave(){
+    const secs=(Date.now()-startRef.current)/1000;
+    if(secs>15&&touchRef.current>2) ASE('echo');
+    onBack();
+  }
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',background:'radial-gradient(ellipse at 50% 50%,#140C02,#06040A)',position:'relative',overflow:'hidden'}}
+      onClick={tap}>
+      <button onClick={e=>{e.stopPropagation();leave();}} style={{position:'absolute',top:'14px',left:'18px',background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(248,216,112,.42)',textTransform:'uppercase',zIndex:10}}>← Back</button>
+      <p style={{position:'absolute',top:'18px',fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.28em',textTransform:'uppercase',color:'rgba(248,216,112,.25)',zIndex:10}}>the echo</p>
+
+      {/* Ring animations */}
+      {rings.slice(-6).map(r=>(
+        <div key={r.id} style={{position:'absolute',left:'50%',top:'50%',
+          width:'120px',height:'120px',marginLeft:'-60px',marginTop:'-60px',
+          borderRadius:'50%',border:'1px solid rgba(248,216,112,.55)',
+          animation:'ring-out 1.6s ease-out forwards',pointerEvents:'none'}}/>
+      ))}
+
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'24px',pointerEvents:'none'}}>
+        {/* The drum */}
+        <div style={{width:'120px',height:'120px',borderRadius:'50%',
+          background:'radial-gradient(circle at 38% 38%,rgba(248,216,112,.30),rgba(192,144,48,.55))',
+          boxShadow:'0 0 32px rgba(192,144,48,.45)',
+          transform:`scale(${pulseScale})`,transition:'transform .25s ease',
+          display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{width:'60px',height:'60px',borderRadius:'50%',
+            background:'radial-gradient(circle,rgba(248,216,112,.45),rgba(192,144,48,.25))',
+            boxShadow:`0 0 16px rgba(248,216,112,.3)`}}/>
+        </div>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'16px',color:'rgba(248,216,112,.45)',letterSpacing:'.1em'}}>
+          {echoing?'listening…':'tap anywhere'}
+        </p>
+      </div>
+    </div>
+  );
+}
+Object.assign(window,{EchoGame});
+</script>
+
+<!-- ═══ G · THE WORLD IN A BOX ═══ -->
+<script type="text/babel">
+const{useState:useBx,useEffect:useBxE,useRef:useBxR}=React;
+const{addSession:ASBx,getSessions:GSBx}=window;
+
+const BOX_ITEMS={
+  garden: {sym:'✿',c:'#90C050',label:'from the garden'},
+  colours:{sym:'◈',c:'#E08030',label:'from the rivers'},
+  rain:   {sym:'◎',c:'#4090C8',label:'from the rain'},
+  echo:   {sym:'◉',c:'#D0A030',label:'from the echo'},
+};
+
+function BoxGame({onBack}){
+  const[items,setItems]=useBxE(()=>{
+    try{return JSON.parse(localStorage.getItem('child_box_v1')||'[]');}catch{return[];}
+  });
+  const[dragging,setDragging]=useBxE(null);
+  const boxRef=useBxR(null);
+  const sessions=GSBx();
+  const total=Object.values(sessions).reduce((a,b)=>a+b,0);
+
+  function saveItems(its){localStorage.setItem('child_box_v1',JSON.stringify(its));}
+
+  function onItemDown(e,idx){
+    e.stopPropagation();
+    setDragging({idx,startX:e.clientX||e.touches?.[0]?.clientX,startY:e.clientY||e.touches?.[0]?.clientY,ox:items[idx].x,oy:items[idx].y});
+  }
+  function onBoxMove(e){
+    if(dragging===null) return;
+    const box=boxRef.current?.getBoundingClientRect();
+    if(!box) return;
+    const cx=(e.clientX||e.touches?.[0]?.clientX||0);
+    const cy=(e.clientY||e.touches?.[0]?.clientY||0);
+    const nx=Math.max(.05,Math.min(.95,(cx-box.left)/box.width));
+    const ny=Math.max(.05,Math.min(.95,(cy-box.top)/box.height));
+    const its=[...items]; its[dragging.idx]={...its[dragging.idx],x:nx,y:ny};
+    setItems(its); saveItems(its);
+  }
+  function onBoxUp(){setDragging(null);}
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',background:'radial-gradient(ellipse at 50% 30%,#0E0A18,#06040A)'}}>
+      <div style={{padding:'10px 18px 0',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(216,200,248,.42)',textTransform:'uppercase'}}>← Back</button>
+        <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.28em',textTransform:'uppercase',color:'rgba(216,200,248,.28)'}}>your collection</span>
+      </div>
+
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'16px 24px',gap:'14px'}}>
+
+        {items.length===0?(
+          <div style={{textAlign:'center',padding:'20px'}}>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'20px',color:'rgba(216,200,248,.55)',lineHeight:1.7,marginBottom:'8px'}}>The box is empty.</p>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'14px',color:'rgba(216,200,248,.30)',lineHeight:1.7}}>Play the other games.<br/>Each session leaves something here.</p>
+          </div>
+        ):(
+          <>
+            {/* The box */}
+            <div ref={boxRef}
+              onPointerMove={onBoxMove} onPointerUp={onBoxUp}
+              style={{width:'280px',height:'280px',borderRadius:'24px',position:'relative',
+                background:'rgba(20,16,32,.85)',border:'1px solid rgba(180,160,240,.18)',
+                boxShadow:'0 0 40px rgba(100,80,180,.12)',overflow:'hidden',cursor:'default'}}>
+              {/* Grid hint */}
+              <div style={{position:'absolute',inset:0,backgroundImage:'radial-gradient(circle,rgba(180,160,240,.06) 1px,transparent 1px)',backgroundSize:'28px 28px'}}/>
+              {items.map((item,i)=>{
+                const meta=BOX_ITEMS[item.type];
+                if(!meta) return null;
+                return(
+                  <div key={i} onPointerDown={e=>onItemDown(e,i)}
+                    style={{position:'absolute',
+                      left:`calc(${item.x*100}% - 18px)`,top:`calc(${item.y*100}% - 18px)`,
+                      width:'36px',height:'36px',borderRadius:'50%',cursor:'grab',
+                      background:`radial-gradient(circle at 36% 36%,${meta.c}50,${meta.c}30)`,
+                      boxShadow:`0 0 12px ${meta.c}55`,
+                      display:'flex',alignItems:'center',justifyContent:'center',
+                      fontSize:'16px',color:meta.c,
+                      animation:`breathe ${3+i*.2}s ${i*.15}s ease-in-out infinite`,
+                      userSelect:'none',touchAction:'none',
+                    }}>{meta.sym}</div>
+                );
+              })}
+            </div>
+
+            <div style={{display:'flex',gap:'14px',flexWrap:'wrap',justifyContent:'center'}}>
+              {Object.entries(BOX_ITEMS).map(([key,m])=>{
+                const count=items.filter(i=>i.type===key).length;
+                if(!count) return null;
+                return(
+                  <div key={key} style={{display:'flex',alignItems:'center',gap:'5px'}}>
+                    <span style={{fontSize:'12px',color:m.c}}>{m.sym}</span>
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.14em',textTransform:'uppercase',color:`${m.c}65`}}>{count} {m.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:'rgba(216,200,248,.22)'}}>drag them around</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+Object.assign(window,{BoxGame});
+</script>
+
+<!-- ═══ H · APP ═══ -->
+<script type="text/babel">
+const{useState:useApp}=React;
+const{MenuView:MV,GardenGame:GG,ColoursGame:CG,RainGame:RG,EchoGame:EG,BoxGame:BG}=window;
+
+function App(){
+  const[view,setView]=useApp('menu');
+  return(
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"/>
+          <div className="ph-content">
+            {view==='menu'   &&<MV onPlay={setView} onBack={null}/>}
+            {view==='garden' &&<GG onBack={()=>setView('menu')}/>}
+            {view==='colours'&&<CG onBack={()=>setView('menu')}/>}
+            {view==='rain'   &&<RG onBack={()=>setView('menu')}/>}
+            {view==='echo'   &&<EG onBack={()=>setView('menu')}/>}
+            {view==='box'    &&<BG onBack={()=>setView('menu')}/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

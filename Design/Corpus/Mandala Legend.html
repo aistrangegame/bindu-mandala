@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bindu Mandala — The Legend · Four Doorways</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #060104; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
+    #root { width: 100vw; height: 100vh; }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,150,63,0.22); border-radius: 2px; }
+
+    /* ── Mandala — Ring 2, per-status petal breathing ─── */
+    @keyframes ring2TodayBreathe { 0%,100% { opacity:0.78; } 50% { opacity:1.0; filter:brightness(1.45) drop-shadow(0 0 9px rgba(201,150,63,0.8)); } }
+    @keyframes ring2EmbodiedBreathe { 0%,100% { opacity:1.0; } 50% { opacity:0.80; } }
+    @keyframes ring2ActiveBreathe { 0%,100% { opacity:0.76; } 50% { opacity:0.92; } }
+    @keyframes ring2ExploringBreathe { 0%,100% { opacity:0.44; } 50% { opacity:0.56; } }
+    @keyframes ring2MappedBreathe { 0%,100% { opacity:0.22; } 50% { opacity:0.28; } }
+    .ring2-today { animation: ring2TodayBreathe 3s ease-in-out infinite; }
+    .ring2-embodied { animation: ring2EmbodiedBreathe 3.5s ease-in-out infinite; }
+    .ring2-active { animation: ring2ActiveBreathe 5s ease-in-out infinite; }
+    .ring2-exploring { animation: ring2ExploringBreathe 7s ease-in-out infinite; }
+    .ring2-mapped { animation: ring2MappedBreathe 11s ease-in-out infinite; }
+
+    @keyframes ring3PetalBreathe { 0%,100% { opacity:0.17; } 50% { opacity:0.29; } }
+    .ring3-petal { animation: ring3PetalBreathe 8s ease-in-out infinite; }
+
+    @keyframes lockR4 { 0%,100% { opacity:0.15; } 50% { opacity:0.22; } }
+    @keyframes lockR5 { 0%,100% { opacity:0.10; } 50% { opacity:0.15; } }
+    @keyframes lockR6 { 0%,100% { opacity:0.07; } 50% { opacity:0.11; } }
+    @keyframes lockR7 { 0%,100% { opacity:0.045;} 50% { opacity:0.07; } }
+    .lock-r4 { animation: lockR4 9s ease-in-out infinite; }
+    .lock-r5 { animation: lockR5 11s ease-in-out infinite; }
+    .lock-r6 { animation: lockR6 13s ease-in-out infinite; }
+    .lock-r7 { animation: lockR7 15s ease-in-out infinite; }
+
+    @keyframes deepGhostTri { 0%,100% { opacity:0.028; } 50% { opacity:0.052; } }
+    .deep-ghost-tri { animation: deepGhostTri 18s ease-in-out infinite; }
+
+    @keyframes mandalaBinduBreathe {
+      0%,100% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 14px 6px rgba(139,26,42,0.45); }
+      50% { transform: translate(-50%,-50%) scale(1.22); box-shadow: 0 0 26px 14px rgba(139,26,42,0.68), 0 0 52px 28px rgba(139,26,42,0.28); }
+    }
+    .mandala-bindu-breathe { position:absolute; top:50%; left:50%; border-radius:50%; animation: mandalaBinduBreathe 4s ease-in-out infinite; }
+
+    @keyframes ringIndicatorPulse {
+      0%,100% { transform: scale(1); box-shadow: 0 0 8px 2px rgba(201,150,63,0.55); }
+      50% { transform: scale(1.38); box-shadow: 0 0 14px 5px rgba(201,150,63,0.80); }
+    }
+
+    @keyframes moteRise {
+      0% { transform: translate(0,0); opacity:0; }
+      8% { opacity:1; }
+      50% { transform: translate(calc(var(--drift)*.5), -420px); }
+      92% { opacity:0.5; }
+      100% { transform: translate(var(--drift), -880px); opacity:0; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ── Data layer ──────────────────────────────────────────────────────── -->
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+
+<!-- ── Component layer ─────────────────────────────────────────────────── -->
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="mandala-v2.jsx"></script>
+<script type="text/babel" src="legend-explorations.jsx"></script>
+
+<!-- ── App ─────────────────────────────────────────────────────────────── -->
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard,
+        LegendDescent, LegendVeil, LegendDoorways, LegendSpine } = window;
+
+function DesignNote() {
+  const principles = [
+    ['Descent, not a menu', 'The yantra is read outside-in: world-square → lotuses → triangles → Bindu. The Legend echoes that — Ring I at the top, descending to the Bindu. Rings you haven\u2019t reached are deeper in, not "disabled."'],
+    ['Light, never locks', 'A padlock is the most secular thing we could put on a sacred object. Status is luminosity: home is fully lit, open rings glow, the ground is warm, rings ahead are veiled behind a scrim with a dashed, uncrossed threshold-line.'],
+    ['The yantra goes quiet', 'In every option the yantra becomes a held image. Only the Bindu and the Ring\u202f2 petals keep a breath of life — your two intuitive affordances. The Legend carries all navigation.'],
+  ];
+  return (
+    <div style={{ width: 460, minHeight: 844, background: 'linear-gradient(180deg,#0D0508,#080306)',
+      border: '0.5px solid rgba(201,150,63,0.18)', borderRadius: 4,
+      padding: '54px 44px', display: 'flex', flexDirection: 'column',
+      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' }}>
+      <div style={{ fontSize: 10, color: '#C9963F', letterSpacing: '0.20em', textTransform: 'uppercase', opacity: 0.8, marginBottom: 18 }}>
+        The Design Question
+      </div>
+      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 38, fontWeight: 300,
+        color: '#F2E8D9', lineHeight: 1.12, letterSpacing: '0.02em', marginBottom: 14 }}>
+        How does a Legend feel<br/>sacred, not functional?
+      </div>
+      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 17, fontStyle: 'italic',
+        fontWeight: 300, color: 'rgba(242,232,217,0.55)', lineHeight: 1.6, marginBottom: 34 }}>
+        The yantra stays a beautiful, non-interactive presence. Navigation into the nine
+        Avaraṇas happens through a Legend — each entry a doorway, not a list item.
+      </div>
+      <div style={{ width: 44, height: 0.5, background: 'rgba(201,150,63,0.4)', marginBottom: 30 }} />
+      {principles.map(([h, b], i) => (
+        <div key={i} style={{ marginBottom: 26 }}>
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 21, fontWeight: 400,
+            color: '#C9963F', letterSpacing: '0.02em', marginBottom: 7 }}>{i + 1} · {h}</div>
+          <div style={{ fontSize: 13.5, lineHeight: 1.7, color: 'rgba(242,232,217,0.6)', letterSpacing: '0.01em' }}>{b}</div>
+        </div>
+      ))}
+      <div style={{ flex: 1 }} />
+      <div style={{ fontSize: 11, color: 'rgba(242,232,217,0.32)', letterSpacing: '0.06em', lineHeight: 1.7,
+        borderTop: '0.5px solid rgba(201,150,63,0.14)', paddingTop: 18 }}>
+        Four placements to react to — they are not mutually exclusive. The list, the veil, the
+        chambers, and the spine each answer "where does it live?" differently. Mix freely.
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas background="#060104" title="Bindu Mandala · The Legend · Four Doorways">
+      <DCSection id="note" title="The Legend — Reasoning"
+        subtitle="The principle before the pixels — push back on the thinking, not just the layout">
+        <DCArtboard id="design-note" label="Design note" width={460} height={844}>
+          <DesignNote/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="legends" title="Four Placements"
+        subtitle="Each answers 'where does the Legend live?' — inline column · pull-up veil · chamber grid · descent spine">
+        <DCArtboard id="v1-descent" label="1 · The Descent — inline column you read downward" width={390} height={844}>
+          <LegendDescent/>
+        </DCArtboard>
+        <DCArtboard id="v2-veil" label="2 · The Veil — sheet drawn up over the yantra hero" width={390} height={844}>
+          <LegendVeil/>
+        </DCArtboard>
+        <DCArtboard id="v3-doorways" label="3 · The Doorways — nine chambers, lit & veiled" width={390} height={844}>
+          <LegendDoorways/>
+        </DCArtboard>
+        <DCArtboard id="v4-spine" label="4 · The Spine — the suṣumnā, nine nodes of descent" width={390} height={844}>
+          <LegendSpine/>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

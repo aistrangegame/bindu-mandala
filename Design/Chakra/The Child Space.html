@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>The Child Space</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#060402;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.06);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes mote-rise{0%{opacity:0;transform:translateY(0)}20%{opacity:.7}80%{opacity:.4}100%{opacity:0;transform:translateY(-48px)}}
+@keyframes warm-pulse{0%,100%{box-shadow:0 0 18px #C4782030}50%{box-shadow:0 0 38px #C4782055}}
+@keyframes promise-in{0%{transform:scale(.94) rotate(-1deg);opacity:0}100%{transform:scale(1) rotate(0deg);opacity:1}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#100A06;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,220,160,.06),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,220,160,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#1A1208;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #1A1208,0 108px 0 #1A1208;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#1A1208;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#08050200;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+textarea,input{font-family:inherit;outline:none;}
+textarea::placeholder,input::placeholder{color:rgba(240,200,140,.20);}
+.scroll{overflow-y:auto;}.scroll::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ═══ A · DATA + QUESTIONS ═══ -->
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const CC = '#C47820', CA = '#F0B85A', CW = '#F5E8D4';
+
+const QUESTIONS = [
+  "What did you love to do that felt like flying?",
+  "What was your favorite hiding place?",
+  "What smell takes you back to being very small?",
+  "What game did you play alone that felt like a whole world?",
+  "What were you curious about before you learned to be careful?",
+  "What made you laugh until you couldn't breathe?",
+  "Who made you feel completely safe?",
+  "What did you make just for the joy of making it?",
+  "What did you believe was possible that adults told you wasn't?",
+  "What was the bravest thing small-you ever did?",
+  "What did you love about yourself before you learned to doubt?",
+  "What was your most treasured object?",
+  "What did you wish grown-ups understood about you?",
+  "What were you good at that nobody noticed?",
+  "What did you dream of becoming?",
+  "What made you feel most like yourself?",
+  "What did you know for certain that you've since forgotten?",
+  "What would you go back and do more of?",
+  "What is the child in you still waiting for?",
+  "What did small-you deserve that they didn't always receive?",
+];
+
+const STORE = 'child_space_v1';
+
+function getData() {
+  try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { return {}; }
+}
+function setData(d) {
+  localStorage.setItem(STORE, JSON.stringify({ ...getData(), ...d }));
+}
+
+function getTodayQuestion() {
+  const day = Math.floor(Date.now() / 86400000);
+  return { text: QUESTIONS[day % QUESTIONS.length], idx: day % QUESTIONS.length };
+}
+
+function fmtAgo(ts) {
+  if (!ts) return '';
+  const d = Math.floor((Date.now() - ts) / 86400000);
+  if (d === 0) return 'today';
+  if (d === 1) return 'yesterday';
+  if (d < 7)  return `${d} days ago`;
+  return `${Math.round(d/7)} weeks ago`;
+}
+
+Object.assign(window, { CC, CA, CW, QUESTIONS, getData, setData, getTodayQuestion, fmtAgo });
+</script>
+
+<!-- ═══ B · WARM SUN + HOME VIEW ═══ -->
+<script type="text/babel">
+const { useState:useH, useEffect:useHE, useRef:useHR } = React;
+const { CC:CC2, CA:CA2, CW:CW2, getData:GD, getTodayQuestion:GTQ, fmtAgo:FA } = window;
+
+function WarmSun({ size = 110 }) {
+  const ref = useHR(null);
+  useHE(() => {
+    const c = ref.current; if (!c) return;
+    const dpr = window.devicePixelRatio || 1;
+    c.width = size * dpr; c.height = size * dpr;
+    const ctx = c.getContext('2d'); ctx.scale(dpr, dpr);
+    const cx = size/2, cy = size/2;
+    const motes = Array.from({length:14}, () => ({
+      x: cx + (Math.random()-.5)*size*.38,
+      y: cy + (Math.random()-.1)*size*.25,
+      r: Math.random()*1.8 + .5,
+      speed: Math.random()*.35 + .18,
+      phase: Math.random()*Math.PI*2,
+      dx: (Math.random()-.5)*.3,
+    }));
+    let t = 0, raf;
+    function draw() {
+      ctx.clearRect(0,0,size,size);
+      const pulse = .92 + .08*Math.sin(t*.75);
+      // outer glow
+      const og = ctx.createRadialGradient(cx,cy,0,cx,cy,size*.46*pulse);
+      og.addColorStop(0,'#F0B85A28'); og.addColorStop(.5,'#C4782012'); og.addColorStop(1,'#C4782000');
+      ctx.beginPath(); ctx.arc(cx,cy,size*.46*pulse,0,Math.PI*2); ctx.fillStyle=og; ctx.fill();
+      // inner glow
+      const ig = ctx.createRadialGradient(cx,cy,0,cx,cy,size*.22*pulse);
+      ig.addColorStop(0,'#F5E0A0CC'); ig.addColorStop(.45,'#F0B85A60'); ig.addColorStop(1,'#C4782000');
+      ctx.beginPath(); ctx.arc(cx,cy,size*.22*pulse,0,Math.PI*2); ctx.fillStyle=ig; ctx.fill();
+      // center point
+      ctx.beginPath(); ctx.arc(cx,cy,size*.038,0,Math.PI*2);
+      ctx.fillStyle='#F5E8C8'; ctx.shadowColor='#F0B85A'; ctx.shadowBlur=8; ctx.fill(); ctx.shadowBlur=0;
+      // motes
+      motes.forEach(m => {
+        m.y -= m.speed*.28; m.x += m.dx*.08;
+        if (m.y < cy - size*.44) { m.y = cy + size*.15; m.x = cx + (Math.random()-.5)*size*.38; }
+        const a = (.15 + .45*Math.sin(t*1.1 + m.phase)) * .85;
+        ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(240,184,90,${a})`; ctx.fill();
+      });
+      t += .016; raf = requestAnimationFrame(draw);
+    }
+    draw(); return () => cancelAnimationFrame(raf);
+  }, [size]);
+  return <canvas ref={ref} style={{width:size+'px',height:size+'px',display:'block'}}/>;
+}
+
+function HomeView({ setView }) {
+  const q = GTQ();
+  const data = GD();
+  const visits = (data.visits || 0) + 1;
+  const promise = data.promise;
+  const answered = (data.answers || []).length;
+
+  useHE(() => { setData({ visits }); }, []);
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:'radial-gradient(ellipse at 50% 28%, #120A04, #06040A)' }}>
+
+      {/* Header */}
+      <div style={{ padding:'10px 24px 0', flexShrink:0, display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'20px', color:`${CA2}90`, letterSpacing:'.12em' }}>The Child Space</p>
+        {answered > 0 && (
+          <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.22em',
+            textTransform:'uppercase', color:`${CA2}38` }}>{answered} remembered</span>
+        )}
+      </div>
+
+      {/* Sun */}
+      <div style={{ display:'flex', justifyContent:'center', padding:'14px 0 8px', flexShrink:0 }}>
+        <WarmSun size={100} />
+      </div>
+
+      {/* Today's question */}
+      <div style={{ padding:'0 28px', flexShrink:0, textAlign:'center' }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.38em',
+          textTransform:'uppercase', color:`${CA2}40`, marginBottom:'10px' }}>today's question</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px',
+          color:'rgba(245,232,212,.85)', lineHeight:1.55 }}>
+          {q.text}
+        </p>
+      </div>
+
+      {/* Active promise */}
+      {promise?.text && (
+        <div style={{ margin:'16px 22px 0', padding:'14px 18px', borderRadius:'16px',
+          background:`${CC2}0C`, border:`1px solid ${CC2}22`, animation:'promise-in .6s ease' }}>
+          <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.3em',
+            textTransform:'uppercase', color:`${CA2}42`, marginBottom:'5px' }}>a promise, still keeping</p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+            fontSize:'16px', color:`${CW2}80`, lineHeight:1.6 }}>{promise.text}</p>
+        </div>
+      )}
+
+      {/* Three ways in */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end',
+        padding:'0 20px 28px', gap:'9px' }}>
+
+        <button onClick={() => setView('question')} style={{
+          display:'flex', alignItems:'center', gap:'16px', padding:'18px 20px',
+          borderRadius:'18px', cursor:'pointer', textAlign:'left',
+          background:`${CC2}0E`, border:`1px solid ${CC2}30`, transition:'all .2s',
+        }}>
+          <div style={{ width:'38px', height:'38px', borderRadius:'50%', flexShrink:0,
+            background:`radial-gradient(circle at 36% 36%, ${CA2}45, ${CC2}60)`,
+            boxShadow:`0 0 16px ${CC2}40`, animation:'breathe 4s ease-in-out infinite',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px' }}>◎</div>
+          <div>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'18px', color:CW2+'CC' }}>Answer the question</p>
+            <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.16em',
+              textTransform:'uppercase', color:`${CA2}48`, marginTop:'2px' }}>remember what you knew</p>
+          </div>
+        </button>
+
+        <button onClick={() => setView('speak')} style={{
+          display:'flex', alignItems:'center', gap:'16px', padding:'18px 20px',
+          borderRadius:'18px', cursor:'pointer', textAlign:'left',
+          background:`${CC2}0A`, border:`1px solid ${CC2}22`, transition:'all .2s',
+        }}>
+          <div style={{ width:'38px', height:'38px', borderRadius:'50%', flexShrink:0,
+            background:`radial-gradient(circle at 36% 36%, ${CA2}30, ${CC2}45)`,
+            boxShadow:`0 0 10px ${CC2}28`,
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px', color:`${CA2}80` }}>◈</div>
+          <div>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'18px', color:CW2+'CC' }}>Speak with the child</p>
+            <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.16em',
+              textTransform:'uppercase', color:`${CA2}40`, marginTop:'2px' }}>a conversation across the years</p>
+          </div>
+        </button>
+
+        <a href="Child Games.html" style={{
+          display:'flex', alignItems:'center', gap:'16px', padding:'18px 20px',
+          borderRadius:'18px', cursor:'pointer', textDecoration:'none',
+          background:`${CC2}12`, border:`1px solid ${CC2}38`, transition:'all .2s',
+        }}>
+          <div style={{ width:'38px', height:'38px', borderRadius:'50%', flexShrink:0,
+            background:`radial-gradient(circle at 36% 36%, ${CA2}55, ${CC2}70)`,
+            boxShadow:`0 0 20px ${CC2}55`, animation:'breathe 3s ease-in-out infinite',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px', color:`${CA2}` }}>▶</div>
+          <div>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'18px', color:CW2+'EE' }}>Play</p>
+            <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.16em',
+              textTransform:'uppercase', color:`${CA2}55`, marginTop:'2px' }}>garden · colour · rain · echo</p>
+          </div>
+        </a>
+
+        <button onClick={() => setView('childletter')} style={{
+          display:'flex', alignItems:'center', gap:'16px', padding:'18px 20px',
+          borderRadius:'18px', cursor:'pointer', textAlign:'left',
+          background:`${CC2}0A`, border:`1px solid ${CC2}22`, transition:'all .2s',
+        }}>
+          <div style={{ width:'38px', height:'38px', borderRadius:'50%', flexShrink:0,
+            background:`radial-gradient(circle at 36% 36%, ${CA2}30, ${CC2}45)`,
+            boxShadow:`0 0 10px ${CC2}28`,
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px', color:`${CA2}80` }}>✉</div>
+          <div>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'18px', color:CW2+'CC' }}>A letter from the child</p>
+            <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.16em',
+              textTransform:'uppercase', color:`${CA2}40`, marginTop:'2px' }}>they have been wanting to write</p>
+          </div>
+        </button>
+
+        <button onClick={() => setView('promise')} style={{
+          display:'flex', alignItems:'center', gap:'16px', padding:'18px 20px',
+          borderRadius:'18px', cursor:'pointer', textAlign:'left',
+          background:`${CC2}08`, border:`1px solid ${CC2}1C`, transition:'all .2s',
+        }}>
+          <div style={{ width:'38px', height:'38px', borderRadius:'50%', flexShrink:0,
+            background:`radial-gradient(circle at 36% 36%, ${CA2}22, ${CC2}30)`,
+            boxShadow:`0 0 8px ${CC2}20`,
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:'16px', color:`${CA2}65` }}>✦</div>
+          <div>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'18px', color:CW2+'CC' }}>
+              {promise?.text ? 'Renew a promise' : 'Make a promise'}
+            </p>
+            <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.16em',
+              textTransform:'uppercase', color:`${CA2}38`, marginTop:'2px' }}>to the child within</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { WarmSun, HomeView });
+</script>
+
+<!-- ═══ C · THE QUESTION VIEW ═══ -->
+<script type="text/babel">
+const { useState:useQ, useEffect:useQE } = React;
+const { CC:CC3, CA:CA3, CW:CW3, QUESTIONS:QS, getData:GD3, setData:SD3, getTodayQuestion:GTQ3 } = window;
+
+function QuestionView({ onBack }) {
+  const [phase, setPhase] = useQ('choose');   // choose | write | reflect | done
+  const [qIdx,  setQIdx]  = useQ(() => GTQ3().idx);
+  const [answer, setAnswer] = useQ('');
+  const [reflection, setReflection] = useQ('');
+  const [loading, setLoading] = useQ(false);
+  const [showAll, setShowAll] = useQ(false);
+
+  const data = GD3();
+  const answered = new Set((data.answers||[]).map(a=>a.idx));
+  const currentQ = QS[qIdx];
+
+  async function submit() {
+    if (!answer.trim()) return;
+    setLoading(true);
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:
+        `Someone just answered a question about their childhood. The question was: "${currentQ}"\n\nTheir answer: "${answer.trim()}"\n\nRespond as a warm, present witness. In 1-2 sentences, reflect back what you hear in their answer — not analysis, but recognition. Notice one specific thing they said and name it back to them with tenderness. Do not use "I can see" or "journey". Do not use markdown.`
+      }] });
+      setReflection(r.trim());
+    } catch {
+      setReflection('The child in you remembers things the adult has been too busy to notice.');
+    }
+    // Save
+    const answers = [...(GD3().answers||[]), { idx:qIdx, question:currentQ, answer:answer.trim(), ts:Date.now() }];
+    SD3({ answers });
+    setLoading(false);
+    setPhase('reflect');
+  }
+
+  if (phase === 'choose') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:'radial-gradient(ellipse at 50% 20%, #120A04, #06040A)' }}>
+      <div style={{ padding:'14px 22px 0', flexShrink:0 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${CA3}40`, textTransform:'uppercase' }}>← Back</button>
+      </div>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', padding:'12px 22px 24px', gap:'12px', overflow:'hidden' }}>
+        <div>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', color:CW3+'CC', lineHeight:1.35 }}>Which question calls you?</p>
+          <button onClick={() => setShowAll(v=>!v)} style={{ background:'none', border:'none', cursor:'pointer',
+            fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.22em',
+            color:`${CA3}40`, textTransform:'uppercase', marginTop:'4px', padding:'0' }}>
+            {showAll ? 'show fewer' : 'show all questions'}
+          </button>
+        </div>
+        <div className="scroll" style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:'7px' }}>
+          {QS.slice(0, showAll ? QS.length : 8).map((q, i) => {
+            const done = answered.has(i);
+            const today = i === GTQ3().idx;
+            return (
+              <button key={i} onClick={() => { setQIdx(i); setAnswer(''); setPhase('write'); }} style={{
+                padding:'14px 16px', borderRadius:'14px', cursor:'pointer', textAlign:'left',
+                background: today ? `${CC3}14` : `${CC3}06`,
+                border:`1px solid ${today ? CC3+'38' : CC3+'14'}`,
+                display:'flex', alignItems:'flex-start', gap:'10px',
+              }}>
+                <span style={{ fontSize:'8px', marginTop:'6px', color: done?CA3:`${CA3}25`, flexShrink:0 }}>
+                  {done ? '●' : '○'}
+                </span>
+                <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'16px',
+                  color: done ? `${CW3}55` : `${CW3}80`, lineHeight:1.5 }}>{q}</span>
+                {today && <span style={{ marginLeft:'auto', fontFamily:"'DM Sans',sans-serif", fontSize:'8px',
+                  letterSpacing:'.18em', textTransform:'uppercase', color:`${CA3}50`, flexShrink:0, paddingTop:'3px' }}>today</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (phase === 'write') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:`radial-gradient(ellipse at 50% 15%, ${CC3}10, #06040A)` }}>
+      <div style={{ padding:'14px 22px 0', flexShrink:0 }}>
+        <button onClick={() => setPhase('choose')} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${CA3}40`, textTransform:'uppercase' }}>← Back</button>
+      </div>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', padding:'12px 26px', overflow:'hidden' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'23px', color:CW3+'DD',
+          lineHeight:1.5, marginBottom:'16px', flexShrink:0 }}>{currentQ}</p>
+        <textarea value={answer} onChange={e=>setAnswer(e.target.value)} autoFocus
+          placeholder="Let whatever comes, come…"
+          style={{ flex:1, width:'100%', background:'none', border:'none', resize:'none',
+            color:`rgba(245,232,212,.82)`, fontFamily:"'Cormorant Garamond',serif",
+            fontSize:'19px', lineHeight:1.9, padding:'2px 0' }} />
+      </div>
+      <div style={{ padding:'12px 22px 22px', flexShrink:0 }}>
+        {answer.trim() ? (
+          <button onClick={submit} disabled={loading} style={{
+            width:'100%', padding:'15px', borderRadius:'22px', cursor:'pointer',
+            background:`${CC3}12`, border:`1px solid ${CC3}38`,
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'17px',
+            color:`${CW3}CC`, letterSpacing:'.14em', textTransform:'uppercase', animation:'emerge .4s ease' }}>
+            {loading ? 'Receiving…' : 'Offer it'}
+          </button>
+        ) : (
+          <p style={{ textAlign:'center', fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+            fontSize:'12px', color:`${CA3}28` }}>Write whatever comes to mind.</p>
+        )}
+      </div>
+    </div>
+  );
+
+  if (phase === 'reflect') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      background:`radial-gradient(ellipse at 50% 38%, ${CC3}12, #06040A)`, padding:'40px 30px', gap:'26px' }}>
+      <div style={{ width:'32px', height:'1px', background:`${CA3}38` }}/>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'22px',
+        color:`rgba(245,232,212,.78)`, textAlign:'center', lineHeight:1.8, animation:'emerge .8s ease' }}>
+        {reflection}
+      </p>
+      <div style={{ width:'32px', height:'1px', background:`${CA3}38` }}/>
+      <div style={{ display:'flex', gap:'10px', marginTop:'8px' }}>
+        <button onClick={onBack} style={{ padding:'11px 24px', borderRadius:'20px', cursor:'pointer',
+          background:'none', border:`1px solid ${CC3}25`,
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:`${CA3}45` }}>Return</button>
+        <button onClick={() => { setAnswer(''); setPhase('choose'); }} style={{ padding:'11px 24px', borderRadius:'20px', cursor:'pointer',
+          background:`${CC3}10`, border:`1px solid ${CC3}35`,
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:CA3+'85' }}>Another question</button>
+      </div>
+    </div>
+  );
+
+  return null;
+}
+
+Object.assign(window, { QuestionView });
+</script>
+
+<!-- ═══ D · SPEAK WITH THE CHILD ═══ -->
+<script type="text/babel">
+const { useState:useS, useEffect:useSE, useRef:useSR } = React;
+const { CC:CC4, CA:CA4, CW:CW4, getData:GD4, setData:SD4 } = window;
+
+const CHILD_SYSTEM = `You are the inner child of this person, speaking directly. You are about 7 years old. You speak simply, in short sentences. You are not dramatic — children are matter-of-fact about the deepest things. You say what children actually say, not what adults think children say. You are sometimes a little hurt, sometimes playful, sometimes both. No therapy language. Maximum 4 short sentences. Do not use markdown.`;
+
+const WITNESS_SYSTEM = `Someone just wrote in the voice of their inner child, stream-of-consciousness. They wrote as the child, without editing. You are a compassionate witness. In 3-4 sentences, reflect back what the child was saying — not analysis, but recognition. Name the specific thing the child most needed to say. Speak directly to the child with warmth. Do not use markdown. Do not use "journey".`;
+
+function SpeakView({ onBack }) {
+  const [mode, setMode] = useS('choice');       // choice | adult | through | done
+  const [messages, setMsgs] = useS([]);
+  const [input, setInput] = useS('');
+  const [loading, setLoading] = useS(false);
+  const [throughText, setThrough] = useS('');
+  const [witness, setWitness] = useS('');
+  const bottomRef = useSR(null);
+
+  useSE(() => {
+    if (bottomRef.current) bottomRef.current.scrollIntoView({ block:'end' });
+  }, [messages, loading]);
+
+  // Mode: adult speaks to child
+  async function sendToChild() {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim(); setInput('');
+    const newMsgs = [...messages, { role:'adult', text:userMsg }];
+    setMsgs(newMsgs); setLoading(true);
+
+    const history = newMsgs.slice(-6).map(m =>
+      `${m.role === 'adult' ? 'Adult' : 'Child'}: ${m.text}`
+    ).join('\n');
+
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:
+        `${CHILD_SYSTEM}\n\nConversation:\n${history}\n\nRespond only as the child.`
+      }] });
+      setMsgs([...newMsgs, { role:'child', text:r.trim() }]);
+    } catch {
+      setMsgs([...newMsgs, { role:'child', text:"I'm still here. I've been here the whole time." }]);
+    }
+    setLoading(false);
+  }
+
+  // Mode: child speaks through
+  async function witnessChild() {
+    if (!throughText.trim() || loading) return;
+    setLoading(true);
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:
+        `${WITNESS_SYSTEM}\n\nThe child wrote:\n"${throughText.trim()}"`
+      }] });
+      setWitness(r.trim());
+    } catch {
+      setWitness("The child was heard. What they said was real, and it mattered.");
+    }
+    setLoading(false); setMode('done');
+  }
+
+  // ── Choice ─────────────────────────────────────
+  if (mode === 'choice') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:'radial-gradient(ellipse at 50% 20%, #120A04, #06040A)' }}>
+      <div style={{ padding:'14px 22px 0', flexShrink:0 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${CA4}40`, textTransform:'uppercase' }}>← Back</button>
+      </div>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center',
+        justifyContent:'center', padding:'24px', gap:'14px' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'26px',
+          color:CW4+'DD', textAlign:'center', lineHeight:1.4, marginBottom:'8px' }}>
+          How do you want to meet?
+        </p>
+        {[
+          { m:'adult', title:'You speak to the child',
+            sub:'Write what you want to say. The child writes back.' },
+          { m:'through', title:'The child speaks through you',
+            sub:'Write as them, without editing. Let whatever comes, come.' },
+        ].map(o => (
+          <button key={o.m} onClick={() => setMode(o.m)} style={{
+            width:'100%', padding:'22px 20px', borderRadius:'20px', cursor:'pointer', textAlign:'left',
+            background:`${CC4}0A`, border:`1px solid ${CC4}28`,
+            display:'flex', flexDirection:'column', gap:'7px' }}>
+            <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'21px', color:CA4 }}>{o.title}</span>
+            <span style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'14px',
+              color:`${CA4}55`, lineHeight:1.65 }}>{o.sub}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ── Adult → Child conversation ─────────────────
+  if (mode === 'adult') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:`radial-gradient(ellipse at 50% 12%, ${CC4}10, #06040A)` }}>
+      <div style={{ padding:'12px 22px 0', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <button onClick={() => setMode('choice')} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${CA4}40`, textTransform:'uppercase' }}>← Back</button>
+        <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.22em',
+          textTransform:'uppercase', color:`${CA4}35` }}>speaking with the child</span>
+      </div>
+
+      <div className="scroll" style={{ flex:1, overflowY:'auto', padding:'14px 18px 8px',
+        display:'flex', flexDirection:'column', gap:'10px' }}>
+        {messages.length === 0 && (
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'15px',
+            color:`${CA4}38`, textAlign:'center', padding:'20px 0' }}>
+            Say what you want to say to the child within you.
+          </p>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} style={{
+            display:'flex', justifyContent: m.role==='adult' ? 'flex-end' : 'flex-start',
+            animation:'emerge .4s ease',
+          }}>
+            {m.role === 'child' && (
+              <div style={{ width:'20px', height:'20px', borderRadius:'50%', flexShrink:0,
+                background:`radial-gradient(circle, ${CA4}70, ${CC4}80)`,
+                boxShadow:`0 0 8px ${CC4}45`, marginRight:'8px', marginTop:'4px',
+                animation:'breathe 3.5s ease-in-out infinite' }}/>
+            )}
+            <div style={{
+              maxWidth:'80%', padding:'12px 16px', borderRadius:'16px',
+              background: m.role==='adult' ? `rgba(245,232,212,.08)` : `${CC4}12`,
+              border:`1px solid ${m.role==='adult' ? 'rgba(245,232,212,.12)' : CC4+'28'}`,
+            }}>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif",
+                fontSize: m.role==='child' ? '17px' : '16px',
+                color: m.role==='child' ? CW4+'CC' : 'rgba(245,232,212,.65)',
+                lineHeight:1.7 }}>{m.text}</p>
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display:'flex', alignItems:'center', gap:'8px', animation:'fade-in .4s ease' }}>
+            <div style={{ width:'20px', height:'20px', borderRadius:'50%',
+              background:`radial-gradient(circle, ${CA4}55, ${CC4}65)`,
+              animation:'breathe 2s ease-in-out infinite' }}/>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+              fontSize:'15px', color:`${CA4}45` }}>the child is finding words…</p>
+          </div>
+        )}
+        <div ref={bottomRef}/>
+      </div>
+
+      <div style={{ padding:'8px 16px 20px', flexShrink:0, display:'flex', gap:'8px' }}>
+        <textarea value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendToChild();} }}
+          placeholder="Say something to them…" rows={2}
+          style={{ flex:1, background:'rgba(245,232,212,.05)', border:`1px solid ${CC4}22`,
+            borderRadius:'14px', padding:'12px 16px', resize:'none',
+            color:'rgba(245,232,212,.82)', fontFamily:"'Cormorant Garamond',serif", fontSize:'17px', lineHeight:1.6 }}/>
+        <button onClick={sendToChild} disabled={loading||!input.trim()} style={{
+          padding:'0 16px', borderRadius:'14px', cursor:'pointer', flexShrink:0,
+          background:input.trim()?`${CC4}18`:'none', border:`1px solid ${input.trim()?CC4+'40':CC4+'14'}`,
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.18em',
+          textTransform:'uppercase', color:input.trim()?CA4:`${CA4}28`, transition:'all .2s' }}>→</button>
+      </div>
+    </div>
+  );
+
+  // ── Child speaks through ───────────────────────
+  if (mode === 'through') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:`radial-gradient(ellipse at 50% 12%, ${CC4}08, #06040A)` }}>
+      <div style={{ padding:'12px 22px 0', flexShrink:0 }}>
+        <button onClick={() => setMode('choice')} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${CA4}40`, textTransform:'uppercase' }}>← Back</button>
+      </div>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', padding:'12px 24px 0', overflow:'hidden' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'18px', color:`${CW4}88`,
+          lineHeight:1.6, marginBottom:'8px', flexShrink:0 }}>
+          Let the child use your hands.<br/>
+          <span style={{ fontStyle:'italic', color:`${CA4}60` }}>Write as them. Don't edit. Don't think.</span>
+        </p>
+        <textarea value={throughText} onChange={e=>setThrough(e.target.value)} autoFocus
+          placeholder="I am…  I want…  I feel…"
+          style={{ flex:1, width:'100%', background:'none', border:'none', resize:'none',
+            color:`rgba(245,232,212,.80)`, fontFamily:"'Cormorant Garamond',serif",
+            fontSize:'20px', lineHeight:1.9, padding:'8px 0' }}/>
+      </div>
+      <div style={{ padding:'12px 22px 22px', flexShrink:0 }}>
+        {throughText.trim() ? (
+          <button onClick={witnessChild} disabled={loading} style={{
+            width:'100%', padding:'15px', borderRadius:'22px', cursor:'pointer',
+            background:`${CC4}12`, border:`1px solid ${CC4}38`,
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'17px',
+            color:`${CW4}CC`, letterSpacing:'.14em', textTransform:'uppercase', animation:'emerge .4s ease' }}>
+            {loading ? 'Being heard…' : 'The child has spoken'}
+          </button>
+        ) : (
+          <p style={{ textAlign:'center', fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+            fontSize:'12px', color:`${CA4}25` }}>Let them speak without the adult watching.</p>
+        )}
+      </div>
+    </div>
+  );
+
+  // ── Witnessed ──────────────────────────────────
+  if (mode === 'done') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 30px', gap:'28px',
+      background:`radial-gradient(ellipse at 50% 36%, ${CC4}12, #06040A)` }}>
+      <div style={{ width:'32px', height:'1px', background:`${CA4}38` }}/>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'21px',
+        color:`rgba(245,232,212,.78)`, textAlign:'center', lineHeight:1.8, animation:'emerge .8s ease' }}>
+        {witness}
+      </p>
+      <div style={{ width:'32px', height:'1px', background:`${CA4}38` }}/>
+      <div style={{ display:'flex', gap:'10px' }}>
+        <button onClick={onBack} style={{ padding:'11px 24px', borderRadius:'20px', cursor:'pointer',
+          background:'none', border:`1px solid ${CC4}22`,
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:`${CA4}42` }}>Return</button>
+        <button onClick={() => { setMode('choice'); setThrough(''); setWitness(''); setMsgs([]); }} style={{
+          padding:'11px 24px', borderRadius:'20px', cursor:'pointer',
+          background:`${CC4}10`, border:`1px solid ${CC4}30`,
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:CA4+'80' }}>Again</button>
+      </div>
+    </div>
+  );
+
+  return null;
+}
+
+Object.assign(window, { SpeakView });
+</script>
+
+<!-- ═══ E · THE PROMISE ═══ -->
+<script type="text/babel">
+const { useState:useP, useRef:usePR } = React;
+const { CC:CC5, CA:CA5, CW:CW5, getData:GD5, setData:SD5 } = window;
+
+const STARTERS = [
+  'I promise to play without needing a reason.',
+  'I promise to cry when I need to.',
+  'I promise to follow what lights me up.',
+  'I promise to rest without earning it.',
+  'I promise to create something today, just for me.',
+  'I promise to say what is true.',
+  'I promise to take up the space I need.',
+];
+
+function PromiseView({ onBack }) {
+  const data = GD5();
+  const [promise, setPromise] = useP(data.promise || null);
+  const [text, setText] = useP('');
+  const [phase, setPhase] = useP(data.promise ? 'view' : 'write');
+
+  function makePromise() {
+    if (!text.trim()) return;
+    const p = { text: text.trim(), createdAt: Date.now() };
+    SD5({ promise: p });
+    setPromise(p);
+    setPhase('made');
+    setTimeout(() => setPhase('view'), 2000);
+  }
+
+  function release() {
+    const kept = { ...(data.promise||{}), keptAt: Date.now() };
+    const history = [...(data.keptPromises||[]), kept];
+    SD5({ promise: null, keptPromises: history });
+    setPromise(null); setPhase('write'); setText('');
+  }
+
+  // ── View active promise ────────────────────────
+  if (phase === 'view' && promise) return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:`radial-gradient(ellipse at 50% 30%, ${CC5}12, #06040A)` }}>
+      <div style={{ padding:'14px 22px 0', flexShrink:0 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${CA5}40`, textTransform:'uppercase' }}>← Back</button>
+      </div>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center',
+        justifyContent:'center', padding:'32px 28px', gap:'28px' }}>
+
+        <div style={{ textAlign:'center' }}>
+          <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.42em',
+            textTransform:'uppercase', color:`${CA5}42`, marginBottom:'20px' }}>a promise, still keeping</p>
+
+          <div style={{ padding:'28px 24px', borderRadius:'22px',
+            background:`${CC5}0E`, border:`1px solid ${CC5}30`,
+            animation:'warm-pulse 5s ease-in-out infinite' }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'24px', fontWeight:300,
+              color:CW5+'CC', lineHeight:1.55, textAlign:'center' }}>
+              {promise.text}
+            </p>
+          </div>
+
+          <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.18em',
+            textTransform:'uppercase', color:`${CA5}35`, marginTop:'14px' }}>
+            made {new Date(promise.createdAt).toLocaleDateString('en-US',{month:'long',day:'numeric'})}
+          </p>
+        </div>
+
+        <div style={{ display:'flex', gap:'10px' }}>
+          <button onClick={() => setPhase('write')} style={{ padding:'11px 22px', borderRadius:'18px', cursor:'pointer',
+            background:`${CC5}10`, border:`1px solid ${CC5}30`,
+            fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+            textTransform:'uppercase', color:CA5+'70' }}>Renew</button>
+          <button onClick={release} style={{ padding:'11px 22px', borderRadius:'18px', cursor:'pointer',
+            background:'none', border:`1px solid ${CC5}18`,
+            fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+            textTransform:'uppercase', color:`${CA5}38` }}>Mark kept</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Animation after making ─────────────────────
+  if (phase === 'made') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', gap:'20px',
+      background:`radial-gradient(ellipse at 50% 40%, ${CC5}14, #06040A)` }}>
+      <div style={{ padding:'24px 28px', borderRadius:'22px', background:`${CC5}12`,
+        border:`1px solid ${CC5}35`, animation:'promise-in .7s cubic-bezier(.3,1.4,.5,1) both',
+        maxWidth:'280px', textAlign:'center' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', color:CW5+'CC', lineHeight:1.55 }}>
+          {text.trim()}
+        </p>
+      </div>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'16px',
+        color:`${CA5}55`, animation:'fade-in .8s .4s ease both' }}>The child received it.</p>
+    </div>
+  );
+
+  // ── Write new promise ──────────────────────────
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:'radial-gradient(ellipse at 50% 18%, #120A04, #06040A)' }}>
+      <div style={{ padding:'14px 22px 0', flexShrink:0 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${CA5}40`, textTransform:'uppercase' }}>← Back</button>
+      </div>
+      <div className="scroll" style={{ flex:1, overflowY:'auto', padding:'14px 26px', display:'flex', flexDirection:'column', gap:'16px' }}>
+        <div>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'26px', color:CW5+'CC', lineHeight:1.3 }}>
+            A promise to the child.
+          </p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'14px',
+            color:`${CA5}50`, marginTop:'6px', lineHeight:1.7 }}>
+            Not a goal. Not an aspiration. A promise — something you will actually do, or stop not doing.
+          </p>
+        </div>
+
+        <div style={{ position:'relative' }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'18px',
+            color:`${CA5}55`, marginBottom:'6px' }}>I promise to…</p>
+          <textarea value={text} onChange={e=>setText(e.target.value)} autoFocus rows={2}
+            placeholder="play without needing a reason…"
+            style={{ width:'100%', background:`${CC5}08`, border:`1px solid ${CC5}22`,
+              borderRadius:'14px', padding:'14px 18px', resize:'none',
+              color:`rgba(245,232,212,.86)`, fontFamily:"'Cormorant Garamond',serif", fontSize:'20px', lineHeight:1.7 }}/>
+        </div>
+
+        <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+          <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.28em',
+            textTransform:'uppercase', color:`${CA5}32`, marginBottom:'2px' }}>or begin with one of these</p>
+          {STARTERS.map((s,i) => (
+            <button key={i} onClick={() => setText(s)} style={{
+              padding:'10px 14px', borderRadius:'12px', cursor:'pointer', textAlign:'left',
+              background:`${CC5}05`, border:`1px solid ${CC5}12`,
+              fontFamily:"'Cormorant Garamond',serif", fontSize:'14px', color:`${CW5}58`, lineHeight:1.5 }}>{s}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ padding:'12px 22px 22px', flexShrink:0 }}>
+        {text.trim() && (
+          <button onClick={makePromise} style={{
+            width:'100%', padding:'15px', borderRadius:'22px', cursor:'pointer',
+            background:`${CC5}12`, border:`1px solid ${CC5}38`,
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'17px',
+            color:`${CW5}CC`, letterSpacing:'.14em', textTransform:'uppercase', animation:'emerge .4s ease' }}>
+            Make this promise
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { PromiseView });
+</script>
+
+<!-- ═══ E2 · THE DOOR + LETTER FROM THE CHILD ═══ -->
+<script type="text/babel">
+const { useState:useD, useEffect:useDE, useRef:useDR } = React;
+const { CC:CCD, CA:CAD, CW:CWD, getData:GDD, setData:SDD } = window;
+
+// ── The Door: you must become small to enter ──
+function DoorView({ onEnter }) {
+  const [hold, setHold] = useD(0);
+  const [opening, setOpening] = useD(false);
+  const holdRef = useDR(null);
+
+  function startHold() {
+    let p = 0;
+    holdRef.current = setInterval(() => {
+      p += 50/2800;
+      setHold(Math.min(p, 1));
+      if (p >= 1) {
+        clearInterval(holdRef.current);
+        setOpening(true);
+        setTimeout(onEnter, 1400);
+      }
+    }, 50);
+  }
+  function stopHold() { if (!opening) { clearInterval(holdRef.current); setHold(0); } }
+
+  const shrink = 1 - hold * 0.45;
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', gap:'26px', padding:'40px 34px',
+      background:'radial-gradient(ellipse at 50% 62%, #140C05, #06040A)',
+      overflow:'hidden' }}>
+
+      {/* The small door */}
+      <div style={{ position:'relative', width:'110px', height:'150px',
+        display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+        {/* Light behind */}
+        <div style={{ position:'absolute', inset:'8px 18px 0', borderRadius:'40px 40px 0 0',
+          background: opening
+            ? `radial-gradient(ellipse at 50% 30%, ${CAD}70, ${CCD}20)`
+            : `radial-gradient(ellipse at 50% 30%, ${CAD}${Math.round(16+hold*60).toString(16).padStart(2,'0')}, transparent 80%)`,
+          transition:'background 1.2s ease',
+          boxShadow: opening ? `0 0 60px ${CCD}70` : `0 0 ${10+hold*30}px ${CCD}40` }}></div>
+        {/* Door frame */}
+        <div style={{ position:'absolute', inset:0, borderRadius:'55px 55px 0 0',
+          border:`1.6px solid ${CAD}50`, borderBottom:'none' }}></div>
+        {/* Door panel — slides open */}
+        <div style={{ position:'absolute', inset:'8px 18px 0', borderRadius:'40px 40px 0 0',
+          background:'linear-gradient(180deg, #1A1006, #120A04)',
+          border:`1px solid ${CAD}30`, borderBottom:'none',
+          transformOrigin:'left center',
+          transform: opening ? 'perspective(300px) rotateY(-82deg)' : 'perspective(300px) rotateY(0deg)',
+          transition:'transform 1.3s cubic-bezier(.6,.05,.3,1)' }}>
+          {/* Doorknob */}
+          <div style={{ position:'absolute', right:'12px', top:'55%', width:'7px', height:'7px',
+            borderRadius:'50%', background:`${CAD}80`, boxShadow:`0 0 6px ${CAD}60` }}></div>
+        </div>
+      </div>
+
+      <div style={{ textAlign:'center', transform:`scale(${shrink})`, transition:'transform .1s linear' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'24px',
+          color:`${CWD}D8`, lineHeight:1.5, marginBottom:'8px' }}>
+          {opening ? 'Welcome back.' : 'This door is small.'}
+        </p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'15px',
+          color:`${CAD}55`, lineHeight:1.75 }}>
+          {opening ? 'You remembered how.' : 'Only the child in you fits through.\u2028Hold, and become small enough.'}
+        </p>
+      </div>
+
+      {!opening && (
+        <button
+          onMouseDown={startHold} onMouseUp={stopHold} onMouseLeave={stopHold}
+          onTouchStart={e => { e.preventDefault(); startHold(); }} onTouchEnd={stopHold}
+          style={{ padding:'16px 44px', borderRadius:'32px', cursor:'pointer',
+            background:`${CCD}${Math.round(10+hold*30).toString(16).padStart(2,'0')}`,
+            border:`1px solid ${CAD}${Math.round(40+hold*100).toString(16).padStart(2,'0')}`,
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', letterSpacing:'.2em',
+            textTransform:'uppercase', color:`${CWD}CC`, userSelect:'none',
+            touchAction:'none' }}>
+          {hold > 0 ? 'becoming small…' : 'Hold'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── A letter FROM the child ──
+function ChildLetterView({ onBack }) {
+  const [phase, setPhase] = useD('arriving');   // arriving | reading
+  const [letter, setLetter] = useD('');
+
+  useDE(() => {
+    async function write() {
+      const data = GDD();
+      const answers = (data.answers || []).slice(-4)
+        .map(a => `Q: ${a.question} — they answered: "${a.answer.slice(0,100)}"`).join('\n');
+      const promise = data.promise?.text ? `The adult made this promise to them: "${data.promise.text}"` : '';
+      try {
+        const r = await window.claude.complete({ messages: [{ role:'user', content:
+          `You are the inner child of this person — about 7 years old — writing a letter to the adult they became. You have been watching them all these years from inside.\n\nWhat you know about them:\n${answers || '(they have not answered your questions yet — that is okay, you know them anyway)'}\n${promise}\n\nWrite a short letter (4-6 short sentences). Child's voice: simple words, short sentences, matter-of-fact, sometimes funny, never dramatic or saccharine. Include: one thing you remember that they forgot, one thing you notice about them now, and one small thing you want them to do (something playful and specific). Sign it "— me (you, small)". Do not use markdown. No word "journey".`
+        }]});
+        setLetter(r.trim());
+      } catch {
+        setLetter(`Hi. It's me. You forgot that we used to lie on the floor for no reason. Just lie there. It was great.\n\nYou walk really fast now, even when nobody is waiting for you. I notice that a lot.\n\nCan you draw something dumb today? Not good. Dumb. I miss making dumb things.\n\n— me (you, small)`);
+      }
+      setPhase('reading');
+    }
+    write();
+  }, []);
+
+  if (phase === 'arriving') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', gap:'18px',
+      background:'radial-gradient(ellipse at 50% 35%, #140C05, #06040A)' }}>
+      <div style={{ width:'46px', height:'46px', borderRadius:'50%',
+        background:`radial-gradient(circle at 36% 36%, ${CAD}45, ${CCD}55)`,
+        boxShadow:`0 0 22px ${CCD}45`, animation:'breathe 2.8s ease-in-out infinite' }}></div>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'15px',
+        color:`${CAD}55` }}>they are writing… (they write slowly)</p>
+    </div>
+  );
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:'radial-gradient(ellipse at 50% 12%, #140C05, #06040A)' }}>
+      <div style={{ padding:'14px 22px 0', flexShrink:0 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${CAD}45`,
+          textTransform:'uppercase' }}>← Back</button>
+      </div>
+      <div className="scroll" style={{ flex:1, overflowY:'auto', padding:'16px 30px 30px' }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.3em',
+          textTransform:'uppercase', color:`${CAD}45`, marginBottom:'20px' }}>
+          from the one who stayed small
+        </p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'20px',
+          color:`${CWD}E0`, lineHeight:1.95, whiteSpace:'pre-line',
+          animation:'emerge .8s ease' }}>{letter}</p>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { DoorView, ChildLetterView });
+</script>
+
+<!-- ═══ F · APP ═══ -->
+<script type="text/babel">
+const { useState:useApp } = React;
+const { HomeView:HV, QuestionView:QV, SpeakView:SPV, PromiseView:PV, DoorView:DV, ChildLetterView:CLV } = window;
+
+function App() {
+  const [view, setView] = useApp('door');
+  return (
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"/>
+          <div className="ph-content">
+            {view==='door'    && <DV  onEnter={()=>setView('home')} />}
+            {view==='home'    && <HV  setView={setView} />}
+            {view==='question'&& <QV  onBack={()=>setView('home')} />}
+            {view==='speak'   && <SPV onBack={()=>setView('home')} />}
+            {view==='promise' && <PV  onBack={()=>setView('home')} />}
+            {view==='childletter' && <CLV onBack={()=>setView('home')} />}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

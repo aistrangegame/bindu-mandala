@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phase 7 — The Relationship Field</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #060104; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
+    #root { width: 100vw; height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,150,63,0.22); border-radius: 2px; }
+
+    @keyframes moteRise {
+      0%   { transform: translate(0,0); opacity: 0; }
+      8%   { opacity: 1; }
+      50%  { transform: translate(calc(var(--drift)*.5), -420px); }
+      92%  { opacity: 0.5; }
+      100% { transform: translate(var(--drift), -880px); opacity: 0; }
+    }
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 0.85; }
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="relationship.jsx"></script>
+
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function App() {
+  return (
+    <DesignCanvas background="#060104" title="Phase VII · The Relationship Field">
+
+      <DCSection id="field" title="① The Relationship Field"
+        subtitle="Your yantra at center · beloved arranged around it as luminous nodes · each connected to the shaktis they carry">
+
+        <DCArtboard id="field-screen" label="Six souls in your field · the constellation" width={390} height={844}>
+          <RelationshipFieldScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+      <DCSection id="person" title="② The Person Page"
+        subtitle="Tap a beloved · their shaktis named · encounters logged · how she enters through them">
+
+        <DCArtboard id="person-ram" label="Ram · life partner · carries Ātmā + Buddhi" width={390} height={844}>
+          <PersonPageScreen personIdx={0}/>
+        </DCArtboard>
+        <DCArtboard id="person-ashrey" label="Ashrey · son · carries Nāma + Bīja" width={390} height={844}>
+          <PersonPageScreen personIdx={1}/>
+        </DCArtboard>
+        <DCArtboard id="person-gaia" label="Gaia · daughter · carries Ahaṅ" width={390} height={844}>
+          <PersonPageScreen personIdx={2}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      <DCSection id="carriers" title="③ The Shakti's Carriers"
+        subtitle="Reverse lookup · tap any shakti · see which people in your life carry her">
+
+        <DCArtboard id="carrier-atma" label="Ātmākarṣiṇī · carried by Ram, Self" width={390} height={844}>
+          <ShaktiCarriersScreen shaktiIdx={13}/>
+        </DCArtboard>
+        <DCArtboard id="carrier-naama" label="Nāmākarṣiṇī · carried by Ashrey" width={390} height={844}>
+          <ShaktiCarriersScreen shaktiIdx={12}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      <DCSection id="encounters" title="④ The Encounter Log"
+        subtitle="When you were with whom · which shaktis arose · the crossing of love and recognition">
+
+        <DCArtboard id="encounters-screen" label="Recent encounters · today and back" width={390} height={844}>
+          <EncounterLogScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+      <DCSection id="web" title="⑤ The Field Web"
+        subtitle="The whole constellation with cross-threads · where one carries her, another may too">
+
+        <DCArtboard id="web-screen" label="Shared currents · the web between souls" width={390} height={844}>
+          <FieldWebScreen/>
+        </DCArtboard>
+
+      </DCSection>
+
+      <DCSection id="add" title="⑥ Adding a Beloved · The Ritual"
+        subtitle="Not a contacts list · a sacred recognition · four steps to bring a soul into the field">
+
+        <DCArtboard id="add-naming" label="① Naming · by what name" width={390} height={844}>
+          <AddBelovedScreen state="naming"/>
+        </DCArtboard>
+        <DCArtboard id="add-shaktis" label="② Shaktis · how she enters through them" width={390} height={844}>
+          <AddBelovedScreen state="selecting-shaktis"/>
+        </DCArtboard>
+        <DCArtboard id="add-note" label="③ Note · who is she to you" width={390} height={844}>
+          <AddBelovedScreen state="note"/>
+        </DCArtboard>
+        <DCArtboard id="add-arriving" label="④ Arriving · she enters the field" width={390} height={844}>
+          <AddBelovedScreen state="arriving"/>
+        </DCArtboard>
+
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phase 3 — Three Ring-Worlds</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #060104; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
+    #root { width: 100vw; height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,150,63,0.22); border-radius: 2px; }
+
+    @keyframes moteRise {
+      0%   { transform: translate(0,0); opacity: 0; }
+      8%   { opacity: 1; }
+      50%  { transform: translate(calc(var(--drift)*.5), -420px); }
+      92%  { opacity: 0.5; }
+      100% { transform: translate(var(--drift), -880px); opacity: 0; }
+    }
+
+    /* RING 2 — petals */
+    @keyframes rw2Today {
+      0%, 100% { filter: brightness(1) drop-shadow(0 0 4px rgba(201,150,63,0.45)); }
+      50%      { filter: brightness(1.45) drop-shadow(0 0 14px rgba(201,150,63,0.85)); }
+    }
+    .rw2-today { animation: rw2Today 3.5s ease-in-out infinite; transform-origin: center; }
+    @keyframes rw2TodayHalo {
+      0%, 100% { opacity: 0.35; transform: scale(1); }
+      50%      { opacity: 0.65; transform: scale(1.08); }
+    }
+    .rw2-today-halo { animation: rw2TodayHalo 3.5s ease-in-out infinite; transform-origin: center; }
+    @keyframes rw2Embodied { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.18); } }
+    @keyframes rw2Active   { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.10); } }
+    @keyframes rw2Exploring{ 0%,100% { filter: brightness(0.95);} 50% { filter: brightness(1.04);} }
+    @keyframes rw2Mapped   { 0%,100% { filter: brightness(0.92);} 50% { filter: brightness(0.99);} }
+    .rw2-embodied  { animation: rw2Embodied  4.5s ease-in-out infinite; }
+    .rw2-active    { animation: rw2Active    6s   ease-in-out infinite; }
+    .rw2-exploring { animation: rw2Exploring 8s   ease-in-out infinite; }
+    .rw2-mapped    { animation: rw2Mapped    11s  ease-in-out infinite; }
+
+    /* RING 2 — invocation overlay */
+    @keyframes rw2InvocIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .rw2-invoc-name    { animation: rw2InvocIn 1.4s ease 0.3s forwards; }
+    .rw2-invoc-bija    { animation: rw2InvocIn 1.4s ease 0.9s forwards; }
+    .rw2-invoc-quality { animation: rw2InvocIn 1.4s ease 1.5s forwards; }
+    .rw2-invoc-hint    { animation: rw2InvocIn 1.4s ease 2.4s forwards; }
+
+    /* RING 7 — sound rings */
+    @keyframes rw7SoundRing {
+      0%   { transform: scale(0.4); opacity: 0.85; }
+      100% { transform: scale(3.0); opacity: 0; }
+    }
+    .rw7-sound-ring { animation: rw7SoundRing 1.6s ease-out infinite; }
+    @keyframes rw7ChordRing {
+      0%   { transform: scale(0.3); opacity: 0.7; }
+      100% { transform: scale(4.5); opacity: 0; }
+    }
+    .rw7-chord-ring { animation: rw7ChordRing 2.4s ease-out infinite; }
+
+    /* RING 8 — triangle breath */
+    @keyframes rw8TriBreath {
+      0%, 100% { opacity: 0.78; }
+      50%      { opacity: 0.95; filter: drop-shadow(0 0 10px rgba(242,232,217,0.35)); }
+    }
+    .rw8-triangle { animation: rw8TriBreath 18s ease-in-out infinite; }
+    @keyframes rw8Collapse { 0% { opacity: 0; } 100% { opacity: 1; } }
+    .rw8-collapse { animation: rw8Collapse 0.9s ease forwards; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="home-mandala.jsx"></script>
+<script type="text/babel" src="ring-worlds.jsx"></script>
+
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function App() {
+  return (
+    <DesignCanvas background="#060104" title="Phase III · Three Ring-Worlds">
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 2 — The Inhabited Lotus
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-two" title="Ring 2 · The Inhabited Lotus"
+        subtitle="Sarvāśā-Paripūraka · the 16 Karṣiṇīs · PRESS A PETAL to invoke her presence · home-breath tone (lower-left)">
+
+        <DCArtboard id="r2-default" label="Default · interactive · press a petal to invoke" width={390} height={844}>
+          <RingTwoWorld todayIndex={4}/>
+        </DCArtboard>
+
+        <DCArtboard id="r2-invocation" label="Invocation · long-press today's petal" width={390} height={844}>
+          <RingTwoWorld todayIndex={4} mode="invocation"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 2 — The Lotus Follows the Sun
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-two-time" title="Ring 2 · The Lotus Follows the Sun"
+        subtitle="Within a ring-world, time has texture · petals open and fold with the day">
+
+        <DCArtboard id="r2-opening" label="Dawn · the petals open" width={390} height={844}>
+          <RingTwoLotusByTime phase="opening"/>
+        </DCArtboard>
+        <DCArtboard id="r2-open" label="Noon · the lotus is full" width={390} height={844}>
+          <RingTwoLotusByTime phase="open"/>
+        </DCArtboard>
+        <DCArtboard id="r2-closing" label="Dusk · the petals fold" width={390} height={844}>
+          <RingTwoLotusByTime phase="closing"/>
+        </DCArtboard>
+        <DCArtboard id="r2-closed" label="Night · the lotus rests" width={390} height={844}>
+          <RingTwoLotusByTime phase="closed"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 7 — The Vāk Sound Chamber · INTERACTIVE
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-seven" title="Ring 7 · The Vāk Sound Chamber"
+        subtitle="Sarvarogahara · twelve speech-goddesses · TAP A SYLLABLE TO HEAR HER · tap center for the chord · sound enough and the word that heals arrives">
+
+        <DCArtboard id="r7-default" label="Sound Chamber · interactive · tap a syllable" width={390} height={844}>
+          <RingSevenWorld/>
+        </DCArtboard>
+
+        <DCArtboard id="r7-active" label="One sounding · Modinī's tone visible" width={390} height={844}>
+          <RingSevenWorld initialActive={2}/>
+        </DCArtboard>
+
+        <DCArtboard id="r7-chord" label="The Chord · all twelve together" width={390} height={844}>
+          <RingSevenWorld chord={true}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 8 — The Mūla Trikoṇa · The Teaching Arc
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-eight" title="Ring 8 · The Mūla Trikoṇa · The Teaching Arc"
+        subtitle="Sarvasiddhiprada · three becoming one becoming none · INTERACTIVE: tap a vertex, then tap to dissolve · three tones collapse into one (sound, lower-left)">
+
+        <DCArtboard id="r8-triangle" label="① The Triangle · three vertices" width={390} height={844}>
+          <RingEightWorld state="triangle"/>
+        </DCArtboard>
+
+        <DCArtboard id="r8-iccha" label="② Icchā · the other two collapsed in" width={390} height={844}>
+          <RingEightWorld state="icchaa"/>
+        </DCArtboard>
+
+        <DCArtboard id="r8-jnana" label="③ Jñāna · only the knowing remains" width={390} height={844}>
+          <RingEightWorld state="jnaana"/>
+        </DCArtboard>
+
+        <DCArtboard id="r8-kriya" label="④ Kriyā · only the doing remains" width={390} height={844}>
+          <RingEightWorld state="kriyaa"/>
+        </DCArtboard>
+
+        <DCArtboard id="r8-dissolved" label="⑤ Dissolution · only the Bindu remains" width={390} height={844}>
+          <RingEightWorld state="dissolved"/>
+        </DCArtboard>
+
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
