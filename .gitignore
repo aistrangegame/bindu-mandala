@@ -53,3 +53,7 @@ iOS/Bindu Mandala/Secrets.plist
 # committed, it turns every snapshot run into a re-recording and the suite
 # goes green having compared nothing.
 iOS/SnapshotBaselines/.record
+
+# Raw Airtable exports (before/after the C-edits) hold his Letter, Recognition Count
+# and Last Felt; they feed the bakes locally and are never committed.
+waves/upgrade/snapshot/raw-*/

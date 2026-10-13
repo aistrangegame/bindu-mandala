@@ -1,0 +1,37 @@
+{
+ "base": "app248ZTWhYJlvQj2",
+ "correctionsApplied": "yes",
+ "correctionsIncluded": [
+  "C01",
+  "C02",
+  "C03",
+  "C04",
+  "C08",
+  "C09",
+  "C10",
+  "C13"
+ ],
+ "correctionsNotApplied": [
+  "C11 (select choices cannot be added through the available tools)"
+ ],
+ "correctionsRecord": "waves/upgrade/snapshot/CORRECTIONS-2026-10-13.md",
+ "counts": {
+  "binduField": 60,
+  "mandala": 126,
+  "map": 33
+ },
+ "format": "{\"table\": id, \"fieldNames\": {fieldId: name}, \"records\": [{\"id\": recId, \"fields\": {fieldId: value}}]}; select values are {id,name,color}; links are record-id arrays; empty cells are absent",
+ "privacy": "Letter, Last Felt, Recognition Count removed; Status forced to Mapped; OLD fields omitted; room 32 sealed beyond its public identity; Gaia Voice and Shakti Practice length-stubbed",
+ "sha256": {
+  "bindu-field.json": "1a5785ad6d09549598a8e4cef1a4841c951f10110f58febc45990b77d103402f",
+  "mandala.json": "8753a294cb6dc283eaedfae2111623065f8488d18a29a36522bf568ca2b37d63",
+  "map.json": "01105ac7d9572979d31475e8a697f40546b3982084d63ed89fdb766787fe5dd4"
+ },
+ "snapshot": "S01",
+ "tables": {
+  "binduField": "tblv3WvMZ90Sfhun6",
+  "mandala": "tblrRwXJD0uP8HU8G",
+  "map": "tblwpmyKOeMxEEHd7"
+ },
+ "takenAtUTC": "2026-10-13T18:45:27Z"
+}
