@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phase 3b — Ring-Worlds II</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #060104; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
+    #root { width: 100vw; height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,150,63,0.22); border-radius: 2px; }
+
+    @keyframes moteRise {
+      0%   { transform: translate(0,0); opacity: 0; }
+      8%   { opacity: 1; }
+      50%  { transform: translate(calc(var(--drift)*.5), -420px); }
+      92%  { opacity: 0.5; }
+      100% { transform: translate(var(--drift), -880px); opacity: 0; }
+    }
+
+    /* RING 1 — the ground holds; only embers and risen text move */
+    @keyframes rw1FarBindu {
+      0%, 100% { opacity: 0.35; r: 3.0; }
+      50%      { opacity: 0.62; r: 4.0; }
+    }
+    .rw1-far-bindu { animation: rw1FarBindu 9s ease-in-out infinite; }
+
+    @keyframes rw1GateEmber {
+      0%, 100% { opacity: 0.42; }
+      50%      { opacity: 0.78; }
+    }
+    .rw1-gate-ember { animation: rw1GateEmber 5.5s ease-in-out infinite; }
+
+    @keyframes rw1MetRing {
+      0%   { transform: scale(1);   opacity: 0.8; }
+      100% { transform: scale(4.2); opacity: 0; }
+    }
+    .rw1-met-ring { animation: rw1MetRing 2.6s ease-out infinite; }
+
+    @keyframes rw1Rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .rw1-rise { animation: rw1Rise 1.1s cubic-bezier(.25,.1,.25,1) forwards; }
+
+    @keyframes rw1DroneOn {
+      0%, 100% { transform: scale(1);   opacity: 0.9; }
+      50%      { transform: scale(1.5); opacity: 1; }
+    }
+    .rw1-drone-on { animation: rw1DroneOn 3.2s ease-in-out infinite; }
+
+    /* RING 3 — smoke breathes (no crisp edges) */
+    @keyframes r3Smoke { 0%,100% { opacity: 0.82; } 50% { opacity: 1; } }
+    .r3-smoke { animation: r3Smoke 8s ease-in-out infinite; }
+    @keyframes r3Seed { 0%,100% { opacity: 0.8; } 50% { opacity: 1; } }
+    .r3-seed { animation: r3Seed 8s ease-in-out infinite; }
+
+    /* RING 5 — overflow rays shimmer past the boundary */
+    @keyframes r5Ray { 0%,100% { opacity: 0.28; } 50% { opacity: 0.85; } }
+    .r5-ray { animation: r5Ray 2.6s ease-in-out infinite; }
+
+    /* RING 6 — the whisper comes, and will not stay */
+    @keyframes r6Whisper {
+      0% { opacity: 0; filter: blur(3px); transform: translateY(4px); }
+      16% { opacity: 1; filter: blur(0); transform: translateY(0); }
+      72% { opacity: 1; }
+      100% { opacity: 0; filter: blur(2px); }
+    }
+    .r6-whisper { animation: r6Whisper 3.2s ease forwards; }
+    @keyframes r6Heart { 0%,100% { opacity: 0.38; } 50% { opacity: 0.7; } }
+    .r6-heart { animation: r6Heart 6s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="ring-worlds-2.jsx"></script>
+<script type="text/babel" src="ring-nine.jsx"></script>
+<script type="text/babel" src="ring-worlds-3.jsx"></script>
+
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function App() {
+  return (
+    <DesignCanvas background="#060104" title="Phase III·b — Ring-Worlds II">
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 1 — Bhūpura · The Earth-City
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-one" title="Ring 1 · The Earth-City"
+        subtitle="Trailokyamohana · the outer ground · 28 forces in three families — the three nested squares · TAP A LIGHT, A FAMILY, OR A GATE · ground drone (lower-left)">
+
+        <DCArtboard id="r1-default" label="The Earth-City · interactive · tap a light, a family, a gate" width={390} height={844}>
+          <RingOneWorld/>
+        </DCArtboard>
+
+        <DCArtboard id="r1-family" label="A family illumined · the eight Mothers (language)" width={390} height={844}>
+          <RingOneWorld initialFamily="matrka"/>
+        </DCArtboard>
+
+        <DCArtboard id="r1-met" label="Meeting her · Vārāhī, the rooting tongue" width={390} height={844}>
+          <RingOneWorld initialMet={15}/>
+        </DCArtboard>
+
+        <DCArtboard id="r1-all" label="The world made visible · all 28 alight" width={390} height={844}>
+          <RingOneWorld initialAllLit={true}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 3 — Anaṅga · The Smoke Lotus
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-three" title="Ring 3 · The Smoke Lotus"
+        subtitle="Sarvasaṅkṣobhaṇa · the eight Anaṅgas · bodyless desire · TOUCH A PLUME (it never hardens) · the seed for all eight · longing-tone (lower-left)">
+
+        <DCArtboard id="r3-live" label="The Smoke Lotus · interactive · touch a plume, or the seed" width={390} height={844}>
+          <RingThreeWorld/>
+        </DCArtboard>
+
+        <DCArtboard id="r3-one" label="One longing felt · Anaṅgamadanā" width={390} height={844}>
+          <RingThreeWorld initialActive={2}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 4 — Sampradāya · The Lineage
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-four" title="Ring 4 · The Lineage"
+        subtitle="Sarvasaubhāgyadāyaka · the fourteen Sampradāya Śaktis · the teaching travels teacher → student · TOUCH A STATION · the center to send the teaching · lineage-tone">
+
+        <DCArtboard id="r4-live" label="The Lineage · interactive · a transmission travels the line" width={390} height={844}>
+          <RingFourWorld/>
+        </DCArtboard>
+
+        <DCArtboard id="r4-one" label="One station · received, and passed on" width={390} height={844}>
+          <RingFourWorld initialActive={6}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 5 — Kulottīrṇa · The Overflow
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-five" title="Ring 5 · The Overflow"
+        subtitle="Sarvārthasādhaka · the ten Kulottīrṇa Śaktis · overflowing what contains them · TOUCH ONE TO OVERFLOW · the center to transcend the kula · overflow-tone">
+
+        <DCArtboard id="r5-live" label="The Overflow · interactive · the boundary cannot hold her" width={390} height={844}>
+          <RingFiveWorld/>
+        </DCArtboard>
+
+        <DCArtboard id="r5-flood" label="Transcending the kula · all ten overflow" width={390} height={844}>
+          <RingFiveWorld initialFlood={true}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 6 — Nigarbha · The Concealed
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-six" title="Ring 6 · The Concealed"
+        subtitle="Sarvarakṣākara · the ten Nigarbha Śaktis · too interior to be spoken · MOVE THE LIGHT (it reveals only what is near) · touch what it reaches · she will not stay">
+
+        <DCArtboard id="r6-live" label="The Concealed · interactive · move the light through the dark" width={390} height={844}>
+          <RingSixWorld/>
+        </DCArtboard>
+
+        <DCArtboard id="r6-one" label="The light reaches one · she whispers, then conceals" width={390} height={844}>
+          <RingSixWorld revealAt={7}/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ─────────────────────────────────────────────────────────────
+          RING 9 — The Bindu · Sarvānandamaya · TWO DIRECTIONS
+      ────────────────────────────────────────────────────────────── */}
+      <DCSection id="ring-nine" title="Ring 9 · The Bindu — Praveśa, the Endless Indwelling"
+        subtitle="Sarvānandamaya · the point that contains all points · CHOSEN DIRECTION: B · press and hold to fall inward — hold past the falling for the recognition · Shepard tone (lower-left)">
+
+        <DCArtboard id="r9b-live" label="B · Praveśa — the Endless Indwelling · hold to fall inward" width={390} height={844}>
+          <RingNineDescent/>
+        </DCArtboard>
+
+        <DCArtboard id="r9b-recog" label="B · the recognition — held past the falling, the seeker dissolves" width={390} height={844}>
+          <RingNineDescent mode="recognition"/>
+        </DCArtboard>
+
+        <DCArtboard id="r9a-live" label="A · Spanda — the World-Breath (the other direction we explored)" width={390} height={844}>
+          <RingNineSpanda/>
+        </DCArtboard>
+
+        <DCArtboard id="r9a-full" label="A · Spanda — the fullness" width={390} height={844}>
+          <RingNineSpanda frozen={1}/>
+        </DCArtboard>
+
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

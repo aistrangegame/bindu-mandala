@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Record</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{background:#030108;}
+body{background:#030108;min-height:100vh;font-family:'DM Sans',sans-serif;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+@keyframes emerge{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes breathe{0%,100%{opacity:.82}50%{opacity:1}}
+@keyframes codex-glow{0%,100%{opacity:.55}50%{opacity:1}}
+a{color:#C0B0F8;}a:hover{color:#E0D4FF;}
+.doc{max-width:720px;margin:0 auto;padding:64px 44px 80px;}
+@media print{
+  .no-print{display:none !important;}
+  .doc{padding:32px 24px;}
+  body,html{background:#0A0715 !important;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ─── Read every trace ────────────────────────────────────
+const safe = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
+
+function readEverything() {
+  const seedTs = (() => { try { const v = localStorage.getItem('game_seed_v1'); return v ? parseInt(v) : null; } catch { return null; } })();
+  return {
+    beads:      safe('g108', []),
+    roots:      safe('game_roots_v1', []),
+    bodyMap:    safe('game_bodymap_v1', []),
+    mandala:    safe('game_mandala_v1', []),
+    yantra:     safe('yantra', []),
+    seedTs,
+    hubLetter:  safe('hub_letter_v1', null),
+    letters:    safe('correspondence_v2', []),
+    childSessions: safe('child_sessions_v1', {}),
+    childBox:   safe('child_box_v1', []),
+    childSpace: safe('child_space_v1', {}),
+  };
+}
+
+function collectTimestamps(d) {
+  const ts = [];
+  d.bodyMap.forEach(s => s.ts && ts.push(s.ts));
+  d.mandala.forEach(s => s.ts && ts.push(s.ts));
+  d.letters.forEach(l => l.createdAt && ts.push(l.createdAt));
+  if (d.hubLetter?.createdAt) ts.push(d.hubLetter.createdAt);
+  if (d.seedTs) ts.push(d.seedTs);
+  d.childBox.forEach(i => i.ts && ts.push(i.ts));
+  (d.childSpace.answers || []).forEach(a => a.ts && ts.push(a.ts));
+  if (d.childSpace.promise?.createdAt) ts.push(d.childSpace.promise.createdAt);
+  return ts.sort((a,b) => a-b);
+}
+
+const CHAKRA_COLORS = ['#A83232','#C45A18','#C49B17','#1A8060','#1E6EA0','#4A3AAB','#8A3AB5'];
+
+// ─── Mandala renderer (condensed from Living Mandala) ────
+function drawRecordMandala(cv, d) {
+  const dpr = window.devicePixelRatio || 1;
+  const S = cv.offsetWidth;
+  cv.width = S * dpr; cv.height = S * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const cx = S/2, cy = S/2, R = S * 0.46;
+
+  ctx.fillStyle = '#06040A'; ctx.fillRect(0, 0, S, S);
+
+  // Chakra wash
+  CHAKRA_COLORS.forEach((c, i) => {
+    const r1 = R*(i/7.5), r2 = R*((i+1)/7.5);
+    const g = ctx.createRadialGradient(cx,cy,r1,cx,cy,r2);
+    g.addColorStop(0, c+'00'); g.addColorStop(.5, c+'09'); g.addColorStop(1, c+'00');
+    ctx.beginPath(); ctx.arc(cx,cy,r2,0,Math.PI*2); ctx.fillStyle = g; ctx.fill();
+  });
+
+  // Skeleton rings
+  [.24,.46,.68,.88,1.0].forEach(f => {
+    ctx.beginPath(); ctx.arc(cx,cy,R*f,0,Math.PI*2);
+    ctx.strokeStyle = 'rgba(180,160,240,.06)'; ctx.lineWidth = .7; ctx.stroke();
+  });
+
+  // 108 beads
+  const beadSet = new Set(d.beads);
+  const dots = [];
+  [[40,1.0],[32,.735],[24,.484],[12,.281]].forEach(([count, r]) => {
+    for (let i = 0; i < count; i++) {
+      const a = (i/count)*Math.PI*2 - Math.PI/2;
+      dots.push({ id: dots.length, x: r*Math.cos(a), y: r*Math.sin(a) });
+    }
+  });
+  const ringR = R * 0.86;
+  dots.forEach(dot => {
+    const x = cx + dot.x*ringR, y = cy + dot.y*ringR;
+    const on = beadSet.has(dot.id);
+    ctx.beginPath(); ctx.arc(x, y, on ? 2.6 : 1.4, 0, Math.PI*2);
+    ctx.fillStyle = on ? '#C0B0F8' : 'rgba(180,160,240,.13)';
+    if (on) { ctx.shadowColor = '#C0B0F8'; ctx.shadowBlur = 4; }
+    ctx.fill(); ctx.shadowBlur = 0;
+  });
+
+  // Root web
+  const ROOT_W = 370, ROOT_H = 680;
+  const rootScale = (R*0.55) / (ROOT_H*0.48);
+  d.roots.forEach(stroke => {
+    if (!stroke || stroke.length < 3) return;
+    const norm = stroke.map(p => ({ x:(p.x-ROOT_W/2)*rootScale, y:(p.y-ROOT_H*0.38)*rootScale }));
+    for (let rot = 0; rot < 8; rot++) {
+      const a = (rot/8)*Math.PI*2, cos = Math.cos(a), sin = Math.sin(a);
+      ctx.beginPath();
+      norm.forEach((p, i) => {
+        const rx = p.x*cos - p.y*sin, ry = p.x*sin + p.y*cos;
+        i === 0 ? ctx.moveTo(cx+rx, cy+ry) : ctx.lineTo(cx+rx, cy+ry);
+      });
+      ctx.strokeStyle = `rgba(140,90,35,${rot%2 ? .26 : .36})`;
+      ctx.lineWidth = rot === 0 ? 1.3 : .8; ctx.lineCap = 'round'; ctx.stroke();
+    }
+  });
+
+  // Body petals
+  const BODY_W = 370, BODY_H = 680;
+  const bIn = R*0.30, bOut = R*0.70;
+  const modeColor = { alive:'#80E5BC', tight:'#E89080', absent:'#8090C0' };
+  const drawDot = (dot) => {
+    const angle = (dot.x/BODY_W)*Math.PI*2 - Math.PI/2;
+    const r = bIn + (dot.y/BODY_H)*(bOut-bIn);
+    const x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
+    const col = modeColor[dot.mode] || modeColor.alive;
+    ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI*2);
+    ctx.fillStyle = col + '55'; ctx.fill();
+  };
+  d.bodyMap.forEach(s => (Array.isArray(s.dots) ? s.dots : []).forEach(drawDot));
+  d.mandala.forEach(s => (s.strokes||[]).forEach(st => {
+    if (st.mode === 'root') return;
+    (st.points||[]).forEach(p => drawDot({ ...p, mode: st.mode }));
+  }));
+
+  // Center bloom
+  const petals = Math.min(16, 4 + d.letters.length + (d.childSpace.answers||[]).length);
+  const cR = R * 0.16;
+  const g = ctx.createRadialGradient(cx,cy,0,cx,cy,cR*1.8);
+  g.addColorStop(0, '#8A3AB555'); g.addColorStop(1, '#8A3AB500');
+  ctx.beginPath(); ctx.arc(cx,cy,cR*1.8,0,Math.PI*2); ctx.fillStyle = g; ctx.fill();
+  for (let i = 0; i < petals; i++) {
+    const a = (i/petals)*Math.PI*2 - Math.PI/2;
+    const px = cx + cR*0.8*Math.cos(a), py = cy + cR*0.8*Math.sin(a);
+    const pg = ctx.createRadialGradient(px,py,0,px,py,cR*.4);
+    pg.addColorStop(0, '#E0B8F838'); pg.addColorStop(1, '#E0B8F800');
+    ctx.beginPath(); ctx.arc(px,py,cR*.4,0,Math.PI*2); ctx.fillStyle = pg; ctx.fill();
+  }
+  ctx.beginPath(); ctx.arc(cx,cy,3.5,0,Math.PI*2);
+  ctx.fillStyle = '#E0B8F8'; ctx.shadowColor = '#E0B8F8'; ctx.shadowBlur = 8;
+  ctx.fill(); ctx.shadowBlur = 0;
+}
+
+// ─── Presentation helpers ────────────────────────────────
+const fmtDate = ts => new Date(ts).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+
+function fmtAddr(t) {
+  if (!t) return '';
+  if (t.type === 'age')     return `age ${t.value}`;
+  if (t.type === 'year')    return `${t.value}`;
+  if (t.type === 'moment')  return `a moment`;
+  if (t.type === 'emotion') return `when ${t.value}`;
+  if (t.type === 'date')    { try { return fmtDate(new Date(t.value+'T12:00:00').getTime()); } catch { return t.value; } }
+  if (t.type === 'months')  return fmtDate(t.openAt);
+  return '';
+}
+
+const SectionTitle = ({ children }) => (
+  <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.45em',
+    textTransform:'uppercase', color:'rgba(180,160,240,.40)', marginBottom:'18px' }}>{children}</p>
+);
+
+const Divider = () => (
+  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'12px', margin:'44px 0' }}>
+    <div style={{ width:'60px', height:'1px', background:'rgba(180,160,240,.14)' }}></div>
+    <span style={{ color:'rgba(180,160,240,.30)', fontSize:'10px' }}>✦</span>
+    <div style={{ width:'60px', height:'1px', background:'rgba(180,160,240,.14)' }}></div>
+  </div>
+);
+
+function Stat({ n, label, color }) {
+  return (
+    <div style={{ textAlign:'center', padding:'14px 6px' }}>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'38px', fontWeight:300,
+        color: color || 'rgba(240,232,220,.88)', lineHeight:1 }}>{n}</p>
+      <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.22em',
+        textTransform:'uppercase', color:'rgba(180,160,240,.38)', marginTop:'7px', lineHeight:1.5 }}>{label}</p>
+    </div>
+  );
+}
+
+// ─── The document ────────────────────────────────────────
+function App() {
+  const [d] = useState(() => readEverything());
+  const [bene, setBene] = useState('');
+  const [beneLoading, setBeneLoading] = useState(false);
+  const mandalaRef = useRef(null);
+
+  useEffect(() => {
+    const cv = mandalaRef.current; if (!cv) return;
+    let cancelled = false;
+    function tryDraw() {
+      if (cancelled) return;
+      if (cv.offsetWidth > 0) drawRecordMandala(cv, d);
+      else requestAnimationFrame(tryDraw);
+    }
+    requestAnimationFrame(tryDraw);
+    return () => { cancelled = true; };
+  }, []);
+
+  const stamps = collectTimestamps(d);
+  const firstDay = stamps[0] || Date.now();
+  const days = new Set(stamps.map(t => new Date(t).toDateString())).size;
+
+  const pastLetters   = d.letters.filter(l => l.direction === 'past');
+  const futureLetters = d.letters.filter(l => l.direction === 'future');
+  const answers  = d.childSpace.answers || [];
+  const promise  = d.childSpace.promise;
+  const kept     = d.childSpace.keptPromises || [];
+  const childPlays = Object.values(d.childSessions).reduce((a,b) => a+b, 0);
+
+  const hasAnything = stamps.length > 0 || d.beads.length > 0 || d.roots.length > 0;
+
+  async function receiveBenediction() {
+    setBeneLoading(true);
+    const summary = [
+      d.beads.length   && `${d.beads.length} of 108 beads touched`,
+      days             && `${days} days of practice`,
+      d.roots.length   && `${d.roots.length} roots grown`,
+      pastLetters.length && `${pastLetters.length} letters sent to past selves (${pastLetters.map(l=>fmtAddr(l.time)).join(', ')})`,
+      futureLetters.length && `${futureLetters.length} letters sent forward`,
+      answers.length   && `child questions answered: ${answers.map(a=>`"${(a.answer||'').slice(0,60)}"`).join(' · ')}`,
+      promise?.text    && `an active promise: "${promise.text}"`,
+      kept.length      && `${kept.length} promises kept and released`,
+      childPlays       && `${childPlays} sessions of pure play`,
+    ].filter(Boolean).join('\n');
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:
+        `You are the quiet intelligence that has witnessed this person's entire practice of remembering themselves. Here is the record of everything they have done:\n\n${summary || 'They have just begun. The record is nearly empty.'}\n\nWrite a benediction — a short blessing over this record. 2-3 sentences. Address them directly as "you". It should feel like being seen completely and blessed without condition. Specific to what they actually did. No platitudes. Do not use markdown. Do not use the word "journey".`
+      }]});
+      setBene(r.trim());
+    } catch {
+      setBene('What you have made here was made slowly, in moments no one else saw. That is what makes it real. Go gently — you are further along than you know.');
+    }
+    setBeneLoading(false);
+  }
+
+  return (
+    <div className="doc">
+
+      {/* ── Masthead ── */}
+      <div style={{ textAlign:'center', animation:'emerge .8s ease both' }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.5em',
+          textTransform:'uppercase', color:'rgba(180,160,240,.35)', marginBottom:'14px' }}>a sacred document</p>
+        <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'52px', fontWeight:300,
+          letterSpacing:'.16em', color:'rgba(240,232,220,.92)', lineHeight:1 }}>THE RECORD</h1>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'15px',
+          color:'rgba(180,160,240,.42)', marginTop:'14px' }}>
+          {hasAnything
+            ? `${fmtDate(firstDay)} — ${fmtDate(Date.now())}`
+            : fmtDate(Date.now())}
+        </p>
+      </div>
+
+      {/* ── Action bar (screen only) ── */}
+      <div className="no-print" style={{ display:'flex', justifyContent:'center', gap:'10px', marginTop:'28px' }}>
+        <button onClick={() => {
+          const cv = mandalaRef.current; if (!cv) return;
+          const a = document.createElement('a');
+          a.download = `record-mandala-${new Date().toISOString().slice(0,10)}.png`;
+          a.href = cv.toDataURL('image/png'); a.click();
+        }} style={{ padding:'10px 22px', borderRadius:'20px', cursor:'pointer',
+          background:'rgba(180,160,240,.07)', border:'1px solid rgba(180,160,240,.24)',
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:'rgba(240,232,220,.60)' }}>↓ Save mandala</button>
+        <button onClick={() => window.print()} style={{ padding:'10px 22px', borderRadius:'20px', cursor:'pointer',
+          background:'rgba(180,160,240,.07)', border:'1px solid rgba(180,160,240,.24)',
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:'rgba(240,232,220,.60)' }}>Print · Save as PDF</button>
+      </div>
+
+      <Divider></Divider>
+
+      {/* ── The Mandala ── */}
+      <div style={{ textAlign:'center' }}>
+        <SectionTitle>the mandala of this practice</SectionTitle>
+        <canvas ref={mandalaRef} style={{ width:'min(440px, 100%)', aspectRatio:'1',
+          margin:'0 auto', display:'block', borderRadius:'8px' }}></canvas>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'13px',
+          color:'rgba(180,160,240,.30)', marginTop:'14px', lineHeight:1.7 }}>
+          Every bead, root, and sensation you recorded, woven into one form.
+        </p>
+      </div>
+
+      <Divider></Divider>
+
+      {/* ── The Numbers ── */}
+      <SectionTitle>what the practice holds</SectionTitle>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(110px, 1fr))', gap:'4px' }}>
+        {days > 0            && <Stat n={days} label="days of practice"></Stat>}
+        {d.beads.length > 0  && <Stat n={`${d.beads.length}`} label="of 108 beads" color="#C0B0F8"></Stat>}
+        {d.roots.length > 0  && <Stat n={d.roots.length} label="roots grown" color="#C09060"></Stat>}
+        {d.yantra.length > 0 && <Stat n={d.yantra.length} label="yantra lines" color="#DFC0F8"></Stat>}
+        {d.letters.length > 0 && <Stat n={d.letters.length} label="letters in the river" color="#F5DC80"></Stat>}
+        {childPlays > 0      && <Stat n={childPlays} label="sessions of play" color="#C8E870"></Stat>}
+        {answers.length > 0  && <Stat n={answers.length} label="child questions met" color="#F0A870"></Stat>}
+        {kept.length > 0     && <Stat n={kept.length} label="promises kept" color="#80E5BC"></Stat>}
+      </div>
+      {!hasAnything && (
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'16px',
+          color:'rgba(180,160,240,.32)', textAlign:'center', padding:'12px 0' }}>
+          The record is open. Everything you do from here will be written into it.
+        </p>
+      )}
+
+      {/* ── The Correspondence ── */}
+      {d.letters.length > 0 && (<React.Fragment>
+        <Divider></Divider>
+        <SectionTitle>the correspondence</SectionTitle>
+        <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
+          {pastLetters.slice(-4).map((l, i) => (
+            <div key={'p'+i} style={{ borderLeft:'2px solid #C49B1755', paddingLeft:'16px' }}>
+              <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.24em',
+                textTransform:'uppercase', color:'rgba(245,220,128,.48)', marginBottom:'5px' }}>
+                ← to myself at {fmtAddr(l.time)} · {fmtDate(l.createdAt)}
+              </p>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'16px',
+                color:'rgba(240,232,220,.72)', lineHeight:1.75, fontStyle:'italic' }}>
+                “{(l.body||'').slice(0, 160).trim()}{(l.body||'').length > 160 ? '…' : ''}”
+              </p>
+            </div>
+          ))}
+          {futureLetters.slice(-4).map((l, i) => (
+            <div key={'f'+i} style={{ borderLeft:'2px solid #4A3AAB55', paddingLeft:'16px' }}>
+              <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.24em',
+                textTransform:'uppercase', color:'rgba(192,176,248,.48)', marginBottom:'5px' }}>
+                → arriving {fmtAddr(l.time)} · {Date.now() >= (l.openAt||0) ? 'arrived' : 'still sealed'}
+              </p>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'16px',
+                color:'rgba(240,232,220,.72)', lineHeight:1.75, fontStyle:'italic' }}>
+                “{(l.body||'').slice(0, 160).trim()}{(l.body||'').length > 160 ? '…' : ''}”
+              </p>
+            </div>
+          ))}
+        </div>
+      </React.Fragment>)}
+
+      {/* ── The Child ── */}
+      {(answers.length > 0 || promise || kept.length > 0) && (<React.Fragment>
+        <Divider></Divider>
+        <SectionTitle>the child</SectionTitle>
+        <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
+          {answers.slice(-3).map((a, i) => (
+            <div key={i}>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'15px',
+                color:'rgba(240,184,90,.55)', marginBottom:'6px' }}>{a.question}</p>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'17px',
+                color:'rgba(240,232,220,.78)', lineHeight:1.75 }}>{a.answer}</p>
+            </div>
+          ))}
+          {promise?.text && (
+            <div style={{ padding:'18px 22px', borderRadius:'14px',
+              background:'rgba(196,120,32,.07)', border:'1px solid rgba(196,120,32,.22)' }}>
+              <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.3em',
+                textTransform:'uppercase', color:'rgba(240,184,90,.45)', marginBottom:'7px' }}>a promise, still keeping</p>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'18px',
+                color:'rgba(245,232,212,.82)', lineHeight:1.6 }}>{promise.text}</p>
+            </div>
+          )}
+          {kept.slice(-3).map((k, i) => (
+            <p key={'k'+i} style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+              fontSize:'14px', color:'rgba(128,229,188,.50)' }}>
+              ✓ kept — “{k.text}”
+            </p>
+          ))}
+        </div>
+      </React.Fragment>)}
+
+      {/* ── The Benediction ── */}
+      <Divider></Divider>
+      <div style={{ textAlign:'center' }}>
+        <SectionTitle>the benediction</SectionTitle>
+        {bene ? (
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'21px', fontStyle:'italic',
+            color:'rgba(240,232,220,.82)', lineHeight:1.9, maxWidth:'520px', margin:'0 auto',
+            animation:'emerge .9s ease' }}>{bene}</p>
+        ) : (
+          <button className="no-print" onClick={receiveBenediction} disabled={beneLoading}
+            style={{ padding:'13px 32px', borderRadius:'26px', cursor:'pointer',
+              background:'rgba(180,160,240,.08)', border:'1px solid rgba(180,160,240,.28)',
+              fontFamily:"'Cormorant Garamond',serif", fontSize:'16px',
+              color:'rgba(240,232,220,.72)', letterSpacing:'.12em', textTransform:'uppercase',
+              animation: beneLoading ? 'codex-glow 1.6s ease-in-out infinite' : 'none' }}>
+            {beneLoading ? 'being read…' : 'Receive the benediction'}
+          </button>
+        )}
+      </div>
+
+      {/* ── Footer ── */}
+      <div style={{ textAlign:'center', marginTop:'64px' }}>
+        <div style={{ display:'flex', gap:'8px', justifyContent:'center', marginBottom:'16px' }}>
+          {CHAKRA_COLORS.map((c,i) => (
+            <div key={i} style={{ width:'7px', height:'7px', borderRadius:'50%', background:c, opacity:.6 }}></div>
+          ))}
+        </div>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'13px',
+          color:'rgba(180,160,240,.28)', letterSpacing:'.08em' }}>
+          a spirit, enjoying a human experience
+        </p>
+      </div>
+
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -4,10 +4,10 @@ import SwiftUI
 //
 // Wave 1 · Slice D. The after-effect of a stay, on the whole instrument
 // (``HomeAfterEffect``): when he crosses out of a room the light of the app
-// lifts and fades over twenty-four seconds, a line reads *"her siddhi is still
-// on the instrument"* for twelve, and for three minutes the instrument is a
-// little lighter, heavier, sharper or wider, by her āvaraṇa, decaying as the
-// square of what is left.
+// lifts and fades over twenty-four seconds, and for three minutes the
+// instrument is a little lighter, heavier, sharper or wider, by her āvaraṇa,
+// decaying as the square of what is left. Felt, never named: no line says it
+// (ruling 15, 12 Oct 2026).
 //
 // **Nothing about it is a measure.** It is the same after-effect for every stay
 // in a ring, it carries no number, and it says nothing about how long he stayed
@@ -36,10 +36,7 @@ struct HerSiddhiLingers: ViewModifier {
     @State private var lingering: Double = 0
     /// What is left of the exposure lift.
     @State private var lift: Double = 0
-    @State private var lineShown = false
     @State private var fading: Task<Void, Never>?
-
-    private static let lineSize: CGFloat = 11
 
     func body(content: Content) -> some View {
         content
@@ -50,20 +47,6 @@ struct HerSiddhiLingers: ViewModifier {
                         .allowsHitTesting(false)
                         .ignoresSafeArea()
                 }
-            }
-            .overlay(alignment: .topLeading) {
-                Text(HomeAfterEffect.line)
-                    .font(AppFont.label(Self.lineSize))
-                    .textCase(.uppercase)
-                    .tracking(Self.lineSize * 0.2)
-                    .foregroundStyle(Color.gold)
-                    .shadow(color: .black.opacity(0.9), radius: 14, y: 2)
-                    .opacity(lineShown ? 1 : 0)
-                    .accessibilityHidden(!lineShown)
-                    .padding(.top, 58)
-                    .padding(.leading, 24)
-                    .padding(.trailing, 24)
-                    .allowsHitTesting(false)
             }
             .onReceive(NotificationCenter.default.publisher(for: HomeAfterEffect.didLeave)) { note in
                 let ring = (note.userInfo?["ring"] as? Int) ?? 1
@@ -122,7 +105,6 @@ struct HerSiddhiLingers: ViewModifier {
             self.kind = kind
             lingering = 1
             lift = 1
-            lineShown = true
         }
         fading = Task { @MainActor in
             // One frame at full strength, so the decay has somewhere to start.
@@ -134,11 +116,7 @@ struct HerSiddhiLingers: ViewModifier {
             withAnimation(.linear(duration: HomeAfterEffect.liftFades)) {
                 lift = 0
             }
-            try? await Task.sleep(nanoseconds: UInt64(HomeAfterEffect.lineHolds * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            withAnimation(.linear(duration: 1.2)) { lineShown = false }
-            let rest = HomeAfterEffect.lingers - HomeAfterEffect.lineHolds
-            try? await Task.sleep(nanoseconds: UInt64(rest * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: UInt64(HomeAfterEffect.lingers * 1_000_000_000))
             guard !Task.isCancelled else { return }
             self.kind = nil
         }

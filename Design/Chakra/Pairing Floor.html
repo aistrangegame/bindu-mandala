@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="design_doc_mode" content="canvas">
+<title>The Gift Pairing · Pairing Floor</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;}
+a{color:rgba(200,185,240,.6);} a:hover{color:rgba(220,210,248,.9);}
+.floor{position:absolute;left:60px;top:60px;width:1240px;background:radial-gradient(ellipse at 50% 0%,#0E0B16 0%,#060409 70%);
+  border-radius:8px;padding:64px 72px 72px;box-shadow:0 30px 80px rgba(0,0,0,.8);}
+.eyebrow{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:rgba(200,185,240,.45);}
+h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:42px;color:rgba(240,232,220,.92);margin:14px 0 6px;}
+.sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;color:rgba(240,232,220,.45);}
+.legend{display:flex;gap:28px;margin:28px 0 0;font-size:11px;color:rgba(240,232,220,.5);letter-spacing:.06em;}
+.legend b{font-weight:400;color:rgba(240,232,220,.85);margin-right:6px;}
+h2{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:rgba(200,185,240,.5);font-weight:400;
+  margin:52px 0 6px;padding-bottom:10px;border-bottom:1px solid rgba(240,232,220,.08);}
+.h2sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:rgba(240,232,220,.35);margin-bottom:18px;}
+.rows{display:grid;grid-template-columns:1fr 1fr;gap:10px 28px;}
+.row{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border:1px solid rgba(240,232,220,.06);border-radius:6px;background:rgba(240,232,220,.015);}
+.gdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.gbody{flex:1;min-width:0;}
+.gname{font-family:'Cormorant Garamond',serif;font-size:18px;color:rgba(240,232,220,.9);line-height:1.2;}
+.gheart{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12.5px;color:rgba(240,232,220,.4);margin-top:2px;}
+.how{font-size:11.5px;color:rgba(240,232,220,.55);line-height:1.55;margin-top:8px;}
+.dest{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;max-width:200px;text-align:right;}
+.room{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.08em;color:rgba(240,232,220,.75);}
+.rdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.status{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(240,232,220,.4);}
+.st-carry{color:#9FD8A8;} .st-cand{color:#C8B8F0;} .st-spirit{color:rgba(240,232,220,.42);} .st-sealed{color:#D8A878;}
+.registry{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;}
+.chip{font-family:'Cormorant Garamond',serif;font-size:15px;color:rgba(240,232,220,.6);border:1px solid rgba(240,232,220,.1);border-radius:20px;padding:7px 16px;}
+.note{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:rgba(240,232,220,.38);margin-top:22px;line-height:1.7;}
+</style>
+</head>
+<body>
+<div class="floor">
+  <p class="eyebrow">Bindu Chakras App · Design Floor · July 6 2026</p>
+  <h1>The Gift Pairing — Pairing Floor</h1>
+  <p class="sub">What past Ashrey built &middot; where it lives in the 33 rooms &middot; mechanics carry forward, forms fresh-build, gift copy never replaces canon.</p>
+  <div class="legend">
+    <span><b>●</b> mechanic carries forward</span>
+    <span><b>◆</b> design-floor candidate</span>
+    <span><b>○</b> spirit survives · superseded</span>
+    <span><b>◼</b> sealed / held</span>
+  </div>
+
+  <h2>Into the rooms</h2>
+  <p class="h2sub">Direct ancestors — each mechanic pairs with a room; the room is still originated from its Register card.</p>
+  <div class="rows">
+    <div class="row"><span class="gdot" style="background:#8A3AB5"></span><div class="gbody"><p class="gname">Sri Yantra</p><p class="gheart">"Trace the sacred geometry."</p><p class="how">Trace-texture candidate for the walk's only Canvas gate — the first mark, before knowing.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#E8C568"></span>01 · Bindu</span><span class="status st-cand">◆ candidate</span></div></div>
+    <div class="row"><span class="gdot" style="background:#6A4020"></span><div class="gbody"><p class="gname">Root System</p><p class="gheart">"Hold still. Grow deep."</p><p class="how">Stillness-hold mechanic pairs with heavy trace + 3500ms holds in the root pair.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#B83A3A"></span>02 · Muladhara &nbsp;·&nbsp; <span class="rdot" style="background:#7A1515"></span>10 · Soles</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#A83232"></span><div class="gbody"><p class="gname">The Drum</p><p class="gheart">"Roots grow in steady time."</p><p class="how">Wake-up / dance-adjacent rhythm companion for the root pair.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#B83A3A"></span>02 · 10 · root pair</span><span class="status st-cand">◆ candidate</span></div></div>
+    <div class="row"><span class="gdot" style="background:#1E6EA0"></span><div class="gbody"><p class="gname">Water Level</p><p class="gheart">"Find your equilibrium."</p><p class="how">Motion companion for the flow room — nothing in Svadhisthana is still.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#D47438"></span>03 · Svadhisthana</span><span class="status st-cand">◆ candidate</span></div></div>
+    <div class="row"><span class="gdot" style="background:#C45A18"></span><div class="gbody"><p class="gname">The Fire</p><p class="gheart">"Tend without forcing."</p><p class="how">The fire-tending loop pairs with BURN and TRANSFORM.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#D4A848"></span>04 · Manipura &nbsp;·&nbsp; <span class="rdot" style="background:#6B5800"></span>11 · Forge</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#8A3AB5"></span><div class="gbody"><p class="gname">Mirror Maze</p><p class="gheart">"One word through seven forms."</p><p class="how">Language-play companion for the throat pair's word-work.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#4C7AB8"></span>06 · Vishuddha &nbsp;·&nbsp; <span class="rdot" style="background:#091840"></span>15 · Sonar</span><span class="status st-cand">◆ candidate</span></div></div>
+    <div class="row"><span class="gdot" style="background:#4A2A7A"></span><div class="gbody"><p class="gname">The Corridor</p><p class="gheart">"Walk at the pace your body allows."</p><p class="how">Confirms the constricted, body-paced register. Pair with the three-breath entry and the pulse.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#2A2420"></span>09 · Shadow</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#1A8060"></span><div class="gbody"><p class="gname">Body Map</p><p class="gheart">"Where do you feel it right now?"</p><p class="how">Arrival-gesture candidate for the body walk: touch where the room lives in you.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#7A1515"></span>10–19 · arrivals</span><span class="status st-cand">◆ candidate</span></div></div>
+    <div class="row"><span class="gdot" style="background:#C84B6E"></span><div class="gbody"><p class="gname">Coherence</p><p class="gheart">"Align heart and breath."</p><p class="how">Tap-your-heartbeat mechanic — where the ambient pulse and the walker's real one meet, unremarked.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#112E17"></span>14 · Pulse</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#4A3AAB"></span><div class="gbody"><p class="gname">Spine Walk</p><p class="gheart">"Your attention, made visible."</p><p class="how">Attention traces the axis — pair with the tilt-to-vertical practice.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#1A0848"></span>18 · Axis</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#8A3AB5"></span><div class="gbody"><p class="gname">Shake to Clear</p><p class="gheart">"Scatter the thoughts."</p><p class="how">The 30-second shake, already built — carry the accelerometer logic.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#3A0A54"></span>19 · Crow</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#4A3AAB"></span><div class="gbody"><p class="gname">The 12 &nbsp;/&nbsp; Mandala</p><p class="gheart">"Find the order by feeling." · "Complete what is missing."</p><p class="how">Optional pattern-practice companions for the Visualization family.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#4A3368"></span>26 · Invention &nbsp;·&nbsp; <span class="rdot" style="background:#5E2448"></span>29 · Integration</span><span class="status st-cand">◆ candidate</span></div></div>
+    <div class="row"><span class="gdot" style="background:#1E6EA0"></span><div class="gbody"><p class="gname">The Correspondence &nbsp;/&nbsp; The Letter</p><p class="gheart">"Written now. Opened later."</p><p class="how">Strongest single ancestor. Sealed-until-arrival logic is proven — reusable for grace surfacing and offerings returning.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#522D60"></span>27 · Incarnation · post-32</span><span class="status st-cand">◆ candidate</span></div></div>
+    <div class="row"><span class="gdot" style="background:#1A8060"></span><div class="gbody"><p class="gname">The Child Space</p><p class="gheart">"12 questions to small-you."</p><p class="how">Direct ancestor — its question-register informs Sahaja's practice; canon prompts win.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#5A2858"></span>28 · Innocence</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#4A2A7A"></span><div class="gbody"><p class="gname">Shadow Translator</p><p class="gheart">"Name the burden. Find the gift."</p><p class="how">Direct mechanical ancestor of the Ego Reveal gate — the two-field inversion: betrayal re-seen as service.</p></div><div class="dest"><span class="room"><span class="rdot" style="background:#3D6B35"></span>32 · Ego Reveal</span><span class="status st-carry">● carries</span></div></div>
+  </div>
+
+  <h2>Into the shell &amp; the floor</h2>
+  <p class="h2sub">Systems-level inheritance — these pair with Slice 0, not with any single room.</p>
+  <div class="rows">
+    <div class="row"><span class="gdot" style="background:#4A3AAB"></span><div class="gbody"><p class="gname">The 108</p><p class="gheart">"108 deliberate taps. No timer. No score."</p><p class="how">The one-second floor's whole ethic, prototyped. Patience without measurement.</p></div><div class="dest"><span class="room">The floor · anti-pattern canon</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#1A8060"></span><div class="gbody"><p class="gname">The Seed</p><p class="gheart">"Plant it. Return and find it grown."</p><p class="how">The offering-that-leaves gains the Seed's return dimension: quiet growth where offerings were given — never counts, only life.</p></div><div class="dest"><span class="room">Gate offerings · the walked-seal</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#8A6AC8"></span><div class="gbody"><p class="gname">Starfield / GShell</p><p class="gheart">The shared dark shell.</p><p class="how">Reusable code substrate for corridor-era ground and weather components.</p></div><div class="dest"><span class="room">Weather system · corridor era</span><span class="status st-carry">● carries</span></div></div>
+    <div class="row"><span class="gdot" style="background:#C49B17"></span><div class="gbody"><p class="gname">Sacred selection</p><p class="gheart">"When the mind won't land / when something goes unseen…"</p><p class="how">The state-phrased label is a proven register — doors may speak in the when-voice when offering sizes.</p></div><div class="dest"><span class="room">The three doors · midday sizes</span><span class="status st-cand">◆ candidate</span></div></div>
+    <div class="row"><span class="gdot" style="background:#6A6A8A"></span><div class="gbody"><p class="gname">Home spine</p><p class="gheart">7 dots · "1 of 7 awakened."</p><p class="how">Spirit survives as the walk-position feel; superseded by the weather and the doors.</p></div><div class="dest"><span class="room">The ground + gate system</span><span class="status st-spirit">○ spirit survives</span></div></div>
+    <div class="row"><span class="gdot" style="background:#6A6A8A"></span><div class="gbody"><p class="gname">Hub time-gates</p><p class="gheart">"Opens in N days."</p><p class="how">Pacing-as-architecture proven; the braid replaces day-counts with thread-arrival.</p></div><div class="dest"><span class="room">Braid sequentiality · gate-trailing</span><span class="status st-spirit">○ spirit survives</span></div></div>
+  </div>
+
+  <h2>Sealed / held</h2>
+  <p class="h2sub">Nothing more is written here.</p>
+  <div class="rows">
+    <div class="row"><span class="gdot" style="background:#D8A878"></span><div class="gbody"><p class="gname">Living Mandala</p><p class="gheart">Form assembled from the player's own practice.</p><p class="how">Past Ashrey's instinct was correct. Code inherits this.</p></div><div class="dest"><span class="room">sealed territory</span><span class="status st-sealed">◼ sealed</span></div></div>
+    <div class="row"><span class="gdot" style="background:#D8A878"></span><div class="gbody"><p class="gname">Sanctuary</p><p class="gheart">"The hearts here have all felt alone before."</p><p class="how">Not in the v1 walk (offline-complete). Held as the field-feature seed for the era after the Reveal.</p></div><div class="dest"><span class="room">post-32 · E-chakra era</span><span class="status st-sealed">◼ held</span></div></div>
+  </div>
+
+  <h2>The registry — held in memory</h2>
+  <p class="h2sub">Part of this project's memory; unpaired today, may pair on a later floor.</p>
+  <div class="registry">
+    <span class="chip">Mantra Tuner</span><span class="chip">The Mirror</span><span class="chip">The Field</span><span class="chip">The Record</span><span class="chip">The World in a Box</span><span class="chip">The Seven Gates</span><span class="chip">The Body as Scripture</span><span class="chip">Sacred Experiences</span><span class="chip">7 chakra experiences ○ superseded by V5 + Registers</span>
+  </div>
+
+  <p class="note">Past Ashrey planted this. Present Ashrey returned and found it grown. &nbsp;—&nbsp; walkable Slice 0: <a href="The Shell.html">The Shell</a></p>
+</div>
+</body>
+</html>

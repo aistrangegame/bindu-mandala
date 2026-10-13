@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Sacred Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="games-core.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#020205;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.07);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.6);opacity:0}}
+textarea,input{font-family:inherit;outline:none;-webkit-appearance:none;}
+textarea::placeholder,input::placeholder{color:rgba(240,232,220,.22);}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0C0A12;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#181620;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #181620,0 108px 0 #181620;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#181620;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#06040A;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="games-utils.jsx"></script>
+<script type="text/babel" src="games-patience.jsx"></script>
+<script type="text/babel" src="games-rhythm.jsx"></script>
+<script type="text/babel" src="games-language.jsx"></script>
+<script type="text/babel" src="games-elements.jsx"></script>
+<script type="text/babel" src="games-pattern.jsx"></script>
+<script type="text/babel" src="games-body.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const { Starfield, GShell, GameDone, T } = window;
+
+// ─── COMING SOON ──────────────────────────────────────────────────────────────
+function ComingSoon({ game, onReturn }) {
+  return (
+    <GShell game={game} onReturn={onReturn}>
+      <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px', textAlign:'center' }}>
+        <div style={{ width:'60px', height:'60px', borderRadius:'50%', marginBottom:'20px', background:`${game.color}15`, border:`1px solid ${game.color}35`, animation:'breathe 4s ease-in-out infinite' }} />
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', color:'rgba(240,232,220,.65)', marginBottom:'8px' }}>{game.name}</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'15px', color:'rgba(240,232,220,.32)', marginBottom:'32px' }}>Coming in the next cycle.</p>
+        <button onClick={onReturn} style={{ padding:'10px 24px', borderRadius:'22px', cursor:'pointer', background:'none', border:`1px solid ${game.color}30`, fontFamily:"'Cormorant Garamond',serif", fontSize:'14px', color:'rgba(240,232,220,.55)', letterSpacing:'.12em', textTransform:'uppercase' }}>Back</button>
+      </div>
+    </GShell>
+  );
+}
+
+// ─── GAME TILE ────────────────────────────────────────────────────────────────
+function GameTile({ game, onSelect, idx }) {
+  const [pressed, setPressed] = useState(false);
+  const isReady = !!window[game.comp];
+  return (
+    <button
+      onClick={() => onSelect(game.id)}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      style={{
+        width:'calc(50% - 5px)', aspectRatio:'1.6/1',
+        background: pressed ? `${game.color}20` : `${game.color}0C`,
+        border:`1px solid ${pressed ? game.color+'45' : game.color+'20'}`,
+        borderRadius:'16px', cursor:'pointer', textAlign:'left',
+        padding:'12px 14px', display:'flex', flexDirection:'column',
+        justifyContent:'space-between', transition:'all .2s',
+        animation:`emerge .4s ${idx*.04}s ease both`,
+        position:'relative', overflow:'hidden',
+      }}
+    >
+      {/* Glow orb */}
+      <div style={{ position:'absolute', top:'-16px', right:'-16px', width:'48px', height:'48px', borderRadius:'50%', background:`radial-gradient(circle,${game.color}30,transparent)`, pointerEvents:'none' }} />
+      <div>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', color:'rgba(240,232,220,.85)', lineHeight:1.2, marginBottom:'3px' }}>{game.name}</p>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.16em', color:`${game.accent}55`, textTransform:'uppercase' }}>{game.sub.split('.')[0]}</p>
+      </div>
+      {!isReady && <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.15em', color:'rgba(255,255,255,.18)', textTransform:'uppercase' }}>soon</p>}
+    </button>
+  );
+}
+
+// ─── HUB SCREEN ───────────────────────────────────────────────────────────────
+function HubScreen({ onSelect }) {
+  const games = window.GAMES;
+  const cats  = window.GCATS;
+
+  return (
+    <div style={{ height:'100%', background:'linear-gradient(185deg,#060310,#090512 55%,#050308)', position:'relative', overflow:'auto', display:'flex', flexDirection:'column' }}>
+      <Starfield count={100} opacity={.38} />
+
+      {/* Header */}
+      <div style={{ textAlign:'center', padding:'28px 0 20px', position:'relative', zIndex:10, flexShrink:0, animation:'emerge .8s ease' }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.38em', textTransform:'uppercase', color:'rgba(200,185,240,.30)', marginBottom:'6px' }}>sacred</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'42px', letterSpacing:'.18em', fontWeight:300, color:'rgba(240,232,222,.92)', lineHeight:1 }}>Games</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'13px', color:'rgba(200,185,240,.28)', marginTop:'6px' }}>play your way to presence</p>
+      </div>
+
+      {/* Categories */}
+      <div style={{ flex:1, position:'relative', zIndex:10, padding:'0 16px 24px', display:'flex', flexDirection:'column', gap:'24px' }}>
+        {cats.map(cat => {
+          const catGames = games.filter(g => g.cat === cat.id);
+          if (!catGames.length) return null;
+          return (
+            <div key={cat.id}>
+              <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.28em', color:'rgba(200,185,240,.30)', textTransform:'uppercase', marginBottom:'10px', paddingLeft:'2px' }}>{cat.label}</p>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:'10px' }}>
+                {catGames.map((g,i) => (
+                  <GameTile key={g.id} game={g} onSelect={onSelect} idx={i} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <p style={{ textAlign:'center', padding:'12px 0 20px', fontFamily:"'Cormorant Garamond',serif", fontSize:'11px', letterSpacing:'.28em', color:'rgba(200,185,240,.16)', position:'relative', zIndex:10, flexShrink:0 }}>Love · Knowledge · Will · Action</p>
+    </div>
+  );
+}
+
+// ─── ROUTER ───────────────────────────────────────────────────────────────────
+function GameRouter({ gameId, onReturn }) {
+  const game = window.GAMES.find(g => g.id === gameId);
+  if (!game) return null;
+  const Comp = window[game.comp];
+  if (!Comp) return <ComingSoon game={game} onReturn={onReturn} />;
+  return <Comp game={game} onReturn={onReturn} />;
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+function App() {
+  const [active, setActive] = useState(null);
+  return (
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island" />
+          <div className="ph-content">
+            <div key={active||'hub'} style={{ width:'100%', height:'100%', animation:'fade-in .3s ease' }}>
+              {active
+                ? <GameRouter gameId={active} onReturn={() => setActive(null)} />
+                : <HubScreen onSelect={setActive} />
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

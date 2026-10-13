@@ -10,6 +10,16 @@ re-checked against the live row:
                                                         # …and prove every line
                                                         # is still a verbatim
                                                         # substring of its row
+    python3 bake_game_structure.py OUT.json --verify --export DIR [--baked-on YYYY-MM-DD]
+                                                        # U0: the same proof against
+                                                        # a dated export (DIR holds
+                                                        # identity.json and map.json,
+                                                        # e.g. waves/upgrade/snapshot/
+                                                        # raw-after-2026-10-13), no API
+
+U0 (13 Oct 2026): ruling 8 — Maya's last line is "…There was only You, playing."
+(Map recMyqKSqwRnimgvy, Panel Seed Message, changed in Airtable as C08), so the ring-9
+seed follows the base.
 
 Truth floor: his words verbatim, never invented. Nothing here composes a line;
 a Leela drop's `lead` and `action` are two exact substrings of one Leela Story,
@@ -65,7 +75,7 @@ PANELS = [
      'recqe8qnDxkq0BiCZ', 'Will. Knowledge. Action. You already know. You have always known.'),
     (9, 'rec2VtJ6wZVZpY7la', 'Dissolve',
      'I dissolve into what was already dissolving. Nothing was solid to begin with.',
-     'recMyqKSqwRnimgvy', 'There was never anything to fear. There was only the Bindu, playing.'),
+     'recMyqKSqwRnimgvy', 'There was never anything to fear. There was only You, playing.'),
 ]
 
 # The tenth panel (the Axis triptych) — carried for the record, not a ring.
@@ -135,9 +145,12 @@ DROPS = [
 SEALED = {'recg65oeH56mF8vMK', 'rec3O90Mtasuh5qI7'}   # Ego Reveal (32), Lalita (33)
 
 
+BAKED_ON = '2026-10-12'
+
+
 def build():
     out = {
-        'bakedOn': '2026-10-12',
+        'bakedOn': BAKED_ON,
         'bakedFrom': {'base': BASE, 'identity': IDENTITY, 'map': MAP},
         'panels': [
             {'ring': r, 'verb': verb, 'declaration': decl, 'seed': seed,
@@ -170,7 +183,20 @@ def build():
     return out
 
 
+EXPORT = None   # {table id: {record id: cellValuesByFieldId}} when --export DIR is given
+
+
+def load_export(directory):
+    tables = {}
+    for table, name in ((IDENTITY, 'identity.json'), (MAP, 'map.json')):
+        with open(os.path.join(directory, name), encoding='utf-8') as fh:
+            tables[table] = {r['id']: r['cellValuesByFieldId'] for r in json.load(fh)['records']}
+    return tables
+
+
 def fetch(table, record):
+    if EXPORT is not None:
+        return EXPORT[table][record]
     token = os.environ['AIRTABLE_TOKEN']
     url = f'https://api.airtable.com/v0/{BASE}/{table}/{record}?returnFieldsByFieldId=true'
     req = urllib.request.Request(url, headers={'Authorization': f'Bearer {token}'})
@@ -178,32 +204,53 @@ def fetch(table, record):
         return json.load(r)['fields']
 
 
-def verify():
-    """Every baked line must be a verbatim substring of the field it came from."""
+def verify(data):
+    """Every baked line must be a verbatim substring of the field it came from
+    (panels, faces, practices and the axis: the whole cell, exactly)."""
     bad = []
-    for (r, idrec, verb, decl, maprec, seed) in PANELS:
-        f = fetch(IDENTITY, idrec)
-        if f.get(ID_DECLARATION, '').strip() != decl or f.get(ID_NAME) != verb:
-            bad.append(('panel', r))
-        m = fetch(MAP, maprec)
-        if m.get(MAP_SEED, '').strip() != seed:
-            bad.append(('seed', r))
-    for (_, _, rec, line) in FACES + PRACTICES:
-        if fetch(IDENTITY, rec).get(ID_DECLARATION, '').strip() != line:
-            bad.append(('identity', rec))
-    for (i, rec, _, _, lead, action) in DROPS:
-        story = fetch(MAP, rec).get(MAP_LEELA, '')
-        if lead not in story or action not in story:
-            bad.append(('drop', i))
+    lines = 0
+    def check(kind, key, line, cell, whole=True):
+        nonlocal lines
+        lines += 1
+        cell = cell or ''
+        if line not in cell or (whole and cell.strip() != line):
+            bad.append((kind, key))
+    for p in data['panels']:
+        f = fetch(IDENTITY, p['identityRecord'])
+        check('panel verb', p['ring'], p['verb'], f.get(ID_NAME))
+        check('panel declaration', p['ring'], p['declaration'], f.get(ID_DECLARATION))
+        check('panel seed', p['ring'], p['seed'], fetch(MAP, p['mapRecord']).get(MAP_SEED))
+    a = data['axis']
+    f = fetch(IDENTITY, a['identityRecord'])
+    check('axis verb', 'axis', a['verb'], f.get(ID_NAME))
+    check('axis declaration', 'axis', a['declaration'], f.get(ID_DECLARATION))
+    for x in data['faces']:
+        f = fetch(IDENTITY, x['identityRecord'])
+        check('face name', x['face'], x['name'], f.get(ID_NAME))
+        check('face line', x['face'], x['line'], f.get(ID_DECLARATION))
+    for x in data['practices']:
+        f = fetch(IDENTITY, x['identityRecord'])
+        check('practice name', x['key'], x['name'], f.get(ID_NAME))
+        check('practice line', x['key'], x['line'], f.get(ID_DECLARATION))
+    for d in data['leelaDrops']:
+        m = fetch(MAP, d['mapRecord'])
+        check('drop chakra', d['id'], d['chakra'], m.get(MAP_NAME))
+        story = m.get(MAP_LEELA, '')
+        check('drop lead', d['id'], d['lead'], story, whole=False)
+        check('drop action', d['id'], d['action'], story, whole=False)
     if bad:
         raise SystemExit(f'not verbatim: {bad}')
-    print('verified: every line is verbatim')
+    print(f'verified: every line is verbatim ({lines} lines checked)')
 
 
 if __name__ == '__main__':
+    if '--baked-on' in sys.argv:
+        BAKED_ON = sys.argv[sys.argv.index('--baked-on') + 1]
+    if '--export' in sys.argv:
+        EXPORT = load_export(sys.argv[sys.argv.index('--export') + 1])
     data = build()
     with open(sys.argv[1], 'w', encoding='utf-8') as fh:
         json.dump(data, fh, ensure_ascii=False, indent=1)
         fh.write('\n')
     if '--verify' in sys.argv:
-        verify()
+        verify(data)

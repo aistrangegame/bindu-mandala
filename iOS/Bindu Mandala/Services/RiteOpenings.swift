@@ -5,8 +5,8 @@ import Foundation
 // The Rite keeps its nine-beat arrival (Wave 1) and its day layer (Wave 3).
 // What Wave 6 adds stands around them:
 //
-//   • **The openings** — before the nine beats, once in the morning half of a
-//     practice day and once in the evening half: *"Stop. Breathe. Remember."*
+//   • **The openings** — before the nine beats (once in each half of a practice
+//     day until U0; ruling 16 lifted that): *"Stop. Breathe. Remember."*
 //     (C-1303), then **the Sacred Pause** (C-1160) — three breaths: release the
 //     past · ground in now · let the answer open through the feeling body.
 //   • **Dawn and dusk are two rites** (expansion #17). At first light the
@@ -164,10 +164,15 @@ enum RiteOpening {
         }
     }
 
-    /// Whether the opening comes now: not if it already came in this half of
-    /// this practice day.
+    /// Whether the opening is held to once in each half of a practice day.
+    /// An app-added limit, lifted by ruling 16 (12 Oct 2026): false.
+    static let oncePerHalfDay = false
+
+    /// Whether the opening comes now. With the limit lifted, always; with it
+    /// on, not if it already came in this half of this practice day.
     static func opens(lastKey: String?, practiceDay: Int, hour: Int) -> Bool {
-        lastKey != key(practiceDay: practiceDay, hour: hour)
+        guard oncePerHalfDay else { return true }
+        return lastKey != key(practiceDay: practiceDay, hour: hour)
     }
 }
 
@@ -202,9 +207,12 @@ enum RiteStation: Int, CaseIterable, Equatable {
         return (offering, c.isEmpty ? nil : c)
     }
 
-    /// The Rite closes this way once a practice day (expansion #24: a same-day
-    /// return continues, it does not repeat).
+    /// The day the Rite last closed this way (kept on the phone).
     static let closedDayKey = "rite_carry_day"
+
+    /// Whether the closing stations are held to once a practice day (expansion
+    /// #24). An app-added limit, lifted by ruling 16 (12 Oct 2026): false.
+    static let oncePerDay = false
 }
 
 // MARK: - The low-state door

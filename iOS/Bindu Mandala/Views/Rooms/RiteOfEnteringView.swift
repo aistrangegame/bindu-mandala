@@ -733,7 +733,7 @@ struct RiteOfEnteringView: View {
         dwelling?.end()
         voice?.closes()
         handOverTheStay()
-        // Her siddhi is still on the instrument (Wave 1).
+        // Her siddhi lingers on the instrument, felt, never named (Wave 1; ruling 15).
         HomeAfterEffect.left(ring: room.ring)
         onLeft?()
     }

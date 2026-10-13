@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Sanctuary</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#070305;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.07);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes spin-rev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.8);opacity:0}}
+@keyframes gate-open{from{opacity:0;transform:translateY(22px) scaleX(.9)}to{opacity:1;transform:translateY(0) scaleX(1)}}
+@keyframes dissolve{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.85)}}
+@keyframes word-arrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0E080C;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(212,160,80,.06),0 40px 100px rgba(0,0,0,.95),inset 0 0 0 1px rgba(212,160,80,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#18100E;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #18100E,0 108px 0 #18100E;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#18100E;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#08040A;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+textarea,input{font-family:inherit;outline:none;}
+textarea::placeholder{color:rgba(252,240,220,.18);}
+.scroll{overflow-y:auto;}.scroll::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ═══ A · ENGINE ═══ -->
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// Greeting by hour
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 5)  return ['the small hours', 'The veil is thinnest now.'];
+  if (h < 9)  return ['good morning', 'Something in you is rising.'];
+  if (h < 12) return ['the morning', 'The day is still soft.'];
+  if (h < 15) return ['midday', 'You are the center of your own light.'];
+  if (h < 18) return ['the afternoon', 'The body knows what the mind is still learning.'];
+  if (h < 21) return ['the evening', 'Something is completing itself.'];
+  return ['the night', 'The deepest things move in the dark.'];
+}
+
+// Collective Pulse — 84 = 7 × 12
+function usePulse() {
+  const [n, setN] = useState(84);
+  const [p, setP] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setN(c => Math.max(76, Math.min(96, c + (Math.random() < .5 ? -1 : 1)))), 7000);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    let t = 0;
+    const id = setInterval(() => { t += .016; setP(.5 + .5 * Math.sin(t * (Math.PI / 4))); }, 16);
+    return () => clearInterval(id);
+  }, []);
+  return { n, scale: .8 + p * .55, glow: Math.round(p * 12) };
+}
+
+// Shared audio
+let _ctx = null;
+function audio() {
+  if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_ctx.state === 'suspended') _ctx.resume();
+  return _ctx;
+}
+function tone(hz, vol = .1, dur = .4, type = 'sine') {
+  try {
+    const ctx = audio(), now = ctx.currentTime;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = hz;
+    g.gain.setValueAtTime(vol, now);
+    g.gain.exponentialRampToValueAtTime(.001, now + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(now); o.stop(now + dur + .05);
+  } catch(e) {}
+}
+
+// Sacred geometry canvas
+function SacredGeo({ size = 200, color = '#D4A030', opacity = .13, speed = 80 }) {
+  return (
+    <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none' }}>
+      <svg viewBox="0 0 400 400" style={{ position:'absolute', inset:0, width:'100%', height:'100%',
+        opacity, animation:`spin-slow ${speed}s linear infinite` }}>
+        {[28,56,84,112,140,168].map((r, i) => (
+          <circle key={i} cx="200" cy="200" r={r} fill="none" stroke={color} strokeWidth=".55"/>
+        ))}
+        {Array.from({length:12}, (_,i) => {
+          const a = (i * 30 * Math.PI) / 180;
+          return <line key={i} x1="200" y1="200" x2={200+168*Math.cos(a)} y2={200+168*Math.sin(a)} stroke={color} strokeWidth=".35"/>;
+        })}
+        {[[3,'M200,60 L310,240 L90,240 Z'],
+          [3,'M200,340 L310,160 L90,160 Z'],
+        ].map(([w,d],i) => <path key={i} d={d} fill="none" stroke={color} strokeWidth={w*.2}/>)}
+      </svg>
+      <svg viewBox="0 0 400 400" style={{ position:'absolute', inset:0, width:'100%', height:'100%',
+        opacity:opacity*.7, animation:`spin-rev ${speed*.65}s linear infinite` }}>
+        {[42,98,154].map((r, i) => (
+          <circle key={i} cx="200" cy="200" r={r} fill="none" stroke={color} strokeWidth=".4" strokeDasharray="3 8"/>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+Object.assign(window, { greeting, usePulse, audio, tone, SacredGeo });
+</script>
+
+<!-- ═══ B · HOME ═══ -->
+<script type="text/babel">
+const { usePulse:UP, SacredGeo:SG, greeting:GR } = window;
+
+const PORTALS = [
+  { label:'The Journey',       sub:'7 chakras awakened',    color:'#4A3AAB', href:'Chakra Game.html'       },
+  { label:'The Correspondence',sub:'letters across time',   color:'#C49B17', href:'The Correspondence.html'},
+  { label:'Living Mandala',    sub:'your practice woven',   color:'#8A3AB5', href:'Living Mandala.html'    },
+  { label:'Child Games',       sub:'play · remember',       color:'#7AAA40', href:'Child Games.html'       },
+  { label:'Sacred Experiences',sub:'deep dives',            color:'#1E6EA0', href:'Sacred Experiences.html'},
+  { label:'Mini Practices',    sub:'daily rituals',         color:'#1A8060', href:'Mini Games.html'        },
+];
+
+const SANCTUARIES = [
+  { key:'mirror', label:'The Mirror',     sub:'look until you see yourself',    symbol:'◯', color:'#D4A030' },
+  { key:'gates',  label:'The Seven Gates',sub:'put down what is not yours',      symbol:'▽', color:'#C84070' },
+  { key:'field',  label:'The Field',      sub:'84 hearts breathing together',   symbol:'✦', color:'#1A8060' },
+];
+
+function HomeView({ setView }) {
+  const pulse = UP();
+  const [time, sub] = GR();
+
+  return (
+    <div className="scroll" style={{ height:'100%', overflowY:'auto',
+      background:'radial-gradient(ellipse at 50% 18%,#140810 0%,#07030A 55%)' }}>
+
+      {/* Living header */}
+      <div style={{ position:'relative', padding:'18px 24px 0', flexShrink:0 }}>
+        <SG size={200} color="#D4A030" opacity={.07} speed={90}/>
+        <div style={{ position:'relative', zIndex:10 }}>
+          <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.48em',
+            textTransform:'uppercase', color:'rgba(212,160,48,.32)' }}>{time}</p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px',
+            color:'rgba(252,240,220,.88)', lineHeight:1.25, marginTop:'4px', letterSpacing:'.04em' }}>
+            Sanctuary
+          </p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'14px',
+            color:'rgba(212,160,48,.52)', marginTop:'4px', lineHeight:1.6 }}>{sub}</p>
+        </div>
+      </div>
+
+      {/* Collective Pulse */}
+      <div style={{ padding:'14px 24px 0', display:'flex', alignItems:'center', gap:'10px' }}>
+        <div style={{ position:'relative', width:'11px', height:'11px', flexShrink:0 }}>
+          <div style={{ position:'absolute', inset:0, borderRadius:'50%', border:'1px solid #80E5BC',
+            animation:'pulse-ring 3.2s ease-out infinite', pointerEvents:'none' }}/>
+          <div style={{ width:'7px', height:'7px', borderRadius:'50%', background:'#80E5BC', margin:'2px',
+            transform:`scale(${pulse.scale.toFixed(3)})`, boxShadow:`0 0 ${pulse.glow}px #80E5BC` }}/>
+        </div>
+        <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.22em',
+          color:'rgba(128,229,188,.38)', textTransform:'uppercase' }}>{pulse.n} hearts in the field</span>
+      </div>
+
+      {/* New sanctuaries */}
+      <div style={{ padding:'16px 18px 0', display:'flex', flexDirection:'column', gap:'8px' }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.42em',
+          textTransform:'uppercase', color:'rgba(212,160,48,.28)', paddingLeft:'2px', marginBottom:'4px' }}>new spaces</p>
+        {SANCTUARIES.map(s => (
+          <button key={s.key} onClick={() => setView(s.key)} style={{
+            display:'flex', alignItems:'center', gap:'14px', padding:'16px 18px',
+            borderRadius:'18px', cursor:'pointer', textAlign:'left',
+            background:`${s.color}0C`, border:`1px solid ${s.color}30`, transition:'all .2s',
+          }}>
+            <div style={{ width:'40px', height:'40px', borderRadius:'50%', flexShrink:0,
+              background:`radial-gradient(circle at 36% 36%,${s.color}45,${s.color}25)`,
+              boxShadow:`0 0 18px ${s.color}45`, animation:'breathe 4s ease-in-out infinite',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:'18px', color:`${s.color}` }}>{s.symbol}</div>
+            <div style={{ flex:1 }}>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'18px',
+                color:'rgba(252,240,220,.82)' }}>{s.label}</p>
+              <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.16em',
+                textTransform:'uppercase', color:`${s.color}50`, marginTop:'2px' }}>{s.sub}</p>
+            </div>
+            <span style={{ color:`${s.color}35`, fontSize:'14px' }}>→</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Existing portals */}
+      <div style={{ padding:'16px 18px 0', display:'flex', flexDirection:'column', gap:'6px' }}>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.42em',
+          textTransform:'uppercase', color:'rgba(180,160,240,.22)', paddingLeft:'2px', marginBottom:'4px' }}>all spaces</p>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px' }}>
+          {PORTALS.map(p => (
+            <a key={p.href} href={p.href} style={{
+              display:'flex', flexDirection:'column', padding:'14px 13px', borderRadius:'16px',
+              background:`${p.color}09`, border:`1px solid ${p.color}22`, textDecoration:'none', cursor:'pointer',
+            }}>
+              <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'15px',
+                color:'rgba(252,240,220,.75)', lineHeight:1.25 }}>{p.label}</span>
+              <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.14em',
+                textTransform:'uppercase', color:`${p.color}50`, marginTop:'3px' }}>{p.sub}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ height:'32px' }}/>
+    </div>
+  );
+}
+Object.assign(window, { HomeView });
+</script>
+
+<!-- ═══ C · THE MIRROR ═══ -->
+<script type="text/babel">
+const { useState:useMi, useEffect:useMiE, useRef:useMiR } = React;
+const { SacredGeo:SGM } = window;
+
+function MirrorView({ onBack }) {
+  const [phase, setPhase] = useMi('intro'); // intro | looking | after
+  const [secs, setSecs]   = useMi(60);
+  const [text, setText]   = useMi('');
+  const [loading, setLoad] = useMi(false);
+  const videoRef = useMiR(null);
+  const streamRef = useMiR(null);
+
+  async function startMirror() {
+    setPhase('looking');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user' }, audio: false });
+      streamRef.current = stream;
+      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+    } catch(e) { /* no camera — keep dark */ }
+    // 60-second countdown
+    let n = 60;
+    const id = setInterval(() => {
+      n--;
+      setSecs(n);
+      if (n <= 0) { clearInterval(id); finish(); }
+    }, 1000);
+  }
+
+  async function finish() {
+    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    setPhase('after'); setLoad(true);
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:
+        `Someone just spent 60 seconds looking at their own face in silence — no distraction, no phone, no looking away. This is one of the most intimate things a person can do.\n\nRespond with a single sentence of recognition. Not about how they look. About the act itself — what it means that they did this, what it says about where they are. Specific, warm, completely free of spiritual cliché. Do not use the words "journey", "brave", "beautiful", "powerful", or "practice".`
+      }] });
+      setText(r.trim());
+    } catch { setText('You showed up to yourself. That is the whole thing.'); }
+    setLoad(false);
+  }
+
+  useMiE(() => () => { if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop()); }, []);
+
+  const R = 52, circ = 2 * Math.PI * R;
+  const progress = 1 - (secs / 60);
+
+  if (phase === 'intro') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 32px', position:'relative',
+      background:'radial-gradient(ellipse at 50% 30%,#1A0E10,#07030A)' }}>
+      <SGM color="#D4A030" opacity={.07}/>
+      <button onClick={onBack} style={{ position:'absolute', top:'14px', left:'22px', background:'none',
+        border:'none', cursor:'pointer', fontSize:'11px', letterSpacing:'.22em',
+        color:'rgba(212,160,48,.38)', textTransform:'uppercase', zIndex:10 }}>← Back</button>
+      <div style={{ position:'relative', zIndex:10, textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center', gap:'20px' }}>
+        <div style={{ width:'80px', height:'80px', borderRadius:'50%',
+          background:'radial-gradient(circle at 38% 38%,rgba(212,160,48,.35),rgba(180,80,120,.25))',
+          boxShadow:'0 0 40px rgba(212,160,48,.28)', animation:'breathe 5s ease-in-out infinite' }}/>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'30px',
+          color:'rgba(252,240,220,.88)', lineHeight:1.3, letterSpacing:'.03em' }}>The Mirror</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'17px',
+          color:'rgba(252,240,220,.42)', lineHeight:1.75, maxWidth:'260px' }}>
+          60 seconds.<br/>No phone. No performance.<br/>Just your own eyes.
+        </p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'14px',
+          color:'rgba(212,160,48,.38)', lineHeight:1.7, maxWidth:'240px' }}>
+          When it ends, something will be said.<br/>It will know you were here.
+        </p>
+        <button onClick={startMirror} style={{ padding:'16px 52px', borderRadius:'32px', cursor:'pointer',
+          background:'rgba(212,160,48,.09)', border:'1px solid rgba(212,160,48,.32)',
+          fontFamily:"'Cormorant Garamond',serif", fontSize:'18px',
+          color:'rgba(252,240,220,.80)', letterSpacing:'.22em', textTransform:'uppercase',
+          marginTop:'8px' }}>Look</button>
+      </div>
+    </div>
+  );
+
+  if (phase === 'looking') return (
+    <div style={{ height:'100%', background:'#030108', position:'relative',
+      display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+      {/* Camera feed — circular crop */}
+      <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ width:'260px', height:'260px', borderRadius:'50%', overflow:'hidden',
+          boxShadow:'0 0 60px rgba(212,160,48,.14)' }}>
+          <video ref={videoRef} autoPlay muted playsInline
+            style={{ width:'100%', height:'100%', objectFit:'cover', filter:'brightness(.7) sepia(.25)', transform:'scaleX(-1)' }}/>
+          <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 50% 50%,transparent 45%,#030108 75%)' }}/>
+        </div>
+      </div>
+      {/* Progress ring */}
+      <svg width="300" height="300" style={{ position:'absolute' }}>
+        <circle cx="150" cy="150" r={R} fill="none" stroke="rgba(212,160,48,.12)" strokeWidth="1.5"/>
+        <circle cx="150" cy="150" r={R} fill="none" stroke="rgba(212,160,48,.65)" strokeWidth="1.5"
+          strokeDasharray={circ} strokeDashoffset={circ * (1 - progress)}
+          strokeLinecap="round" transform="rotate(-90 150 150)"
+          style={{ transition:'stroke-dashoffset .9s linear' }}/>
+      </svg>
+      {secs <= 10 && (
+        <p style={{ position:'absolute', bottom:'80px', fontFamily:"'Cormorant Garamond',serif",
+          fontStyle:'italic', fontSize:'22px', color:'rgba(212,160,48,.45)', animation:'fade-in .6s ease' }}>
+          {secs}
+        </p>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'44px 36px', position:'relative',
+      background:'radial-gradient(ellipse at 50% 40%,#140A08,#07030A)' }}>
+      <SGM color="#D4A030" opacity={.06}/>
+      <div style={{ position:'relative', zIndex:10, textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center', gap:'24px', animation:'emerge .9s ease' }}>
+        <div style={{ width:'36px', height:'1px', background:'rgba(212,160,48,.35)' }}/>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'22px',
+          color:'rgba(252,240,220,.78)', lineHeight:1.85, maxWidth:'270px' }}>
+          {loading ? <span style={{ opacity:.3 }}>…</span> : text}
+        </p>
+        <div style={{ width:'36px', height:'1px', background:'rgba(212,160,48,.35)' }}/>
+        {!loading && (
+          <button onClick={onBack} style={{ marginTop:'16px', padding:'13px 34px', borderRadius:'26px',
+            cursor:'pointer', background:'rgba(212,160,48,.08)', border:'1px solid rgba(212,160,48,.28)',
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'16px',
+            color:'rgba(252,240,220,.72)', letterSpacing:'.16em', textTransform:'uppercase',
+            animation:'emerge .6s ease' }}>Return</button>
+        )}
+      </div>
+    </div>
+  );
+}
+Object.assign(window, { MirrorView });
+</script>
+
+<!-- ═══ D · THE SEVEN GATES ═══ -->
+<script type="text/babel">
+const { useState:useG, useEffect:useGE, useRef:useGR } = React;
+const { SacredGeo:SGG, tone:TG } = window;
+
+const GATES = [
+  { n:1, title:'The Crown',      symbol:'♛', color:'#8A3AB5', accent:'#E0B8F8',
+    q:'What role have you been playing\nthat was never truly yours?' },
+  { n:2, title:'The Earrings',   symbol:'◇', color:'#1E6EA0', accent:'#80C8F0',
+    q:'What voice do you keep listening for\nthat has never brought you home?' },
+  { n:3, title:'The Necklace',   symbol:'◎', color:'#C84070', accent:'#F8A0C0',
+    q:'What story about yourself\nare you still carrying as fact?' },
+  { n:4, title:'The Breastplate',symbol:'◈', color:'#A83232', accent:'#E89080',
+    q:'What are you protecting\nthat no longer needs protecting?' },
+  { n:5, title:'The Rings',      symbol:'◉', color:'#C49B17', accent:'#F5DC80',
+    q:'What transaction are you still trying\nto complete that cannot be completed?' },
+  { n:6, title:'The Belt',       symbol:'▽', color:'#1A8060', accent:'#80E5BC',
+    q:'What are you holding yourself in against\nthat is actually yours to release?' },
+  { n:7, title:'The Robe',       symbol:'✦', color:'#4A3AAB', accent:'#C0B0F8',
+    q:'Who would you be\nif no one needed you to be anyone?' },
+];
+
+const FREQS = [396, 417, 528, 639, 741, 852, 963];
+
+function GatesView({ onBack }) {
+  const [phase, setPhase] = useG('intro'); // intro | gate | dissolving | center | done
+  const [gIdx,  setGIdx]  = useG(0);
+  const [word,  setWord]  = useG('');
+  const [received, setReceived] = useG('');
+  const [loading, setLoad] = useG(false);
+  const [offerings, setOfferings] = useG([]);
+
+  const gate = GATES[gIdx];
+
+  async function offer() {
+    if (!word.trim()) return;
+    setLoad(true); setPhase('dissolving');
+    TG(FREQS[gIdx], .10, .7);
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:
+        `Someone is passing through the ${gate.title} in a descent ritual. The question was: "${gate.q.replace(/\n/g,' ')}"\n\nThey offered: "${word.trim()}"\n\nRespond as the gate itself — ancient, loving, without judgment. In ONE sentence, receive what they offered and transform it: name what it truly was beneath the label they gave it. Begin with their exact word. Do not use "journey". No markdown.`
+      }] });
+      setReceived(r.trim());
+    } catch {
+      setReceived(`${word.trim()} — received. This gate has been holding it long before you named it.`);
+    }
+    setLoad(false);
+    setOfferings(o => [...o, { gate: gate.title, word: word.trim(), received: '' }]);
+    setTimeout(() => {
+      setPhase('gate');
+      if (gIdx < 6) { setGIdx(i => i + 1); setWord(''); setReceived(''); }
+      else setPhase('center');
+    }, 3800);
+  }
+
+  if (phase === 'intro') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'36px 28px', position:'relative',
+      background:'radial-gradient(ellipse at 50% 28%,#140818,#07030A)' }}>
+      <SGG color="#C84070" opacity={.07}/>
+      <button onClick={onBack} style={{ position:'absolute', top:'14px', left:'22px', background:'none',
+        border:'none', cursor:'pointer', fontSize:'11px', letterSpacing:'.22em',
+        color:'rgba(248,160,192,.38)', textTransform:'uppercase', zIndex:10 }}>← Back</button>
+      <div style={{ position:'relative', zIndex:10, textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center', gap:'18px' }}>
+        <div style={{ display:'flex', gap:'8px' }}>
+          {GATES.map((_,i) => <div key={i} style={{ width:'8px', height:'8px', borderRadius:'50%', background:GATES[i].color, opacity:.6 }}/>)}
+        </div>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'32px',
+          color:'rgba(252,240,220,.88)', lineHeight:1.3 }}>The Seven Gates</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'16px',
+          color:'rgba(252,240,220,.40)', lineHeight:1.8, maxWidth:'255px' }}>
+          At each gate, you will be asked to leave something behind. You do not lose it. You are simply no longer carrying it.
+        </p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'14px',
+          color:'rgba(200,64,112,.50)', lineHeight:1.7 }}>Seven gates. One arrival.</p>
+        <button onClick={() => setPhase('gate')} style={{ marginTop:'8px', padding:'16px 48px', borderRadius:'30px',
+          cursor:'pointer', background:'rgba(200,64,112,.09)', border:'1px solid rgba(200,64,112,.32)',
+          fontFamily:"'Cormorant Garamond',serif", fontSize:'18px',
+          color:'rgba(252,240,220,.80)', letterSpacing:'.2em', textTransform:'uppercase' }}>Enter</button>
+      </div>
+    </div>
+  );
+
+  if (phase === 'center') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 32px', position:'relative',
+      background:'radial-gradient(ellipse at 50% 45%,#0E0818,#07030A)' }}>
+      <SGG color="#C0B0F8" opacity={.12}/>
+      <div style={{ position:'relative', zIndex:10, textAlign:'center', animation:'emerge .9s ease', display:'flex', flexDirection:'column', alignItems:'center', gap:'22px' }}>
+        <div style={{ width:'72px', height:'72px', borderRadius:'50%', background:'radial-gradient(circle,rgba(200,160,248,.30),rgba(74,58,171,.20))',
+          boxShadow:'0 0 44px rgba(192,176,248,.28)', animation:'breathe 5s ease-in-out infinite' }}/>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px',
+          color:'rgba(252,240,220,.88)', lineHeight:1.4 }}>You have arrived<br/>at the center.</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'17px',
+          color:'rgba(252,240,220,.40)', lineHeight:1.8, maxWidth:'250px' }}>
+          Empty, which is full.<br/>None of what you left behind was you.<br/>What remains is.
+        </p>
+        <div style={{ display:'flex', gap:'7px', marginTop:'4px' }}>
+          {GATES.map((_,i) => <div key={i} style={{ width:'8px', height:'8px', borderRadius:'50%', background:GATES[i].accent, opacity:.5 }}/>)}
+        </div>
+        <button onClick={onBack} style={{ marginTop:'8px', padding:'14px 38px', borderRadius:'28px',
+          cursor:'pointer', background:'rgba(192,176,248,.08)', border:'1px solid rgba(192,176,248,.28)',
+          fontFamily:"'Cormorant Garamond',serif", fontSize:'17px',
+          color:'rgba(252,240,220,.78)', letterSpacing:'.16em', textTransform:'uppercase' }}>Return</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', position:'relative',
+      background:`radial-gradient(ellipse at 50% 22%,${gate.color}14,#07030A)`, overflow:'hidden' }}>
+      <SGG color={gate.color} opacity={.06}/>
+      <div style={{ padding:'14px 22px 0', position:'relative', zIndex:10 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${gate.accent}42`, textTransform:'uppercase' }}>← End</button>
+      </div>
+
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center',
+        justifyContent:'center', padding:'10px 28px', gap:'18px', position:'relative', zIndex:10 }}>
+
+        {/* Gate indicator */}
+        <div style={{ display:'flex', gap:'6px' }}>
+          {GATES.map((_,i) => <div key={i} style={{
+            width: i===gIdx?'10px':'7px', height: i===gIdx?'10px':'7px',
+            borderRadius:'50%', transition:'all .4s',
+            background: i<gIdx?GATES[i].color:i===gIdx?gate.color:`${gate.color}1E`,
+            boxShadow: i===gIdx?`0 0 8px ${gate.color}`:'none',
+          }}/>)}
+        </div>
+
+        <div style={{ textAlign:'center' }}>
+          <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.35em',
+            textTransform:'uppercase', color:`${gate.accent}45`, marginBottom:'6px' }}>
+            Gate {gate.n} · {gate.title}
+          </p>
+          <span style={{ fontSize:'28px', color:gate.accent }}>{gate.symbol}</span>
+        </div>
+
+        {phase === 'dissolving' ? (
+          <div style={{ textAlign:'center', animation:'dissolve 3.5s ease forwards', display:'flex', flexDirection:'column', gap:'14px' }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px', color:gate.accent, letterSpacing:'.08em' }}>
+              {word.trim()}
+            </p>
+            {!loading && received && (
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'17px',
+                color:'rgba(252,240,220,.60)', lineHeight:1.75, maxWidth:'260px', animation:'word-arrive .7s ease' }}>
+                {received}
+              </p>
+            )}
+          </div>
+        ) : (
+          <>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'21px',
+              color:'rgba(252,240,220,.82)', lineHeight:1.7, textAlign:'center', whiteSpace:'pre-line',
+              animation:'gate-open .6s ease' }}>{gate.q}</p>
+
+            <textarea value={word} onChange={e => setWord(e.target.value)} rows={2}
+              placeholder="one word, or a few…"
+              style={{ width:'100%', background:`${gate.color}09`, border:`1px solid ${gate.color}28`,
+                borderRadius:'16px', padding:'14px 16px', textAlign:'center', resize:'none',
+                color:'rgba(252,240,220,.88)', fontFamily:"'Cormorant Garamond',serif", fontSize:'21px', lineHeight:1.55 }}/>
+
+            {word.trim() && (
+              <button onClick={offer} style={{ padding:'14px 44px', borderRadius:'26px', cursor:'pointer',
+                background:`${gate.color}10`, border:`1px solid ${gate.accent}35`,
+                fontFamily:"'Cormorant Garamond',serif", fontSize:'17px',
+                color:'rgba(252,240,220,.80)', letterSpacing:'.16em', textTransform:'uppercase',
+                animation:'emerge .4s ease' }}>Leave it here</button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+Object.assign(window, { GatesView });
+</script>
+
+<!-- ═══ E · THE FIELD ═══ -->
+<script type="text/babel">
+const { useState:useF, useEffect:useFE, useRef:useFR } = React;
+const { usePulse:UPF, SacredGeo:SGF, tone:TF } = window;
+
+function FieldView({ onBack }) {
+  const [phase, setPhase] = useF('arrive'); // arrive | breathe | still | send
+  const [cycle, setCycle] = useF(0);
+  const [text,  setText]  = useF('');
+  const [beatPhase, setBeat] = useF('in'); // in | hold | out
+  const [beatN, setBeatN] = useF(4);
+  const [whisper, setWhisper] = useF('');
+  const pulse = UPF();
+
+  // Breathing cycle: in 4 / hold 4 / out 6
+  useFE(() => {
+    if (phase !== 'breathe') return;
+    const seq = [['in',4],['hold',4],['out',6]];
+    let sIdx = 0, count = 0;
+    const id = setInterval(() => {
+      count++;
+      const [label, total] = seq[sIdx];
+      setBeat(label); setBeatN(total - (count % total || total) + 1);
+      if (count % total === 0) {
+        sIdx = (sIdx + 1) % 3;
+        if (sIdx === 0) {
+          setCycle(c => {
+            if (c + 1 >= 3) { clearInterval(id); setTimeout(() => setPhase('still'), 800); }
+            return c + 1;
+          });
+        }
+        if (sIdx === 1) TF(396, .05, .5);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  // Field whisper after stillness
+  useFE(() => {
+    if (phase !== 'still') return;
+    async function load() {
+      try {
+        const r = await window.claude.complete({ messages: [{ role:'user', content:
+          `Someone just completed three full breathing cycles (in 4, hold 4, out 6) in conscious coherence. They are sitting in the field with ${pulse.n} other hearts. Offer them a single sentence from the collective field — something that speaks to what it means to breathe together even when you cannot see each other. Warm, specific, not generic. Not about breathing itself. About belonging. No markdown. Do not use "journey".`
+        }] });
+        setWhisper(r.trim());
+      } catch { setWhisper(`The ${pulse.n} hearts here have all felt alone before. Breathing together changes something that cannot be named.`); }
+    }
+    load();
+  }, [phase]);
+
+  const BREATHE_COLOR = beatPhase === 'in' ? '#80E5BC' : beatPhase === 'hold' ? '#C0B0F8' : '#80C8F0';
+  const BREATHE_SCALE = beatPhase === 'in' ? 1.18 : beatPhase === 'hold' ? 1.12 : 0.92;
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', position:'relative',
+      background:'radial-gradient(ellipse at 50% 30%,#07120E,#070308)', overflow:'hidden' }}>
+      <SGF color="#80E5BC" opacity={.05}/>
+
+      <button onClick={onBack} style={{ position:'absolute', top:'14px', left:'22px', zIndex:10,
+        background:'none', border:'none', cursor:'pointer', fontSize:'11px', letterSpacing:'.22em',
+        color:'rgba(128,229,188,.38)', textTransform:'uppercase' }}>← Back</button>
+
+      {/* Pulse indicator */}
+      <div style={{ position:'absolute', top:'18px', right:'22px', zIndex:10,
+        display:'flex', alignItems:'center', gap:'7px' }}>
+        <div style={{ width:'7px', height:'7px', borderRadius:'50%', background:'#80E5BC',
+          transform:`scale(${pulse.scale})`, boxShadow:`0 0 ${pulse.glow}px #80E5BC` }}/>
+        <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.2em',
+          color:'rgba(128,229,188,.38)', textTransform:'uppercase' }}>{pulse.n}</span>
+      </div>
+
+      {phase === 'arrive' && (
+        <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+          padding:'40px 30px', gap:'20px', animation:'emerge .8s ease', position:'relative', zIndex:10 }}>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'32px',
+            color:'rgba(252,240,220,.88)', textAlign:'center', lineHeight:1.3 }}>The Field</p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'17px',
+            color:'rgba(128,229,188,.45)', textAlign:'center', lineHeight:1.8, maxWidth:'255px' }}>
+            {pulse.n} hearts breathing.<br/>You are not alone in your remembering.
+          </p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'14px',
+            color:'rgba(252,240,220,.30)', textAlign:'center', lineHeight:1.75 }}>
+            Three cycles of coherence breathing.<br/>In 4 · Hold 4 · Out 6.
+          </p>
+          <button onClick={() => setPhase('breathe')} style={{ marginTop:'10px', padding:'16px 48px', borderRadius:'30px',
+            cursor:'pointer', background:'rgba(128,229,188,.08)', border:'1px solid rgba(128,229,188,.28)',
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'18px',
+            color:'rgba(252,240,220,.80)', letterSpacing:'.2em', textTransform:'uppercase' }}>Enter the field</button>
+        </div>
+      )}
+
+      {phase === 'breathe' && (
+        <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+          gap:'24px', position:'relative', zIndex:10 }}>
+
+          {/* Breathing orb */}
+          <div style={{ width:'160px', height:'160px', borderRadius:'50%',
+            background:`radial-gradient(circle at 38% 38%,${BREATHE_COLOR}35,${BREATHE_COLOR}15)`,
+            boxShadow:`0 0 50px ${BREATHE_COLOR}30`,
+            transform:`scale(${BREATHE_SCALE})`,
+            transition:`transform ${beatPhase==='in'?4:beatPhase==='hold'?4:6}s ease`,
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'4px' }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', color:BREATHE_COLOR, letterSpacing:'.18em', textTransform:'uppercase' }}>{beatPhase}</p>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'28px', fontWeight:300, color:BREATHE_COLOR }}>{beatN}</p>
+          </div>
+
+          <div style={{ display:'flex', gap:'7px' }}>
+            {[0,1,2].map(i => <div key={i} style={{ width:'8px', height:'8px', borderRadius:'50%',
+              background: i < cycle ? '#80E5BC' : i === cycle ? '#80E5BC' : 'rgba(128,229,188,.15)',
+              boxShadow: i === cycle ? '0 0 8px #80E5BC' : 'none', transition:'all .4s' }}/>)}
+          </div>
+
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'13px',
+            color:'rgba(128,229,188,.28)' }}>breathing with {pulse.n}</p>
+        </div>
+      )}
+
+      {phase === 'still' && (
+        <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+          padding:'40px 32px', gap:'22px', animation:'emerge .9s ease', position:'relative', zIndex:10 }}>
+          <div style={{ width:'36px', height:'1px', background:'rgba(128,229,188,.30)' }}/>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'21px',
+            color:'rgba(252,240,220,.72)', textAlign:'center', lineHeight:1.85 }}>
+            {whisper || <span style={{ opacity:.3 }}>…</span>}
+          </p>
+          <div style={{ width:'36px', height:'1px', background:'rgba(128,229,188,.30)' }}/>
+          {whisper && (
+            <button onClick={onBack} style={{ marginTop:'12px', padding:'13px 34px', borderRadius:'26px',
+              cursor:'pointer', background:'rgba(128,229,188,.08)', border:'1px solid rgba(128,229,188,.25)',
+              fontFamily:"'Cormorant Garamond',serif", fontSize:'16px',
+              color:'rgba(252,240,220,.72)', letterSpacing:'.16em', textTransform:'uppercase',
+              animation:'emerge .6s .4s ease both' }}>Return</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+Object.assign(window, { FieldView });
+</script>
+
+<!-- ═══ F · APP ═══ -->
+<script type="text/babel">
+const { useState:useApp } = React;
+const { HomeView:HV, MirrorView:MV, GatesView:GV, FieldView:FV } = window;
+
+function App() {
+  const [view, setView] = useApp('home');
+  return (
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"/>
+          <div className="ph-content">
+            {view==='home'   && <HV setView={setView}/>}
+            {view==='mirror' && <MV onBack={()=>setView('home')}/>}
+            {view==='gates'  && <GV onBack={()=>setView('home')}/>}
+            {view==='field'  && <FV onBack={()=>setView('home')}/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

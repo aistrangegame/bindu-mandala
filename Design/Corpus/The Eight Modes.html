@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phase 4 — The Eight Modes of Engagement</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #060104; font-family: -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden; }
+    #root { width: 100vw; height: 100vh; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,150,63,0.22); border-radius: 2px; }
+
+    @keyframes moteRise {
+      0%   { transform: translate(0,0); opacity: 0; }
+      8%   { opacity: 1; }
+      50%  { transform: translate(calc(var(--drift)*.5), -420px); }
+      92%  { opacity: 0.5; }
+      100% { transform: translate(var(--drift), -880px); opacity: 0; }
+    }
+
+    /* DARŚANA */
+    @keyframes darsanaRadiance {
+      0%, 100% { transform: translate(-50%,-50%) scale(1);    opacity: 0.6; }
+      50%      { transform: translate(-50%,-50%) scale(1.15); opacity: 1; }
+    }
+    @keyframes darsanaBijaIn {
+      0%, 100% { opacity: 0; }
+      30%, 70% { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    /* RECOGNITION */
+    @keyframes recogPetalGlow {
+      0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) translateY(-94px) scale(1); }
+      50%      { opacity: 0.9; transform: translate(-50%, -50%) translateY(-94px) scale(1.18); }
+    }
+
+    /* SĀDHANA */
+    @keyframes sadhanaBinduBreath {
+      0%, 100% { transform: scale(1); }
+      50%      { transform: scale(1.15); }
+    }
+
+    /* SMṚTI */
+    @keyframes smritiTwinkle {
+      0%, 100% { opacity: 0.5; }
+      50%      { opacity: 1; }
+    }
+    .smriti-twinkle { animation: smritiTwinkle 1.4s ease-in-out infinite; }
+
+    /* MAUNA */
+    @keyframes maunaNameIn { from { opacity: 0; } to { opacity: 1; } }
+    .mauna-name { animation: maunaNameIn 5s ease forwards; }
+    @keyframes maunaBinduBreath {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 48px 12px rgba(139,26,42,0.45); }
+      50%      { transform: scale(1.10); box-shadow: 0 0 72px 22px rgba(139,26,42,0.62); }
+    }
+    .mauna-bindu { animation: maunaBinduBreath 6s ease-in-out infinite; border-radius: 50%; }
+    @keyframes maunaCaptionIn {
+      0%, 60% { opacity: 0; transform: translateY(8px); }
+      100%    { opacity: 1; transform: translateY(0); }
+    }
+    .mauna-caption { animation: maunaCaptionIn 7s ease forwards; }
+
+    /* SVAPNA */
+    @keyframes svapnaMarkPulse {
+      0%, 100% { opacity: 0.45; transform: scale(1); }
+      50%      { opacity: 0.85; transform: scale(1.3); }
+    }
+
+    /* PŪJĀ */
+    @keyframes pujaCatchPulse {
+      0%, 100% { opacity: 0.65; }
+      50%      { opacity: 0.95; filter: drop-shadow(0 0 4px currentColor); }
+    }
+    .puja-catch { animation: pujaCatchPulse 3.5s ease-in-out infinite; }
+
+    /* SAṄGHA — new two-layer assembly */
+    @keyframes sanghaNameBreathe {
+      0%, 100% { opacity: 0.55; }
+      50%      { opacity: 0.95; }
+    }
+    @keyframes sanghaNodeBreathe {
+      0%, 100% { transform: scale(1); }
+      50%      { transform: scale(1.18); }
+    }
+
+    /* SVAPNA — voice recording state */
+    @keyframes svapnaWaveform {
+      0%, 100% { transform: scaleY(0.4); }
+      50%      { transform: scaleY(1.2); }
+    }
+    @keyframes svapnaMicPulse {
+      0%, 100% { box-shadow: 0 0 28px 8px rgba(232,180,140,0.35); }
+      50%      { box-shadow: 0 0 44px 14px rgba(232,180,140,0.55); }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="shakti-data.js"></script>
+<script src="all-shaktis-data.js"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="modes.jsx"></script>
+
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function App() {
+  return (
+    <DesignCanvas background="#060104" title="Phase IV · The Eight Modes of Engagement">
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODE 1 — DARŚANA · Beholding
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="darsana" title="① Darśana · Beholding"
+        subtitle="Hold the phone vertical and still · the yantra wakes to your stillness · three depths">
+
+        <DCArtboard id="darsana-arriving" label="3 seconds in · arriving" width={390} height={844}>
+          <DarsanaScreen depth="arriving"/>
+        </DCArtboard>
+        <DCArtboard id="darsana-holding" label="30 seconds in · bījas appear" width={390} height={844}>
+          <DarsanaScreen depth="holding"/>
+        </DCArtboard>
+        <DCArtboard id="darsana-entered" label="2 minutes in · pure radiance" width={390} height={844}>
+          <DarsanaScreen depth="entered"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODE 2 — RECOGNITION · The Catch (refined)
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="recognition" title="② Recognition · The Catch (refined)"
+        subtitle="Long-press anywhere · she is named · she felt you back · the mandala remembers">
+
+        <DCArtboard id="recog-open" label="① Open · waiting for the tap" width={390} height={844}>
+          <RecognitionScreen state="open"/>
+        </DCArtboard>
+        <DCArtboard id="recog-caught" label="② Caught · she is named" width={390} height={844}>
+          <RecognitionScreen state="caught"/>
+        </DCArtboard>
+        <DCArtboard id="recog-recip" label="③ Reciprocated · her petal glows on the mandala" width={390} height={844}>
+          <RecognitionScreen state="reciprocated"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODE 3 — SĀDHANA · The Khaḍgamāla
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="sadhana" title="③ Sādhana · The Khaḍgamāla"
+        subtitle="The 102-name garland · ~28 minutes · ring by ring, inward, to the Bindu · four states">
+
+        <DCArtboard id="sadhana-sankalpa" label="① Saṅkalpa · setting intention" width={390} height={844}>
+          <SadhanaScreen state="sankalpa"/>
+        </DCArtboard>
+        <DCArtboard id="sadhana-station" label="② Station · the current shakti (Ring 2, pos 5)" width={390} height={844}>
+          <SadhanaScreen state="station" ringIdx={2} posInRing={5}/>
+        </DCArtboard>
+        <DCArtboard id="sadhana-transition" label="③ Transition · descending from Ring 2 to Ring 3" width={390} height={844}>
+          <SadhanaScreen state="transition"/>
+        </DCArtboard>
+        <DCArtboard id="sadhana-bindu" label="④ Bindu · the culmination" width={390} height={844}>
+          <SadhanaScreen state="bindu"/>
+        </DCArtboard>
+        <DCArtboard id="sadhana-visarjana" label="⑤ Visarjana · the release & return" width={390} height={844}>
+          <SadhanaScreen state="visarjana"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODE 4 — SMṚTI · The Constellation of Memory
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="smriti" title="④ Smṛti · The Constellation of Memory"
+        subtitle="Every recognition ever made, visible as light · your spiritual fingerprint emerging">
+
+        <DCArtboard id="smriti-full" label="The Full Constellation · all-time" width={390} height={844}>
+          <SmritiScreen state="full"/>
+        </DCArtboard>
+        <DCArtboard id="smriti-cluster" label="One Shakti's Cluster · Sparśākarṣiṇī" width={390} height={844}>
+          <SmritiScreen state="cluster"/>
+        </DCArtboard>
+        <DCArtboard id="smriti-timelapse" label="Time-lapse · 264 days, watching herself emerge" width={390} height={844}>
+          <SmritiScreen state="timelapse"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODE 5 — MAUNA · The Silence (refined)
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="mauna" title="⑤ Mauna · The Silence (refined)"
+        subtitle="Pure Bindu · names as orbital stars · captions deepening with time">
+
+        <DCArtboard id="mauna-d7" label="7 seconds · All of her, here, always" width={390} height={844}>
+          <MaunaScreen depth="d7"/>
+        </DCArtboard>
+        <DCArtboard id="mauna-d14" label="14 seconds · She has not gone anywhere" width={390} height={844}>
+          <MaunaScreen depth="d14"/>
+        </DCArtboard>
+        <DCArtboard id="mauna-d21" label="21 seconds · You have not gone anywhere" width={390} height={844}>
+          <MaunaScreen depth="d21"/>
+        </DCArtboard>
+        <DCArtboard id="mauna-d28" label="28 seconds · silence" width={390} height={844}>
+          <MaunaScreen depth="d28"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODE 6 — SVAPNA · The Dream
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="svapna" title="⑥ Svapna · The Dream"
+        subtitle="First open of the day · who walked through last night · the deep night is recognized">
+
+        <DCArtboard id="svapna-q" label="① The Question · who walked through" width={390} height={844}>
+          <SvapnaScreen state="question"/>
+        </DCArtboard>
+        <DCArtboard id="svapna-tap" label="② Marking · two shaktis felt in the dream" width={390} height={844}>
+          <SvapnaScreen state="tap"/>
+        </DCArtboard>
+        <DCArtboard id="svapna-voice" label="③ Voice · tap to speak" width={390} height={844}>
+          <SvapnaScreen state="voice"/>
+        </DCArtboard>
+        <DCArtboard id="svapna-voice-active" label="④ Recording · 00:42 with transcription" width={390} height={844}>
+          <SvapnaScreen state="voice-active"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODE 7 — PŪJĀ · The Evening Offering
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="puja" title="⑦ Pūjā · The Evening Offering"
+        subtitle="After sunset · today's catches witnessed together · offered · released into the Bindu">
+
+        <DCArtboard id="puja-gathering" label="① Gathering · the day's catches" width={390} height={844}>
+          <PujaScreen state="gathering"/>
+        </DCArtboard>
+        <DCArtboard id="puja-offering" label="② Offering · five recognitions, named" width={390} height={844}>
+          <PujaScreen state="offering"/>
+        </DCArtboard>
+        <DCArtboard id="puja-released" label="③ Released · the day received" width={390} height={844}>
+          <PujaScreen state="released"/>
+        </DCArtboard>
+
+      </DCSection>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          MODE 8 — SAṄGHA · The Assembly
+      ═══════════════════════════════════════════════════════════════ */}
+      <DCSection id="sangha" title="⑧ Saṅgha · The Assembly"
+        subtitle="The field is all you · two layers: the 102 as inner sangha · loved ones as outer carriers of her">
+
+        <DCArtboard id="sangha-inner" label="Inner Sangha · the 102 as your assembly" width={390} height={844}>
+          <SanghaScreen state="inner"/>
+        </DCArtboard>
+        <DCArtboard id="sangha-outer" label="Outer Sangha · loved ones as carriers" width={390} height={844}>
+          <SanghaScreen state="outer"/>
+        </DCArtboard>
+        <DCArtboard id="sangha-person" label="Person Detail · how she enters through Ram" width={390} height={844}>
+          <SanghaScreen state="person"/>
+        </DCArtboard>
+
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

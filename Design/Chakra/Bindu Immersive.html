@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Bindu · The Origin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&family=Noto+Serif+Devanagari:wght@300&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;-webkit-font-smoothing:antialiased;}
+body{font-family:'DM Sans',sans-serif;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  background:radial-gradient(circle at 50% 40%, #F8F1DF 0%, #F2E7CC 62%, #EADCBA 100%);
+  transition:transform 2.4s ease;}
+body.settle{animation:settle 2.4s ease;}
+@keyframes settle{0%{transform:scale(1)}40%{transform:scale(.985)}100%{transform:scale(1)}}
+a{color:rgba(165,125,34,.7);} a:hover{color:rgba(165,125,34,1);}
+
+#dotCanvas{position:fixed;inset:0;z-index:5;pointer-events:none;}
+
+.scene{position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity 2s ease;z-index:10;}
+.scene.active{opacity:1;pointer-events:auto;}
+
+/* type atoms on cream */
+.serif{font-family:'Cormorant Garamond',serif;color:rgba(56,44,26,.84);line-height:1.55;text-wrap:pretty;}
+.italic{font-family:'Cormorant Garamond',serif;font-style:italic;color:rgba(56,44,26,.5);line-height:1.7;text-wrap:pretty;}
+.label{font-family:'DM Sans',sans-serif;letter-spacing:.26em;text-transform:uppercase;color:rgba(56,44,26,.32);}
+.fadeable{opacity:0;transform:translateY(8px);transition:opacity 2.2s ease,transform 1.8s ease;}
+.fadeable.visible{opacity:1;transform:translateY(0);}
+.word{display:inline-block;white-space:pre;animation:word-in .9s ease both;}
+@keyframes word-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.word-still{display:inline-block;white-space:pre;opacity:0;transition:opacity 1.5s ease;}
+.word-still.on{opacity:1;}
+.nc{font-family:ui-monospace,monospace;font-size:8.5px;letter-spacing:.08em;color:rgba(56,44,26,.3);border:1px dotted rgba(56,44,26,.25);border-radius:3px;padding:1px 5px;margin-left:8px;vertical-align:middle;white-space:nowrap;}
+
+/* ── gate ── */
+#scene-gate{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 36px;cursor:pointer;touch-action:none;}
+#gateHead{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:rgba(56,44,26,.32);margin-bottom:46px;}
+#gateHead svg{width:15px;height:15px;opacity:.5;}
+#gateSeed{font-size:19px;text-align:center;max-width:320px;animation:seed-pulse 6s ease-in-out infinite;}
+#gateSeed.done{animation:none;opacity:.85;}
+@keyframes seed-pulse{0%,100%{opacity:.45}50%{opacity:.8}}
+#gateRings{position:absolute;width:280px;height:280px;pointer-events:none;}
+#gateRings circle{fill:none;stroke:#C9A84C;stroke-width:.5;opacity:0;}
+#gateRings.growing circle{animation:ring-grow 3.2s ease-out infinite;}
+#gateRings.growing circle:nth-child(2){animation-delay:1.1s;}
+#gateRings.growing circle:nth-child(3){animation-delay:2.2s;}
+@keyframes ring-grow{0%{opacity:.28;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
+#gateBar{width:120px;height:2px;background:rgba(56,44,26,.1);border-radius:2px;overflow:hidden;margin-top:44px;opacity:0;transition:opacity .8s ease;}
+#gateBar.visible{opacity:1;}
+#gateFill{width:0%;height:100%;background:#C9A84C;border-radius:2px;}
+#gateInst{font-size:11px;margin-top:18px;}
+
+/* ── arrival ── */
+#scene-arrival{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 44px;text-align:center;touch-action:none;cursor:pointer;}
+#arrHint{font-size:15px;margin-top:210px;min-height:26px;}
+#arrQuestion{font-size:25px;margin-top:26px;min-height:40px;max-width:340px;}
+#arrAff{font-size:9px;margin-top:52px;}
+
+/* ── the room ── */
+#scene-room{display:flex;flex-direction:column;padding:0 40px;overflow-y:auto;}
+#roomSeed{font-size:15.5px;text-align:center;margin-top:min(38vh,300px);flex-shrink:0;}
+#roomDoors{display:flex;flex-direction:column;gap:2px;margin-top:min(9vh,64px);flex-shrink:0;}
+.door{display:flex;align-items:center;gap:16px;width:100%;background:none;border:none;cursor:pointer;padding:13px 6px;text-align:left;
+  opacity:0;animation:emerge 2.2s ease both;}
+.door.walked{opacity:0;animation:emerge-dim 2.2s ease both;}
+@keyframes emerge{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes emerge-dim{from{opacity:0;transform:translateY(14px)}to{opacity:.4;transform:translateY(0)}}
+.slit{width:1px;height:30px;flex-shrink:0;background:rgba(56,44,26,.3);}
+.door-text{display:flex;flex-direction:column;gap:3px;}
+.door-title{font-family:'Cormorant Garamond',serif;font-size:21px;color:rgba(56,44,26,.8);}
+.door-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:rgba(56,44,26,.4);}
+.gate-door .door-sub{color:rgba(176,110,50,.75);}
+.ember{width:6px;height:6px;border-radius:50%;background:#D08A3E;flex-shrink:0;margin:0 5px;animation:ember 2.6s ease-in-out infinite;}
+@keyframes ember{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+#roomSeal{margin-top:10px;}
+.seal-row{display:flex;align-items:center;gap:16px;padding:13px 6px;opacity:0;animation:emerge-dim 2.2s ease both;}
+.seal-glyph{width:18px;height:26px;border-radius:9px 9px 2px 2px;flex-shrink:0;border:1px solid rgba(201,168,76,.5);border-bottom:2px solid rgba(201,168,76,.65);}
+.seal-note{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:rgba(56,44,26,.38);}
+.walked-mark{font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:rgba(56,44,26,.3);display:block;text-align:center;padding:13px 0;}
+#roomFoot{position:sticky;bottom:0;margin-top:auto;padding:20px 0 34px;text-align:center;font-size:8.5px;font-family:'Noto Serif Devanagari','DM Sans',sans-serif;letter-spacing:.18em;flex-shrink:0;}
+
+/* ── held door (slice B placeholder) ── */
+#scene-hold{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 44px;text-align:center;}
+#holdTitle{font-size:24px;margin-top:120px;}
+#holdNote{font-size:14px;margin-top:20px;}
+#holdBack{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:rgba(56,44,26,.3);margin-top:70px;padding:12px;}
+#holdBack.visible{opacity:1;}
+
+/* ── the story — five scenes on one canvas ── */
+#scene-story{cursor:default;touch-action:none;}
+#storyCanvas{position:absolute;inset:0;}
+.engrave{position:absolute;left:50%;top:66%;transform:translate(-50%,-50%);width:min(78vw,360px);text-align:center;
+  font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1.6;letter-spacing:.04em;text-wrap:pretty;
+  color:rgba(232,208,152,.72);opacity:0;transition:opacity 2.6s ease,top 1.4s ease;pointer-events:none;
+  text-shadow:0 1px 22px rgba(0,0,0,.72),0 0 40px rgba(0,0,0,.5);}
+.engrave.it{font-style:italic;color:rgba(226,216,200,.62);}
+.engrave.big{font-size:36px;letter-spacing:.08em;}
+.engrave.on-cream{color:rgba(52,40,22,.78);text-shadow:0 1px 22px rgba(248,241,223,.95),0 0 46px rgba(248,241,223,.85);}
+.engrave.on-cream.it{color:rgba(52,40,22,.6);}
+.engrave.on{opacity:1;}
+#reachHint{position:absolute;left:50%;bottom:15%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,247,224,.95),rgba(240,214,140,0));opacity:0;transition:opacity 3s ease;pointer-events:none;}
+#reachHint.on{opacity:1;animation:seed-pulse 6s ease-in-out infinite;}
+
+#root{position:fixed;z-index:100;}
+</style>
+</head>
+<body>
+<canvas id="dotCanvas"></canvas>
+
+<!-- ═══ Act 0 · The Held Threshold ═══ -->
+<section class="scene active" id="scene-gate" data-screen-label="Bindu · The Held Threshold">
+  <div id="gateHead" class="fadeable">
+    <svg viewBox="0 0 24 24" fill="none" stroke="rgba(56,44,26,.6)" stroke-width="1.6"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2" y="14" width="5" height="7" rx="2"/><rect x="17" y="14" width="5" height="7" rx="2"/></svg>
+    <span>headphones, if you have them</span>
+  </div>
+  <svg id="gateRings" viewBox="0 0 280 280">
+    <circle cx="140" cy="140" r="60" style="transform-origin:center"></circle>
+    <circle cx="140" cy="140" r="90" style="transform-origin:center"></circle>
+    <circle cx="140" cy="140" r="120" style="transform-origin:center"></circle>
+  </svg>
+  <p id="gateSeed" class="italic">Before the tree. Before the name. Before the game. This.</p>
+  <div id="gateBar"><div id="gateFill"></div></div>
+  <p id="gateInst" class="label fadeable">press, and hold — one full breath</p>
+</section>
+
+<!-- ═══ Act I · Arrival ═══ -->
+<section class="scene" id="scene-arrival" data-screen-label="Bindu · Arrival">
+  <p id="arrHint" class="italic fadeable"></p>
+  <p id="arrQuestion" class="serif fadeable"></p>
+  <p id="arrAff" class="label fadeable">rest one finger on the glass, and be still</p>
+</section>
+
+<!-- ═══ Act I · The Room ═══ -->
+<section class="scene" id="scene-room" data-screen-label="Bindu · The Room">
+  <p id="roomSeed" class="italic fadeable"></p>
+  <div id="roomDoors"></div>
+  <div id="roomSeal"></div>
+  <p id="roomFoot" class="label fadeable">बिंदु · the origin</p>
+</section>
+
+<!-- ═══ Held door — Slice C territory ═══ -->
+<section class="scene" id="scene-hold" data-screen-label="Bindu · Held Door">
+  <p id="holdTitle" class="serif fadeable"></p>
+  <p id="holdNote" class="italic fadeable"></p>
+  <button id="holdBack" class="fadeable">← the room</button>
+</section>
+
+<!-- ═══ Act II · The Story — five scenes, one canvas ═══ -->
+<section class="scene" id="scene-story" data-screen-label="Bindu · The Story">
+  <canvas id="storyCanvas"></canvas>
+  <p id="engrave" class="engrave"></p>
+  <span id="reachHint"></span>
+</section>
+
+<div id="root"></div>
+
+<script src="shell/walk-canon.js"></script>
+<script src="shell/bindu-engine.js"></script>
+<script type="text/babel" src="shell/tweaks-panel.jsx"></script>
+<script type="text/babel">
+const IMM_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "pace": 1.4,
+  "sound": true,
+  "skipGate": true
+}/*EDITMODE-END*/;
+function ImmTweaks() {
+  const [t, setTweak] = useTweaks(IMM_DEFAULTS);
+  window.BINDU_TWEAKS = t;
+  return (
+    <React.Fragment>
+      <span style={{ display:'none' }} data-mounted="true">·</span>
+      <TweaksPanel>
+      <TweakSection label="The breath" />
+      <TweakSlider label="Pace (1 = the slow one)" value={t.pace} min={0.25} max={1.4} step={0.05} onChange={v => setTweak('pace', v)} />
+      <TweakSection label="The silence" />
+      <TweakToggle label="Sound" value={t.sound} onChange={v => setTweak('sound', v)} />
+      <TweakSection label="Review" />
+      <TweakToggle label="Skip the gate (review only)" value={t.skipGate} onChange={v => setTweak('skipGate', v)} />
+      <TweakButton label="Arrive again (reset the room)" onClick={() => window.dispatchEvent(new Event('bindu-reset'))} />
+      </TweaksPanel>
+    </React.Fragment>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<ImmTweaks />);
+</script>
+<script src="shell/bindu-slice-a.js"></script>
+<script src="shell/bindu-slice-b.js"></script>
+</body>
+</html>

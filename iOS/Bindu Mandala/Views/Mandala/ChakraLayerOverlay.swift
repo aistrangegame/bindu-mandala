@@ -170,7 +170,15 @@ struct ChakraLayerOverlay: View {
                 }
                 // Wave 6 · the one line at each place on the Road: its Core
                 // Question; and at the two stations, the Map's story thread.
-                if let q = c.coreQuestion {
+                // U0 · ruling 2: the sealed station shows only that it is held.
+                if c.isSealed {
+                    Text(ChakraConstellation.sealedLine)
+                        .font(AppFont.voice(17))
+                        .italic()
+                        .foregroundStyle(Color.cream.opacity(0.72))
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 6)
+                } else if let q = c.coreQuestion {
                     Text(q)
                         .font(AppFont.voice(17))
                         .foregroundStyle(Color.cream.opacity(0.82))
@@ -178,7 +186,7 @@ struct ChakraLayerOverlay: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 6)
                 }
-                if station != nil, let thread = c.storyThread {
+                if station != nil, !c.isSealed, let thread = c.storyThread {
                     ScrollView(.vertical, showsIndicators: false) {
                         Text(thread)
                             .font(AppFont.voice(15))
@@ -203,7 +211,8 @@ struct ChakraLayerOverlay: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityHint("Opens this chakra's room. The road waits.")
+                .accessibilityHint(c.isSealed ? "Opens its held threshold. The road waits."
+                                                : "Opens this chakra's room. The road waits.")
                 Button(action: endRoad) {
                     Text("leave the road")
                         .font(AppFont.label(11.5))

@@ -6,6 +6,11 @@ import SwiftData
 /// and as a permanent fallback when Airtable is unreachable.
 /// Airtable's `Bija` field is treated as authoritative when sync succeeds;
 /// these values are overwritten on reconciliation.
+///
+/// U0 (C07, 13 Oct 2026): the bīja series is the Mandala table's own, kp 29–44,
+/// verbatim — aṁ āṁ iṁ īṁ uṁ ūṁ ṛṁ ṝṁ ḷṁ ḹṁ eṁ aiṁ oṁ auṁ "aṁ — anusvāra"
+/// "aḥ — visarga" (Design's shakti-data.js skipped ḹṁ and ended on "kaṁ", which
+/// is not one of the sixteen vowels). Names follow the base (kp 41 Bījākarṣiṇī).
 enum ShaktiBootstrap {
 
     static let all: [Shakti] = [
@@ -148,7 +153,7 @@ enum ShaktiBootstrap {
             qualityDescription: "She draws the ground of awareness itself — not thoughts or perceptions, but the silent knowing that holds them all. She is the most subtle and the most pervasive. She is what you cannot step outside of.",
             somatic: "Where does witnessing happen in your body — not thinking, but knowing?",
             somaticPoetry: "Not a location. An atmosphere.\nThe one who is already here, watching this.",
-            bija: "lṁ",
+            bija: "ḷṁ",
             bodilyLocation: "whole",
             tattva: "Pure Consciousness (Cit)",
             recognitionPhrase: "You are extraordinary for bringing me this awareness.",
@@ -164,7 +169,7 @@ enum ShaktiBootstrap {
             qualityDescription: "She draws the power of stability in motion — not the absence of fear, but the capacity to remain present through it. She lives in the upright spine, the planted feet.",
             somatic: "Where does steadiness take root in you when everything moves?",
             somaticPoetry: "The spine knows what to hold and what to release.\nStability is not stillness — it is groundedness in movement.",
-            bija: "eṁ",
+            bija: "ḹṁ",
             bodilyLocation: "spine",
             tattva: "Earth (Pṛthivī)",
             recognitionPhrase: "You are extraordinary for bringing me this steadiness.",
@@ -180,7 +185,7 @@ enum ShaktiBootstrap {
             qualityDescription: "She draws the power of memory — not just intellectual recall, but the body's knowing of what has been lived. She is why you recognize beauty you've never seen before.",
             somatic: "What memory is she holding in your body, not your mind?",
             somaticPoetry: "Something in the chest knows this.\nThe body has its own library, older than language.",
-            bija: "aiṁ",
+            bija: "eṁ",
             bodilyLocation: "temples",
             tattva: "Water (Jala)",
             recognitionPhrase: "You are extraordinary for bringing me this memory.",
@@ -196,7 +201,7 @@ enum ShaktiBootstrap {
             qualityDescription: "She draws the power of naming — the way consciousness uses sound to crystallize reality into recognizable form. Every name you speak is her doing.",
             somatic: "What name is vibrating in your throat that you haven't spoken yet?",
             somaticPoetry: "The throat vibrates with what hasn't been said.\nName precedes the named.",
-            bija: "oṁ",
+            bija: "aiṁ",
             bodilyLocation: "throat",
             tattva: "Space (Ākāśa)",
             recognitionPhrase: "You are extraordinary for bringing me this name.",
@@ -207,14 +212,14 @@ enum ShaktiBootstrap {
         ),
         Shakti(
             position: 13,
-            name: "Bījakarṣiṇī",
+            name: "Bījākarṣiṇī",
             shortName: "Bīja",
             phonetic: "Bee · JAH · kar · shi · nee",
             quality: "She who attracts the Seed",
             qualityDescription: "She draws the power of the seed — potential before manifestation, the creative force held in latency. She is the silence before the word, the stillness before the movement.",
             somatic: "What is seeding itself in the base of your body right now?",
             somaticPoetry: "At the base, something wants to germinate.\nThe sacrum knows what the mind hasn't yet decided.",
-            bija: "auṁ",
+            bija: "oṁ",
             bodilyLocation: "sacrum",
             tattva: "Fire (Agni)",
             recognitionPhrase: "You are extraordinary for bringing me this seed.",
@@ -230,7 +235,7 @@ enum ShaktiBootstrap {
             qualityDescription: "She draws the very Self — not the ego-self, but the radiant unconditioned awareness that precedes all experience. She is the most profound of all the attractions, the one that never stops.",
             somatic: "Where does the Self — not self — pulse in you without effort?",
             somaticPoetry: "A fullness that doesn't depend on anything.\nThe heart center, but deeper than the heart.\nNot a feeling — a recognition.",
-            bija: "aṃ",
+            bija: "auṁ",
             bodilyLocation: "heart",
             tattva: "Pure Being (Sat)",
             recognitionPhrase: "You are extraordinary for bringing me this Self.",
@@ -248,7 +253,7 @@ enum ShaktiBootstrap {
             qualityDescription: "She draws the quality of immortality — not the survival of the ego, but the recognition of the dimension of being that has no beginning and no end. She is the most subtle and the most eternal.",
             somatic: "What in you knows it cannot die?",
             somaticPoetry: "Something at the crown opens upward.\nNot going anywhere — arriving.",
-            bija: "aḥ",
+            bija: "aṁ — anusvāra",
             bodilyLocation: "crown",
             tattva: "Nectar (Amṛta)",
             recognitionPhrase: "You are extraordinary for bringing me this immortality.",
@@ -264,7 +269,7 @@ enum ShaktiBootstrap {
             qualityDescription: "She draws the miracle of embodiment itself — the mystery of consciousness taking on a specific physical form. She is the reason there is a \"here\" to have experience in.",
             somatic: "What does it feel like to be pulled into having this particular body?",
             somaticPoetry: "This body, specifically.\nNot a body — this arrangement of sensation and weight.\nShe chose this.",
-            bija: "kaṁ",
+            bija: "aḥ — visarga",
             bodilyLocation: "whole",
             tattva: "Earth (Pṛthivī)",
             recognitionPhrase: "You are extraordinary for bringing me this body.",

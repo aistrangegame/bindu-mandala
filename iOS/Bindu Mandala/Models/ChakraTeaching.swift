@@ -215,6 +215,8 @@ enum ChakraTeaching {
     }
 
     static func homeDoor(_ c: Chakra33) -> HomeDoor? {
+        // Ruling 2 · a sealed room is a held threshold: it opens no further door.
+        guard !c.isSealed else { return nil }
         switch c.address {
         case .seat, .centre:
             return c.kp.first.map { HomeDoor.seat($0) }
@@ -233,6 +235,10 @@ enum ChakraTeaching {
     /// games whose address is that ring. A game is found where it lives. In
     /// the walk's own order.
     static func games(_ c: Chakra33) -> [PlayGame] {
+        // Ruling 2 · the sealed room offers no game door (the Shadow Translator
+        // stands at its seat, kp 101; it is reached from A Strange Game, never
+        // through the sealed room).
+        guard !c.isSealed else { return [] }
         if c.address == .threshold {
             guard let pair = c.crossing, pair.count == 2 else { return [] }
             let here = PlayAddress.threshold(from: pair[0], to: pair[1])

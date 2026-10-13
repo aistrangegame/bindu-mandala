@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bindu Mandala — Audit II</title>
+<script src="doc-page.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap');
+
+  :root {
+    --ground: #0D0508;
+    --gold: #C9963F;
+    --gold-deep: #A07830;
+    --cream: #F2E8D9;
+    --red: #8B1A2A;
+    --ink: #2A2118;
+    --ink-soft: #5A4C3C;
+    --paper: #FBF7F0;
+  }
+
+  doc-page {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: var(--ink);
+    background: var(--paper);
+  }
+
+  a { color: var(--red); }
+  a:hover { color: var(--gold-deep); }
+
+  .kicker {
+    font-family: ui-sans-serif, -apple-system, sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 0 0 14px 0;
+  }
+
+  h1 {
+    font-size: 44px;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    margin: 0 0 6px 0;
+  }
+
+  .subtitle {
+    font-style: italic;
+    font-size: 19px;
+    color: var(--ink-soft);
+    margin: 0 0 40px 0;
+  }
+
+  h2 {
+    font-size: 27px;
+    font-weight: 400;
+    margin: 44px 0 6px 0;
+    letter-spacing: 0.01em;
+  }
+
+  h2 .num {
+    color: var(--gold-deep);
+    font-style: italic;
+    margin-right: 10px;
+  }
+
+  h3 {
+    font-size: 19px;
+    font-weight: 500;
+    margin: 26px 0 4px 0;
+  }
+
+  p { font-size: 16.5px; line-height: 1.55; margin: 8px 0; }
+
+  .rule {
+    border: none;
+    border-top: 1px solid rgba(160, 120, 48, 0.35);
+    margin: 36px 0;
+  }
+
+  .verdict {
+    background: #F2EADC;
+    border-top: 2px solid var(--gold);
+    padding: 18px 22px;
+    margin: 20px 0;
+    font-size: 16.5px;
+    line-height: 1.5;
+  }
+  .verdict em { color: var(--red); }
+
+  .finding {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 0 18px;
+    margin: 22px 0;
+    align-items: baseline;
+  }
+  .finding .sev {
+    font-family: ui-sans-serif, -apple-system, sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding-top: 5px;
+  }
+  .sev.high { color: var(--red); }
+  .sev.med  { color: var(--gold-deep); }
+  .sev.low  { color: #8C7B63; }
+  .finding h3 { margin: 0 0 4px 0; }
+  .finding p  { margin: 4px 0; font-size: 15.5px; }
+  .finding .where {
+    font-family: ui-sans-serif, -apple-system, sans-serif;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    color: #8C7B63;
+    margin-top: 6px;
+  }
+
+  .principle {
+    margin: 26px 0;
+  }
+  .principle h3 {
+    font-style: italic;
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--red);
+    margin-bottom: 4px;
+  }
+
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { font-size: 15.5px; line-height: 1.55; margin: 5px 0; }
+
+  .footer-note {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin-top: 44px;
+  }
+</style>
+</head>
+<body>
+<doc-page size="letter" margin="0.9in">
+
+  <p class="kicker">Bindu Mandala · Audit II · July 2026</p>
+  <h1>State of the App</h1>
+  <p class="subtitle">A combined aesthetic and experience audit of the shipped SwiftUI build — and the direction that follows from it.</p>
+
+  <div class="verdict">
+    The app's <em>voice</em> is right: Cormorant, darkness, gold, restraint, no chrome. What's missing is <em>presence at scale</em>. The instrument whispers everything — including the one thing it exists to say each morning. 102 distinct energies currently receive one identical, small, centered treatment. The design system is faithful to its tokens and unfaithful to its premise: that <em>she arrives differently every day</em>.
+  </div>
+
+  <hr class="rule">
+
+  <h2><span class="num">I.</span>Aesthetic audit</h2>
+
+  <div class="finding">
+    <span class="sev high">High</span>
+    <div>
+      <h3>The scale crisis — everything squints</h3>
+      <p>The ceremonial register is set in caption sizes: 9–12px tracked uppercase labels appear on every screen; body text runs 13.5–16px; the Śakti Detail name — the most sacred string in the app — is 34px. Heavy tracking (2.0–3.2) at 10px actively harms legibility. A devotional app read at 6am in bed needs display sizes, not museum-card sizes.</p>
+      <p class="where">DailyRiteView (10–12px labels), ShaktiDetailView (34px name, 10.5px section heads), TheHundredTwoView (16px rows), PortraitMandalaView (11px header)</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="sev high">High</span>
+    <div>
+      <h3>One atmosphere for 102 beings</h3>
+      <p>Every day renders the same composition: same ground <code>#0D0508</code>, same crimson radial at 38% height, same column order, same dust motes. Only three strings change. Kāmākarṣiṇī (fire, heart, desire) and Sarvamṛtyupraśamanī (death-calming) are visually interchangeable. The strongest asset in the data model — ring geometry, element, cluster, bīja — is unused as a design input.</p>
+      <p class="where">DailyRiteView — one layout, two minor variants (body / bīja)</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="sev high">High</span>
+    <div>
+      <h3>Screens share tokens, not composition</h3>
+      <p>Today is centered ceremony; Detail is a left-aligned reference stack; The 102 is a settings-style list; The Well is a table view; the menu is an opacity flip. Each is competent alone, but nothing carries across — no shared header ritual, no motif that travels, no transition language. The cluster color, the one connective thread available, appears only as 5–7px dots.</p>
+      <p class="where">All screens</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="sev med">Med</span>
+    <div>
+      <h3>The system sans undermines the voice</h3>
+      <p>SF at 9–11px tracked uppercase does the app's structural speaking (section heads, tithi labels, phonetics, "TAP ANYWHERE TO CLOSE"). The contrast of sacred serif vs. utilitarian sans could be intentional, but at these sizes the sans reads as UI debris rather than counterpoint.</p>
+      <p class="where">AppFont.label() usage throughout</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="sev med">Med</span>
+    <div>
+      <h3>Detail screen buries its soul</h3>
+      <p>The Codex portrait — "the soul of the screen" per the code comment — renders at 16px italic in a 10-section vertical stack. The Devanagari (44px) outranks her name (34px). The reader scrolls through Quality, Somatic, Bīja, Moments and a fold before any sense of <em>her</em> accumulates. It reads as a database record, not an encounter.</p>
+      <p class="where">ShaktiDetailView section order</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="sev low">Low</span>
+    <div>
+      <h3>The moon and Nityā are cramped furniture</h3>
+      <p>The presiding Nityā — a second goddess, presiding over the whole day — is a 17px card squeezed between moon and name, competing with the daily energy instead of framing her.</p>
+      <p class="where">DailyRiteView.nityaCardLayer</p>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <h2><span class="num">II.</span>Experience audit</h2>
+
+  <div class="finding">
+    <span class="sev high">High</span>
+    <div>
+      <h3>Today is a dead end</h3>
+      <p>Her name — the largest tap target on the screen — does nothing. There is no path from the morning greeting to her full presence (portrait, etymology, moments, bīja sound). The only affordance is "I feel her," which ends the visit. The requested fix: <strong>tap her name to open her detail.</strong></p>
+      <p class="where">DailyRiteView → ShaktiDetailView (no route exists)</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="sev med">Med</span>
+    <div>
+      <h3>The 102 gives no sense of place</h3>
+      <p>Nine avaraṇas — nine distinct territories with their own geometry, mental state, and chakra — flatten into one scrolling list of identical rows. There is no feeling of descent, of rings within rings, of where today's energy sits in the whole.</p>
+      <p class="where">TheHundredTwoView</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="sev med">Med</span>
+    <div>
+      <h3>Navigation order is accidental</h3>
+      <p>Settings sits mid-menu, before The Memory. The menu is the app's only map and it doesn't express the practice loop (arrive → feel → remember).</p>
+      <p class="where">HamburgerMenuView</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="sev low">Low</span>
+    <div>
+      <h3>Unexplained boundaries</h3>
+      <p>The Well accepts letters only for the 16 Karṣiṇīs with no in-app explanation; recognition ceremonies cannot be revisited; the Portrait offers no orientation for a new practitioner (appropriately numberless, but also wordless).</p>
+      <p class="where">WellView, RecognitionMomentView, PortraitMandalaView</p>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <h2><span class="num">III.</span>The direction — The Living Rite</h2>
+  <p>Four principles drive the redesign prototyped alongside this document:</p>
+
+  <div class="principle">
+    <h3>She arrives differently every day.</h3>
+    <p>Each Śakti generates her own Today screen from her actual attributes: her ring's geometry becomes the ground she stands on (bhūpura square, 16-petal lotus, triangle rings, bindu); her element drives the motion of the air (fire rises, air drifts, water settles); her cluster or ring sets the day's hue, threaded through every screen until 6am tomorrow. Deterministic — the same date always produces the same arrival.</p>
+  </div>
+
+  <div class="principle">
+    <h3>Scale is reverence.</h3>
+    <p>Her name becomes the screen — display-size Cormorant, 56–72px. Body text moves to 18–22px, labels to 12–13px minimum. Nothing the practitioner must read at dawn is smaller than comfortable.</p>
+  </div>
+
+  <div class="principle">
+    <h3>One thread through every room.</h3>
+    <p>The day's hue and sigil persist across Detail, the Field, the Well, and the menu. Screens stop being separate documents and become rooms of one house, lit by the same lamp.</p>
+  </div>
+
+  <div class="principle">
+    <h3>Her name is a door.</h3>
+    <p>Tapping her name on Today opens her full presence. The 102 becomes a descent through nine rings rather than a list. Everything that names her, navigates to her.</p>
+  </div>
+
+  <p class="footer-note">The interactive prototype — "Bindu Mandala — The Living Rite" — demonstrates all four principles with the real 102-energy data, a working daily cycle, and the tap-name→detail flow. Use the day control in Tweaks to preview how different energies reshape the screen.</p>
+
+</doc-page>
+</body>
+</html>

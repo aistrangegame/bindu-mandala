@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>The Field</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#020604;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.07);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes soul-drift{0%,100%{transform:translate(0,0)}33%{transform:translate(3px,-4px)}66%{transform:translate(-3px,3px)}}
+@keyframes witness-in{0%{opacity:0}15%{opacity:.8}85%{opacity:.8}100%{opacity:0}}
+@keyframes conv-ring{0%{transform:scale(.3);opacity:0}30%{opacity:.5}100%{transform:scale(1.6);opacity:0}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0A100C;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#141C16;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #141C16,0 108px 0 #141C16;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#141C16;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#030A06;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+textarea{font-family:inherit;outline:none;}
+textarea::placeholder{color:rgba(240,232,220,.20);}
+.scroll{overflow-y:auto;}.scroll::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ═══ A · FIELD ENGINE ═══ -->
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const GREEN = '#1A8060', MINT = '#80E5BC';
+
+// Deterministic "presence" count — same for everyone at the same minute.
+// Slow sine over the day + minute-level jitter, seeded by time so all
+// instances agree without a server.
+function presenceAt(t) {
+  const min = Math.floor(t / 60000);
+  const day = (t / 86400000) % 1;
+  const wave = Math.sin(day * Math.PI * 2 - Math.PI/2) * 22;      // day/night swell
+  const seed = Math.sin(min * 12.9898) * 43758.5453;
+  const jitter = (seed - Math.floor(seed)) * 14 - 7;
+  return Math.max(23, Math.round(84 + wave + jitter));
+}
+
+// Next convergence: top of every hour.
+function nextConvergence(t) {
+  const d = new Date(t);
+  d.setMinutes(0, 0, 0);
+  d.setHours(d.getHours() + 1);
+  return d.getTime();
+}
+
+// Anonymous witnessings — the field's quiet truths
+const WITNESSINGS = [
+  'Someone in this field lost someone they loved this month.',
+  'Someone here just felt joy for the first time in a long while.',
+  'Someone is awake in the middle of their night, unable to sleep.',
+  'Someone here is terrified of the thing they are about to do anyway.',
+  'Someone just forgave a person who will never know it.',
+  'Someone in this field is falling in love right now.',
+  'Someone here is sitting with an old grief, letting it be old.',
+  'Someone just came back to their breath after years away.',
+  'Someone in this field is holding a newborn.',
+  'Someone here whispered a prayer without knowing who it was for.',
+  'Someone is watching the same moon you saw last night.',
+  'Someone here chose to stay soft today, against all advice.',
+];
+
+const BREATH_CYCLE = 8000; // 4s in, 4s out — the field breathes together
+
+// Shared breath phase — synced to wall clock so everyone breathes together
+function breathPhase(t) { return (t % BREATH_CYCLE) / BREATH_CYCLE; }
+
+const getIntentions = () => { try { return JSON.parse(localStorage.getItem('field_intentions_v1')||'[]'); } catch { return []; } };
+const addIntention = (x) => localStorage.setItem('field_intentions_v1',
+  JSON.stringify([...getIntentions(), x].slice(-30)));
+
+Object.assign(window, { GREEN, MINT, presenceAt, nextConvergence, WITNESSINGS, breathPhase, BREATH_CYCLE, getIntentions, addIntention });
+</script>
+
+<!-- ═══ B · THE FIELD (main view) ═══ -->
+<script type="text/babel">
+const { useState:useF, useEffect:useFE, useRef:useFR } = React;
+const { GREEN:G, MINT:M, presenceAt:PA, nextConvergence:NC, WITNESSINGS:WT, breathPhase:BP } = window;
+
+function FieldCanvas({ count }) {
+  const ref = useFR(null);
+  useFE(() => {
+    const cv = ref.current; if (!cv) return;
+    const dpr = window.devicePixelRatio || 1;
+    let raf, souls = [];
+    function resize() {
+      if (cv.offsetWidth === 0) { raf = requestAnimationFrame(resize); return; }
+      cv.width = cv.offsetWidth * dpr; cv.height = cv.offsetHeight * dpr;
+      const W = cv.width, H = cv.height;
+      souls = Array.from({ length: Math.min(count, 120) }, (_, i) => {
+        // Spiral-ish scatter around center
+        const a = i * 2.399963;                        // golden angle
+        const r = Math.sqrt((i + 1) / (count + 1)) * Math.min(W, H) * .42;
+        return {
+          x: W/2 + r * Math.cos(a), y: H/2 + r * Math.sin(a),
+          ph: Math.random() * Math.PI * 2,
+          sz: (1 + Math.random() * 1.6) * dpr,
+          you: i === Math.floor(count * .38),
+        };
+      });
+      draw();
+    }
+    function draw() {
+      const ctx = cv.getContext('2d');
+      const W = cv.width, H = cv.height;
+      ctx.clearRect(0, 0, W, H);
+      const bp = BP(Date.now());
+      const breath = Math.sin(bp * Math.PI * 2 - Math.PI/2) * .5 + .5;  // 0..1
+
+      // Center heart-glow, breathing with everyone
+      const cR = (Math.min(W,H) * .1) * (1 + breath * .35);
+      const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, cR * 2.4);
+      g.addColorStop(0, `rgba(128,229,188,${.14 + breath*.12})`);
+      g.addColorStop(1, 'rgba(128,229,188,0)');
+      ctx.beginPath(); ctx.arc(W/2, H/2, cR * 2.4, 0, Math.PI*2);
+      ctx.fillStyle = g; ctx.fill();
+
+      souls.forEach(s => {
+        const tw = .35 + .65 * (Math.sin(s.ph + Date.now()*.0011) * .5 + .5);
+        const pulse = 1 + breath * .5;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.sz * pulse * (s.you ? 1.9 : 1), 0, Math.PI*2);
+        if (s.you) {
+          ctx.fillStyle = `rgba(240,232,220,${.75 + breath*.25})`;
+          ctx.shadowColor = '#F0E8DC'; ctx.shadowBlur = 9 * dpr;
+        } else {
+          ctx.fillStyle = `rgba(128,229,188,${tw * (.4 + breath*.35)})`;
+          ctx.shadowColor = M; ctx.shadowBlur = 4 * dpr;
+        }
+        ctx.fill(); ctx.shadowBlur = 0;
+      });
+      raf = requestAnimationFrame(draw);
+    }
+    resize();
+    return () => cancelAnimationFrame(raf);
+  }, [count]);
+  return <canvas ref={ref} style={{ width:'100%', height:'100%', display:'block' }}></canvas>;
+}
+
+function FieldView({ onConverge }) {
+  const [now, setNow] = useF(Date.now());
+  const [witIdx, setWitIdx] = useF(() => Math.floor(Math.random() * WT.length));
+
+  useFE(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useFE(() => {
+    const id = setInterval(() => setWitIdx(i => (i + 1) % WT.length), 12000);
+    return () => clearInterval(id);
+  }, []);
+
+  const count = PA(now);
+  const convAt = NC(now);
+  const untilConv = convAt - now;
+  const mm = Math.floor(untilConv / 60000), ss = Math.floor((untilConv % 60000) / 1000);
+  const convClose = untilConv < 5 * 60000;
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:'radial-gradient(ellipse at 50% 45%, #06130C, #020805)' }}>
+
+      <div style={{ padding:'12px 22px 0', flexShrink:0, textAlign:'center' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'21px',
+          color:'rgba(240,232,220,.82)', letterSpacing:'.12em' }}>The Field</p>
+        <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.3em',
+          textTransform:'uppercase', color:`${M}45`, marginTop:'4px' }}>
+          {count} hearts breathing with you
+        </p>
+      </div>
+
+      {/* The living field */}
+      <div style={{ flex:1, position:'relative', minHeight:0 }}>
+        <FieldCanvas count={count}/>
+        {/* Witnessing line */}
+        <div style={{ position:'absolute', bottom:'14px', left:'24px', right:'24px',
+          textAlign:'center', pointerEvents:'none' }}>
+          <p key={witIdx} style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+            fontSize:'14px', color:'rgba(240,232,220,.0)', lineHeight:1.7,
+            animation:'witness-in 12s ease both' }}>{WT[witIdx]}</p>
+        </div>
+      </div>
+
+      {/* Breath hint */}
+      <p style={{ textAlign:'center', flexShrink:0, padding:'2px 0 8px',
+        fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'12px',
+        color:`${M}30` }}>
+        the bright dot is you · everyone here breathes on the same rhythm
+      </p>
+
+      {/* Convergence */}
+      <div style={{ padding:'0 20px 20px', flexShrink:0 }}>
+        <button onClick={onConverge} style={{
+          width:'100%', padding:'16px 18px', borderRadius:'20px', cursor:'pointer',
+          background: convClose ? `${G}20` : `${G}0E`,
+          border:`1px solid ${convClose ? M+'55' : G+'35'}`,
+          display:'flex', alignItems:'center', justifyContent:'space-between',
+          animation: convClose ? 'breathe 3s ease-in-out infinite' : 'none' }}>
+          <div style={{ textAlign:'left' }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'17px',
+              color:'rgba(240,232,220,.82)' }}>
+              {convClose ? 'The Convergence is gathering' : 'Next Convergence'}
+            </p>
+            <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.2em',
+              textTransform:'uppercase', color:`${M}48`, marginTop:'3px' }}>
+              every hour, on the hour · all together
+            </p>
+          </div>
+          <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'24px',
+            color: convClose ? M : `${M}60`, fontVariantNumeric:'tabular-nums' }}>
+            {mm}:{String(ss).padStart(2,'0')}
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+Object.assign(window, { FieldView });
+</script>
+
+<!-- ═══ C · THE CONVERGENCE ═══ -->
+<script type="text/babel">
+const { useState:useC, useEffect:useCE, useRef:useCR } = React;
+const { GREEN:GC, MINT:MC, presenceAt:PAC, breathPhase:BPC, BREATH_CYCLE:BCY, addIntention:AIC } = window;
+
+const CONV_MINUTES = 3;
+
+function ConvergenceView({ onDone }) {
+  const [phase, setPhase] = useC('threshold');  // threshold | breathing | offering | complete
+  const [secs, setSecs] = useC(CONV_MINUTES * 60);
+  const [breath, setBreath] = useC(0);
+  const [intention, setIntention] = useC('');
+  const [woven, setWoven] = useC('');
+  const count = PAC(Date.now());
+
+  // Breath sync loop
+  useCE(() => {
+    if (phase !== 'breathing') return;
+    let raf;
+    const tick = () => {
+      setBreath(Math.sin(BPC(Date.now()) * Math.PI * 2 - Math.PI/2) * .5 + .5);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [phase]);
+
+  // Countdown
+  useCE(() => {
+    if (phase !== 'breathing') return;
+    const id = setInterval(() => {
+      setSecs(s => {
+        if (s <= 1) { clearInterval(id); setPhase('offering'); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  async function offer(skip) {
+    const text = skip ? '' : intention.trim();
+    if (text) AIC({ text, ts: Date.now() });
+    setPhase('complete');
+    try {
+      const r = await window.claude.complete({ messages: [{ role:'user', content:
+        `${count} people just spent three minutes breathing on the same rhythm, each alone with their screen, together in a field of shared attention.${text ? ` One of them offered this intention into the field: "${text}".` : ''}\n\nSpeak one or two sentences as the field itself — the sum of all of them at once — acknowledging what just happened${text ? ' and receiving the intention' : ''}. Warm, vast but intimate, no mysticism-kitsch, no cliché. Do not use markdown. Do not use the word "journey".`
+      }]});
+      setWoven(r.trim());
+    } catch {
+      setWoven('For three minutes, your breath was not only yours. The field holds what was offered — including what was never said aloud.');
+    }
+  }
+
+  if (phase === 'threshold') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 34px', textAlign:'center',
+      background:'radial-gradient(ellipse at 50% 35%, #07150D, #020805)' }}>
+      <div style={{ position:'relative', width:'90px', height:'90px', marginBottom:'30px' }}>
+        {[0,1,2].map(i => (
+          <div key={i} style={{ position:'absolute', inset:0, borderRadius:'50%',
+            border:`1px solid ${MC}50`, animation:`conv-ring 3.5s ${i*1.1}s ease-out infinite` }}></div>
+        ))}
+        <div style={{ position:'absolute', inset:'30px', borderRadius:'50%',
+          background:`radial-gradient(circle at 36% 36%, ${MC}45, ${GC}65)`,
+          boxShadow:`0 0 24px ${GC}55`, animation:'breathe 4s ease-in-out infinite' }}></div>
+      </div>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'30px', fontWeight:300,
+        color:'rgba(240,232,220,.90)', lineHeight:1.35, marginBottom:'14px' }}>The Convergence</p>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'16px',
+        color:'rgba(240,232,220,.42)', lineHeight:1.85, marginBottom:'42px', maxWidth:'260px' }}>
+        {count} hearts are here.<br/>
+        For three minutes, everyone breathes<br/>on the same rhythm. Including you.
+      </p>
+      <button onClick={() => setPhase('breathing')} style={{ padding:'16px 48px',
+        borderRadius:'32px', cursor:'pointer', background:`${GC}14`,
+        border:`1px solid ${MC}38`, fontFamily:"'Cormorant Garamond',serif",
+        fontSize:'18px', letterSpacing:'.2em', textTransform:'uppercase',
+        color:'rgba(240,232,220,.82)' }}>Enter</button>
+    </div>
+  );
+
+  if (phase === 'breathing') {
+    const inhale = breath > .5 ? false : true; // rising half = inhale
+    const scale = .7 + breath * .55;
+    return (
+      <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+        justifyContent:'center', gap:'34px', position:'relative',
+        background:`radial-gradient(ellipse at 50% 45%, rgba(26,128,96,${.06+breath*.10}), #020805)` }}>
+        <p style={{ position:'absolute', top:'18px', left:0, right:0, textAlign:'center',
+          fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.3em',
+          textTransform:'uppercase', color:`${MC}40` }}>
+          {count} breathing with you
+        </p>
+        <div style={{ width:'170px', height:'170px', borderRadius:'50%',
+          background:`radial-gradient(circle at 38% 38%, ${MC}40, ${GC}60)`,
+          boxShadow:`0 0 ${30+breath*50}px ${GC}${Math.round(40+breath*30).toString(16)}`,
+          transform:`scale(${scale})`, transition:'transform .1s linear' }}></div>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'19px',
+          color:'rgba(240,232,220,.55)', letterSpacing:'.14em' }}>
+          {breath > .92 ? 'hold' : (BPC(Date.now()) < .5 ? 'breathe in' : 'breathe out')}
+        </p>
+        <p style={{ position:'absolute', bottom:'24px', left:0, right:0, textAlign:'center',
+          fontFamily:"'Cormorant Garamond',serif", fontSize:'14px', color:`${MC}35`,
+          fontVariantNumeric:'tabular-nums' }}>
+          {Math.floor(secs/60)}:{String(secs%60).padStart(2,'0')}
+        </p>
+      </div>
+    );
+  }
+
+  if (phase === 'offering') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'36px 32px', gap:'20px',
+      background:'radial-gradient(ellipse at 50% 30%, #07150D, #020805)', animation:'fade-in 1s ease' }}>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'24px',
+        color:'rgba(240,232,220,.86)', textAlign:'center', lineHeight:1.45 }}>
+        Before you leave the field —<br/>what do you place in it?
+      </p>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'13px',
+        color:`${MC}40`, textAlign:'center', marginTop:'-8px' }}>
+        an intention, a name, a hope — it stays anonymous, held by everyone
+      </p>
+      <textarea value={intention} onChange={e => setIntention(e.target.value)} rows={3}
+        placeholder="…"
+        style={{ width:'100%', maxWidth:'290px', background:`${GC}0A`,
+          border:`1px solid ${MC}25`, borderRadius:'16px', padding:'15px 17px',
+          color:'rgba(240,232,220,.88)', fontFamily:"'Cormorant Garamond',serif",
+          fontSize:'19px', lineHeight:1.7, textAlign:'center', resize:'none' }}></textarea>
+      <div style={{ display:'flex', gap:'10px' }}>
+        <button onClick={() => offer(true)} style={{ padding:'12px 22px', borderRadius:'24px',
+          cursor:'pointer', background:'none', border:`1px solid ${MC}18`,
+          fontFamily:"'DM Sans',sans-serif", fontSize:'10px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:`${MC}38` }}>hold it silently</button>
+        {intention.trim() && (
+          <button onClick={() => offer(false)} style={{ padding:'12px 30px', borderRadius:'24px',
+            cursor:'pointer', background:`${GC}16`, border:`1px solid ${MC}40`,
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'15px', letterSpacing:'.16em',
+            textTransform:'uppercase', color:'rgba(240,232,220,.80)',
+            animation:'emerge .4s ease' }}>Place it</button>
+        )}
+      </div>
+    </div>
+  );
+
+  // complete
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 34px', textAlign:'center', gap:'28px',
+      background:'radial-gradient(ellipse at 50% 40%, #07150D, #020805)' }}>
+      <div style={{ width:'42px', height:'1px', background:`${MC}40` }}></div>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'20px',
+        color:'rgba(240,232,220,.80)', lineHeight:1.85, maxWidth:'280px',
+        animation:'emerge .9s ease' }}>
+        {woven || <span style={{ opacity:.35 }}>the field is receiving…</span>}
+      </p>
+      <div style={{ width:'42px', height:'1px', background:`${MC}40` }}></div>
+      {woven && (
+        <button onClick={onDone} style={{ marginTop:'10px', padding:'13px 36px',
+          borderRadius:'28px', cursor:'pointer', background:`${GC}12`,
+          border:`1px solid ${MC}30`, fontFamily:"'Cormorant Garamond',serif",
+          fontSize:'15px', letterSpacing:'.2em', textTransform:'uppercase',
+          color:'rgba(240,232,220,.70)', animation:'emerge .6s ease' }}>
+          Return to the field
+        </button>
+      )}
+    </div>
+  );
+}
+Object.assign(window, { ConvergenceView });
+</script>
+
+<!-- ═══ D · APP ═══ -->
+<script type="text/babel">
+const { useState:useApp } = React;
+const { FieldView:FV, ConvergenceView:CV } = window;
+
+function App() {
+  const [view, setView] = useApp('field');
+  return (
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"></div>
+          <div className="ph-content">
+            {view === 'field' && <FV onConverge={() => setView('convergence')}/>}
+            {view === 'convergence' && <CV onDone={() => setView('field')}/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

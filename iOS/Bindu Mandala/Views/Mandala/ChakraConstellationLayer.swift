@@ -323,7 +323,7 @@ struct ChakraConstellationVoices: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(e.label)
-                    .accessibilityHint("Opens its room.")
+                    .accessibilityHint(e.sealed ? "Opens its held threshold." : "Opens its room.")
                     .accessibilitySortPriority(Double(-e.road))
                     .position(e.point)
                 } else {
@@ -346,6 +346,8 @@ struct ChakraConstellationVoices: View {
         let road: Int
         let label: String
         let point: CGPoint
+        /// Ruling 2 · a sealed room (its label already says it is held).
+        var sealed: Bool = false
     }
 
     static func entries(chakras: [Chakra33], seats: [MandalaWorld.Seat],
@@ -363,7 +365,8 @@ struct ChakraConstellationVoices: View {
             let seatName: String? = c.address == .seat ? c.kp.first.flatMap { names[$0] } : nil
             out.append(Entry(road: c.road,
                              label: ChakraConstellation.spokenLabel(c, seatName: seatName),
-                             point: p))
+                             point: p,
+                             sealed: c.isSealed))
         }
         return out
     }

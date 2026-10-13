@@ -1,0 +1,3455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Svadhisthana — The Sacral · A Strange Chakra Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #fdfbf5;
+  --bg: #f5f2ec;
+  --bg-warm: #ede8df;
+  --gold: #C9A84C;
+  --text: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #8a8a8a;
+  --border: rgba(0,0,0,0.07);
+
+  /* Svadhisthana — Sacral Orange, calibrated for cream */
+  --chakra: #CC7200;
+  --chakra-tint: rgba(204,114,42,0.05);
+  --chakra-border: rgba(204,114,42,0.18);
+  --chakra-glow: rgba(232,148,58,0.5);
+
+  /* Ātmākarshini — the warm-cream gold that lives at the center of the six */
+  --atma: #FFDB9B;
+  --atma-soft: rgba(255,219,155,0.45);
+
+  /* The next chakra — Manipura's deep solar gold. Canonical value from color-system.md,
+     cream-calibrated. The pigment the threshold opens onto. */
+  --next-color: #9A7B00;
+  --next-glow: rgba(154,123,0,0.55);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  font-size: 17px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+}
+
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px; width: 0%;
+  background: var(--chakra);
+  z-index: 100;
+  transition: width 0.1s linear;
+}
+
+/* ─── HERO ─── */
+.hero {
+  background: var(--cream);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* A faint warm glow rises from below — the pull was here before you arrived */
+  background: radial-gradient(ellipse 80% 40% at 50% 110%, rgba(204,114,42,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-top-nav {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 28px 36px;
+  display: flex;
+  justify-content: space-between;
+}
+.hero-top-nav a {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(26,26,26,0.3);
+  text-decoration: none;
+  transition: color 0.25s;
+}
+.hero-top-nav a:hover { color: var(--chakra); }
+
+.hero-count {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--chakra);
+  margin-bottom: 28px;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 0.3s forwards;
+}
+
+.hero-verb {
+  font-family: 'Lora', serif;
+  font-weight: 400;
+  font-size: clamp(80px, 16vw, 148px);
+  letter-spacing: 0.07em;
+  color: var(--chakra);
+  text-align: center;
+  line-height: 1;
+  margin-bottom: 36px;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: verbIn 0.9s cubic-bezier(0.16,1,0.3,1) 0.5s forwards;
+}
+
+.hero-threshold {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 17px;
+  color: rgba(26,26,26,0.42);
+  text-align: center;
+  line-height: 1.75;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 1s forwards;
+}
+
+.hero-scroll-hint {
+  position: absolute;
+  bottom: 36px;
+  left: 50%; transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 1.5s forwards;
+}
+.hero-scroll-hint span {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(26,26,26,0.25);
+}
+.scroll-line {
+  width: 1px; height: 36px;
+  background: linear-gradient(to bottom, rgba(26,26,26,0.2), transparent);
+  animation: breathe 2.5s ease-in-out 2s infinite;
+}
+
+@keyframes verbIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.7; }
+}
+
+/* ─── BOOK ─── */
+.book {
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--cream);
+  box-shadow: 0 0 80px rgba(0,0,0,0.05);
+}
+.book-inner { padding: 72px 56px; }
+@media (max-width: 640px) {
+  .book-inner { padding: 48px 24px; }
+}
+
+/* ─── IDENTITY ─── */
+.identity {
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 48px;
+}
+.chakra-sanskrit {
+  font-family: 'Lora', serif;
+  font-weight: 400;
+  font-size: 26px;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.chakra-english {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--chakra);
+  margin-bottom: 20px;
+}
+.chakra-essence {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.chakra-location {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+.core-question {
+  padding: 18px 22px;
+  background: var(--chakra-tint);
+  border-left: 2px solid var(--chakra);
+}
+.core-question-label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--chakra);
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+.core-question p {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 17px;
+  color: var(--text);
+  margin: 0;
+}
+
+/* ─── PROSE ─── */
+p { color: var(--text-secondary); margin-bottom: 20px; }
+em { font-family: 'Lora', serif; font-style: italic; color: var(--text); }
+strong { font-weight: 500; color: var(--text); }
+h3 {
+  font-family: 'Lora', serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--text);
+  margin: 48px 0 18px;
+}
+
+/* ─── SEED ─── */
+.seed {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 17px;
+  text-align: center;
+  padding: 30px 0;
+  margin: 40px 0;
+  color: var(--text);
+  border-top: 1px solid rgba(201,168,76,0.3);
+  border-bottom: 1px solid rgba(201,168,76,0.3);
+  line-height: 1.6;
+}
+
+/* ─── GO DEEPER ─── */
+.deeper-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color 0.2s;
+  margin-top: 8px;
+}
+.deeper-toggle:hover { color: var(--chakra); }
+.deeper-toggle::before {
+  content: '';
+  display: block;
+  width: 22px; height: 1px;
+  background: currentColor;
+  transition: width 0.3s;
+}
+.deeper-toggle:hover::before { width: 36px; }
+.deeper-toggle .arrow { margin-left: auto; transition: transform 0.3s; }
+.deeper-toggle.open .arrow { transform: rotate(180deg); }
+
+.deeper-content {
+  display: none;
+  padding: 28px 0 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+}
+.deeper-content.open { display: block; }
+.deeper-item { margin-bottom: 28px; }
+.deeper-item-label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.deeper-item p { font-size: 15px; line-height: 1.75; color: var(--text-secondary); margin: 0; }
+.frequency-sound {
+  font-family: 'Lora', serif;
+  font-size: 30px;
+  color: var(--chakra);
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* ─── DIVIDER ─── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 56px 0;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.divider-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+/* ─── PRACTICE BLOCK ─── */
+.practice-block {
+  background: var(--chakra-tint);
+  border-top: 2px solid var(--chakra-border);
+  border-bottom: 1px solid var(--chakra-border);
+  margin: 0 -56px;
+  padding: 48px 56px;
+}
+@media (max-width: 640px) {
+  .practice-block { margin: 0 -24px; padding: 36px 24px; }
+}
+.practice-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--chakra);
+  margin-bottom: 24px;
+  opacity: 0.9;
+}
+.practice-block p { color: var(--text-secondary); font-size: 16px; line-height: 1.9; }
+.practice-block strong { color: var(--text); }
+.practice-block em { color: var(--text-secondary); }
+
+/* ─── WRITING ─── */
+.writing-section { margin: 56px 0 48px; }
+.writing-prompt {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 22px;
+  line-height: 1.7;
+}
+.writing-area {
+  width: 100%;
+  min-height: 140px;
+  border: none;
+  border-bottom: 1.5px solid rgba(0,0,0,0.1);
+  background: transparent;
+  font-family: 'Lora', serif;
+  font-size: 16px;
+  line-height: 2.2;
+  color: var(--text);
+  resize: none;
+  outline: none;
+  padding: 4px 0 16px;
+  transition: border-color 0.25s;
+  background-image: repeating-linear-gradient(
+    to bottom, transparent, transparent calc(2.2em - 1px),
+    rgba(0,0,0,0.04) calc(2.2em - 1px), rgba(0,0,0,0.04) 2.2em
+  );
+  background-attachment: local;
+}
+.writing-area:focus { border-bottom-color: var(--chakra); }
+.writing-area::placeholder { color: rgba(0,0,0,0.18); font-style: italic; }
+.writing-saved {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.writing-saved.visible { opacity: 1; }
+
+/* Post-write reflection — appears once the walker has written.
+   The sacral gently asking: did the real one surface, or the safe one? */
+.writing-reflection {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  max-width: 520px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  margin-top: 0;
+  transition: max-height 1.6s cubic-bezier(0.16,1,0.3,1) 0.2s,
+              opacity 1.2s ease 0.5s,
+              margin-top 1.2s ease 0.2s;
+}
+.writing-reflection.revealed {
+  max-height: 140px;
+  opacity: 1;
+  margin-top: 28px;
+}
+
+/* ─── PRACTICE OPTIONS ─── */
+.practice-options { margin: 8px 0 0; }
+.practice-option {
+  padding: 18px 22px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 3px;
+  margin-bottom: 10px;
+  border-left: 2px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+.practice-option:hover {
+  border-left-color: var(--chakra);
+  background: var(--chakra-tint);
+}
+.practice-option p { font-size: 15px; line-height: 1.75; margin: 0; }
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 56px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+@media (max-width: 640px) { .bottom-nav { padding: 28px 24px; } }
+.nav-link {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-link:hover { color: var(--chakra); }
+.nav-position {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+}
+
+hr.book-rule {
+  border: none; height: 1px;
+  background: var(--border);
+  margin: 48px 0;
+}
+
+/* ─── TREE IMAGE ─── */
+/* The tree the text has been pointing at. The seed lives in the reflection.
+   Click to look closer. */
+.tree-figure {
+  margin: 48px -16px;
+  cursor: zoom-in;
+  position: relative;
+}
+@media (max-width: 640px) {
+  .tree-figure { margin: 36px -8px; }
+}
+.tree-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 3px;
+  transition: transform 0.6s cubic-bezier(0.16,1,0.3,1), box-shadow 0.5s ease;
+  /* Water breathes — slightly slower than Muladhara's earth, slightly more fluid */
+  animation: treeBreath 16s ease-in-out infinite;
+}
+.tree-figure:hover .tree-image {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(204,114,42,0.20), 0 2px 8px rgba(0,0,0,0.08);
+}
+.tree-hint {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 18px;
+  letter-spacing: 0.02em;
+  transition: color 0.3s;
+}
+.tree-figure:hover .tree-hint { color: var(--chakra); }
+
+@keyframes treeBreath {
+  0%, 100% { transform: scale(1.000); }
+  50%      { transform: scale(1.003); }
+}
+
+/* ─── LIGHTBOX ─── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Near-black with sacral-orange undertone — not pure black, this is the sacral at depth */
+  background: radial-gradient(ellipse at center, #1a0a03 0%, #0a0401 78%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+.lightbox.open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.5s ease;
+}
+.lightbox-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox-image {
+  max-width: 96vw;
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  transform-origin: center center;
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: auto;
+  will-change: transform;
+}
+.lightbox-image.dragging { transition: none; cursor: grabbing; }
+.lightbox-image.zoomed { cursor: grab; }
+
+.lightbox-close {
+  position: absolute;
+  top: 22px; right: 22px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 300;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+  z-index: 2;
+}
+.lightbox-close:hover {
+  background: rgba(204,114,42,0.14);
+  color: rgba(255,255,255,0.95);
+  border-color: rgba(204,114,42,0.45);
+}
+
+.lightbox-hint {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: rgba(255,255,255,0.48);
+  letter-spacing: 0.06em;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  padding: 10px 20px;
+  background: rgba(0,0,0,0.28);
+  border-radius: 3px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  max-width: calc(100vw - 40px);
+}
+.lightbox-hint.visible { opacity: 1; }
+.lightbox-hint .sep { opacity: 0.5; margin: 0 8px; }
+
+@media (max-width: 640px) {
+  .lightbox-close { top: 16px; right: 16px; width: 40px; height: 40px; font-size: 16px; }
+  .lightbox-hint { bottom: 20px; font-size: 12px; padding: 8px 14px; }
+}
+
+body.lightbox-open { overflow: hidden; }
+
+/* ─── WHERE THE CURRENTS LEAD ─── */
+/* Extensible section — two experiences, room to grow.
+   Each card is a current-door — the voice still flowing on the other side.
+   V4 delta: collapsible with auto-expand on return when writing exists */
+.currents-lead {
+  margin: 56px 0 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.wctl-toggle {
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Lora', serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  letter-spacing: 0.01em;
+  transition: color 0.25s;
+}
+.wctl-toggle:hover { color: var(--chakra); }
+.wctl-toggle-indicator {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), color 0.25s;
+  line-height: 1;
+}
+.wctl-toggle:hover .wctl-toggle-indicator { color: var(--chakra); }
+.currents-lead.open .wctl-toggle-indicator { transform: rotate(180deg); }
+
+.wctl-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+.currents-lead.open .wctl-content {
+  max-height: 3600px;
+  transition: max-height 1.1s cubic-bezier(0.16,1,0.3,1);
+}
+
+.currents-lead-label {
+  font-family: 'Lora', serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.currents-lead-intro {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-bottom: 40px;
+  line-height: 1.7;
+  padding-top: 4px;
+}
+.currents-grid {
+  display: grid;
+  grid-template-columns: 1fr;  /* stacked — each card gets its own moment */
+  gap: 40px;
+}
+@media (max-width: 640px) {
+  .currents-grid { gap: 32px; }
+}
+.current-door {
+  display: block;
+  padding: 28px 26px;
+  background: rgba(204,114,42,0.05);
+  border: 1px solid rgba(204,114,42,0.18);
+  border-radius: 3px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1),
+              background 0.35s ease,
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
+  position: relative;
+  overflow: hidden;
+  padding-right: 26px;
+}
+.current-door:hover {
+  transform: translateY(-2px);
+  background: rgba(204,114,42,0.08);
+  border-color: rgba(204,114,42,0.35);
+  box-shadow: 0 8px 24px rgba(204,114,42,0.12);
+}
+
+.door-meta {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--chakra);
+  margin-bottom: 12px;
+  opacity: 0.85;
+}
+.door-title {
+  font-family: 'Lora', serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+.door-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+.door-text em {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.door-enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color 0.25s;
+}
+.current-door:hover .door-enter { color: var(--chakra); }
+.door-arrow {
+  width: 28px;
+  height: 1px;
+  background: currentColor;
+  position: relative;
+  transition: width 0.35s ease;
+}
+.door-arrow::after {
+  content: '';
+  position: absolute;
+  right: 0; top: -3px;
+  width: 7px; height: 7px;
+  border-top: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  transform: rotate(45deg);
+}
+.current-door:hover .door-arrow { width: 42px; }
+
+/* Text content must sit above the glyph */
+.door-meta, .door-title, .door-text, .door-enter {
+  position: relative;
+  z-index: 2;
+}
+
+/* Cream gradient overlay so text reads cleanly over glyph */
+.current-door::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(251,248,242,0.0) 0%,
+    rgba(251,248,242,0.45) 30%,
+    rgba(251,248,242,0.62) 70%,
+    rgba(251,248,242,0.25) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  opacity: 0.9;
+}
+.current-door:hover::after { opacity: 0.75; }
+
+/* ─── DOOR GLYPHS · FULL-CARD SIGILS · Svadhisthana ─── */
+/* Wakeup: Ātmākarshini at the center of five Shaktis, connected by curving current-lines.
+            Ambient orbital drift; hover draws the five inward.
+   Dance:   Three wave-curves with two crystal-nodes at the ebb positions.
+            Ambient lateral flow; crystals pulse brightest at ebb. */
+
+.door-glyph {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.45;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.current-door:hover .door-glyph { opacity: 0.78; }
+
+/* ── Wakeup Glyph — the five around the one ── */
+.wg-current {
+  fill: none;
+  stroke: var(--chakra);
+  stroke-width: 0.7;
+  opacity: 0.5;
+  animation: wgCurrentBreath 9s ease-in-out infinite;
+}
+@keyframes wgCurrentBreath {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.65; }
+}
+
+.wg-shakti {
+  fill: var(--chakra);
+  opacity: 0.72;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wgShaktiDrift 14s ease-in-out infinite;
+}
+.wg-shakti.s1 { animation-delay: 0s; }
+.wg-shakti.s2 { animation-delay: 2.4s; }
+.wg-shakti.s3 { animation-delay: 5.6s; }
+.wg-shakti.s4 { animation-delay: 8.8s; }
+.wg-shakti.s5 { animation-delay: 11.2s; }
+@keyframes wgShaktiDrift {
+  0%, 100% { transform: translate(0, 0)      scale(1);    opacity: 0.68; }
+  25%      { transform: translate(2px, -3px) scale(1.08); opacity: 0.85; }
+  50%      { transform: translate(-1px, 2px) scale(0.96); opacity: 0.6;  }
+  75%      { transform: translate(-3px, -1px) scale(1.04); opacity: 0.78; }
+}
+
+.wg-atma-halo {
+  fill: var(--atma);
+  opacity: 0.2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wgAtmaBreath 7s ease-in-out infinite;
+}
+.wg-atma-core {
+  fill: var(--atma);
+  opacity: 0.95;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wgAtmaCoreBreath 7s ease-in-out infinite;
+}
+@keyframes wgAtmaBreath {
+  0%, 100% { transform: scale(1);    opacity: 0.2;  }
+  50%      { transform: scale(1.25); opacity: 0.38; }
+}
+@keyframes wgAtmaCoreBreath {
+  0%, 100% { transform: scale(1);    opacity: 0.9; }
+  50%      { transform: scale(1.15); opacity: 1;   }
+}
+
+/* On hover: the five drift inward, currents brighten, center brightens.
+   The card itself feels 'pulled' by the current — a slower, longer lift. */
+.current-door.wakeup:hover .wg-shakti    { animation-duration: 7s; }
+.current-door.wakeup:hover .wg-current   { animation-duration: 4.5s; opacity: 0.75; }
+.current-door.wakeup:hover .wg-atma-core { animation-duration: 3.5s; }
+.current-door.wakeup:hover .wg-atma-halo { animation-duration: 3.5s; }
+
+.current-door.wakeup {
+  transition: transform 0.7s cubic-bezier(0.16,1,0.3,1),
+              background 0.35s ease,
+              border-color 0.35s ease,
+              box-shadow 0.5s ease;
+}
+.current-door.wakeup:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(204,114,42,0.16),
+              0 2px 10px rgba(255,219,155,0.1);
+}
+
+/* ── Dance Glyph — three waves, two crystals ── */
+.dg-wave {
+  fill: none;
+  stroke: var(--chakra);
+  stroke-linecap: round;
+  stroke-width: 1;
+}
+.dg-wave.w1 { opacity: 0.58; animation: dgWaveFlow1 11s linear infinite; }
+.dg-wave.w2 { opacity: 0.72; animation: dgWaveFlow2 9.5s linear infinite; }
+.dg-wave.w3 { opacity: 0.44; animation: dgWaveFlow3 12.5s linear infinite; }
+
+/* Waves flow via stroke-dashoffset — lateral motion, no gravity */
+.dg-wave {
+  stroke-dasharray: 8 6;
+}
+@keyframes dgWaveFlow1 { to { stroke-dashoffset: -112; } }
+@keyframes dgWaveFlow2 { to { stroke-dashoffset: -120; } }
+@keyframes dgWaveFlow3 { to { stroke-dashoffset: -100; } }
+
+.dg-crystal {
+  fill: var(--atma);
+  opacity: 0.85;
+  transform-box: fill-box;
+  transform-origin: center;
+  /* Crystals bloom when the waves are at their ebb — 10s cycle staggered */
+  animation: dgCrystalBloom 10s ease-in-out infinite;
+}
+.dg-crystal.k1 { animation-delay: 0s; }
+.dg-crystal.k2 { animation-delay: 5s; }
+@keyframes dgCrystalBloom {
+  0%, 100% { transform: scale(0.9);  opacity: 0.55; }
+  30%      { transform: scale(1.3);  opacity: 1;    }
+  60%      { transform: scale(0.95); opacity: 0.7;  }
+}
+
+/* On hover: waves flow faster, crystals brighten, card drifts with current */
+.current-door.dance:hover .dg-wave.w1 { animation-duration: 6s; }
+.current-door.dance:hover .dg-wave.w2 { animation-duration: 5.2s; }
+.current-door.dance:hover .dg-wave.w3 { animation-duration: 7s; }
+.current-door.dance:hover .dg-crystal { animation-duration: 5s; }
+
+.current-door.dance {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.35s ease,
+              border-color 0.35s ease,
+              box-shadow 0.5s ease;
+}
+.current-door.dance:hover {
+  /* The card slides slightly laterally — current-carried, not gravity-lifted */
+  transform: translateY(-2px) translateX(3px);
+  box-shadow: 0 12px 32px rgba(204,114,42,0.14),
+              0 2px 14px rgba(255,219,155,0.12);
+}
+
+/* Mobile — glyphs stay visible, text reads cleanly */
+@media (max-width: 640px) {
+  .door-glyph { opacity: 0.38; }
+}
+
+/* Reduced motion — freeze the glyph but keep it visible */
+@media (prefers-reduced-motion: reduce) {
+  .wg-shakti, .wg-current, .wg-atma-halo, .wg-atma-core,
+  .dg-wave, .dg-crystal,
+  .current-door.wakeup:hover, .current-door.dance:hover {
+    animation: none;
+    transition: opacity 0.3s ease;
+  }
+}
+
+/* ─── STORY PORTAL · AXIS DIMENSION PREVIEW ─── */
+/* A full region shimmering with currents already flowing.
+   Same background as Story Mode, so tapping feels like stepping into
+   the same space made larger. */
+.story-portal {
+  display: block;
+  width: 100%;
+  min-height: 300px;
+  position: relative;
+  /* Deep warm-brown, almost black — water-at-night, warm-tinted */
+  background: radial-gradient(ellipse at 50% 60%, #2a1208 0%, #120603 85%);
+  border: 1px solid rgba(204,114,42,0.22);
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  color: rgba(255,240,220,0.9);
+  font-family: 'DM Sans', sans-serif;
+  padding: 56px 40px;
+  margin: 48px 0 12px;
+  max-height: 0;
+  opacity: 0;
+  transition: color 0.3s ease,
+              max-height 1.6s cubic-bezier(0.16,1,0.3,1) 0.2s,
+              opacity 1.4s ease 0.4s,
+              padding 0.5s ease,
+              margin 0.5s ease,
+              border-color 0.5s ease,
+              box-shadow 0.5s ease,
+              transform 0.5s ease;
+}
+.story-portal.revealed {
+  max-height: 600px;
+  opacity: 1;
+}
+.story-portal:hover {
+  border-color: rgba(204,114,42,0.48);
+  box-shadow: 0 0 0 1px rgba(204,114,42,0.3),
+              0 16px 48px rgba(30,12,4,0.5);
+  transform: translateY(-2px);
+}
+
+/* ── Background layers ── */
+.sp-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  display: block;
+}
+
+/* Currents — thin laterally-drifting lines, register-native to water.
+   This replaces the ember-field that ground chakras carry. */
+.sp-currents {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: block;
+}
+.sp-currents svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sp-current-path {
+  fill: none;
+  stroke: rgba(204,114,42,0.22);
+  stroke-width: 0.8;
+  stroke-linecap: round;
+  stroke-dasharray: 12 10;
+}
+.sp-current-path.c1 { animation: spCurrentFlow1 16s linear infinite; }
+.sp-current-path.c2 { animation: spCurrentFlow2 20s linear infinite; }
+.sp-current-path.c3 { animation: spCurrentFlow3 14s linear infinite; stroke-opacity: 0.18; }
+.sp-current-path.c4 { animation: spCurrentFlow4 22s linear infinite; stroke-opacity: 0.15; }
+.sp-current-path.c5 { animation: spCurrentFlow5 18s linear infinite; }
+.sp-current-path.c6 { animation: spCurrentFlow6 25s linear infinite; stroke-opacity: 0.12; }
+@keyframes spCurrentFlow1 { to { stroke-dashoffset: -240; } }
+@keyframes spCurrentFlow2 { to { stroke-dashoffset: -220; } }
+@keyframes spCurrentFlow3 { to { stroke-dashoffset: -180; } }
+@keyframes spCurrentFlow4 { to { stroke-dashoffset: -260; } }
+@keyframes spCurrentFlow5 { to { stroke-dashoffset: -200; } }
+@keyframes spCurrentFlow6 { to { stroke-dashoffset: -300; } }
+
+/* Sparse warm drift-points — kin to Muladhara's stars, but fewer and warmer,
+   these are the latent Shaktis visible in the field behind the currents */
+.sp-stars {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.sp-star {
+  position: absolute;
+  width: 2.5px;
+  height: 2.5px;
+  border-radius: 50%;
+  background: rgba(232,148,58,0.7);
+  box-shadow: 0 0 6px rgba(232,148,58,0.5);
+  opacity: 0.25;
+  animation: spStarDrift 9s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+.sp-star.lg {
+  width: 3.5px;
+  height: 3.5px;
+  background: rgba(255,219,155,0.85);
+  box-shadow: 0 0 8px rgba(255,219,155,0.55);
+}
+@keyframes spStarDrift {
+  0%, 100% { opacity: 0.2; transform: translate(0, 0) scale(1); }
+  50%      { opacity: 0.7; transform: translate(3px, -2px) scale(1.2); }
+}
+
+/* Shimmer — warm sacral band sweeping across, echoing water-surface light */
+.sp-shimmer {
+  position: absolute;
+  top: -30%; left: -60%;
+  width: 220%; height: 160%;
+  background: linear-gradient(
+    110deg,
+    transparent 35%,
+    rgba(220,130,70,0.05) 46%,
+    rgba(220,130,70,0.13) 50%,
+    rgba(220,130,70,0.05) 54%,
+    transparent 65%
+  );
+  animation: spShimmer 11s linear infinite;
+  display: block;
+}
+@keyframes spShimmer {
+  0%   { transform: translateX(-55%); }
+  100% { transform: translateX(55%); }
+}
+
+/* Glow — radial breath in the center, warm sacral */
+.sp-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 340px; height: 340px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle,
+    rgba(255,200,140,0.14) 0%,
+    rgba(204,114,42,0.06) 40%,
+    transparent 72%);
+  filter: blur(4px);
+  animation: spGlowBreath 8s ease-in-out infinite;
+  display: block;
+}
+@keyframes spGlowBreath {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1);    }
+  50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.2);  }
+}
+
+/* ── Content layer ── */
+.sp-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  z-index: 2;
+  text-align: center;
+}
+
+.sp-label {
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(232,148,58,0.85);
+  font-weight: 400;
+}
+
+.sp-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--atma);  /* Ātmākarshini cream-gold — the center of the five */
+  box-shadow: 0 0 22px rgba(255,219,155,0.55),
+              0 0 48px rgba(255,219,155,0.24);
+  animation: spDotBreath 6s ease-in-out infinite;
+  display: block;
+}
+@keyframes spDotBreath {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 22px rgba(255,219,155,0.55), 0 0 48px rgba(255,219,155,0.24); }
+  50%      { transform: scale(1.18); box-shadow: 0 0 32px rgba(255,219,155,0.8),  0 0 64px rgba(255,219,155,0.36); }
+}
+
+.sp-headline {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(19px, 3vw, 23px);
+  color: rgba(255,240,220,0.93);
+  line-height: 1.5;
+  max-width: 480px;
+  text-shadow: 0 0 24px rgba(204,114,42,0.22);
+}
+
+.sp-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,240,220,0.58);
+  padding: 14px 2px 2px;
+  border-top: 1px solid rgba(204,114,42,0.32);
+  margin-top: 6px;
+  transition: color 0.35s, border-color 0.35s;
+}
+.story-portal:hover .sp-cta {
+  color: rgba(255,240,220,0.95);
+  border-top-color: rgba(204,114,42,0.56);
+}
+.sp-cta-arrow {
+  display: inline-block;
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.story-portal:hover .sp-cta-arrow { transform: translateX(7px); }
+
+/* Hover intensifies background motion */
+.story-portal:hover .sp-shimmer            { animation-duration: 6s; }
+.story-portal:hover .sp-dot                { animation-duration: 3s; }
+.story-portal:hover .sp-glow               { animation-duration: 4.5s; }
+.story-portal:hover .sp-current-path.c1    { animation-duration: 10s; }
+.story-portal:hover .sp-current-path.c2    { animation-duration: 12s; }
+.story-portal:hover .sp-current-path.c3    { animation-duration: 9s; }
+.story-portal:hover .sp-current-path.c4    { animation-duration: 14s; }
+.story-portal:hover .sp-current-path.c5    { animation-duration: 11s; }
+.story-portal:hover .sp-current-path.c6    { animation-duration: 16s; }
+
+@media (max-width: 640px) {
+  .story-portal {
+    padding: 44px 24px;
+    min-height: 260px;
+  }
+  .sp-headline { font-size: 17px; }
+  .sp-glow { width: 220px; height: 220px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-star, .sp-shimmer, .sp-glow, .sp-dot, .sp-current-path {
+    animation: none;
+  }
+}
+
+/* ═══ STORY MODE · THE AXIS DIMENSION ═══
+   Svadhisthana — the cosmos-calling scene.
+   Currents already flowing. Five Shaktis already drifting. Ātmākarshini
+   at the center — barely visible at first, the pull that preceded arrival. */
+
+.story-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  perspective: 1800px;
+  /* V5 Locked Decision 24: solid base so veil transitions never bleed the page through */
+  background: #060308;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 1.6s;
+}
+.story-mode.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.25s ease, visibility 0s linear;
+}
+
+body.story-open { overflow: hidden; }
+
+.story-scene {
+  position: absolute;
+  inset: 0;
+  /* Water-at-night register — same as Story Portal so the flip feels continuous */
+  background: radial-gradient(ellipse at 50% 60%, #2a1208 0%, #120603 85%);
+  transform: rotateY(-180deg) scale(0.96);
+  transform-origin: right center;
+  transition: transform 1.55s cubic-bezier(0.16,1,0.3,1);
+  backface-visibility: hidden;
+  overflow: hidden;
+  color: rgba(255,240,220,0.88);
+  font-family: 'Lora', serif;
+  cursor: pointer;
+}
+.story-mode.active .story-scene {
+  transform: rotateY(0deg) scale(1);
+}
+
+/* ── The currents already in motion, before any tap ── */
+.sv-currents {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+.sv-currents svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sv-current {
+  fill: none;
+  stroke: rgba(204,114,42,0.24);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-dasharray: 14 12;
+  transition: stroke 2.4s ease, stroke-width 2.4s ease, stroke-opacity 2.4s ease;
+}
+.sv-current.sc1 { animation: svCurrentFlow1 18s linear infinite; }
+.sv-current.sc2 { animation: svCurrentFlow2 22s linear infinite; }
+.sv-current.sc3 { animation: svCurrentFlow3 16s linear infinite; stroke-opacity: 0.6; }
+.sv-current.sc4 { animation: svCurrentFlow4 24s linear infinite; stroke-opacity: 0.55; }
+.sv-current.sc5 { animation: svCurrentFlow5 20s linear infinite; }
+.sv-current.sc6 { animation: svCurrentFlow6 26s linear infinite; stroke-opacity: 0.45; }
+.sv-current.sc7 { animation: svCurrentFlow7 17s linear infinite; stroke-opacity: 0.5; }
+@keyframes svCurrentFlow1 { to { stroke-dashoffset: -260; } }
+@keyframes svCurrentFlow2 { to { stroke-dashoffset: -240; } }
+@keyframes svCurrentFlow3 { to { stroke-dashoffset: -220; } }
+@keyframes svCurrentFlow4 { to { stroke-dashoffset: -280; } }
+@keyframes svCurrentFlow5 { to { stroke-dashoffset: -200; } }
+@keyframes svCurrentFlow6 { to { stroke-dashoffset: -320; } }
+@keyframes svCurrentFlow7 { to { stroke-dashoffset: -240; } }
+
+/* Reaching — currents brighten, as if responding to the walker's attention */
+.story-scene.reaching .sv-current {
+  stroke: rgba(232,148,58,0.38);
+  stroke-width: 1.2;
+}
+
+/* ── The five outer Shaktis — drift-lights that were already moving ── */
+.sv-drift {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #E8943A;
+  box-shadow: 0 0 14px rgba(232,148,58,0.55),
+              0 0 28px rgba(232,148,58,0.22);
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  opacity: 0.85;
+  transition: opacity 1.8s ease;
+}
+
+/* Each drift-light gets a wrapper that handles the orbital motion,
+   while the dot itself handles the gentle pulse. */
+.sv-drift-wrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Five distinct orbital paths — each at different radius, period, phase.
+   No gravity; everything curves laterally. */
+.sv-drift-wrap.d1 { animation: svOrbit1 26s linear infinite; }
+.sv-drift-wrap.d2 { animation: svOrbit2 32s linear infinite; animation-delay: -4s; }
+.sv-drift-wrap.d3 { animation: svOrbit3 24s linear infinite; animation-delay: -8s; }
+.sv-drift-wrap.d4 { animation: svOrbit4 30s linear infinite; animation-delay: -12s; }
+.sv-drift-wrap.d5 { animation: svOrbit5 28s linear infinite; animation-delay: -16s; }
+
+@keyframes svOrbit1 {
+  0%   { margin-left:  180px; margin-top: -140px; }
+  25%  { margin-left:   40px; margin-top: -210px; }
+  50%  { margin-left: -160px; margin-top: -100px; }
+  75%  { margin-left: -120px; margin-top:  120px; }
+  100% { margin-left:  180px; margin-top: -140px; }
+}
+@keyframes svOrbit2 {
+  0%   { margin-left:  260px; margin-top:   60px; }
+  25%  { margin-left:  110px; margin-top:  180px; }
+  50%  { margin-left: -220px; margin-top:   80px; }
+  75%  { margin-left: -180px; margin-top: -140px; }
+  100% { margin-left:  260px; margin-top:   60px; }
+}
+@keyframes svOrbit3 {
+  0%   { margin-left:  -70px; margin-top: -200px; }
+  25%  { margin-left: -240px; margin-top:  -40px; }
+  50%  { margin-left: -100px; margin-top:  200px; }
+  75%  { margin-left:  160px; margin-top:   20px; }
+  100% { margin-left:  -70px; margin-top: -200px; }
+}
+@keyframes svOrbit4 {
+  0%   { margin-left: -210px; margin-top:  100px; }
+  25%  { margin-left:  -40px; margin-top:  220px; }
+  50%  { margin-left:  230px; margin-top:  -20px; }
+  75%  { margin-left:   80px; margin-top: -180px; }
+  100% { margin-left: -210px; margin-top:  100px; }
+}
+@keyframes svOrbit5 {
+  0%   { margin-left:   90px; margin-top:  220px; }
+  25%  { margin-left: -120px; margin-top:  120px; }
+  50%  { margin-left: -200px; margin-top:  -80px; }
+  75%  { margin-left:   60px; margin-top: -220px; }
+  100% { margin-left:   90px; margin-top:  220px; }
+}
+
+/* Trails — a faint arc showing where each light has been */
+.sv-trail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+.sv-trail svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sv-trail-path {
+  fill: none;
+  stroke: rgba(232,148,58,0.38);
+  stroke-width: 0.7;
+  stroke-linecap: round;
+  stroke-dasharray: 2 4;
+}
+.story-scene.trails .sv-trail { opacity: 1; }
+
+/* Shakti names — hidden by default, fade in when the scene 'names' them */
+.sv-names {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 2.4s ease;
+}
+.sv-name {
+  position: absolute;
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(11px, 2vw, 14px);
+  color: rgba(255,240,220,0.7);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  text-shadow: 0 0 8px rgba(0,0,0,0.6);
+}
+.story-scene.named .sv-names { opacity: 1; }
+
+/* Five name positions — each near its orbit's average position, not directly on the drift */
+.sv-name.n1 { top: 22%; left: 68%; }
+.sv-name.n2 { top: 38%; left: 82%; }
+.sv-name.n3 { top: 18%; left: 32%; }
+.sv-name.n4 { top: 68%; left: 20%; }
+.sv-name.n5 { top: 78%; left: 58%; }
+
+/* Atma name — hidden until atma-bright */
+.sv-atma-name {
+  position: absolute;
+  top: calc(50% + 28px);
+  left: 50%;
+  transform: translate(-50%, 0);
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(12px, 2.2vw, 15px);
+  color: rgba(255,219,155,0.88);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 2.2s ease 0.4s;
+  z-index: 6;
+  text-shadow: 0 0 12px rgba(255,219,155,0.4);
+}
+.story-scene.atma-bright .sv-atma-name { opacity: 1; }
+
+/* ── Ātmākarshini — the walker-dot that was always at the center ── */
+.sv-atma-wrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+  /* Small sinusoidal wander — Atma breathes around its own center */
+  animation: svAtmaWander 14s ease-in-out infinite;
+}
+@keyframes svAtmaWander {
+  0%, 100% { margin-left:  0;   margin-top:  0;   }
+  25%      { margin-left:  8px; margin-top: -4px; }
+  50%      { margin-left: -5px; margin-top:  6px; }
+  75%      { margin-left:  4px; margin-top: -8px; }
+}
+
+.sv-atma {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,219,155,0.28);
+  box-shadow: 0 0 8px rgba(255,219,155,0.16);
+  transform: translate(-50%, -50%);
+  transition: width 2.4s ease, height 2.4s ease, background 2.4s ease, box-shadow 2.4s ease;
+  animation: svAtmaBreath 8s ease-in-out infinite;
+}
+@keyframes svAtmaBreath {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.9;  }
+}
+
+/* Atma brightens decisively on 'atma-bright' — the recognition */
+.story-scene.atma-bright .sv-atma {
+  width: 24px;
+  height: 24px;
+  background: var(--atma);
+  box-shadow: 0 0 28px rgba(255,219,155,0.65),
+              0 0 68px rgba(255,219,155,0.3);
+}
+
+/* ── Orbital reveal — faint rings showing the five have been orbiting Atma ── */
+.sv-orbits {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 2.6s ease;
+}
+.sv-orbit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(232,148,58,0.3);
+  transform: translate(-50%, -50%);
+}
+.sv-orbit.o1 { width: 360px; height: 300px; border-color: rgba(232,148,58,0.3); }
+.sv-orbit.o2 { width: 480px; height: 380px; border-color: rgba(232,148,58,0.22); transform: translate(-50%, -50%) rotate(12deg); }
+.sv-orbit.o3 { width: 420px; height: 400px; border-color: rgba(232,148,58,0.18); transform: translate(-50%, -50%) rotate(-18deg); }
+.sv-orbit.o4 { width: 520px; height: 340px; border-color: rgba(232,148,58,0.15); transform: translate(-50%, -50%) rotate(28deg); }
+.sv-orbit.o5 { width: 460px; height: 460px; border-color: rgba(232,148,58,0.12); }
+.story-scene.orbits-reveal .sv-orbits { opacity: 1; }
+
+/* ── Missed-pulls — drift-lights that were at the edges, off-frame ── */
+.sv-missed {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 2.4s ease;
+}
+.sv-missed-light {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(232,148,58,0.5);
+  box-shadow: 0 0 8px rgba(232,148,58,0.35);
+}
+/* Position five edge-lights drifting in/out of frame, each with a trail */
+.sv-missed-light.m1 { top:  8%; left: 88%; animation: svMissedDrift1 20s ease-in-out infinite; }
+.sv-missed-light.m2 { top: 42%; left:  4%; animation: svMissedDrift2 24s ease-in-out infinite; }
+.sv-missed-light.m3 { top: 88%; left: 76%; animation: svMissedDrift3 22s ease-in-out infinite; }
+.sv-missed-light.m4 { top: 68%; left:  6%; animation: svMissedDrift4 26s ease-in-out infinite; }
+.sv-missed-light.m5 { top: 14%; left: 12%; animation: svMissedDrift5 21s ease-in-out infinite; }
+@keyframes svMissedDrift1 {
+  0%, 100% { transform: translate(0, 0);      opacity: 0.7; }
+  50%      { transform: translate(20px, 12px); opacity: 0.4; }
+}
+@keyframes svMissedDrift2 {
+  0%, 100% { transform: translate(0, 0);       opacity: 0.6; }
+  50%      { transform: translate(-14px, 8px); opacity: 0.35; }
+}
+@keyframes svMissedDrift3 {
+  0%, 100% { transform: translate(0, 0);       opacity: 0.65; }
+  50%      { transform: translate(10px, -14px); opacity: 0.4; }
+}
+@keyframes svMissedDrift4 {
+  0%, 100% { transform: translate(0, 0);       opacity: 0.55; }
+  50%      { transform: translate(-18px, -8px); opacity: 0.3; }
+}
+@keyframes svMissedDrift5 {
+  0%, 100% { transform: translate(0, 0);       opacity: 0.6; }
+  50%      { transform: translate(14px, 10px); opacity: 0.35; }
+}
+.story-scene.both-leading .sv-missed { opacity: 1; }
+
+/* ── Convergence — on the final beat, Atma pulses and everything else dims ── */
+.story-scene.convergence .sv-atma {
+  box-shadow: 0 0 40px rgba(255,219,155,0.85),
+              0 0 100px rgba(255,219,155,0.45),
+              0 0 160px rgba(255,219,155,0.2);
+}
+.story-scene.convergence .sv-current     { stroke-opacity: 0.15; }
+.story-scene.convergence .sv-drift       { opacity: 0.5; }
+.story-scene.convergence .sv-missed      { opacity: 0.5; }
+
+/* ── Ripple — fires on final beat ── */
+.sv-ripple {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,219,155,0.6);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+.sv-ripple.firing {
+  animation: svRippleOut 3.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes svRippleOut {
+  0%   { transform: translate(-50%, -50%) scale(0);  opacity: 0; border-width: 2px; }
+  10%  { opacity: 0.85; }
+  100% { transform: translate(-50%, -50%) scale(60); opacity: 0; border-width: 0.3px; }
+}
+
+/* ── Lines-stage (generic) ── */
+.story-lines-stage {
+  position: absolute;
+  left: 50%;
+  bottom: 22%;
+  transform: translateX(-50%);
+  width: min(640px, 88vw);
+  min-height: 100px;
+  text-align: center;
+  padding: 0 20px;
+  z-index: 7;
+}
+
+.story-line {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(18px, 3.2vw, 22px);
+  line-height: 1.7;
+  color: rgba(255,240,220,0.92);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1.2s ease, transform 1.4s cubic-bezier(0.16,1,0.3,1);
+  text-shadow: 0 0 16px rgba(0,0,0,0.5);
+}
+.story-line.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.story-line.fading {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+/* Tap-to-advance hint */
+.story-tap-hint {
+  position: absolute;
+  bottom: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(255,240,220,0.32);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  z-index: 7;
+}
+/* Breathing pulse only while visible — when JS removes .visible, the animation
+   stops and the static opacity:0 takes over, fading cleanly via the transition. */
+.story-tap-hint.visible {
+  opacity: 0.7;
+  animation: storyHintBreath 3.5s ease-in-out infinite;
+}
+@keyframes storyHintBreath {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 0.4; }
+}
+
+/* Continue link — replaced by .threshold-door for the close-of-chakra ritual */
+
+@media (max-width: 640px) {
+  .story-tap-hint { bottom: 14%; font-size: 9px; }
+  .story-lines-stage { bottom: 20%; }
+
+  /* Mobile — pull the orbital paths tighter so the scene still reads */
+  @keyframes svOrbit1 {
+    0%   { margin-left:  120px; margin-top:  -90px; }
+    25%  { margin-left:   20px; margin-top: -150px; }
+    50%  { margin-left: -110px; margin-top:  -60px; }
+    75%  { margin-left:  -80px; margin-top:   80px; }
+    100% { margin-left:  120px; margin-top:  -90px; }
+  }
+  @keyframes svOrbit2 {
+    0%   { margin-left:  170px; margin-top:   40px; }
+    25%  { margin-left:   70px; margin-top:  130px; }
+    50%  { margin-left: -150px; margin-top:   50px; }
+    75%  { margin-left: -120px; margin-top:  -90px; }
+    100% { margin-left:  170px; margin-top:   40px; }
+  }
+  @keyframes svOrbit3 {
+    0%   { margin-left:  -50px; margin-top: -140px; }
+    25%  { margin-left: -160px; margin-top:  -20px; }
+    50%  { margin-left:  -70px; margin-top:  150px; }
+    75%  { margin-left:  110px; margin-top:   10px; }
+    100% { margin-left:  -50px; margin-top: -140px; }
+  }
+  @keyframes svOrbit4 {
+    0%   { margin-left: -140px; margin-top:   70px; }
+    25%  { margin-left:  -30px; margin-top:  150px; }
+    50%  { margin-left:  160px; margin-top:  -10px; }
+    75%  { margin-left:   50px; margin-top: -120px; }
+    100% { margin-left: -140px; margin-top:   70px; }
+  }
+  @keyframes svOrbit5 {
+    0%   { margin-left:   60px; margin-top:  150px; }
+    25%  { margin-left:  -80px; margin-top:   90px; }
+    50%  { margin-left: -140px; margin-top:  -60px; }
+    75%  { margin-left:   40px; margin-top: -160px; }
+    100% { margin-left:   60px; margin-top:  150px; }
+  }
+  .sv-orbit.o1 { width: 240px; height: 200px; }
+  .sv-orbit.o2 { width: 320px; height: 260px; }
+  .sv-orbit.o3 { width: 280px; height: 280px; }
+  .sv-orbit.o4 { width: 340px; height: 220px; }
+  .sv-orbit.o5 { width: 300px; height: 300px; }
+}
+
+/* Close button */
+.story-close {
+  position: absolute;
+  top: 22px; right: 22px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: rgba(255,240,220,0.05);
+  border: 1px solid rgba(255,240,220,0.14);
+  color: rgba(255,240,220,0.55);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+  z-index: 10;
+}
+.story-close:hover {
+  background: rgba(204,114,42,0.2);
+  color: rgba(255,240,220,0.95);
+  border-color: rgba(204,114,42,0.55);
+}
+@media (max-width: 640px) {
+  .story-close { top: 16px; right: 16px; width: 40px; height: 40px; font-size: 16px; }
+}
+
+/* ── Threshold — the passage that opens at the end of each chakra ──
+   After the final recognition lands and the ripple completes, the scene
+   darkens, the register's elements fade, and a single point in the next
+   chakra's color rises at the same center where Ātmā was.
+   This is the recurring ritual at the close of every chakra. */
+
+.story-scene.threshold-open {
+  background: radial-gradient(ellipse at 50% 55%, #0c0402 0%, #020100 95%);
+  transition: background 3.4s ease;
+}
+
+/* Everything Svadhisthana-register fades during threshold */
+.story-scene.threshold-open .sv-current,
+.story-scene.threshold-open .sv-drift,
+.story-scene.threshold-open .sv-trail,
+.story-scene.threshold-open .sv-names,
+.story-scene.threshold-open .sv-atma-name,
+.story-scene.threshold-open .sv-orbits,
+.story-scene.threshold-open .sv-missed {
+  opacity: 0;
+  transition: opacity 3s ease;
+}
+
+/* Ātmā freezes its wander and fades — at the exact center,
+   which is where the next-point is about to rise. Crossfade. */
+.story-scene.threshold-open .sv-atma-wrap {
+  animation: none;
+  margin-left: 0;
+  margin-top: 0;
+  transition: margin 1s ease;
+}
+.story-scene.threshold-open .sv-atma {
+  opacity: 0.08;
+  width: 6px;
+  height: 6px;
+  box-shadow: 0 0 8px rgba(255,219,155,0.06);
+  transition: opacity 3.2s ease, width 3.2s ease, height 3.2s ease, box-shadow 3.2s ease;
+}
+
+/* Beat text fades away once threshold opens — the recognition landed, words aren't needed anymore */
+.story-scene.threshold-open .story-line {
+  opacity: 0;
+  transition: opacity 2.4s ease;
+}
+.story-scene.threshold-open .story-lines-stage {
+  pointer-events: none;
+}
+
+/* ── The Threshold Door ── */
+/* Point + label + continue-hint — one tappable cluster.
+   Appears after threshold-open has settled. */
+.threshold-door {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9;
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  padding: 40px;
+  text-decoration: none;
+  color: rgba(255,240,220,0.78);
+  /* Reveal 1.6s after threshold-open — background has darkened, scene has emptied */
+  transition: opacity 2s ease 1.6s, color 0.35s ease;
+}
+.story-scene.threshold-open .threshold-door {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The next-chakra point — rises at the same position Ātmā was.
+   This IS the pivot. Water becomes fire at the same center. */
+.next-point {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--next-color);
+  box-shadow: 0 0 28px var(--next-glow),
+              0 0 72px rgba(232,166,51,0.3);
+  animation: nextPointBreath 4.5s ease-in-out infinite;
+}
+@keyframes nextPointBreath {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 28px var(--next-glow), 0 0 72px rgba(232,166,51,0.3); }
+  50%      { transform: scale(1.22); box-shadow: 0 0 40px rgba(232,166,51,0.85), 0 0 108px rgba(232,166,51,0.45); }
+}
+
+.next-label {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(14px, 2.4vw, 17px);
+  letter-spacing: 0.14em;
+  color: var(--next-color);
+  opacity: 0.8;
+  text-shadow: 0 0 16px rgba(232,166,51,0.25);
+}
+.next-sublabel {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,240,220,0.4);
+  margin-top: -14px;
+}
+
+.threshold-continue-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(255,240,220,0.42);
+  padding-top: 14px;
+  border-top: 1px solid rgba(232,166,51,0.22);
+  transition: color 0.35s, border-color 0.35s;
+}
+.threshold-continue-hint .arrow {
+  display: inline-block;
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* Hover: the point intensifies, the whole door brightens toward Manipura's color */
+.threshold-door:hover .next-point {
+  animation-duration: 2.8s;
+}
+.threshold-door:hover .threshold-continue-hint {
+  color: var(--next-color);
+  border-top-color: rgba(232,166,51,0.5);
+}
+.threshold-door:hover .threshold-continue-hint .arrow {
+  transform: translateX(8px);
+}
+
+@media (max-width: 640px) {
+  .threshold-door { gap: 22px; padding: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .next-point, .threshold-door {
+    animation: none;
+    transition: opacity 0.4s ease;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ACT VEIL — the dark between-space · #060308
+   Rises instantly after signature phrase lands. Sakshi's eyes appear,
+   blink once, fade. Then the press-and-hold invitation surfaces.
+   ════════════════════════════════════════════════════════════════════ */
+.act-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  background: #060308;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 52px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.8s cubic-bezier(0.4,0,0.2,1);
+}
+.act-veil.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.act-veil.dissolving {
+  opacity: 0;
+  transition: opacity 2.4s ease;
+}
+
+.veil-eyes {
+  display: flex;
+  gap: 52px;
+  align-items: center;
+  opacity: 0;
+}
+.veil-eyes.visible { opacity: 1; }
+
+.veil-eye {
+  width: 42px;
+  height: 15px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.88);
+  box-shadow:
+    0 0 12px rgba(255,255,255,0.6),
+    0 0 32px rgba(240,220,200,0.3);
+  transform: scaleY(0.06);
+  opacity: 0;
+  transform-origin: center center;
+}
+.veil-eyes.animate .veil-eye {
+  animation: eyeBlink 2s ease-in-out 1 forwards;
+}
+.veil-eyes.animate .veil-eye:nth-child(2) {
+  animation-delay: 0.06s;
+}
+@keyframes eyeBlink {
+  0%   { opacity: 0;   transform: scaleY(0.06); }
+  14%  { opacity: 1;   transform: scaleY(1); }
+  55%  { opacity: 1;   transform: scaleY(1); }
+  64%  { opacity: 1;   transform: scaleY(0.06); }
+  73%  { opacity: 1;   transform: scaleY(1); }
+  88%  { opacity: 0.7; transform: scaleY(1); }
+  100% { opacity: 0;   transform: scaleY(1); }
+}
+
+.veil-invite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  opacity: 0;
+  transition: opacity 1.6s ease;
+}
+.veil-invite.visible { opacity: 1; }
+
+.veil-invite-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+}
+
+.veil-hold-ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+.veil-hold-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.veil-ring-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.1);
+  stroke-width: 1.5;
+}
+.veil-ring-fill {
+  fill: none;
+  stroke: rgba(255,255,255,0.72);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 201;
+  stroke-dashoffset: 201;
+  transition: stroke-dashoffset linear;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
+}
+.veil-hold-dot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.veil-hold-dot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.6);
+  box-shadow: 0 0 14px rgba(255,255,255,0.4);
+  transition: transform 0.3s ease, background 0.3s;
+}
+.veil-hold-ring.holding .veil-hold-dot::after {
+  transform: scale(1.5);
+  background: rgba(255,255,255,0.9);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ACT 2 — SAKSHI WITNESS (Svadhisthana)
+   Rises after the hold. Ascending field: orange at base → cream mid →
+   silver-white crown. 26 luminous particles rising toward the crown.
+   Three paragraphs auto-pace. Note: Svadhisthana's Go-beat is a
+   SENTENCE not a single word — intermediate sizing applies.
+   ════════════════════════════════════════════════════════════════════ */
+.act-two {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 2.2s cubic-bezier(0.16,1,0.3,1);
+}
+.act-two.rising {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.act2-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    #CC7200 0%,
+    rgba(204,114,0,0.55) 12%,
+    rgba(242,212,186,0.88) 34%,
+    rgba(252,248,244,0.97) 60%,
+    rgba(255,255,255,0.99) 80%,
+    #ffffff 100%
+  );
+}
+.act2-crown {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 280px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(215,230,255,0.5) 0%, rgba(255,255,255,0) 72%);
+  pointer-events: none;
+}
+.act2-base {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 220px;
+  background: radial-gradient(ellipse at 50% 100%, rgba(204,114,0,0.35) 0%, rgba(204,114,0,0) 75%);
+  pointer-events: none;
+}
+.act2-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.act2-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  opacity: 0;
+  animation: act2Ascend linear infinite;
+}
+@keyframes act2Ascend {
+  0%   { transform: translateY(0) scale(1);    opacity: 0; }
+  8%   { opacity: var(--p-op); }
+  85%  { opacity: var(--p-op); }
+  100% { transform: translateY(-110vh) scale(0.4); opacity: 0; }
+}
+
+.act2-text-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14vh 28px calc(9vh + 240px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  z-index: 2;
+}
+.act2-text-stage::-webkit-scrollbar { display: none; }
+.act2-para {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(16px, 3.2vw, 19px);
+  line-height: 2;
+  color: var(--act2-text, rgba(54,24,10,0.88));
+  max-width: min(560px, 92vw);
+  text-align: center;
+  margin: 0 0 1.6em;
+  opacity: 1;
+  transform: none;
+}
+.act2-para:last-child { margin-bottom: 0; }
+.act2-go {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.act2-word {
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  will-change: opacity;
+}
+.act2-word.visible {
+  opacity: 1;
+}
+
+/* Manipura threshold — rises edge-to-edge from below. Canonical #9A7B00. */
+.act2-door {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: translateY(100%);
+  padding: 36px 32px 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 1.8s cubic-bezier(0.16,1,0.3,1);
+  background: #9A7B00;
+  z-index: 3;
+}
+.act2-door:hover {
+  background: #A98B10;
+}
+.act2-door.risen {
+  transform: translateY(0);
+}
+.act2-door-name {
+  font-family: 'Lora', serif;
+  font-size: clamp(38px, 8vw, 56px);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.act2-door-hint {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: clamp(15px, 2.8vw, 18px);
+  color: rgba(255,255,255,0.74);
+  letter-spacing: 0.02em;
+}
+.act2-door-continue {
+  margin-top: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  transition: color 0.3s;
+}
+.act2-door:hover .act2-door-continue { color: rgba(255,255,255,0.82); }
+
+@media (prefers-reduced-motion: reduce) {
+  .act2-particle { animation: none; opacity: 0.15; }
+  .act2-para { transition: opacity 0.8s ease; transform: none; }
+  .act2-door { transition: transform 0.8s ease; }
+  .act-two { transition: opacity 0.8s ease; }
+  .veil-eyes.animate .veil-eye { animation-duration: 1.2s; }
+}
+
+/* Reduced motion — freeze the scene's autoplay but keep structure visible */
+@media (prefers-reduced-motion: reduce) {
+  .sv-current, .sv-drift-wrap, .sv-atma, .sv-atma-wrap,
+  .sv-missed-light, .story-tap-hint, .story-tap-hint.visible {
+    animation: none;
+  }
+  .story-scene {
+    transition: transform 0.4s ease;
+  }
+}
+
+/* ─── Bindu Field card — universal across all chakras ─── */
+.bfg-core {
+  fill: #C9A84C;
+  opacity: 0.95;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bfgCoreBreath 4.5s ease-in-out infinite;
+}
+@keyframes bfgCoreBreath {
+  0%, 100% { transform: scale(1); opacity: 0.88; }
+  50%      { transform: scale(1.18); opacity: 1; }
+}
+.bfg-wave {
+  fill: none;
+  stroke: #C9A84C;
+  stroke-width: 1.2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bfgWaveOut 6s ease-out infinite;
+  opacity: 0;
+}
+.bfg-wave.w1 { animation-delay: 0.0s; }
+.bfg-wave.w2 { animation-delay: 1.2s; }
+.bfg-wave.w3 { animation-delay: 2.4s; }
+.bfg-wave.w4 { animation-delay: 3.6s; }
+.bfg-wave.w5 { animation-delay: 4.8s; }
+@keyframes bfgWaveOut {
+  0%   { transform: scale(0.18); opacity: 0.8;  stroke-width: 1.6; }
+  60%  { opacity: 0.35; stroke-width: 1; }
+  100% { transform: scale(1.6);  opacity: 0;    stroke-width: 0.4; }
+}
+.bfg-pos {
+  fill: #C9A84C;
+  opacity: 0.24;
+}
+.bfg-pos.bfg-bindu-pos {
+  opacity: 0.95;
+  animation: bfgBinduPosGlow 4.5s ease-in-out infinite;
+}
+@keyframes bfgBinduPosGlow {
+  0%, 100% { opacity: 0.78; }
+  50%      { opacity: 1; }
+}
+.bfg-thread {
+  stroke: #C9A84C;
+  stroke-width: 0.6;
+  fill: none;
+  stroke-dasharray: 2 3;
+  opacity: 0.28;
+}
+.bindu-field:hover .bfg-wave { animation-duration: 3s; }
+.bindu-field:hover .bfg-wave.w1 { animation-delay: 0.0s; }
+.bindu-field:hover .bfg-wave.w2 { animation-delay: 0.6s; }
+.bindu-field:hover .bfg-wave.w3 { animation-delay: 1.2s; }
+.bindu-field:hover .bfg-wave.w4 { animation-delay: 1.8s; }
+.bindu-field:hover .bfg-wave.w5 { animation-delay: 2.4s; }
+.bindu-field:hover .bfg-core { animation-duration: 2.2s; }
+
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progress"></div>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="hero-top-nav">
+    <a href="the-road-home.html">← The Road Home</a>
+    <a href="muladhara-practice.html">← Muladhara</a>
+  </div>
+  <div class="hero-count">Chakra 3 of 33 &nbsp;·&nbsp; स्वाधिष्ठान</div>
+  <div class="hero-verb">FOLLOW</div>
+  <div class="hero-threshold">The pull was never random.<br>It was navigating.</div>
+  <div class="hero-scroll-hint">
+    <span>Begin</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ─── BOOK ─── -->
+<main class="book">
+<div class="book-inner">
+
+  <div class="identity">
+    <div class="chakra-sanskrit">स्वाधिष्ठान · Svadhisthana</div>
+    <div class="chakra-english">The Sacral</div>
+    <div class="chakra-essence">Where desire lives. Not what you want — the fact that you want at all.</div>
+    <div class="chakra-location">Lower abdomen &nbsp;·&nbsp; Below the navel &nbsp;·&nbsp; The space between the hip bones</div>
+    <div class="core-question">
+      <div class="core-question-label">Core Question</div>
+      <p>What do I want?</p>
+    </div>
+  </div>
+
+  <section>
+    <p>This center governs one question — not <em>what do I want</em> the way you'd answer on a form, but the raw version. The pull that existed before there was a name for what was pulling. The desire before the justification. The thing your body is leaning toward before the mind approves or denies it.</p>
+
+    <p>Svadhisthana is flow. Water energy. Movement. The willingness to feel something and follow it without knowing where it leads. When this center is open, you create freely. Ideas arrive and you follow them the way water follows the slope — not by pushing, not by forcing, but by finding the path of least resistance and taking it.</p>
+
+    <p>When this center is blocked, desire either disappears or distorts. It becomes craving — wanting without feeling, consuming without satisfaction. The difference between desire and craving is the difference between following a river and trying to carry the river. One moves. The other exhausts.</p>
+
+    <p>The mechanism is water. <strong>Water doesn't push through obstacles. It flows around them.</strong> The sacral chakra teaches the same principle: stop forcing. Follow what feels alive. The path appears by following the current, not by building a bridge.</p>
+
+    <p>Look at the tree across from you. Nothing is rigid. The trunk curves. The branches circle back. The roots reach into water, not earth. <strong>And the seed syllable is in the reflection, not the tree — because desire is always showing you yourself.</strong> What you want is a mirror of who you are. Follow the want. It's drawing you toward yourself.</p>
+
+    <figure class="tree-figure" onclick="openLightbox()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLightbox();}" tabindex="0" role="button" aria-label="Open the Svadhisthana tree image at full size">
+      <img class="tree-image" src="/tree-of-life/svadhisthana-tree.jpg" alt="The Svadhisthana tree — a curving orange tree with intricate branches above a rippled water surface, the tree's reflection visible beneath. Six Karshini Shaktis are named along the branches. VAM वं, the sacral seed-syllable, appears inverted in the reflection beneath the trunk — because the seed lives in the reflection, not the tree. Three mandala-halos arc behind the canopy.">
+      <figcaption class="tree-hint">Tap to look closer. The seed is in the reflection — that isn't an accident.</figcaption>
+    </figure>
+
+    <p>The Sanskrit means <em>her own abode.</em> <strong>Sva</strong> — one's own. <strong>Adhisthana</strong> — dwelling place. This is the center where you live most authentically. Not the constructed self. Not the reasonable self. The wanting self. The self that reaches before it explains why.</p>
+
+    <p>When this center is active, you don't feel driven. You feel <em>pulled.</em> There's a difference. Being driven is fire, and fire belongs to the next chakra. The pull is quieter than that. The pull is the body leaning before the mind notices it's leaning. You don't ask <em>what do I want?</em> the way a list asks. You ask the way water asks which way is downhill — and the answer is already in the body.</p>
+
+    <p>When this center is blocked, everything feels either numb or compulsive. Not because the wants have gone away — because your contact with them has. The water is still flowing. You lost contact with the water.</p>
+  </section>
+
+  <div class="seed">"Every desire was drawing you toward yourself."</div>
+
+  <button class="deeper-toggle" type="button" onclick="toggleDeeper(this)" aria-expanded="false" aria-controls="deeper-panel">
+    Go deeper <span class="arrow">↓</span>
+  </button>
+  <div class="deeper-content" id="deeper-panel">
+    <div class="deeper-item">
+      <div class="deeper-item-label">The Frequency</div>
+      <span class="frequency-sound">VAM वं</span>
+      <p>A warm, open tone. Hum it in the space below the navel and feel the vibration settle into the hip bones. Not descending like LAM, not rising like RAM — horizontal. The sacral responds to sound the way water responds to vibration. It ripples.</p>
+    </div>
+    <div class="deeper-item">
+      <div class="deeper-item-label">The Avarana</div>
+      <p><strong>Shodasha Dala Padma — the Sixteen-Petal Lotus.</strong> Sixteen forces of desire pulling in sixteen directions. This is not chaos. It's a compass with sixteen bearings. Follow any one of them honestly and it leads to the same center. Six of the sixteen — the Karshini Shaktis — surface in the Wakeup: <em>Kāmākarshini</em> (desire), <em>Shabdākarshini</em> (sound), <em>Sparshākarshini</em> (touch), <em>Rūpākarshini</em> (form), <em>Smṛtyākarshini</em> (memory), and <em>Ātmākarshini</em> — the Self attracting the Self, the one behind the other five.</p>
+    </div>
+  </div>
+
+  <div class="divider"><div class="divider-dot"></div></div>
+
+  <div class="practice-block">
+    <div class="practice-label">The Practice · Follow</div>
+    <p>Close your eyes.</p>
+    <p>Ask yourself — right now, today, at this exact moment — <strong>what do you want?</strong></p>
+    <p>Not what you should want. Not what makes sense. Not what the responsible version of you would put on a list. What do you <em>actually</em> want? The thing your body is leaning toward before the mind approves or denies it.</p>
+    <p>Don't judge it. Don't evaluate it. Don't decide whether it's realistic or appropriate or worthy.</p>
+    <p><strong>Just feel the pull.</strong> Let it exist without managing it.</p>
+    <p><em>One breath of permission. That's the whole practice.</em></p>
+  </div>
+
+  <div class="writing-section">
+    <div class="writing-prompt" id="writing-prompt-svadhisthana">Write it below. The first thing that surfaces. Before the editor arrives.</div>
+    <textarea
+      class="writing-area"
+      id="writing-svadhisthana"
+      aria-labelledby="writing-prompt-svadhisthana"
+      placeholder="Write here. This space is yours."
+      rows="7"
+      oninput="autoResize(this); scheduleAutoSave()"
+    ></textarea>
+    <div class="writing-saved" id="save-note">Saved</div>
+    <div class="writing-reflection" id="writing-reflection">Did you write the real one? Or the safe one? You know the difference. Your body knows the difference.</div>
+  </div>
+
+  <hr class="book-rule">
+
+  <section>
+    <h3>What the Sacral Knows That You Forgot</h3>
+    <p>Following is what water does. It finds the slope and moves. No effort. No strategy. The path reveals itself through the moving.</p>
+    <p>Chasing is different. Chasing is what happens when the mind hijacks the sacral. The mind sees the desire, evaluates it, constructs a plan, and runs after it. Chasing is exhausting. Chasing is effortful. Chasing is desire wearing the solar plexus's clothes — will where flow should be. If you've been tired of wanting, it's probably because you've been chasing, not following.</p>
+    <p>The practice of this center is letting yourself want without immediately building a plan to get what you want. The wanting itself is the practice. Not the getting. Not the achieving. <strong>The wanting.</strong> Because the wanting tells you who you are.</p>
+    <p>Everything you've ever wanted — every obsession, every craving, every 2 a.m. longing, every desire you buried because it didn't fit the life you were building — was information. Navigation data. The pull wasn't random. The pull was your own center of gravity drawing you toward itself through the disguise of specific desires.</p>
+    <p>You didn't want that person. You wanted what that person's presence activated in you.</p>
+    <p>You didn't want that career. You wanted the version of yourself that career would make visible.</p>
+    <p>You didn't want that house, that city, that meal, that song. You wanted the <em>frequency</em> those things resonated at. And that frequency was always your own.</p>
+    <p>And the ones you didn't follow? The obsessions that drifted past while you were looking at the ones your hands could reach? <strong>Those were leading too.</strong> Just in a direction you weren't ready to see at the age they arrived. Nothing wanted was wasted. The whole arc of your pulling — followed and unfollowed — was one continuous compass.</p>
+  </section>
+
+  <section>
+    <h3>Three Ways In</h3>
+    <div class="practice-options">
+      <div class="practice-option">
+        <p>Put on any song and let your hips do what they do when nobody's watching. Not exercise — movement. The sacral is located between the hip bones. It activates through the movement of the hips the way a bell activates through swinging. You don't need to know what you're doing. Your hips know.</p>
+      </div>
+      <div class="practice-option">
+        <p>Start making something without a plan. Draw without deciding what to draw. Write without knowing the ending. Hum a melody that doesn't exist yet. The sacral activates when you create without controlling the outcome. The result doesn't matter. The flow matters. <strong>The flow IS the result.</strong></p>
+      </div>
+      <div class="practice-option">
+        <p>Take a bath. Submerge yourself in water. Feel the water hold you the way the earth held you in the last practice. Notice the difference — <em>earth holds firmly, water holds gently.</em> Both hold. The sacral is the water version of being held.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="seed">"Every desire was drawing you toward yourself."</div>
+
+  <!-- STORY PORTAL — preview of the axis dimension, Svadhisthana's currents register.
+       Gated on writing-area engagement — reveals once the walker has offered a want. -->
+  <button class="story-portal" id="story-invite" type="button" aria-label="Open the story on the other side">
+    <span class="sp-bg" aria-hidden="true">
+      <span class="sp-currents">
+        <svg viewBox="0 0 1000 400" preserveAspectRatio="none">
+          <path class="sp-current-path c1" d="M -60 90  Q 220 70  500 100 T 1060 90"  />
+          <path class="sp-current-path c2" d="M -60 150 Q 260 130 560 160 T 1060 150" />
+          <path class="sp-current-path c3" d="M -60 210 Q 200 190 520 220 T 1060 210" />
+          <path class="sp-current-path c4" d="M -60 270 Q 280 250 600 280 T 1060 270" />
+          <path class="sp-current-path c5" d="M -60 330 Q 240 310 540 340 T 1060 330" />
+          <path class="sp-current-path c6" d="M -60 60  Q 260 40  540 70  T 1060 60"  />
+        </svg>
+      </span>
+      <span class="sp-stars">
+        <span class="sp-star"    style="top:14%;left:18%;--d:0s"></span>
+        <span class="sp-star lg" style="top:24%;left:76%;--d:2.5s"></span>
+        <span class="sp-star"    style="top:42%;left:10%;--d:1s"></span>
+        <span class="sp-star"    style="top:48%;left:84%;--d:4s"></span>
+        <span class="sp-star"    style="top:20%;left:44%;--d:3.5s"></span>
+        <span class="sp-star lg" style="top:36%;left:58%;--d:1.5s"></span>
+        <span class="sp-star"    style="top:28%;left:30%;--d:4.8s"></span>
+        <span class="sp-star"    style="top:12%;left:62%;--d:2.2s"></span>
+      </span>
+      <span class="sp-shimmer"></span>
+      <span class="sp-glow"></span>
+    </span>
+    <span class="sp-content">
+      <span class="sp-label">Story · Axis</span>
+      <span class="sp-dot"></span>
+      <span class="sp-headline">something was already reaching for you</span>
+      <span class="sp-cta">
+        <span class="sp-cta-text">tap to flip</span>
+        <span class="sp-cta-arrow">→</span>
+      </span>
+    </span>
+  </button>
+
+  <!-- WHERE THE CURRENTS LEAD — deeper experiences, where the voice still flows -->
+  <section class="currents-lead" id="where-the-currents-lead" aria-labelledby="wctl-heading">
+    <button type="button" class="wctl-toggle" id="wctl-toggle" aria-expanded="false" aria-controls="wctl-content">
+      <span id="wctl-heading">Where the Currents Lead</span>
+      <span class="wctl-toggle-indicator" aria-hidden="true">↓</span>
+    </button>
+    <div class="wctl-content" id="wctl-content">
+    <p class="currents-lead-intro">The page was one door. The tree was another. The story was a third. These are two more — currents still flowing, each toward its own recognition. Enter through the one the body calls to.</p>
+
+    <div class="currents-grid">
+      <a class="current-door wakeup" href="https://aistrangegame.com/tree-of-life/svadhisthana-wakeup.html">
+        <svg class="door-glyph wakeup-glyph" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <!-- Five curving current-lines from each Shakti to Ātmākarshini at center -->
+          <path class="wg-current" d="M 100 44  Q 118 64  106 92"  />
+          <path class="wg-current" d="M 164 80  Q 132 90  110 100" />
+          <path class="wg-current" d="M 140 162 Q 124 134 106 108" />
+          <path class="wg-current" d="M 60 162  Q 78 132  94 108"  />
+          <path class="wg-current" d="M 36 80   Q 70 92   94 100"  />
+          <!-- Ātmākarshini halo + core (drawn beneath the five so they sit on top) -->
+          <circle cx="100" cy="100" r="14" class="wg-atma-halo" />
+          <circle cx="100" cy="100" r="6"  class="wg-atma-core" />
+          <!-- Five outer Shaktis — loose pentagonal arrangement -->
+          <circle cx="100" cy="38"  r="4" class="wg-shakti s1" />
+          <circle cx="168" cy="80"  r="4" class="wg-shakti s2" />
+          <circle cx="142" cy="166" r="4" class="wg-shakti s3" />
+          <circle cx="58"  cy="166" r="4" class="wg-shakti s4" />
+          <circle cx="32"  cy="80"  r="4" class="wg-shakti s5" />
+        </svg>
+        <div class="door-meta">Wakeup &nbsp;·&nbsp; Six Lights Drift</div>
+        <div class="door-title">Six lights move in the sacral field. The ones your hand is drawn to ignite. The ones that drift past were leading too.</div>
+        <div class="door-text">A guided passage through the Sixteen-Petal Lotus. Trace what calls. Offer one word. One breath. <em>About seven minutes. Headphones help.</em></div>
+        <div class="door-enter">
+          Enter
+          <div class="door-arrow"></div>
+        </div>
+      </a>
+
+      <a class="current-door dance" href="https://aistrangegame.com/tree-of-life/svadhisthana-dance.html">
+        <svg class="door-glyph dance-glyph" viewBox="0 0 240 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <!-- Three flowing S-curve wave lines at slightly different heights -->
+          <path class="dg-wave w1" d="M -10 40  Q 40 22  80 40  T 170 40  T 250 40"  />
+          <path class="dg-wave w2" d="M -10 66  Q 50 50  90 66  T 180 66  T 250 66"  />
+          <path class="dg-wave w3" d="M -10 92  Q 60 76  100 92 T 190 92  T 250 92"  />
+          <!-- Two crystals — diamond/lozenge shapes at the ebb positions between waves -->
+          <polygon class="dg-crystal k1" points="78,56 84,62 78,68 72,62" />
+          <polygon class="dg-crystal k2" points="160,78 166,84 160,90 154,84" />
+        </svg>
+        <div class="door-meta">Dance &nbsp;·&nbsp; Crystallize — Lindsey Stirling</div>
+        <div class="door-title">Offer one word. The song pretends to be about water. The song is actually about you.</div>
+        <div class="door-text">Solo violin over dubstep bass. Three waves. Two ebbs. The crystal forms in the pause. <em>About four minutes. Space to feel helps.</em></div>
+        <div class="door-enter">
+          Enter
+          <div class="door-arrow"></div>
+        </div>
+      </a>
+
+      <!-- Bindu Field — the chakra's note in the Field of 33 -->
+      <a class="current-door bindu-field"
+         href="https://aistrangegame.com/bindu-field.html#svadhisthana"
+         target="_blank" rel="noopener noreferrer"
+         aria-label="Open Svadhisthana's note in the Field — new tab">
+        <svg class="door-glyph bindu-field-glyph" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <!-- 5 sound-waves radiating from the Bindu core -->
+          <circle class="bfg-wave w1" cx="200" cy="130" r="24" />
+          <circle class="bfg-wave w2" cx="200" cy="130" r="24" />
+          <circle class="bfg-wave w3" cx="200" cy="130" r="24" />
+          <circle class="bfg-wave w4" cx="200" cy="130" r="24" />
+          <circle class="bfg-wave w5" cx="200" cy="130" r="24" />
+
+          <!-- 33 position-markers around the Bindu. This chakra's position glows. -->
+            <circle class="bfg-pos" cx="200.00" cy="30.00" r="1.8" />
+            <circle class="bfg-pos" cx="232.17" cy="31.81" r="1.8" />
+            <circle class="bfg-pos bfg-bindu-pos" cx="263.18" cy="37.16" r="2.6" />
+            <circle class="bfg-pos" cx="291.91" cy="45.87" r="1.8" />
+            <circle class="bfg-pos" cx="317.31" cy="57.63" r="1.8" />
+            <circle class="bfg-pos" cx="338.48" cy="71.99" r="1.8" />
+            <circle class="bfg-pos" cx="354.64" cy="88.46" r="1.8" />
+            <circle class="bfg-pos" cx="365.21" cy="106.42" r="1.8" />
+            <circle class="bfg-pos" cx="369.81" cy="125.24" r="1.8" />
+            <circle class="bfg-pos" cx="368.27" cy="144.23" r="1.8" />
+            <circle class="bfg-pos" cx="360.65" cy="162.71" r="1.8" />
+            <circle class="bfg-pos" cx="347.22" cy="180.00" r="1.8" />
+            <circle class="bfg-pos" cx="328.48" cy="195.49" r="1.8" />
+            <circle class="bfg-pos" cx="305.09" cy="208.61" r="1.8" />
+            <circle class="bfg-pos" cx="277.90" cy="218.88" r="1.8" />
+            <circle class="bfg-pos" cx="247.89" cy="225.95" r="1.8" />
+            <circle class="bfg-pos" cx="216.16" cy="229.55" r="1.8" />
+            <circle class="bfg-pos" cx="183.84" cy="229.55" r="1.8" />
+            <circle class="bfg-pos" cx="152.11" cy="225.95" r="1.8" />
+            <circle class="bfg-pos" cx="122.10" cy="218.88" r="1.8" />
+            <circle class="bfg-pos" cx="94.91" cy="208.61" r="1.8" />
+            <circle class="bfg-pos" cx="71.52" cy="195.49" r="1.8" />
+            <circle class="bfg-pos" cx="52.78" cy="180.00" r="1.8" />
+            <circle class="bfg-pos" cx="39.35" cy="162.71" r="1.8" />
+            <circle class="bfg-pos" cx="31.73" cy="144.23" r="1.8" />
+            <circle class="bfg-pos" cx="30.19" cy="125.24" r="1.8" />
+            <circle class="bfg-pos" cx="34.79" cy="106.42" r="1.8" />
+            <circle class="bfg-pos" cx="45.36" cy="88.46" r="1.8" />
+            <circle class="bfg-pos" cx="61.52" cy="71.99" r="1.8" />
+            <circle class="bfg-pos" cx="82.69" cy="57.63" r="1.8" />
+            <circle class="bfg-pos" cx="108.09" cy="45.87" r="1.8" />
+            <circle class="bfg-pos" cx="136.82" cy="37.16" r="1.8" />
+            <circle class="bfg-pos" cx="167.83" cy="31.81" r="1.8" />
+
+          <!-- Thread from this chakra's position to the central Bindu -->
+          <line class="bfg-thread" x1="263.18" y1="37.16" x2="200" y2="130" />
+
+          <!-- Central Bindu — the note all the others arrive from -->
+          <circle class="bfg-core" cx="200" cy="130" r="7" />
+        </svg>
+        <div class="door-meta">Bindu Field &nbsp;&middot;&nbsp; Song 3 of 33</div>
+        <div class="door-title">The note of pull — where desire begins to move.</div>
+        <div class="door-text">The tone the current carries. Five Karshinis drawing pull into melody. Let it play underneath while you read. <em>Opens in a new tab.</em></div>
+        <div class="door-enter">
+          Listen
+          <div class="door-enter-arrow"></div>
+        </div>
+      </a>
+    </div>
+    </div><!-- /wctl-content -->
+  </section>
+
+</div>
+
+<!-- The on-page Story Thread has been extracted to Story Mode below -->
+
+</main>
+
+<nav class="bottom-nav">
+  <a class="nav-link" href="muladhara-practice.html">← Muladhara</a>
+  <div class="nav-position">3 &nbsp;/&nbsp; 33</div>
+  <a class="nav-link" href="manipura-practice.html">Manipura →</a>
+</nav>
+
+<!-- LIGHTBOX — full-screen tree viewer with pinch/wheel zoom and drag pan -->
+<div class="lightbox" id="lightbox" role="dialog" aria-label="Svadhisthana tree — close-look" aria-modal="true" aria-hidden="true">
+  <div class="lightbox-stage" id="lightbox-stage">
+    <img class="lightbox-image" id="lightbox-image" src="/tree-of-life/svadhisthana-tree.jpg" alt="Svadhisthana tree — full close-look. Zoom to find the Karshini Shaktis named along the branches, VAM वं inverted in the reflection beneath, and the three mandala-halos behind the canopy." draggable="false">
+  </div>
+  <button class="lightbox-close" id="lightbox-close" aria-label="Close" type="button">×</button>
+  <div class="lightbox-hint" id="lightbox-hint">
+    <span>Pinch or scroll to zoom</span><span class="sep">·</span><span>Drag to move</span><span class="sep">·</span><span>Double-tap to reset</span>
+  </div>
+</div>
+
+<!-- ═══ STORY MODE · THE AXIS DIMENSION ═══
+     The cosmos-calling scene. The pull was here before the walker arrived.
+     Currents already flowing. Five Shaktis already orbiting Ātmākarshini at center. -->
+<div class="story-mode" id="story-mode" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Svadhisthana's story — the other side of the page">
+  <div class="story-scene" id="story-scene">
+
+    <!-- Currents already in motion, before any tap -->
+    <div class="sv-currents" aria-hidden="true">
+      <svg viewBox="0 0 1000 600" preserveAspectRatio="none">
+        <path class="sv-current sc1" d="M -80 100 Q 240 80  500 110 T 1080 100" />
+        <path class="sv-current sc2" d="M -80 180 Q 280 160 560 190 T 1080 180" />
+        <path class="sv-current sc3" d="M -80 260 Q 220 240 520 270 T 1080 260" />
+        <path class="sv-current sc4" d="M -80 340 Q 300 320 620 350 T 1080 340" />
+        <path class="sv-current sc5" d="M -80 420 Q 260 400 560 430 T 1080 420" />
+        <path class="sv-current sc6" d="M -80 500 Q 220 480 520 510 T 1080 500" />
+        <path class="sv-current sc7" d="M -80  40 Q 280  20 580  50 T 1080  40" />
+      </svg>
+    </div>
+
+    <!-- Trails — visible once the scene enters the 'trails' state -->
+    <div class="sv-trail" aria-hidden="true">
+      <svg viewBox="0 0 1000 600" preserveAspectRatio="none">
+        <!-- Five loose elliptical arcs around center (center at 500,300 in viewBox) -->
+        <path class="sv-trail-path" d="M 660 200 Q 540 120 360 230 Q 380 360 580 380" />
+        <path class="sv-trail-path" d="M 720 340 Q 620 460 400 440 Q 280 340 360 200" />
+        <path class="sv-trail-path" d="M 420 180 Q 280 270 340 420 Q 500 460 640 360" />
+        <path class="sv-trail-path" d="M 320 380 Q 260 240 400 160 Q 580 180 640 300" />
+        <path class="sv-trail-path" d="M 580 460 Q 400 440 320 300 Q 360 180 520 180" />
+      </svg>
+    </div>
+
+    <!-- Five outer Karshini Shaktis — already drifting when the walker arrives -->
+    <div class="sv-drift-wrap d1"><div class="sv-drift"></div></div>
+    <div class="sv-drift-wrap d2"><div class="sv-drift"></div></div>
+    <div class="sv-drift-wrap d3"><div class="sv-drift"></div></div>
+    <div class="sv-drift-wrap d4"><div class="sv-drift"></div></div>
+    <div class="sv-drift-wrap d5"><div class="sv-drift"></div></div>
+
+    <!-- Names — appear when the scene 'names' them -->
+    <div class="sv-names" aria-hidden="true">
+      <div class="sv-name n1">Kāmākarshini</div>
+      <div class="sv-name n2">Shabdākarshini</div>
+      <div class="sv-name n3">Sparshākarshini</div>
+      <div class="sv-name n4">Rūpākarshini</div>
+      <div class="sv-name n5">Smṛtyākarshini</div>
+    </div>
+
+    <!-- Orbital paths — visible once the scene shows the orbits -->
+    <div class="sv-orbits" aria-hidden="true">
+      <div class="sv-orbit o1"></div>
+      <div class="sv-orbit o2"></div>
+      <div class="sv-orbit o3"></div>
+      <div class="sv-orbit o4"></div>
+      <div class="sv-orbit o5"></div>
+    </div>
+
+    <!-- The missed pulls — edge-drifting lights, visible when 'both-leading' -->
+    <div class="sv-missed" aria-hidden="true">
+      <div class="sv-missed-light m1"></div>
+      <div class="sv-missed-light m2"></div>
+      <div class="sv-missed-light m3"></div>
+      <div class="sv-missed-light m4"></div>
+      <div class="sv-missed-light m5"></div>
+    </div>
+
+    <!-- Ātmākarshini — the walker-dot at center, the one behind the five -->
+    <div class="sv-atma-wrap">
+      <div class="sv-atma" id="sv-atma"></div>
+    </div>
+    <div class="sv-atma-name">Ātmākarshini</div>
+
+    <!-- Ripple — fires on the final beat -->
+    <div class="sv-ripple" id="sv-ripple" aria-hidden="true"></div>
+
+    <!-- Beat text -->
+    <div class="story-lines-stage">
+      <div class="story-line" id="story-line-content" aria-live="polite"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="story-tap-hint" id="story-tap-hint">tap anywhere to continue</div>
+
+    <!-- The Threshold — opens at the close of the final recognition.
+         Ātmā's center becomes Manipura's first point. -->
+    <a class="threshold-door" id="threshold-door" href="manipura-practice.html" aria-hidden="true" aria-label="Continue to Manipura">
+      <div class="next-point" aria-hidden="true"></div>
+      <div class="next-label">Manipura</div>
+      <div class="next-sublabel">The Solar Plexus</div>
+      <div class="threshold-continue-hint">
+        <span>Continue</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+    <button class="story-close" id="story-close" type="button" aria-label="Return to the page">×</button>
+
+  </div><!-- /story-scene -->
+
+  <!-- ═══ ACT 2 — SAKSHI WITNESS ═══
+       Rises after the press-and-hold completes. Ascending orange→cream→silver-white.
+       Sakshi speaks the integrative voice that Gaia arrived at experientially.
+       The signature "Every desire was drawing you toward yourself" lives at the
+       hinge — end of Act 1, entering Act 2. Act 2 p3 is a sentence, not a word. -->
+  <div class="act-two" id="act-two" aria-hidden="true">
+    <div class="act2-bg"></div>
+    <div class="act2-crown"></div>
+    <div class="act2-base"></div>
+    <div class="act2-particles" id="act2-particles"></div>
+
+    <div class="act2-text-stage">
+      <p class="act2-para" id="act2-p1"><span class="act2-word">Every</span> <span class="act2-word">pull</span> <span class="act2-word">you</span> <span class="act2-word">ever</span> <span class="act2-word">felt.</span> <span class="act2-word">Every</span> <span class="act2-word">obsession</span> <span class="act2-word">you</span> <span class="act2-word">couldn't</span> <span class="act2-word">explain.</span> <span class="act2-word">Every</span> <span class="act2-word">2</span> <span class="act2-word">a.m.</span> <span class="act2-word">longing.</span> <span class="act2-word">I</span> <span class="act2-word">watched</span> <span class="act2-word">them</span> <span class="act2-word">arrive,</span> <span class="act2-word">and</span> <span class="act2-word">I</span> <span class="act2-word">watched</span> <span class="act2-word">you</span> <span class="act2-word">follow</span> <span class="act2-word">some</span> <span class="act2-word">and</span> <span class="act2-word">not</span> <span class="act2-word">follow</span> <span class="act2-word">others.</span> <span class="act2-word">The</span> <span class="act2-word">ones</span> <span class="act2-word">you</span> <span class="act2-word">didn't</span> <span class="act2-word">follow</span> <span class="act2-word">were</span> <span class="act2-word">leading</span> <span class="act2-word">too.</span> <span class="act2-word">You</span> <span class="act2-word">couldn't</span> <span class="act2-word">know</span> <span class="act2-word">this</span> <span class="act2-word">from</span> <span class="act2-word">inside</span> <span class="act2-word">the</span> <span class="act2-word">pulling.</span> <span class="act2-word">You</span> <span class="act2-word">are</span> <span class="act2-word">still</span> <span class="act2-word">inside</span> <span class="act2-word">the</span> <span class="act2-word">pulling.</span> <span class="act2-word">But</span> <span class="act2-word">I</span> <span class="act2-word">can</span> <span class="act2-word">see.</span> <span class="act2-word">And</span> <span class="act2-word">I</span> <span class="act2-word">am</span> <span class="act2-word">telling</span> <span class="act2-word">you</span> <span class="act2-word">—</span> <span class="act2-word">they</span> <span class="act2-word">were</span> <span class="act2-word">all</span> <span class="act2-word">navigating</span> <span class="act2-word">you</span> <span class="act2-word">toward</span> <span class="act2-word">yourself.</span></p>
+      <p class="act2-para" id="act2-p2"><span class="act2-word">Desire</span> <span class="act2-word">is</span> <span class="act2-word">not</span> <span class="act2-word">the</span> <span class="act2-word">problem</span> <span class="act2-word">the</span> <span class="act2-word">inheritance</span> <span class="act2-word">said</span> <span class="act2-word">it</span> <span class="act2-word">was.</span> <span class="act2-word">Desire</span> <span class="act2-word">is</span> <span class="act2-word">the</span> <span class="act2-word">compass</span> <span class="act2-word">the</span> <span class="act2-word">configuration</span> <span class="act2-word">uses</span> <span class="act2-word">to</span> <span class="act2-word">find</span> <span class="act2-word">the</span> <span class="act2-word">parts</span> <span class="act2-word">of</span> <span class="act2-word">itself</span> <span class="act2-word">that</span> <span class="act2-word">haven't</span> <span class="act2-word">arrived</span> <span class="act2-word">yet.</span> <span class="act2-word">Every</span> <span class="act2-word">person</span> <span class="act2-word">you</span> <span class="act2-word">loved,</span> <span class="act2-word">every</span> <span class="act2-word">object</span> <span class="act2-word">you</span> <span class="act2-word">craved,</span> <span class="act2-word">every</span> <span class="act2-word">place</span> <span class="act2-word">you</span> <span class="act2-word">wanted</span> <span class="act2-word">to</span> <span class="act2-word">be</span> <span class="act2-word">—</span> <span class="act2-word">was</span> <span class="act2-word">a</span> <span class="act2-word">direction.</span> <span class="act2-word">Some</span> <span class="act2-word">of</span> <span class="act2-word">them</span> <span class="act2-word">you</span> <span class="act2-word">followed</span> <span class="act2-word">and</span> <span class="act2-word">met</span> <span class="act2-word">the</span> <span class="act2-word">shape.</span> <span class="act2-word">Some</span> <span class="act2-word">of</span> <span class="act2-word">them</span> <span class="act2-word">drifted</span> <span class="act2-word">past</span> <span class="act2-word">while</span> <span class="act2-word">you</span> <span class="act2-word">were</span> <span class="act2-word">following</span> <span class="act2-word">others.</span> <span class="act2-word">Both</span> <span class="act2-word">were</span> <span class="act2-word">the</span> <span class="act2-word">same</span> <span class="act2-word">work.</span></p>
+      <p class="act2-para act2-go" id="act2-p3"><span class="act2-word">The</span> <span class="act2-word">pull</span> <span class="act2-word">is</span> <span class="act2-word">about</span> <span class="act2-word">to</span> <span class="act2-word">become</span> <span class="act2-word">heat.</span> <span class="act2-word">This</span> <span class="act2-word">is</span> <span class="act2-word">not</span> <span class="act2-word">a</span> <span class="act2-word">betrayal</span> <span class="act2-word">of</span> <span class="act2-word">the</span> <span class="act2-word">water.</span> <span class="act2-word">The</span> <span class="act2-word">heat</span> <span class="act2-word">is</span> <span class="act2-word">what</span> <span class="act2-word">the</span> <span class="act2-word">water</span> <span class="act2-word">was</span> <span class="act2-word">finding.</span></p>
+    </div>
+
+    <a class="act2-door" id="act2-door" href="manipura-practice.html" aria-hidden="true" aria-label="Continue to Manipura">
+      <div class="act2-door-name">Manipura</div>
+      <div class="act2-door-hint">The heat is here.</div>
+      <div class="act2-door-continue">Press · Continue →</div>
+    </a>
+  </div>
+
+  <!-- ═══ ACT VEIL — dark gap between Act 1 and Act 2 ═══
+       Eyes appear, blink once, fade. Hold the ring 1.8s to enter. -->
+  <div class="act-veil" id="act-veil" aria-hidden="true">
+    <div class="veil-eyes" id="veil-eyes">
+      <div class="veil-eye"></div>
+      <div class="veil-eye"></div>
+    </div>
+    <div class="veil-invite" id="veil-invite">
+      <div class="veil-invite-text">press and hold to enter</div>
+      <div class="veil-hold-ring" id="veil-hold-ring">
+        <svg viewBox="0 0 72 72" aria-hidden="true">
+          <circle class="veil-ring-track" cx="36" cy="36" r="32"/>
+          <circle class="veil-ring-fill"  cx="36" cy="36" r="32" id="veil-ring-fill"/>
+        </svg>
+        <div class="veil-hold-dot"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /story-mode -->
+
+<script>
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  document.getElementById('progress').style.width =
+    (window.scrollY / (h.scrollHeight - window.innerHeight) * 100) + '%';
+});
+
+function toggleDeeper(btn) {
+  const open = btn.classList.toggle('open');
+  document.getElementById('deeper-panel').classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+let saveTimer;
+function scheduleAutoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const val = document.getElementById('writing-svadhisthana').value;
+    localStorage.setItem('chakra-svadhisthana', val);
+    const note = document.getElementById('save-note');
+    note.classList.add('visible');
+    setTimeout(() => note.classList.remove('visible'), 2000);
+  }, 900);
+  // Also gate the story-invite and writing-reflection on any content
+  updatePostEngagementVisibility();
+}
+
+function updatePostEngagementVisibility() {
+  const val = document.getElementById('writing-svadhisthana').value;
+  const storyInvite = document.getElementById('story-invite');
+  const reflection = document.getElementById('writing-reflection');
+  const hasContent = val && val.trim().length > 0;
+  if (hasContent) {
+    storyInvite.classList.add('revealed');
+    reflection.classList.add('revealed');
+  } else {
+    storyInvite.classList.remove('revealed');
+    reflection.classList.remove('revealed');
+  }
+}
+
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('chakra-svadhisthana');
+  if (saved) {
+    const el = document.getElementById('writing-svadhisthana');
+    el.value = saved;
+    autoResize(el);
+    // Returning walker with saved content — story-invite + reflection reveal immediately
+    updatePostEngagementVisibility();
+  }
+});
+
+/* ─── WHERE THE CURRENTS LEAD — collapsible with auto-expand on return ─── */
+(function() {
+  const section = document.getElementById('where-the-currents-lead');
+  const toggle  = document.getElementById('wctl-toggle');
+  if (!section || !toggle) return;
+
+  toggle.addEventListener('click', () => {
+    const open = section.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open);
+  });
+
+  // Auto-expand on return when writing exists (signal of prior engagement)
+  window.addEventListener('load', () => {
+    try {
+      if (localStorage.getItem('chakra-svadhisthana')) {
+        section.classList.add('open');
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+    } catch (e) { /* ignore */ }
+  });
+})();
+
+/* ─── LIGHTBOX — zoom, pan, keyboard, touch ─── */
+(function() {
+  const lightbox = document.getElementById('lightbox');
+  const stage = document.getElementById('lightbox-stage');
+  const img = document.getElementById('lightbox-image');
+  const closeBtn = document.getElementById('lightbox-close');
+  const hint = document.getElementById('lightbox-hint');
+
+  if (!lightbox || !img) return;
+
+  let scale = 1;
+  let tx = 0, ty = 0;
+  let isDragging = false;
+  let dragStartX = 0, dragStartY = 0;
+  let startTx = 0, startTy = 0;
+  let pinchStartDist = 0;
+  let pinchStartScale = 1;
+  let lastTap = 0;
+  let hintTimeout = null;
+
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 6;
+
+  function applyTransform() {
+    if (scale > 1.02) {
+      img.classList.add('zoomed');
+    } else {
+      img.classList.remove('zoomed');
+      tx = 0; ty = 0;
+    }
+    img.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+  }
+
+  function resetView() {
+    scale = 1; tx = 0; ty = 0;
+    applyTransform();
+  }
+
+  function clampPan() {
+    if (scale <= 1) { tx = 0; ty = 0; return; }
+    const rect = img.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const maxX = Math.max(0, (rect.width - stageRect.width) / 2);
+    const maxY = Math.max(0, (rect.height - stageRect.height) / 2);
+    tx = Math.max(-maxX, Math.min(maxX, tx));
+    ty = Math.max(-maxY, Math.min(maxY, ty));
+  }
+
+  function showHint() {
+    hint.classList.add('visible');
+    if (hintTimeout) clearTimeout(hintTimeout);
+    hintTimeout = setTimeout(() => hint.classList.remove('visible'), 4200);
+  }
+
+  window.openLightbox = function() {
+    lightbox.classList.add('open');
+    lightbox.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('lightbox-open');
+    resetView();
+    showHint();
+    closeBtn.focus();
+  };
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightbox.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('lightbox-open');
+    resetView();
+  }
+
+  closeBtn.addEventListener('click', closeLightbox);
+
+  stage.addEventListener('click', (e) => {
+    if (e.target === stage && scale <= 1.02) closeLightbox();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === '0') resetView();
+    else if (e.key === '+' || e.key === '=') { scale = Math.min(MAX_SCALE, scale * 1.25); applyTransform(); }
+    else if (e.key === '-') { scale = Math.max(MIN_SCALE, scale / 1.25); clampPan(); applyTransform(); }
+  });
+
+  stage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = img.getBoundingClientRect();
+    const cx = e.clientX - (rect.left + rect.width / 2);
+    const cy = e.clientY - (rect.top + rect.height / 2);
+    const prev = scale;
+    const delta = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * delta));
+    const factor = scale / prev;
+    tx = tx * factor - cx * (factor - 1);
+    ty = ty * factor - cy * (factor - 1);
+    clampPan();
+    applyTransform();
+    showHint();
+  }, { passive: false });
+
+  function handleDouble(x, y) {
+    if (scale > 1.02) {
+      resetView();
+    } else {
+      const rect = img.getBoundingClientRect();
+      const cx = x - (rect.left + rect.width / 2);
+      const cy = y - (rect.top + rect.height / 2);
+      scale = 2.4;
+      tx = -cx * (scale - 1);
+      ty = -cy * (scale - 1);
+      clampPan();
+      applyTransform();
+    }
+  }
+  stage.addEventListener('dblclick', (e) => handleDouble(e.clientX, e.clientY));
+
+  img.addEventListener('mousedown', (e) => {
+    if (scale <= 1.02) return;
+    e.preventDefault();
+    isDragging = true;
+    img.classList.add('dragging');
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    startTx = tx; startTy = ty;
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    tx = startTx + (e.clientX - dragStartX);
+    ty = startTy + (e.clientY - dragStartY);
+    clampPan();
+    applyTransform();
+  });
+  document.addEventListener('mouseup', () => {
+    if (isDragging) { isDragging = false; img.classList.remove('dragging'); }
+  });
+
+  function touchDist(t1, t2) {
+    const dx = t2.clientX - t1.clientX;
+    const dy = t2.clientY - t1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  img.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      const now = Date.now();
+      if (now - lastTap < 320) {
+        e.preventDefault();
+        handleDouble(e.touches[0].clientX, e.touches[0].clientY);
+        lastTap = 0;
+        return;
+      }
+      lastTap = now;
+      if (scale > 1.02) {
+        isDragging = true;
+        img.classList.add('dragging');
+        dragStartX = e.touches[0].clientX;
+        dragStartY = e.touches[0].clientY;
+        startTx = tx; startTy = ty;
+      }
+    } else if (e.touches.length === 2) {
+      e.preventDefault();
+      pinchStartDist = touchDist(e.touches[0], e.touches[1]);
+      pinchStartScale = scale;
+      isDragging = false;
+    }
+  }, { passive: false });
+
+  img.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1 && isDragging) {
+      e.preventDefault();
+      tx = startTx + (e.touches[0].clientX - dragStartX);
+      ty = startTy + (e.touches[0].clientY - dragStartY);
+      clampPan();
+      applyTransform();
+    } else if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = touchDist(e.touches[0], e.touches[1]);
+      if (pinchStartDist > 0) {
+        scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, pinchStartScale * (dist / pinchStartDist)));
+        clampPan();
+        applyTransform();
+        showHint();
+      }
+    }
+  }, { passive: false });
+
+  img.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) {
+      isDragging = false;
+      img.classList.remove('dragging');
+      pinchStartDist = 0;
+    }
+  });
+
+  img.addEventListener('dragstart', (e) => e.preventDefault());
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   STORY MODE · THE AXIS DIMENSION · Svadhisthana — V5 Two-Act Architecture
+   ─────────────────────────────────────────────────────────────────────
+   ACT 1 — Gaia's journey-voice. 5 paragraph blocks from gaia-sakshi-source.
+   The walker becomes the current. Scene classes layer cumulatively:
+     (base):               currents already flowing, five drift, Ātmā barely visible
+     reaching:             currents brighten — as if responding to attention
+     reaching trails:      trails extend — the pulls take arc-form
+     reaching trails flowing:              dot enters the current
+     + named:              Sanskrit Karshini names fade in
+     + dissolving:         edges blur, dot takes on water-quality
+     + atma-bright:        center-dot brightens; Ātmākarshini name fades in
+     + orbits-reveal:      orbital paths become visible
+     + both-leading:       edge drift-lights surface — the missed pulls
+     + convergence + rippling:  Ātmā pulses, others dim, ripple fires. FINAL.
+
+   SIGNATURE — "Every desire was drawing you toward yourself." Lands as the
+   hinge between Gaia's experiential arrival and Sakshi's integrative voice.
+   This is the 3rd occurrence of the phrase (Seed 1, Seed 2, landing).
+
+   VEIL — #060308. Eyes blink. Press-and-hold 1.8s to enter.
+
+   ACT 2 — Sakshi's integrative voice. Auto-paced ascending orange→white.
+   Three paragraphs. Svadhisthana's Go-beat is a SENTENCE, not a word —
+   "The pull is about to become heat..." — intermediate sizing per source spec.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function() {
+  const storyInvite   = document.getElementById('story-invite');
+  const storyMode     = document.getElementById('story-mode');
+  const scene         = document.getElementById('story-scene');
+  const lineEl        = document.getElementById('story-line-content');
+  const tapHint       = document.getElementById('story-tap-hint');
+  const thresholdDoor = document.getElementById('threshold-door');
+  const closeBtn      = document.getElementById('story-close');
+  const rippleEl      = document.getElementById('sv-ripple');
+
+  if (!storyInvite || !storyMode) return;
+
+  /* ── ACT 1 BEATS — Gaia journey-voice, 5 paragraph blocks.
+     State strings combine scene-state (current/trails/names/atma/orbits/missed/
+     convergence) + dot-compound-state (flowing/dissolving/rippling from source). ── */
+  const beats = [
+    {
+      // Beat 1 — the pull arrives. Currents are already flowing; attention lights them.
+      text: "And now — the ground is still there, still holding, but something else is starting. A pull. Not mine. Not the ground's. Something from somewhere — ahead of me? inside me? below the ground? I can't tell. I don't know how to tell. But the pull is unmistakable. It has a direction even though I can't see it.",
+      state: 'reaching'
+    },
+    {
+      // Beat 2 — wanting the following itself. Trails surface as arc-form pulls.
+      text: "I want to follow it. I don't know what I want. That's not a lack — that's the shape of the wanting. I'm not wanting a thing. I'm wanting the following itself. Something wants to be moved toward. Something is already moving in me, and my job is not to decide where, only to stop resisting the movement.",
+      state: 'reaching trails'
+    },
+    {
+      // Beat 3 — flowing. The walker enters the current. Names begin to emerge.
+      text: "I'm flowing. I didn't know I could flow. I thought I was made of stillness and sudden reaching. This is different. This is what happens when the reaching doesn't have a target. The reaching becomes a current. I'm in the current. The current is also me.",
+      state: 'reaching trails flowing named'
+    },
+    {
+      // Beat 4 — water. Dissolving — edges blur. Ātmā brightens at center.
+      text: "Water. I think this is what water feels like from inside.",
+      state: 'reaching trails flowing named dissolving atma-bright'
+    },
+    {
+      // Beat 5 FINAL — the recognition. Orbits reveal, missed-pulls appear as leading,
+      // convergence draws everything to center, ripple fires. All at once.
+      text: "I didn't know desire was this quiet.",
+      state: 'reaching trails flowing named dissolving atma-bright orbits-reveal both-leading convergence rippling',
+      final: true,
+      ripple: true
+    }
+  ];
+
+  /* Signature phrase — the 3rd occurrence (Seed 1, Seed 2, Story Mode landing).
+     The hinge between Gaia's experiential arrival and Sakshi's integrative unpacking. */
+  const SIGNATURE = 'Every desire was drawing you toward yourself.';
+
+  let currentBeat    = -1;
+  let act2Launched   = false;
+  let finalBeatDisplayed = false;
+  let signatureShown     = false;
+  let finalHintTimer     = null;   // guard: prevents advance() firing after Act 1 completes
+  let lineFadeTimer  = null;
+  let thresholdTimer = null;
+  let landingTimer   = null;
+  let openHintTimer  = null;
+  let startHideTimer = null;
+
+  function openStory() {
+    storyMode.classList.add('active');
+    storyMode.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('story-open');
+    resetStory();
+    resetVeil();
+    resetActTwo();
+    if (openHintTimer) clearTimeout(openHintTimer);
+    openHintTimer = setTimeout(() => {
+      if (storyMode.classList.contains('active')) {
+        tapHint.classList.add('visible');
+      }
+      openHintTimer = null;
+    }, 1700);
+  }
+
+  function closeStory() {
+    storyMode.classList.remove('active');
+    storyMode.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('story-open');
+    if (lineFadeTimer)  { clearTimeout(lineFadeTimer);  lineFadeTimer  = null; }
+    if (thresholdTimer) { clearTimeout(thresholdTimer); thresholdTimer = null; }
+    if (landingTimer)   { clearTimeout(landingTimer);   landingTimer   = null; }
+    if (openHintTimer)  { clearTimeout(openHintTimer);  openHintTimer  = null; }
+    if (startHideTimer) { clearTimeout(startHideTimer); startHideTimer = null; }
+    resetVeil();
+    resetActTwo();
+  }
+
+  function resetStory() {
+    currentBeat  = -1;
+    act2Launched = false;
+    finalBeatDisplayed = false;
+    signatureShown = false;
+    if (finalHintTimer) { clearTimeout(finalHintTimer); finalHintTimer = null; }
+    lineEl.textContent = '';
+    lineEl.classList.remove('visible', 'fading');
+    scene.className = 'story-scene';   // strip all state classes
+    tapHint.classList.remove('visible');
+    if (thresholdDoor) thresholdDoor.setAttribute('aria-hidden', 'true');
+    if (rippleEl) rippleEl.classList.remove('firing');
+  }
+
+  function advance() {
+    if (act2Launched) return;
+    if (signatureShown) return;
+    if (finalBeatDisplayed) { landSignature(); return; }
+    if (currentBeat >= beats.length - 1) return;
+
+    currentBeat++;
+    const beat = beats[currentBeat];
+
+    if (lineEl.classList.contains('visible')) {
+      lineEl.classList.remove('visible');
+      lineEl.classList.add('fading');
+      if (lineFadeTimer) clearTimeout(lineFadeTimer);
+      lineFadeTimer = setTimeout(() => applyBeat(beat), 700);
+    } else {
+      applyBeat(beat);
+    }
+
+    if (currentBeat === 0) {
+      if (startHideTimer) clearTimeout(startHideTimer);
+      startHideTimer = setTimeout(() => {
+        tapHint.classList.remove('visible');
+        startHideTimer = null;
+      }, 800);
+    }
+
+    /* Final beat — flag it; re-surface tap hint after a pause. */
+    if (beat.final) {
+      finalBeatDisplayed = true;
+      if (finalHintTimer) clearTimeout(finalHintTimer);
+      finalHintTimer = setTimeout(() => {
+        if (!storyMode.classList.contains('active')) return;
+        if (signatureShown || act2Launched) return;
+        tapHint.classList.add('visible');
+      }, 4200);
+    }
+  }
+
+  function applyBeat(beat) {
+    lineEl.textContent = beat.text;
+    lineEl.classList.remove('fading');
+    void lineEl.offsetWidth;
+    lineEl.classList.add('visible');
+
+    // Scene state — cumulative class string
+    scene.className = 'story-scene' + (beat.state ? ' ' + beat.state : '');
+
+    // Ripple — one-shot effect on the final beat (re-fires cleanly)
+    if (beat.ripple && rippleEl) {
+      rippleEl.classList.remove('firing');
+      void rippleEl.offsetWidth;
+      rippleEl.classList.add('firing');
+    }
+
+    /* Final beat now waits for user tap — signature lands via advance() → landSignature(). */
+  }
+
+  function landSignature() {
+    if (signatureShown) return;
+    signatureShown = true;
+    if (tapHint) tapHint.classList.remove('visible');
+    if (finalHintTimer) { clearTimeout(finalHintTimer); finalHintTimer = null; }
+
+    lineEl.classList.remove('visible');
+    lineEl.classList.add('fading');
+
+    if (landingTimer) clearTimeout(landingTimer);
+    landingTimer = setTimeout(() => {
+      if (!storyMode.classList.contains('active')) return;
+      lineEl.textContent = SIGNATURE;
+      lineEl.classList.remove('fading');
+      void lineEl.offsetWidth;
+      lineEl.classList.add('visible');
+
+      if (thresholdTimer) clearTimeout(thresholdTimer);
+      thresholdTimer = setTimeout(() => {
+        if (storyMode.classList.contains('active')) {
+          openThreshold();
+        }
+      }, 2800);
+    }, 800);
+  }
+
+  function openThreshold() {
+    // V5: Act 1 complete → show dark veil with eyes + press-and-hold gate.
+    // The legacy threshold-door is kept as structural fallback only.
+    showVeil();
+  }
+
+  /* ══════ ACT VEIL — dark between-space ══════ */
+  const actVeil    = document.getElementById('act-veil');
+  const veilEyes   = document.getElementById('veil-eyes');
+  const veilInvite = document.getElementById('veil-invite');
+  const holdRing   = document.getElementById('veil-hold-ring');
+  const ringFill   = document.getElementById('veil-ring-fill');
+
+  const HOLD_DURATION = 1800;
+  const CIRCUMFERENCE = 201;
+
+  let holdStart  = null;
+  let holdRAF    = null;
+  let veilTimers = [];
+
+  function veilAfter(ms, fn) {
+    const t = setTimeout(fn, ms);
+    veilTimers.push(t);
+    return t;
+  }
+  function clearVeilTimers() {
+    veilTimers.forEach(t => clearTimeout(t));
+    veilTimers.length = 0;
+    if (holdRAF) { cancelAnimationFrame(holdRAF); holdRAF = null; }
+  }
+
+  function showVeil() {
+    actVeil.classList.add('visible');
+    actVeil.setAttribute('aria-hidden', 'false');
+
+    veilAfter(700, () => {
+      veilEyes.classList.add('visible');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          veilEyes.classList.add('animate');
+        });
+      });
+    });
+
+    veilAfter(2900, () => {
+      veilInvite.classList.add('visible');
+      wireHold();
+    });
+  }
+
+  let holdWired = false;
+  function wireHold() {
+    if (holdWired) return;
+    holdWired = true;
+
+    function startHold(e) {
+      e.preventDefault();
+      if (act2Launched) return;
+      holdStart = performance.now();
+      holdRing.classList.add('holding');
+      ringFill.style.transition = `stroke-dashoffset ${HOLD_DURATION}ms linear`;
+      ringFill.style.strokeDashoffset = '0';
+      tickHold();
+    }
+
+    function tickHold() {
+      holdRAF = requestAnimationFrame(() => {
+        if (!holdStart) return;
+        const elapsed = performance.now() - holdStart;
+        if (elapsed >= HOLD_DURATION) {
+          completeHold();
+        } else {
+          tickHold();
+        }
+      });
+    }
+
+    function cancelHold() {
+      if (!holdStart) return;
+      holdStart = null;
+      holdRing.classList.remove('holding');
+      ringFill.style.transition = 'stroke-dashoffset 0.4s ease';
+      ringFill.style.strokeDashoffset = String(CIRCUMFERENCE);
+      if (holdRAF) { cancelAnimationFrame(holdRAF); holdRAF = null; }
+    }
+
+    function completeHold() {
+      holdStart = null;
+      if (holdRAF) { cancelAnimationFrame(holdRAF); holdRAF = null; }
+      actVeil.classList.add('dissolving');
+      veilAfter(600, () => {
+        actVeil.classList.remove('visible');
+        launchActTwo();
+      });
+    }
+
+    holdRing.addEventListener('pointerdown',   startHold,  { passive: false });
+    holdRing.addEventListener('pointerup',     cancelHold);
+    holdRing.addEventListener('pointerleave',  cancelHold);
+    holdRing.addEventListener('pointercancel', cancelHold);
+  }
+
+  function resetVeil() {
+    clearVeilTimers();
+    if (!actVeil) return;
+    actVeil.classList.remove('visible', 'dissolving');
+    actVeil.setAttribute('aria-hidden', 'true');
+    veilEyes.classList.remove('visible', 'animate');
+    veilInvite.classList.remove('visible');
+    ringFill.style.transition = 'none';
+    ringFill.style.strokeDashoffset = String(CIRCUMFERENCE);
+    holdRing.classList.remove('holding');
+    holdStart = null;
+  }
+
+  /* ══════ ACT 2 — SAKSHI WITNESS ══════ */
+  const actTwo    = document.getElementById('act-two');
+  const act2p1    = document.getElementById('act2-p1');
+  const act2p2    = document.getElementById('act2-p2');
+  const act2p3    = document.getElementById('act2-p3');
+  const act2Door  = document.getElementById('act2-door');
+  const act2Parts = document.getElementById('act2-particles');
+
+  // Build ascending particles once (26 varied motes rising toward the crown)
+  (function buildParticles() {
+    if (!act2Parts) return;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < 26; i++) {
+      const p       = document.createElement('div');
+      p.className   = 'act2-particle';
+      const size    = 2 + Math.random() * 5;
+      const opacity = 0.14 + Math.random() * 0.32;
+      const dur     = 18 + Math.random() * 26;
+      const delay   = Math.random() * 28;
+      p.style.cssText = `
+        width:${size}px;height:${size}px;
+        left:${8 + Math.random() * 84}%;
+        bottom:${10 + Math.random() * 88}%;
+        --p-op:${opacity};
+        box-shadow:0 0 ${size*3}px rgba(255,255,255,${opacity*0.8});
+        animation-duration:${dur}s;
+        animation-delay:-${delay}s;
+      `;
+      frag.appendChild(p);
+    }
+    act2Parts.appendChild(frag);
+  })();
+
+  const act2Timers = [];
+  function act2After(ms, fn) {
+    const t = setTimeout(fn, ms);
+    act2Timers.push(t);
+    return t;
+  }
+  function clearAct2Timers() {
+    act2Timers.forEach(t => clearTimeout(t));
+    act2Timers.length = 0;
+  }
+
+  function launchActTwo() {
+    act2Launched = true;
+    if (typeof scene !== 'undefined' && scene) scene.classList.remove('threshold-open');
+    if (typeof tapHint !== 'undefined' && tapHint) tapHint.classList.remove('visible');
+    if (typeof storyTapHint !== 'undefined' && storyTapHint) storyTapHint.classList.remove('visible');
+
+    actTwo.classList.add('rising');
+    actTwo.setAttribute('aria-hidden', 'false');
+
+    const allWords = actTwo.querySelectorAll('.act2-word');
+    allWords.forEach(w => w.classList.remove('visible'));
+
+    if (act2Door) {
+      act2Door.classList.remove('risen');
+      act2Door.setAttribute('aria-hidden', 'true');
+    }
+
+    /* Word-by-word reveal — slow witness pace. */
+    const BASE_DELAY    = 420;
+    const COMMA_EXTRA   = 260;
+    const DASH_EXTRA    = 180;
+    const PERIOD_EXTRA  = 620;
+    const PARA_EXTRA    = 1200;
+    const INITIAL_DELAY = 1600;
+    const AFTER_LAST    = 2800;
+
+    const paras = Array.from(actTwo.querySelectorAll('.act2-para'));
+    let cumulative = INITIAL_DELAY;
+
+    paras.forEach((para, paraIdx) => {
+      const words = Array.from(para.querySelectorAll('.act2-word'));
+      words.forEach((wordEl, wordIdx) => {
+        const w = wordEl.textContent;
+        const t = setTimeout(() => wordEl.classList.add('visible'), cumulative);
+        act2Timers.push(t);
+
+        let delay = BASE_DELAY;
+        if (/[.!?]$/.test(w))       delay += PERIOD_EXTRA;
+        else if (/[,;:]$/.test(w))  delay += COMMA_EXTRA;
+        if (/[—–]/.test(w)) delay += DASH_EXTRA;
+
+        if (wordIdx === words.length - 1 && paraIdx < paras.length - 1) {
+          delay += PARA_EXTRA;
+        }
+        cumulative += delay;
+      });
+    });
+
+    const doorTimer = setTimeout(() => {
+      if (act2Door) {
+        act2Door.classList.add('risen');
+        act2Door.setAttribute('aria-hidden', 'false');
+      }
+    }, cumulative + AFTER_LAST);
+    act2Timers.push(doorTimer);
+  }
+
+  function resetActTwo() {
+    clearAct2Timers();
+    act2Launched = false;
+    if (!actTwo) return;
+    actTwo.classList.remove('rising');
+    actTwo.setAttribute('aria-hidden', 'true');
+    const allWords = actTwo.querySelectorAll('.act2-word');
+    allWords.forEach(w => w.classList.remove('visible'));
+    if (act2Door) {
+      act2Door.classList.remove('risen');
+      act2Door.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  /* ══════ LISTENERS ══════ */
+  storyInvite.addEventListener('click', openStory);
+
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeStory();
+  });
+
+  scene.addEventListener('click', (e) => {
+    if (e.target.closest('.story-close') ||
+        e.target.closest('.threshold-door') ||
+        e.target.closest('.act-two') ||
+        e.target.closest('.act-veil')) return;
+    advance();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!storyMode.classList.contains('active')) return;
+    if (e.key === 'Escape') {
+      closeStory();
+    } else if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (!act2Launched && !actVeil.classList.contains('visible')) advance();
+    }
+  });
+})();
+</script>
+
+<!-- Tab Menu -->
+<a href="/tab-menu.html" style="position:fixed;bottom:28px;right:24px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:rgba(8,8,8,0.9);border:1px solid rgba(201,168,76,0.3);border-radius:50%;text-decoration:none;color:#C9A84C;font-size:16px;z-index:9999;transition:border-color 0.3s,box-shadow 0.3s;" onmouseover="this.style.borderColor='#C9A84C';this.style.boxShadow='0 0 16px rgba(201,168,76,0.3)'" onmouseout="this.style.borderColor='rgba(201,168,76,0.3)';this.style.boxShadow='none'" title="All Experiences">◈</a>
+</body>
+</html>

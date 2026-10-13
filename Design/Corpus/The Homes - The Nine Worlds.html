@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Homes — The Nine Worlds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<style>
+:root{--gold:#C9963F;--cream:#F2E8D9;--serif:'Cormorant Garamond',Georgia,serif;--mono:ui-monospace,'SF Mono',Menlo,monospace}
+*{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:var(--serif)}
+a{color:var(--gold)}a:hover{color:var(--cream)}
+#stage{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
+.ui{position:fixed;inset:0;pointer-events:none;z-index:5}
+.id{position:absolute;top:34px;left:0;right:0;text-align:center}
+.id .ord{font-family:var(--mono);font-size:9px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);opacity:.85;text-shadow:0 2px 16px #000}
+.id .nm{margin-top:8px;font-size:29px;color:var(--cream);opacity:.94;letter-spacing:.01em;text-shadow:0 2px 30px rgba(0,0,0,.95),0 0 70px rgba(0,0,0,.8)}
+.id .gm{margin-top:5px;font-size:13px;font-style:italic;color:var(--cream);opacity:.7;letter-spacing:.05em;text-shadow:0 2px 18px #000}
+.weather{position:absolute;left:50%;transform:translateX(-50%);bottom:118px;width:min(540px,86vw);text-align:center;
+  font-size:19px;line-height:1.5;color:var(--cream);opacity:.92;text-wrap:pretty;
+  text-shadow:0 2px 26px rgba(0,0,0,.95),0 0 60px rgba(0,0,0,.85)}
+.facts{position:absolute;left:50%;transform:translateX(-50%);bottom:78px;display:flex;gap:22px;
+  font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream);opacity:.5;text-shadow:0 2px 14px #000}
+/* the climb — the body, feet to totality */
+.climb{position:absolute;right:26px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:0;pointer-events:auto}
+.climb button{appearance:none;background:none;border:none;cursor:pointer;padding:7px 0 7px 22px;display:flex;align-items:center;gap:9px;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--cream);opacity:.34;transition:opacity 300ms;min-height:32px}
+.climb button:hover{opacity:.8}
+.climb button[aria-current="true"]{opacity:1}
+.climb .tick{width:16px;height:1px;background:currentColor;flex:0 0 auto}
+.climb button[aria-current="true"] .tick{width:26px;height:2px}
+.climb .rg{white-space:nowrap}
+.hint{position:absolute;left:26px;bottom:34px;font-family:var(--mono);font-size:9px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--cream);opacity:.3;text-shadow:0 2px 14px #000}
+.rise{position:absolute;left:26px;bottom:60px;pointer-events:auto}
+.rise button{appearance:none;cursor:pointer;background:rgba(10,7,10,.45);border:1px solid rgba(242,232,217,.18);color:var(--cream);
+  font-family:var(--serif);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;padding:11px 15px;border-radius:2px;
+  backdrop-filter:blur(8px);min-height:44px}
+.rise button[aria-pressed="true"]{border-color:rgba(201,150,63,.85);background:rgba(201,150,63,.16)}
+#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;z-index:20;
+  font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--cream);opacity:.5;transition:opacity 900ms}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div class="ui">
+  <div class="id"><div class="ord" id="ord"></div><div class="nm" id="nm"></div><div class="gm" id="gm"></div></div>
+  <div class="weather" id="weather"></div>
+  <div class="facts" id="facts"></div>
+  <div class="climb" id="climb"></div>
+  <div class="rise"><button type="button" id="riseBtn" aria-pressed="false">rise</button></div>
+  <div class="hint">scroll to climb · drag to look</div>
+</div>
+<div id="boot">the nine worlds</div>
+<script type="module">
+import * as THREE from 'three';
+import { WORLDS, WORLD_SPACING, worldY } from './homes-worlds.js?v=6';
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const host = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.04;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+host.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const fog = new THREE.FogExp2(0x000000, 0.014);
+scene.fog = fog;
+scene.background = new THREE.Color(0x000000);
+const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 500);
+
+// A dim neutral environment, so physically-based surfaces have something to
+// reflect. Without it every metal and every glass in these worlds reads black.
+(function () {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 32;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 32);
+  g.addColorStop(0, '#3a3a44'); g.addColorStop(0.5, '#1a1a20'); g.addColorStop(1, '#0a0a0c');
+  x.fillStyle = g; x.fillRect(0, 0, 64, 32);
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  scene.environment = tex;
+})();
+
+// every band built once; only the near ones are drawn
+const bands = WORLDS.map((w, i) => {
+  const b = w.build(worldY(i));
+  b.group.name = 'world-' + w.n;
+  scene.add(b.group);
+  return b;
+});
+const TOP = worldY(WORLDS.length - 1);
+const fogCols = WORLDS.map((w) => new THREE.Color(w.fog));
+
+let climb = 0, target = 0, t = 0, last = performance.now();
+let yaw = 0, pitch = 0, tYaw = 0, tPitch = 0, rising = false;
+
+// the climb rail — the body, read bottom to top
+const rail = document.getElementById('climb');
+[...WORLDS].reverse().forEach((w) => {
+  const i = WORLDS.indexOf(w);
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.innerHTML = `<span class="rg">${w.region}</span><span class="tick"></span>`;
+  b.addEventListener('click', () => { target = worldY(i); rising = false; syncRise(); });
+  rail.appendChild(b);
+});
+const railBtns = [...rail.children].reverse();
+
+const riseBtn = document.getElementById('riseBtn');
+function syncRise() { riseBtn.setAttribute('aria-pressed', String(rising)); }
+riseBtn.addEventListener('click', () => {
+  rising = !rising;
+  if (rising && climb >= TOP - 0.5) { climb = 0; target = 0; }
+  syncRise();
+});
+
+let dragging = false, px = 0, py = 0;
+renderer.domElement.addEventListener('pointerdown', (e) => { dragging = true; px = e.clientX; py = e.clientY; });
+addEventListener('pointerup', () => { dragging = false; });
+addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  tYaw -= (e.clientX - px) * 0.0024; tPitch -= (e.clientY - py) * 0.0016;
+  tPitch = Math.max(-0.5, Math.min(0.5, tPitch));
+  px = e.clientX; py = e.clientY;
+});
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault(); rising = false; syncRise();
+  target = Math.max(0, Math.min(TOP, target - e.deltaY * 0.055));
+}, { passive: false });
+
+const ordName = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth'];
+let shownIx = -1;
+function writeUI(ix) {
+  if (ix === shownIx) return;
+  shownIx = ix;
+  const w = WORLDS[ix];
+  document.getElementById('ord').textContent = `the ${ordName[ix]} āvaraṇa · ${w.region}`;
+  document.getElementById('nm').textContent = w.name;
+  document.getElementById('gm').textContent = `${w.gem} on ${w.dhatu}`;
+  document.getElementById('weather').textContent = w.weather;
+  document.getElementById('facts').innerHTML = `<span>${w.clock}</span><span>${w.dhatu}</span><span>${w.gem}</span>`;
+  railBtns.forEach((b, k) => b.setAttribute('aria-current', String(k === ix)));
+}
+
+function resize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+function frame(now) {
+  try {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    t += dt;
+    if (rising) {
+      target = Math.min(TOP, target + dt * 3.4);
+      if (target >= TOP - 0.05) { rising = false; syncRise(); }
+    }
+    climb += (target - climb) * (reduced ? 0.035 : 0.06);
+
+    // the weather is continuous: air, colour and density blend as you rise
+    const f = climb / WORLD_SPACING;
+    const i0 = Math.max(0, Math.min(WORLDS.length - 1, Math.floor(f)));
+    const i1 = Math.min(WORLDS.length - 1, i0 + 1);
+    const k = Math.max(0, Math.min(1, f - i0));
+    fog.color.lerpColors(fogCols[i0], fogCols[i1], k);
+    fog.density = WORLDS[i0].density + (WORLDS[i1].density - WORLDS[i0].density) * k;
+    scene.background.copy(fog.color).multiplyScalar(0.5);
+    writeUI(k > 0.5 ? i1 : i0);
+
+    bands.forEach((b, ix) => {
+      const near = Math.abs(worldY(ix) - climb) < WORLD_SPACING * 1.15;
+      b.group.visible = near;
+      if (near) b.update(t);
+    });
+
+    yaw += (tYaw - yaw) * 0.06; pitch += (tPitch - pitch) * 0.06;
+    camera.position.set(Math.sin(t * 0.07) * 0.5, climb + 1.2, 9 + Math.cos(t * 0.05) * 0.4);
+    camera.lookAt(
+      camera.position.x + Math.sin(yaw) * 9,
+      camera.position.y + Math.sin(pitch) * 9 - 1.9,
+      camera.position.z - Math.cos(yaw) * 9
+    );
+    renderer.render(scene, camera);
+  } catch (e) { /* keep the last good frame rather than stopping */ }
+  requestAnimationFrame(frame);
+}
+
+writeUI(0);
+requestAnimationFrame(frame);
+const boot = document.getElementById('boot');
+boot.style.opacity = '0';
+setTimeout(() => boot.remove(), 1000);
+</script>
+<template id="__bundler_thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#0D0508"/><g transform="translate(50 12)"><rect x="-16" y="0" width="32" height="7" fill="#FFF6DE" opacity=".9"/><rect x="-16" y="10" width="32" height="7" fill="#FFE9A8" opacity=".8"/><rect x="-16" y="20" width="32" height="7" fill="#FBF6EC" opacity=".7"/><rect x="-16" y="30" width="32" height="7" fill="#FF3A52" opacity=".7"/><rect x="-16" y="40" width="32" height="7" fill="#2FE08A" opacity=".7"/><rect x="-16" y="50" width="32" height="7" fill="#DFF0FF" opacity=".7"/><rect x="-16" y="60" width="32" height="7" fill="#FF6A44" opacity=".7"/><rect x="-16" y="70" width="32" height="7" fill="#6F9DFF" opacity=".7"/></g></svg>
+</template>
+</body>
+</html>

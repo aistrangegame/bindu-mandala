@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Tree of Life · Muladhara</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --root-deep: #8B1A1A;
+  --root-mid: #A82828;
+  --root-light: #C43B3B;
+  --root-glow: rgba(196, 59, 59, 0.5);
+  --root-warm: #F5E2D6;
+  --root-womb: #5A0F0F;
+  --root-amber: rgba(212, 114, 42, 0.3);
+  --text-primary: #F5E2D6;
+  --text-soft: rgba(245, 226, 214, 0.7);
+  --text-whisper: rgba(245, 226, 214, 0.45);
+}
+
+html, body {
+  width: 100%; min-height: 100vh; min-height: 100dvh;
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  background: var(--root-deep);
+  color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════
+   PHASE CONTAINERS
+   ═══════════════════════════════════════════ */
+
+.phase {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh; min-height: 100dvh;
+  width: 100%;
+  padding: 0 28px;
+  padding-bottom: env(safe-area-inset-bottom, 24px);
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.phase.active {
+  display: flex;
+  animation: phaseIn 1.5s ease forwards;
+}
+
+@keyframes phaseIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY
+   ═══════════════════════════════════════════ */
+
+.chakra-label {
+  font: 600 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0;
+  margin-top: 48px;
+  margin-bottom: 4px;
+  transition: opacity 0.8s ease;
+}
+.chakra-label.visible { opacity: 0.5; }
+
+.step {
+  max-width: 320px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  margin-bottom: 20px;
+  width: 100%;
+}
+.step.visible { opacity: 1; transform: translateY(0); }
+
+.step-learn {
+  font: 400 1rem/1.75 'DM Sans', sans-serif;
+}
+
+.step-reflect {
+  font: italic 400 1.125rem/1.6 'Lora', serif;
+}
+
+.step-instruct {
+  font: 300 0.9375rem/1.65 'DM Sans', sans-serif;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.step-instruct.visible { opacity: 0.85; transform: translateY(0); }
+
+.step-release {
+  font: italic 500 1.125rem/1.5 'Lora', serif;
+  text-align: center;
+  max-width: 320px;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.step-release.visible { opacity: 1; }
+
+.step-sacred {
+  font: italic 400 1.0625rem/1.6 'Lora', serif;
+}
+
+/* Descent modifier — text grows, warms */
+.descent-text {
+  font-size: 1.15em;
+  line-height: 1.7;
+}
+
+.step-spacer { height: 32px; margin: 0; }
+.step-spacer-deep { height: 56px; margin: 0; }
+
+/* ═══════════════════════════════════════════
+   GATE (Phase 1 — PRESS)
+   ═══════════════════════════════════════════ */
+
+.gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; min-height: 100dvh;
+  width: 100%;
+  position: relative;
+  gap: 32px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+.gate.active { display: flex; }
+.gate.completed {
+  pointer-events: none;
+  animation: gateOut 1.5s ease forwards;
+}
+@keyframes gateOut {
+  to { opacity: 0; height: 0; min-height: 0; overflow: hidden; }
+}
+
+.seed-text {
+  font: italic 400 1.375rem/1.4 'Lora', serif;
+  text-align: center;
+  max-width: 300px;
+  animation: seedBreath 4s ease-in-out infinite;
+  position: relative;
+  z-index: 10;
+  padding: 24px 16px;
+}
+@keyframes seedBreath {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.01); }
+}
+
+.hold-instruction {
+  font: 300 0.75rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-whisper, rgba(255,255,255,0.35));
+  margin-top: 16px;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+.hold-instruction.visible { opacity: 1; }
+
+.gate-progress {
+  width: 60px;
+  height: 2px;
+  background: rgba(245,226,214,0.15);
+  border-radius: 1px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.gate-progress.visible { opacity: 1; }
+.gate-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--text-primary);
+  border-radius: 1px;
+  transition: width 0.05s linear;
+}
+
+/* Root growth during gate hold */
+.gate-roots {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.gate-roots.growing { opacity: 1; }
+.gate-roots svg {
+  width: 280px;
+  height: 400px;
+}
+.gate-roots svg path {
+  stroke: var(--text-primary);
+  fill: none;
+  stroke-width: 1;
+  opacity: 0.35;
+  stroke-linecap: round;
+}
+
+/* ═══════════════════════════════════════════
+   ROOT NETWORK (Phase 2)
+   ═══════════════════════════════════════════ */
+
+.root-network-container {
+  width: 100%;
+  max-width: 300px;
+  margin: 16px auto;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 1s ease, transform 1s ease;
+}
+.root-network-container.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.root-network-svg {
+  width: 100%;
+  height: auto;
+}
+.root-network-svg .root-path {
+  stroke: var(--text-primary);
+  fill: none;
+  stroke-width: 1;
+  opacity: 0.25;
+  stroke-linecap: round;
+  transition: opacity 1.5s ease, stroke 1.5s ease, stroke-width 1s ease;
+}
+.root-network-svg .root-secondary {
+  stroke: var(--text-primary);
+  fill: none;
+  stroke-width: 0.6;
+  opacity: 0.12;
+  stroke-linecap: round;
+  transition: opacity 1.5s ease, stroke 1.5s ease;
+}
+
+.root-network-svg .root-path.lit {
+  opacity: 0.65;
+  stroke: var(--root-light);
+  stroke-width: 1.2;
+}
+.root-network-svg .root-secondary.lit {
+  opacity: 0.4;
+  stroke: var(--root-light);
+  stroke-width: 0.9;
+}
+
+.shakti-node {
+  fill: rgba(245, 226, 214, 0.08);
+  stroke: var(--text-primary);
+  stroke-width: 1;
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.4s ease, fill 0.4s ease;
+  animation: nodePulse 4s ease-in-out infinite;
+}
+.shakti-node:nth-child(2) { animation-delay: 0.7s; }
+.shakti-node:nth-child(3) { animation-delay: 1.4s; }
+.shakti-node:nth-child(4) { animation-delay: 2.1s; }
+.shakti-node:nth-child(5) { animation-delay: 2.8s; }
+.shakti-node:nth-child(6) { animation-delay: 3.5s; }
+
+.shakti-node.explored {
+  fill: var(--root-glow);
+  opacity: 0.9;
+  animation: none;
+}
+
+@keyframes nodePulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.shakti-name {
+  fill: var(--text-primary);
+  font-family: 'Lora', serif;
+  font-size: 8px;
+  font-style: italic;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.shakti-question {
+  font: italic 400 1.0625rem/1.6 'Lora', serif;
+  text-align: center;
+  max-width: 280px;
+  margin: 20px auto 0;
+  min-height: 52px;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.shakti-question.visible { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   BODY SILHOUETTE (Phase 3)
+   ═══════════════════════════════════════════ */
+
+.body-container {
+  width: 100%;
+  max-width: 180px;
+  margin: 24px auto;
+  position: relative;
+  opacity: 0;
+  transition: opacity 1s ease;
+  cursor: pointer;
+}
+.body-container.visible { opacity: 1; }
+
+.body-svg {
+  width: 100%;
+  height: auto;
+}
+.body-svg .body-outline {
+  fill: rgba(245, 226, 214, 0.06);
+  stroke: var(--text-primary);
+  stroke-width: 1;
+  opacity: 0.4;
+}
+
+.body-point {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--root-glow);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  box-shadow: 0 0 20px var(--root-glow), 0 0 40px rgba(196,59,59,0.25);
+}
+.body-point.placed {
+  opacity: 1;
+  animation: safetyGlow 3s ease-in-out infinite;
+}
+
+@keyframes safetyGlow {
+  0%, 100% { box-shadow: 0 0 20px var(--root-glow), 0 0 40px rgba(196,59,59,0.25); }
+  50% { box-shadow: 0 0 30px var(--root-glow), 0 0 60px rgba(196,59,59,0.35); }
+}
+
+/* Roots spreading from body point */
+.body-roots {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.body-roots.visible { opacity: 0.5; }
+.body-roots svg {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  transform: translate(-50%, -50%);
+}
+.body-roots svg path {
+  stroke: var(--root-light);
+  fill: none;
+  stroke-width: 0.8;
+  stroke-linecap: round;
+}
+
+/* ═══════════════════════════════════════════
+   HEADPHONE PROMPT (Gate)
+   ═══════════════════════════════════════════ */
+
+.headphone-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 300 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  margin-bottom: 24px;
+}
+.headphone-prompt.visible { opacity: 0.4; }
+
+.headphone-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════
+   CONTINUE ELEMENT (press-and-hold gates)
+   ═══════════════════════════════════════════ */
+
+.continue-el {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 0;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+.continue-el.visible { display: flex; opacity: 1; }
+
+.continue-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  opacity: 0.5;
+  animation: continuePulse 3s ease-in-out infinite;
+}
+@keyframes continuePulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.3); }
+}
+
+.continue-label {
+  font: 300 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.35;
+}
+
+.continue-progress {
+  width: 40px;
+  height: 2px;
+  background: rgba(245,226,214,0.12);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.continue-progress.active { opacity: 1; }
+.continue-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--text-primary);
+  opacity: 0.6;
+  border-radius: 1px;
+  transition: width 0.05s linear;
+}
+
+/* ═══════════════════════════════════════════
+   TAP CUE — subtle "waiting for you" indicator
+   ═══════════════════════════════════════════ */
+
+.tap-cue {
+  position: fixed;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+.tap-cue.visible {
+  opacity: 1;
+}
+
+.tap-cue-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  animation: tapCuePulse 2.5s ease-in-out infinite;
+}
+
+.tap-cue-label {
+  font: 300 0.5625rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  opacity: 0.4;
+}
+
+@keyframes tapCuePulse {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+
+/* ═══════════════════════════════════════════
+   BREATH (Phase 5)
+   ═══════════════════════════════════════════ */
+
+.breath-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 1px solid var(--text-primary);
+  opacity: 0;
+  margin: 32px auto;
+  transition: opacity 1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.breath-circle.visible { opacity: 0.4; }
+.breath-circle.breathing {
+  animation: rootBreath 12s ease-in-out infinite;
+  opacity: 0.6;
+}
+.breath-circle.complete {
+  animation: none;
+  transform: scale(1);
+  opacity: 0.3;
+  transition: opacity 1.5s ease, transform 1s ease;
+}
+
+.breath-label {
+  font: 300 0.625rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.5;
+  transition: opacity 0.6s ease;
+}
+
+@keyframes rootBreath {
+  0% { transform: scale(1); opacity: 0.4; }
+  5% { opacity: 0.6; }
+  33.3% { transform: scale(1.5); opacity: 0.6; }
+  66.6% { transform: scale(1.5); opacity: 0.5; }
+  95% { opacity: 0.4; }
+  100% { transform: scale(1); opacity: 0.4; }
+}
+
+/* ═══════════════════════════════════════════
+   TRANSITION BLEED (Panel 2 orange)
+   ═══════════════════════════════════════════ */
+
+.descent-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--root-womb);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.8s ease;
+}
+
+.orange-bleed {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 25vh;
+  background: linear-gradient(to top, rgba(212,114,42,0.25), transparent);
+  pointer-events: none;
+  z-index: 30;
+  opacity: 0;
+  transition: opacity 3s ease;
+}
+.orange-bleed.visible { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   GROUND SHIFT MERGE (Phase 4)
+   ═══════════════════════════════════════════ */
+
+.merge-visual {
+  width: 100%;
+  max-width: 240px;
+  margin: 24px auto;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  text-align: center;
+}
+.merge-visual.visible { opacity: 1; }
+
+.merge-svg {
+  width: 100%;
+  height: auto;
+}
+
+.pulse-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--root-womb);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 2s ease;
+  z-index: -1;
+}
+.pulse-screen.visible {
+  opacity: 1;
+  animation: deepPulse 6s ease-in-out infinite;
+}
+
+@keyframes deepPulse {
+  0%, 100% { background: #5A0F0F; }
+  50% { background: #6B1515; }
+}
+
+/* ═══════════════════════════════════════════
+   ZOOM CONTROLS
+   ═══════════════════════════════════════════ */
+
+.zoom-controls {
+  position: fixed;
+  bottom: 16px; left: 16px;
+  display: flex; gap: 6px;
+  z-index: 200;
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
+}
+.zoom-controls:hover, .zoom-controls:active { opacity: 0.8; }
+.zoom-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,245,224,0.2);
+  background: rgba(0,0,0,0.3);
+  color: var(--text-primary);
+  font: 500 0.75rem/1 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ═══════════════════════════════════════════
+   CLOSURE (Phase 6 ending)
+   ═══════════════════════════════════════════ */
+
+.closure-divider {
+  width: 1px;
+  height: 0;
+  background: var(--text-primary);
+  opacity: 0;
+  margin: 16px auto;
+  transition: height 3s ease, opacity 2s ease;
+}
+.closure-divider.visible {
+  height: 40px;
+  opacity: 0.2;
+}
+
+.seed-return {
+  font: italic 400 1.125rem/1.4 'Lora', serif;
+  text-align: center;
+  max-width: 280px;
+  opacity: 0;
+  transition: opacity 4s ease;
+}
+.seed-return.visible {
+  opacity: 0.5;
+}
+
+.closure-dim {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 6s ease;
+  z-index: 35;
+}
+.closure-dim.visible {
+  opacity: 0.4;
+}
+
+/* ═══════════════════════════════════════════
+   BACKGROUND TRANSITION
+   ═══════════════════════════════════════════ */
+
+body.descent {
+  background: var(--root-womb);
+  transition: background-color 3s ease;
+}
+body.ground-shift {
+  background: #4A0D0D;
+  transition: background-color 2s ease;
+}
+body.release-phase {
+  transition: background-color 2s ease;
+  background: var(--root-deep);
+}
+
+
+/* ═══════════════════════════════════════════
+   PERSISTENT BINDU — present in every panel, never explained
+   ═══════════════════════════════════════════ */
+
+.persistent-bindu {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #C0392B;
+  opacity: 0.3;
+  z-index: 150;
+  pointer-events: none;
+}
+
+
+/* ═══════════════════════════════════════════
+   CLOSING ARCHITECTURE
+   ═══════════════════════════════════════════ */
+
+.activation-text {
+  font: 500 clamp(15px, 4vw, 19px)/1.4 'Lora', serif;
+  text-align: center;
+  max-width: 300px;
+  letter-spacing: 0.5px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 2s ease, transform 1s ease;
+  margin-bottom: 20px;
+}
+.activation-text.visible { opacity: 1; transform: translateY(0); }
+
+.mini-reveal-text {
+  font: 300 clamp(12px, 3vw, 14px)/1.6 'DM Sans', sans-serif;
+  text-align: center;
+  max-width: 280px;
+  opacity: 0;
+  transition: opacity 3s ease;
+  margin-top: 16px;
+}
+.mini-reveal-text.visible { opacity: 0.5; }
+
+.closure-luminance {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 6s ease;
+}
+.closure-luminance.visible { opacity: 1; }
+
+.bindu-invite {
+  position: fixed;
+  top: 16px; right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 3s ease;
+  z-index: 160;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.bindu-invite.visible { opacity: 1; }
+
+.bindu-invite-label {
+  font: italic 300 0.5625rem/1 'Lora', serif;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.35);
+}
+
+.persistent-bindu.awakened {
+  opacity: 0.8 !important;
+  animation: binduAwaken 3s ease-in-out infinite !important;
+}
+@keyframes binduAwaken {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.8); opacity: 1; }
+}
+
+</style>
+</head>
+<body>
+<!-- PERSISTENT BINDU — the red dot, always watching -->
+<div class="persistent-bindu" id="persistentBindu"></div>
+
+
+<!-- Transition bleed for Panel 2 -->
+<div class="orange-bleed" id="orangeBleed"></div>
+
+<!-- Deep pulse background for ground shift -->
+<div class="pulse-screen" id="pulseScreen"></div>
+
+<!-- Zoom Controls -->
+<div class="zoom-controls" id="zoomControls">
+  <button class="zoom-btn" id="zoomOut" aria-label="Decrease font size">A−</button>
+  <button class="zoom-btn" id="zoomIn" aria-label="Increase font size">A+</button>
+</div>
+
+<!-- Tap cue — appears when experience is waiting for interaction -->
+<div class="tap-cue" id="tapCue">
+  <div class="tap-cue-dot"></div>
+  <div class="tap-cue-label">tap to continue</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     GATE — Phase 1 — PRESS
+     ═══════════════════════════════════════════ -->
+
+<div class="gate active" id="gate">
+  <div class="gate-roots" id="gateRoots">
+    <svg viewBox="0 0 280 400" xmlns="http://www.w3.org/2000/svg">
+      <path d="M140,200 C120,220 90,250 55,290" stroke-dasharray="180" stroke-dashoffset="180"/>
+      <path d="M140,200 C125,230 100,270 70,320" stroke-dasharray="200" stroke-dashoffset="200"/>
+      <path d="M140,200 C138,230 132,275 120,340" stroke-dasharray="160" stroke-dashoffset="160"/>
+      <path d="M140,200 C142,230 148,275 160,340" stroke-dasharray="160" stroke-dashoffset="160"/>
+      <path d="M140,200 C155,230 180,270 210,320" stroke-dasharray="200" stroke-dashoffset="200"/>
+      <path d="M140,200 C160,220 190,250 225,290" stroke-dasharray="180" stroke-dashoffset="180"/>
+      <!-- Trunk upward -->
+      <path d="M140,200 L140,120" stroke-dasharray="80" stroke-dashoffset="80" stroke-width="1.5"/>
+      <!-- Canopy -->
+      <path d="M140,120 C110,115 85,95 80,70 C78,50 95,35 140,30 C185,35 202,50 200,70 C195,95 170,115 140,120" stroke-dasharray="350" stroke-dashoffset="350"/>
+    </svg>
+  </div>
+  <div class="headphone-prompt" id="headphonePrompt">
+    <svg class="headphone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 18v-6a9 9 0 0118 0v6"/>
+      <path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3v5zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3v5z"/>
+    </svg>
+    headphones on
+  </div>
+  <div class="seed-text" id="seedText">The earth that holds you was chosen by you.</div>
+  <div class="gate-progress" id="gateProgress"><div class="gate-progress-fill" id="gateProgressFill"></div></div>
+  <div class="hold-instruction" id="holdInst">press and hold</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 2 — THE GROUND
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase2">
+  <div class="chakra-label" data-step>Muladhara · The Root</div>
+
+  <div class="step step-learn" data-step>This is your body's conversation with the earth. The part of you that needed to feel safe before it could become anything else.</div>
+
+  <div class="step step-learn" data-step>Below you are roots. Each root holds a force. Tap any that call to you.</div>
+
+  <div class="root-network-container" data-step="interaction" id="rootNetwork">
+    <svg class="root-network-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+      <!-- Root paths from center -->
+      <g>
+        <path class="root-path" data-root-shakti="anima" d="M150,150 C130,125 105,95 70,65"/>
+        <path class="root-secondary" data-root-shakti="anima" d="M105,100 C90,95 70,100 55,110"/>
+        <path class="root-path" data-root-shakti="mahima" d="M150,150 C160,115 168,80 155,40"/>
+        <path class="root-secondary" data-root-shakti="mahima" d="M162,85 C175,75 195,72 210,78"/>
+        <path class="root-path" data-root-shakti="laghima" d="M150,150 C180,128 210,100 245,75"/>
+        <path class="root-secondary" data-root-shakti="laghima" d="M205,105 C220,108 235,120 245,130"/>
+        <path class="root-path" data-root-shakti="garima" d="M150,150 C180,175 210,205 240,240"/>
+        <path class="root-secondary" data-root-shakti="garima" d="M200,195 C215,190 235,185 250,192"/>
+        <path class="root-path" data-root-shakti="prakamya" d="M150,150 C140,180 135,215 145,260"/>
+        <path class="root-secondary" data-root-shakti="prakamya" d="M138,210 C120,218 100,215 85,220"/>
+        <path class="root-path" data-root-shakti="vashitva" d="M150,150 C118,170 85,195 50,225"/>
+        <path class="root-secondary" data-root-shakti="vashitva" d="M95,190 C80,185 60,180 45,188"/>
+      </g>
+
+      <!-- Center point -->
+      <circle cx="150" cy="150" r="3" fill="currentColor" opacity="0.3"/>
+
+      <!-- Shakti nodes -->
+      <g id="shaktiNodes">
+        <circle class="shakti-node" data-shakti="anima" cx="70" cy="65" r="18"/>
+        <text class="shakti-name" x="70" y="42" text-anchor="middle">Animā</text>
+
+        <circle class="shakti-node" data-shakti="mahima" cx="155" cy="40" r="18"/>
+        <text class="shakti-name" x="155" y="18" text-anchor="middle">Mahimā</text>
+
+        <circle class="shakti-node" data-shakti="laghima" cx="245" cy="75" r="18"/>
+        <text class="shakti-name" x="245" y="53" text-anchor="middle">Laghimā</text>
+
+        <circle class="shakti-node" data-shakti="garima" cx="240" cy="240" r="18"/>
+        <text class="shakti-name" x="240" y="265" text-anchor="middle">Garimā</text>
+
+        <circle class="shakti-node" data-shakti="prakamya" cx="145" cy="260" r="18"/>
+        <text class="shakti-name" x="145" y="283" text-anchor="middle">Prākāmya</text>
+
+        <circle class="shakti-node" data-shakti="vashitva" cx="50" cy="225" r="18"/>
+        <text class="shakti-name" x="50" y="248" text-anchor="middle">Vaśhitva</text>
+      </g>
+    </svg>
+    <div class="shakti-question" id="shaktiQuestion"></div>
+  </div>
+
+  <div class="continue-el" id="continue2">
+    <div class="continue-dot"></div>
+    <div class="continue-label">go deeper</div>
+    <div class="hold-instruction visible" style="margin-top:8px">press and hold</div>
+    <div class="continue-progress" id="continueProgress2"><div class="continue-progress-fill" id="continueFill2"></div></div>
+  </div>
+</div>
+
+<!-- Descent overlay — darkens during the "go deeper" hold -->
+<div class="descent-overlay" id="descentOverlay"></div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 3 — THE DESCENT
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase3">
+  <div class="step-spacer-deep"></div>
+
+  <div class="step step-reflect descent-text" data-step>You are very small right now.</div>
+
+  <div class="step step-reflect descent-text" data-step>Someone is holding you. Or: you needed someone to hold you.</div>
+
+  <div class="step step-reflect descent-text" data-step>What did safety feel like in your body? Not the word. The feeling. Where did it live?</div>
+
+  <div class="step step-instruct descent-text" data-step>Tap where it lived.</div>
+
+  <div class="body-container" data-step="interaction" id="bodyContainer">
+    <svg class="body-svg" viewBox="0 0 120 280" xmlns="http://www.w3.org/2000/svg">
+      <!-- Simple human silhouette -->
+      <path class="body-outline" d="
+        M60,4
+        C73,4 82,15 82,28
+        C82,41 73,50 60,50
+        C47,50 38,41 38,28
+        C38,15 47,4 60,4 Z
+      "/>
+      <path class="body-outline" d="
+        M48,54 C35,58 22,70 20,88
+        L16,138 C14,146 20,152 28,150 L32,148 L35,108
+        L44,72 L52,56 Z
+      "/>
+      <path class="body-outline" d="
+        M72,54 C85,58 98,70 100,88
+        L104,138 C106,146 100,152 92,150 L88,148 L85,108
+        L76,72 L68,56 Z
+      "/>
+      <path class="body-outline" d="
+        M44,72 L48,54 L72,54 L76,72
+        Q80,110 78,148
+        L76,180 Q74,210 72,240 L70,270
+        C68,276 62,278 60,278
+        L58,278 C56,278 52,276 50,270
+        L48,240 Q46,210 44,180
+        L42,148 Q40,110 44,72 Z
+      "/>
+      <!-- Leg separation -->
+      <line x1="60" y1="178" x2="60" y2="270" stroke="var(--root-deep)" stroke-width="3"/>
+    </svg>
+    <div class="body-point" id="bodyPoint"></div>
+    <div class="body-roots" id="bodyRoots">
+      <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M80,80 C60,60 35,50 10,55" stroke-dasharray="100" stroke-dashoffset="0"/>
+        <path d="M80,80 C80,55 78,30 85,5" stroke-dasharray="100" stroke-dashoffset="0"/>
+        <path d="M80,80 C100,60 125,50 150,55" stroke-dasharray="100" stroke-dashoffset="0"/>
+        <path d="M80,80 C100,100 125,110 150,105" stroke-dasharray="100" stroke-dashoffset="0"/>
+        <path d="M80,80 C80,105 82,130 75,155" stroke-dasharray="100" stroke-dashoffset="0"/>
+        <path d="M80,80 C60,100 35,110 10,105" stroke-dasharray="100" stroke-dashoffset="0"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="step step-reflect descent-text" data-step="after-body" id="afterBodyText" style="text-align:center">That point remembers. It always has.</div>
+
+  <div class="continue-el" id="continue3">
+    <div class="continue-dot"></div>
+    <div class="continue-label">the ground shift</div>
+    <div class="hold-instruction visible" style="margin-top:8px">press and hold</div>
+    <div class="continue-progress" id="continueProgress3"><div class="continue-progress-fill" id="continueFill3"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 4 — THE GROUND SHIFT
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase4">
+  <div class="step-spacer-deep"></div>
+
+  <div class="step step-reflect" data-step>The ground you stood on then — at three, at five, at eight — is the same ground under your feet right now.</div>
+
+  <div class="step step-reflect" data-step="pivot" style="text-align:center; font-weight:500">It never moved.</div>
+
+  <div class="step-spacer" data-step></div>
+
+  <div class="step step-instruct" data-step>Press your feet into the floor. Not as an exercise. As a greeting.</div>
+
+  <div class="step step-reflect" data-step style="transition: opacity 3s ease">The earth greets you back. It always has.</div>
+
+  <div class="continue-el" id="continue4">
+    <div class="continue-dot"></div>
+    <div class="continue-label">breathe</div>
+    <div class="hold-instruction visible" style="margin-top:8px">press and hold</div>
+    <div class="continue-progress" id="continueProgress4"><div class="continue-progress-fill" id="continueFill4"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 5 — THE PRACTICE
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase5">
+  <div class="step-spacer-deep"></div>
+
+  <div class="step step-instruct" data-step style="text-align:center">Breathe. Into the place you found.</div>
+
+  <div class="breath-circle" data-step="breath" id="breathCircle">
+    <div class="breath-label">breathe</div>
+  </div>
+
+  <div class="step step-sacred" data-step="after-breath" id="afterBreathText">The place you found was waiting for that breath.</div>
+
+  <div class="continue-el" id="continue5">
+    <div class="continue-dot"></div>
+    <div class="hold-instruction visible" style="margin-top:8px">press and hold</div>
+    <div class="continue-progress" id="continueProgress5"><div class="continue-progress-fill" id="continueFill5"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Phase 6 — RELEASE
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase6">
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:24px; width:100%;">
+    <div class="activation-text" id="activationText" style="color:#C0392B">Your Muladhara Chakra is now Breathing.</div>
+
+
+    <div class="step-release" data-step>Your foundation was always stronger than you knew.</div>
+    <div class="step-release" data-step>The tree grows from what was planted here.</div>
+
+    <!-- Closure: seed returns, transformed by the journey -->
+    <div class="closure-divider" id="closureDivider"></div>
+    <div class="seed-return" id="seedReturn">The earth that holds you was chosen by you.</div>
+    <div class="mini-reveal-text" id="miniReveal" style="color:#C0392B">The earth was already holding you. You just told it where.</div>
+  </div>
+
+  <!-- Gentle dim overlay for closure -->
+    <div class="closure-luminance" id="closureLuminance" style="background:radial-gradient(ellipse at 50% 40%,rgba(255,252,245,0.05) 0%,rgba(255,252,245,0) 100%)"></div>
+  <div class="closure-dim" id="closureDim"></div>
+  <div class="bindu-invite" id="binduInvite" onclick="window.open('https://aistrangegame.com/tree-of-life/muladhara-dance.html','_blank')">
+    <div class="bindu-invite-label">watch</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+
+<script>
+// ═══════════════════════════════════════════
+// PANEL 1 V3.1 — MULADHARA — PRESS
+// Hardened: transition locks, Android audio fallback,
+// AbortController listener cleanup, race prevention
+// ═══════════════════════════════════════════
+
+const HOLD_DURATION = 4000;
+const CONTINUE_HOLD = 2000;
+const CONTINUE_HOLD_BREATH = 2500;
+const SHAKTI_QUESTIONS = {
+  anima:    'Where did you hide when you were small?',
+  mahima:   'What was the biggest thing you could imagine at age seven?',
+  laghima:  'When did you first feel weightless — completely free?',
+  garima:   'What made you dig in and refuse to move?',
+  prakamya: 'What did you wish for so hard it felt real?',
+  vashitva: 'What small world did you create that was completely yours?'
+};
+
+let fontScale = 1;
+let holdProgress = 0;
+let isHolding = false;
+let holdTimer = null;
+let currentPhase = 'gate';
+let bodyPointPlaced = false;
+let shaktiExplored = false;
+
+// ─── TRANSITION LOCK ───
+let transitioning = false;
+function lockTransition() { transitioning = true; }
+function unlockTransition() { transitioning = false; }
+function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {} }
+
+// ─── LISTENER MANAGEMENT ───
+let phaseAbort = null;
+function cleanupPhaseListeners() { if (phaseAbort) { phaseAbort.abort(); phaseAbort = null; } }
+
+// ─── BINAURAL SOUND SYSTEM ───
+let audioCtx = null;
+let oscLeft = null;
+let oscRight = null;
+let masterGain = null;
+let soundStarted = false;
+let audioFailed = false;
+
+function initAudio() {
+  if (audioCtx || audioFailed) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(audioCtx.destination);
+
+    oscLeft = audioCtx.createOscillator();
+    oscLeft.type = 'sine';
+    oscLeft.frequency.value = 128;
+
+    oscRight = audioCtx.createOscillator();
+    oscRight.type = 'sine';
+    oscRight.frequency.value = 128;
+
+    // StereoPanner (modern) or ChannelMerger fallback (older Android)
+    if (typeof audioCtx.createStereoPanner === 'function') {
+      const panL = audioCtx.createStereoPanner();
+      panL.pan.value = -1;
+      const panR = audioCtx.createStereoPanner();
+      panR.pan.value = 1;
+      oscLeft.connect(panL); panL.connect(masterGain);
+      oscRight.connect(panR); panR.connect(masterGain);
+    } else {
+      const merger = audioCtx.createChannelMerger(2);
+      const gL = audioCtx.createGain(); gL.gain.value = 1;
+      const gR = audioCtx.createGain(); gR.gain.value = 1;
+      oscLeft.connect(gL); gL.connect(merger, 0, 0);
+      oscRight.connect(gR); gR.connect(merger, 0, 1);
+      merger.connect(masterGain);
+    }
+
+    oscLeft.start();
+    oscRight.start();
+  } catch(e) {
+    console.warn('Audio init failed:', e.message);
+    audioFailed = true;
+    audioCtx = null;
+  }
+}
+
+function soundPhase2() {
+  if (!audioCtx) initAudio();
+  if (!audioCtx) return;
+  try { if (audioCtx.state === 'suspended') audioCtx.resume(); } catch(e) {}
+  soundStarted = true;
+  oscRight.frequency.value = 128;
+  const t = audioCtx.currentTime;
+  masterGain.gain.cancelScheduledValues(t);
+  masterGain.gain.setValueAtTime(0, t);
+  masterGain.gain.linearRampToValueAtTime(0.12, t + 3);
+}
+
+function soundDeepen() {
+  if (!audioCtx || !soundStarted) return;
+  try {
+    const t = audioCtx.currentTime;
+    const c = masterGain.gain.value;
+    if (c < 0.2) {
+      masterGain.gain.cancelScheduledValues(t);
+      masterGain.gain.setValueAtTime(c, t);
+      masterGain.gain.linearRampToValueAtTime(Math.min(c + 0.02, 0.2), t + 1);
+    }
+  } catch(e) {}
+}
+
+function soundPhase3() {
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    oscRight.frequency.cancelScheduledValues(t);
+    oscRight.frequency.setValueAtTime(128, t);
+    oscRight.frequency.linearRampToValueAtTime(132, t + 4);
+  } catch(e) {}
+}
+
+function soundPhase4() {
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    oscRight.frequency.cancelScheduledValues(t);
+    oscRight.frequency.setValueAtTime(132, t);
+    oscRight.frequency.linearRampToValueAtTime(130, t + 8);
+  } catch(e) {}
+}
+
+function soundPhase5() {
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(t);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, t);
+    masterGain.gain.linearRampToValueAtTime(0.25, t + 5);
+    masterGain.gain.linearRampToValueAtTime(0.20, t + 20);
+    masterGain.gain.linearRampToValueAtTime(0.15, t + 36);
+    masterGain.gain.linearRampToValueAtTime(0.1, t + 42);
+  } catch(e) {}
+}
+
+function soundFade() {
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(t);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, t);
+    masterGain.gain.linearRampToValueAtTime(0, t + 6);
+  } catch(e) {}
+}
+
+// ─── GATE MECHANIC ───
+
+
+// ─── WAKE LOCK ───
+// Prevents screen from sleeping during the experience
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    }
+  } catch(e) {}
+}
+// Re-acquire on visibility change (tab switch back)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !wakeLock) requestWakeLock();
+});
+
+
+// --- AWAKENING SOUND ---
+function soundAwakening() {
+  if (!audioCtx) return;
+  var actx = audioCtx, now = actx.currentTime;
+  var FREQ=174, HARM=[1, 0.5, 0.25], ATK=0.01, SUS=0.4, DCY=2.5;
+  var master = actx.createGain(); master.gain.value=0; master.connect(actx.destination);
+  master.gain.setValueAtTime(0,now);
+  master.gain.linearRampToValueAtTime(0.25,now+ATK);
+  master.gain.setValueAtTime(0.25,now+ATK+SUS);
+  master.gain.exponentialRampToValueAtTime(0.001,now+ATK+SUS+DCY);
+  HARM.forEach(function(g,i) {
+    var osc=actx.createOscillator(), oscG=actx.createGain();
+    var freq=FREQ*(i===0?1:(i+1));
+    osc.type='sine'; osc.frequency.value=freq; oscG.gain.value=g;
+    if(i>0) { oscG.gain.setValueAtTime(g,now); oscG.gain.exponentialRampToValueAtTime(0.001,now+DCY*(1-i*0.15)); }
+    osc.connect(oscG).connect(master); osc.start(now); osc.stop(now+ATK+SUS+DCY+0.5);
+  });
+  var sb = actx.createOscillator(); var sbG = actx.createGain();
+  sb.type='sine'; sb.frequency.value=87.0; sbG.gain.value=0.3;
+  sbG.gain.setValueAtTime(0.3,now); sbG.gain.exponentialRampToValueAtTime(0.001,now+DCY*0.6);
+  sb.connect(sbG).connect(master); sb.start(now); sb.stop(now+DCY+0.5);
+  var ns = actx.createBufferSource(); var nB = actx.createBuffer(1,actx.sampleRate*0.05,actx.sampleRate);
+  var nD = nB.getChannelData(0); for(var j=0;j<nD.length;j++) nD[j]=(Math.random()*2-1)*Math.pow(1-j/nD.length,2);
+  ns.buffer=nB; var nG=actx.createGain(); nG.gain.value=0.08;
+  var fl=actx.createBiquadFilter(); fl.type='bandpass'; fl.frequency.value=174; fl.Q.value=5;
+  ns.connect(fl).connect(nG).connect(master); ns.start(now);
+  var rd=actx.createDelay(); rd.delayTime.value=0.08;
+  var rg=actx.createGain(); rg.gain.value=0.15;
+  rg.gain.exponentialRampToValueAtTime(0.001,now+DCY+1);
+  master.connect(rd).connect(rg).connect(actx.destination);
+  setTimeout(function() { master.disconnect(); rg.disconnect(); }, (ATK+SUS+DCY+2)*1000);
+}
+
+function initGate() {
+  const gate = document.getElementById('gate');
+  const seedText = document.getElementById('seedText');
+  const holdInst = document.getElementById('holdInst');
+  const progressBar = document.getElementById('gateProgress');
+  const roots = document.getElementById('gateRoots');
+  const headphonePrompt = document.getElementById('headphonePrompt');
+
+  setTimeout(() => headphonePrompt.classList.add('visible'), 1200);
+  setTimeout(() => holdInst.classList.add('visible'), 2500);
+  setTimeout(() => progressBar.classList.add('visible'), 3000);
+
+  const startHold = (e) => {
+    if (transitioning) return;
+    e.preventDefault(); e.stopPropagation();
+    isHolding = true;
+    roots.classList.add('growing');
+    seedText.style.animation = 'none';
+    seedText.style.opacity = '1';
+    initAudio();
+    try { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); } catch(e2) {}
+    requestWakeLock();
+    animateGateHold();
+  };
+
+  const endHold = (e) => {
+    e.preventDefault();
+    isHolding = false;
+    if (holdTimer) cancelAnimationFrame(holdTimer);
+    if (holdProgress < 1) seedText.style.animation = '';
+  };
+
+  gate.addEventListener('touchstart', startHold, { passive: false });
+  gate.addEventListener('mousedown', startHold);
+  gate.addEventListener('touchend', endHold, { passive: false });
+  gate.addEventListener('mouseup', endHold);
+  gate.addEventListener('touchcancel', endHold, { passive: false });
+  gate.addEventListener('mouseleave', endHold);
+}
+
+function animateGateHold() {
+  if (!isHolding) return;
+  holdProgress += (16 / HOLD_DURATION);
+  if (holdProgress > 1) holdProgress = 1;
+  document.getElementById('gateProgressFill').style.width = (holdProgress * 100) + '%';
+  updateRootGrowth(holdProgress);
+  if (holdProgress >= 1) { completeGate(); return; }
+  holdTimer = requestAnimationFrame(animateGateHold);
+}
+
+function updateRootGrowth(progress) {
+  document.getElementById('gateRoots').querySelectorAll('svg path').forEach(p => {
+    const total = parseFloat(p.getAttribute('stroke-dasharray'));
+    if (total) p.setAttribute('stroke-dashoffset', total * (1 - progress));
+  });
+}
+
+function completeGate() {
+  haptic(80);
+  soundAwakening();
+  lockTransition();
+  const gate = document.getElementById('gate');
+  gate.classList.add('completed');
+  setTimeout(() => {
+    gate.style.display = 'none';
+    enterPhase('phase2');
+    setTimeout(unlockTransition, 200);
+  }, 1500);
+}
+
+// ─── PRESS-AND-HOLD CONTINUE ───
+
+function setupContinueHold(phaseId, continueId, fillId, progressId, duration, onComplete, onProgress) {
+  const phase = document.getElementById(phaseId);
+  const el = document.getElementById(continueId);
+  const fill = document.getElementById(fillId);
+  const progress = document.getElementById(progressId);
+  let holding = false;
+  let prog = 0;
+  let raf = null;
+  let completed = false;
+
+  const ac = new AbortController();
+  const sig = ac.signal;
+
+  const start = (e) => {
+    if (transitioning || completed) return;
+    if (!el.classList.contains('visible')) return;
+    if (e.target.closest('.zoom-btn')) return;
+    holding = true;
+    progress.classList.add('active');
+    animate();
+  };
+
+  const end = () => {
+    if (!holding) return;
+    holding = false;
+    if (raf) cancelAnimationFrame(raf);
+    if (prog < 1 && !completed) {
+      prog = 0;
+      fill.style.width = '0%';
+      progress.classList.remove('active');
+      if (onProgress) onProgress(0);
+    }
+  };
+
+  const animate = () => {
+    if (!holding) return;
+    prog += (16 / duration);
+    if (prog > 1) prog = 1;
+    fill.style.width = (prog * 100) + '%';
+    if (onProgress) onProgress(prog);
+    if (prog >= 1) {
+      completed = true;
+      haptic(40);
+      onComplete();
+      return;
+    }
+    raf = requestAnimationFrame(animate);
+  };
+
+  phase.addEventListener('touchstart', start, { passive: true, signal: sig });
+  phase.addEventListener('mousedown', start, { signal: sig });
+  document.addEventListener('touchend', end, { passive: true, signal: sig });
+  document.addEventListener('mouseup', end, { signal: sig });
+  document.addEventListener('touchcancel', end, { passive: true, signal: sig });
+
+  if (!phase._holdAborts) phase._holdAborts = [];
+  phase._holdAborts.push(ac);
+}
+
+function transitionPhase(fromId, toId) {
+  if (transitioning) return;
+  lockTransition();
+  hideTapCue();
+
+  const from = document.getElementById(fromId);
+  if (from._holdAborts) { from._holdAborts.forEach(ac => ac.abort()); from._holdAborts = []; }
+
+  from.style.transition = 'opacity 1.2s ease';
+  from.style.opacity = '0';
+  setTimeout(() => {
+    from.classList.remove('active');
+    from.style.opacity = '';
+    enterPhase(toId);
+    setTimeout(unlockTransition, 200);
+  }, 1200);
+}
+
+// ─── PHASE MANAGEMENT ───
+
+function enterPhase(phaseId) {
+  currentPhase = phaseId;
+  const phaseEl = document.getElementById(phaseId);
+  phaseEl.classList.add('active');
+  phaseEl.scrollTop = 0;
+  window.scrollTo(0, 0);
+  hideTapCue();
+  cleanupPhaseListeners();
+  phaseAbort = new AbortController();
+
+  if (phaseId === 'phase2') soundPhase2();
+  if (phaseId === 'phase3') soundPhase3();
+  if (phaseId === 'phase4') soundPhase4();
+
+  if (phaseId === 'phase3') {
+    document.body.classList.add('descent');
+    // Body background now matches overlay — fade overlay out
+    const dOvl = document.getElementById('descentOverlay');
+    if (dOvl) { dOvl.style.transition = 'opacity 2s ease'; dOvl.style.opacity = '0'; }
+  }
+  if (phaseId === 'phase4') {
+    document.body.classList.remove('descent');
+    document.body.classList.add('ground-shift');
+    document.getElementById('pulseScreen').classList.add('visible');
+  }
+  if (phaseId === 'phase5') {
+    document.body.classList.remove('ground-shift');
+    document.getElementById('pulseScreen').classList.remove('visible');
+  }
+  if (phaseId === 'phase6') {
+    document.body.classList.add('release-phase');
+    document.getElementById('zoomControls').style.display = 'none';
+    soundFade();
+    initPhase6();
+  }
+
+  if (phaseId !== 'phase6') setupPhaseSteps(phaseEl);
+  if (phaseId === 'phase2') initRootNetwork();
+}
+
+// ─── PHASE STEPS (tap anywhere to advance) ───
+
+let advanceLocked = false;
+
+function setupPhaseSteps(phaseEl) {
+  const steps = Array.from(phaseEl.querySelectorAll('[data-step]'));
+  let idx = 0;
+  let pivotPending = false;
+
+  setTimeout(() => {
+    if (steps.length > 0) {
+      revealStep(steps[0]);
+      idx = 1;
+      // Check if next step is a pivot — schedule auto-reveal instead of tap cue
+      if (idx < steps.length && steps[idx].dataset.step === 'pivot') {
+        pivotPending = true;
+        setTimeout(() => {
+          haptic(50);
+          revealStep(steps[idx]);
+          idx++;
+          pivotPending = false;
+          scheduleTabCue(steps[idx - 1], steps, idx, false, 4000);
+        }, 3500);
+      } else {
+        scheduleTabCue(steps[0], steps, idx, true);
+      }
+    }
+  }, 600);
+
+  const isExcluded = (target) => {
+    return target.closest('.shakti-node') ||
+           target.closest('.body-container') ||
+           target.closest('.continue-el') ||
+           target.closest('.zoom-btn') ||
+           target.closest('.breath-circle');
+  };
+
+  const doAdvance = () => {
+    if (advanceLocked || transitioning) return;
+    if (pivotPending) return;
+
+    hideTapCue();
+    if (idx >= steps.length) return;
+
+    const step = steps[idx];
+    const stepType = step.dataset.step;
+
+    if (stepType === 'interaction') { revealStep(step); idx++; lock(); return; }
+    if (stepType === 'after-body' || stepType === 'after-breath') return;
+    if (stepType === 'pivot') return;
+    if (stepType === 'breath') { revealStep(step); idx++; startBreath(); lock(); return; }
+
+    revealStep(step);
+    idx++;
+
+    // Check if next step is a pivot
+    if (idx < steps.length && steps[idx].dataset.step === 'pivot') {
+      pivotPending = true;
+      setTimeout(() => {
+        haptic(50);
+        revealStep(steps[idx]);
+        idx++;
+        pivotPending = false;
+        scheduleTabCue(steps[idx - 1], steps, idx, false, 4000);
+      }, 3500);
+      lock();
+      return;
+    }
+
+    if (idx < steps.length && steps[idx].dataset.step === 'interaction') {
+      const interactionIdx = idx;
+      idx++;
+      setTimeout(() => { revealStep(steps[interactionIdx]); }, 800);
+    } else {
+      scheduleTabCue(step, steps, idx, false);
+    }
+
+    lock();
+  };
+
+  function lock() {
+    advanceLocked = true;
+    setTimeout(() => { advanceLocked = false; }, 300);
+  }
+
+  // touchend for mobile, click for desktop, lock prevents double-fire
+  phaseEl.addEventListener('touchend', (e) => {
+    if (isExcluded(e.target)) return;
+    doAdvance();
+  }, { passive: true, signal: phaseAbort.signal });
+
+  phaseEl.addEventListener('click', (e) => {
+    if (isExcluded(e.target)) return;
+    doAdvance();
+  }, { signal: phaseAbort.signal });
+}
+
+// ─── TAP CUE ───
+
+let tapCueTimer = null;
+
+function scheduleTabCue(currentStep, allSteps, nextIdx, isFirst, overrideDelay) {
+  clearTimeout(tapCueTimer);
+  hideTapCue();
+  if (nextIdx >= allSteps.length) return;
+  const nextType = allSteps[nextIdx].dataset.step;
+  if (nextType === 'interaction' || nextType === 'after-body' || nextType === 'after-breath' || nextType === 'pivot') return;
+
+  const delay = overrideDelay || (isFirst ? 900 : Math.max(currentStep.textContent.trim().split(/\s+/).length * 220, 1800));
+  tapCueTimer = setTimeout(() => showTapCue(), delay);
+}
+
+function showTapCue() { document.getElementById('tapCue').classList.add('visible'); }
+function hideTapCue() { clearTimeout(tapCueTimer); document.getElementById('tapCue').classList.remove('visible'); }
+function revealStep(el) { el.classList.add('visible'); setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100); }
+
+// ─── ROOT NETWORK (Phase 2) ───
+
+function initRootNetwork() {
+  const nodes = document.querySelectorAll('.shakti-node');
+  const questionEl = document.getElementById('shaktiQuestion');
+  const continueEl = document.getElementById('continue2');
+
+  nodes.forEach(node => {
+    node.addEventListener('click', (e) => {
+      if (transitioning) return;
+      e.stopPropagation();
+      node.classList.add('explored');
+      questionEl.textContent = SHAKTI_QUESTIONS[node.dataset.shakti];
+      questionEl.classList.add('visible');
+      soundDeepen();
+
+      // Light up the root paths connecting to this Shakti
+      const shaktiName = node.dataset.shakti;
+      document.querySelectorAll(`[data-root-shakti="${shaktiName}"]`).forEach(path => {
+        path.classList.add('lit');
+      });
+
+      if (!shaktiExplored) {
+        shaktiExplored = true;
+        setTimeout(() => { continueEl.classList.add('visible'); setTimeout(() => continueEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }, 2000);
+      }
+    }, { signal: phaseAbort.signal });
+  });
+
+  const descentOverlay = document.getElementById('descentOverlay');
+  setupContinueHold('phase2', 'continue2', 'continueFill2', 'continueProgress2', CONTINUE_HOLD, () => {
+    transitionPhase('phase2', 'phase3');
+  }, (prog) => {
+    if (descentOverlay) descentOverlay.style.opacity = (prog * 0.6).toFixed(3);
+  });
+}
+
+// ─── BODY SILHOUETTE (Phase 3) ───
+
+function initBodySilhouette() {
+  const container = document.getElementById('bodyContainer');
+  const point = document.getElementById('bodyPoint');
+  const roots = document.getElementById('bodyRoots');
+  const afterText = document.getElementById('afterBodyText');
+  const continueEl = document.getElementById('continue3');
+
+  container.addEventListener('click', (e) => {
+    if (transitioning || bodyPointPlaced) return;
+    if (!container.classList.contains('visible')) return;
+    e.stopPropagation();
+
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    point.style.left = x + 'px';
+    point.style.top = y + 'px';
+    point.classList.add('placed');
+    bodyPointPlaced = true;
+
+    roots.style.left = x + 'px';
+    roots.style.top = y + 'px';
+    setTimeout(() => roots.classList.add('visible'), 300);
+    haptic(40);
+
+    try { localStorage.setItem('tol-bodypoint-1', JSON.stringify({ x: x / rect.width, y: y / rect.height, label: 'safety' })); } catch(e2) {}
+
+    setTimeout(() => { afterText.classList.add('visible'); afterText.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 1500);
+    setTimeout(() => { continueEl.classList.add('visible'); setTimeout(() => continueEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }, 3500);
+  });
+
+  setupContinueHold('phase3', 'continue3', 'continueFill3', 'continueProgress3', CONTINUE_HOLD, () => {
+    transitionPhase('phase3', 'phase4');
+  });
+}
+
+// ─── PHASE 4 CONTINUE ───
+
+function initPhase4Continue() {
+  const steps = document.getElementById('phase4').querySelectorAll('[data-step]');
+  const observer = new MutationObserver(() => {
+    if (Array.from(steps).every(s => s.classList.contains('visible') || s.classList.contains('step-spacer'))) {
+      setTimeout(() => { const _c = document.getElementById('continue4'); _c.classList.add('visible'); setTimeout(() => _c.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }, 3000);
+      observer.disconnect();
+    }
+  });
+  steps.forEach(s => observer.observe(s, { attributes: true, attributeFilter: ['class'] }));
+
+  setupContinueHold('phase4', 'continue4', 'continueFill4', 'continueProgress4', CONTINUE_HOLD_BREATH, () => {
+    transitionPhase('phase4', 'phase5');
+  });
+}
+
+// ─── BREATH (Phase 5) ───
+
+function startBreath() {
+  const circle = document.getElementById('breathCircle');
+  const label = circle.querySelector('.breath-label');
+  circle.classList.add('visible');
+
+  // 3 cycles of 4-in, 4-hold, 4-out = 36 seconds
+  const CYCLE_MS = 12000;
+  const CYCLES = 3;
+  let cycleCount = 0;
+
+  setTimeout(() => {
+    circle.classList.add('breathing');
+    soundPhase5();
+
+    // Cycle breath labels: in → hold → out, repeating
+    function runLabelCycle() {
+      if (cycleCount >= CYCLES) return;
+      label.textContent = 'in';
+      setTimeout(() => { label.textContent = 'hold'; }, 4000);
+      setTimeout(() => { label.textContent = 'out'; }, 8000);
+      setTimeout(() => {
+        cycleCount++;
+        if (cycleCount < CYCLES) {
+          runLabelCycle();
+        } else {
+          // 3 cycles complete — close the breath
+          circle.classList.remove('breathing');
+          circle.classList.add('complete');
+          label.textContent = '';
+          haptic(50);
+
+          setTimeout(() => {
+            const afterText = document.getElementById('afterBreathText');
+            afterText.classList.add('visible');
+            afterText.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => { const _c = document.getElementById('continue5'); _c.classList.add('visible'); setTimeout(() => _c.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }, 3000);
+          }, 1500);
+        }
+      }, CYCLE_MS);
+    }
+
+    runLabelCycle();
+  }, 1000);
+}
+
+function initPhase5Continue() {
+  setupContinueHold('phase5', 'continue5', 'continueFill5', 'continueProgress5', CONTINUE_HOLD, () => {
+    if (transitioning) return;
+    lockTransition();
+    hideTapCue();
+    const phase5 = document.getElementById('phase5');
+    if (phase5._holdAborts) { phase5._holdAborts.forEach(ac => ac.abort()); phase5._holdAborts = []; }
+    phase5.style.transition = 'opacity 1.5s ease';
+    phase5.style.opacity = '0';
+    setTimeout(() => {
+      phase5.classList.remove('active');
+      phase5.style.opacity = '';
+      enterPhase('phase6');
+      setTimeout(unlockTransition, 200);
+    }, 1500);
+  });
+}
+
+// ─── PHASE 6 RELEASE ───
+
+function initPhase6() {
+  const steps = document.getElementById('phase6').querySelectorAll('[data-step]');
+  steps.forEach((step, i) => { setTimeout(() => step.classList.add('visible'), 1500 + (i * 2500)); });
+  // Activation declaration
+  setTimeout(() => { document.getElementById('activationText').classList.add('visible'); }, 500);
+
+  setTimeout(() => document.getElementById('closureDivider').classList.add('visible'), 9000);
+  setTimeout(() => document.getElementById('seedReturn').classList.add('visible'), 12000);
+
+  // Mini-reveal
+  setTimeout(() => document.getElementById('miniReveal').classList.add('visible'), 15000);
+
+  // Progressive luminance
+  setTimeout(() => document.getElementById('closureLuminance').classList.add('visible'), 18000);
+
+  setTimeout(() => document.getElementById('closureDim').classList.add('visible'), 21000);
+  setTimeout(() => document.getElementById('orangeBleed').classList.add('visible'), 24000);
+
+  // Bindu wakes — patience reward
+  setTimeout(() => { document.getElementById('persistentBindu').classList.add('awakened'); }, 32000);
+  setTimeout(() => { document.getElementById('binduInvite').classList.add('visible'); }, 35000);
+}
+
+// ─── ZOOM ───
+
+document.getElementById('zoomIn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fontScale = Math.min(fontScale + 0.1, 1.45);
+  document.documentElement.style.fontSize = (fontScale * 100) + '%';
+});
+document.getElementById('zoomOut')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fontScale = Math.max(fontScale - 0.1, 0.85);
+  document.documentElement.style.fontSize = (fontScale * 100) + '%';
+});
+
+// ─── INIT ───
+
+document.addEventListener('DOMContentLoaded', () => {
+  initGate();
+  initBodySilhouette();
+  initPhase4Continue();
+  initPhase5Continue();
+});
+
+</script>
+
+</body>
+</html>

@@ -415,9 +415,12 @@ enum PlayField {
     }
 
     /// One game, hosted, ready to put in a cover.
+    /// `fromRoom` is the Map record of the chakra room the game was opened
+    /// from (U0 · C14): its `Played` row then carries `Link to The Map`.
     static func host(_ game: PlayGame,
                      atPosition kp: Int? = nil,
+                     fromRoom mapRecordId: String? = nil,
                      onClose: @escaping () -> Void) -> PlayGameHost {
-        PlayGameHost(game: game, startPosition: kp, onClose: onClose)
+        PlayGameHost(game: game, startPosition: kp, mapRecordId: mapRecordId, onClose: onClose)
     }
 }

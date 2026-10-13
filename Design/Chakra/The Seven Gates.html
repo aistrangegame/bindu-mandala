@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>The Seven Gates</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#050205;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.06);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes gate-open{0%{transform:scaleY(1)}100%{transform:scaleY(0)}}
+@keyframes descend{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes put-down{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(34px) scale(.9)}}
+@keyframes torch{0%,100%{opacity:.5}25%{opacity:.75}50%{opacity:.55}75%{opacity:.8}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0E0810;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#1A121C;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #1A121C,0 108px 0 #1A121C;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#1A121C;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#070409;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+textarea{font-family:inherit;outline:none;}
+textarea::placeholder{color:rgba(240,232,220,.20);}
+.scroll{overflow-y:auto;}.scroll::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ═══ A · THE GATES ═══ -->
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// Descending order — crown first. The descent strips from the top down.
+const GATES = [
+  { n:1, chakra:'Crown',    color:'#8A3AB5', accent:'#E0B8F8',
+    veil:'the crown of knowing',
+    asks:'What certainty are you ready to put down?',
+    whisper:'You have been carrying an answer that stopped being true. The gate does not open for those who know.' },
+  { n:2, chakra:'Third Eye', color:'#4A3AAB', accent:'#C0B0F8',
+    veil:'the veil of image',
+    asks:'What picture of yourself are you ready to put down?',
+    whisper:'The self you show was built for weather that has passed. The gate does not recognize portraits.' },
+  { n:3, chakra:'Throat',   color:'#1E6EA0', accent:'#80C8F0',
+    veil:'the story',
+    asks:'What story about your life are you ready to stop telling?',
+    whisper:'You have told it so well, so long, that it tells you now. The gate is quieter than the story.' },
+  { n:4, chakra:'Heart',    color:'#1A8060', accent:'#80E5BC',
+    veil:'the old armor',
+    asks:'What protection are you ready to put down?',
+    whisper:'It kept you alive. It is keeping you small. Both are true. The gate is the width of an open chest.' },
+  { n:5, chakra:'Solar',    color:'#C49B17', accent:'#F5DC80',
+    veil:'the striving',
+    asks:'What effort are you ready to put down?',
+    whisper:'Not all fire is will. Some of it is fear wearing will\'s clothing. The gate opens without being pushed.' },
+  { n:6, chakra:'Sacral',   color:'#C45A18', accent:'#F0A870',
+    veil:'the old want',
+    asks:'What desire that is no longer yours are you ready to put down?',
+    whisper:'Some of what you want was planted by someone else. The gate asks only for what is truly yours.' },
+  { n:7, chakra:'Root',     color:'#A83232', accent:'#E89080',
+    veil:'the last holding',
+    asks:'What are you still gripping — the very last thing?',
+    whisper:'At the seventh gate there is nothing left but the grip itself. Put it down. What remains is you.' },
+];
+
+const STORE = 'seven_gates_v1';
+const getGateData = () => { try { return JSON.parse(localStorage.getItem(STORE)||'{}'); } catch { return {}; } };
+const setGateData = (d) => localStorage.setItem(STORE, JSON.stringify({ ...getGateData(), ...d }));
+
+Object.assign(window, { GATES, getGateData, setGateData });
+</script>
+
+<!-- ═══ B · THE DESCENT MAP ═══ -->
+<script type="text/babel">
+const { useState:useM } = React;
+const { GATES:GTS, getGateData:GGD } = window;
+
+function MapView({ onEnter, onEmerge }) {
+  const data = GGD();
+  const passed = data.passed || [];
+  const nextGate = passed.length;
+  const allPassed = nextGate >= 7;
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:'linear-gradient(180deg, #0C0714 0%, #070409 45%, #0A0406 100%)' }}>
+
+      <div style={{ padding:'12px 24px 4px', flexShrink:0, textAlign:'center' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'22px',
+          color:'rgba(240,232,220,.85)', letterSpacing:'.14em' }}>The Seven Gates</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'12px',
+          color:'rgba(180,160,240,.32)', marginTop:'3px', lineHeight:1.6 }}>
+          the descent · at each gate, something is put down
+        </p>
+      </div>
+
+      <div className="scroll" style={{ flex:1, overflowY:'auto', padding:'8px 30px 20px',
+        position:'relative' }}>
+        {/* Descent line */}
+        <div style={{ position:'absolute', left:'50%', top:'8px', bottom:'20px', width:'1px',
+          background:'linear-gradient(to bottom, rgba(180,160,240,.20), rgba(168,50,50,.20))',
+          transform:'translateX(-50%)' }}></div>
+
+        {GTS.map((g, i) => {
+          const isPassed = i < nextGate;
+          const isNext = i === nextGate;
+          const entry = (data.entries||{})[i];
+          return (
+            <div key={i} style={{ position:'relative', padding:'13px 0',
+              display:'flex', flexDirection:'column', alignItems:'center',
+              animation:`descend .5s ${i*.08}s ease both` }}>
+              <button onClick={() => isNext && onEnter(i)} disabled={!isNext}
+                style={{ background:'none', border:'none',
+                  cursor: isNext ? 'pointer' : 'default',
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:'7px' }}>
+                {/* Gate symbol */}
+                <div style={{ width:'52px', height:'58px', position:'relative',
+                  display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+                  {/* Arch */}
+                  <div style={{ position:'absolute', inset:0,
+                    borderRadius:'26px 26px 0 0',
+                    border:`1.4px solid ${isPassed ? g.color+'30' : isNext ? g.accent+'70' : g.color+'25'}`,
+                    borderBottom:'none',
+                    boxShadow: isNext ? `0 0 18px ${g.color}40, inset 0 0 14px ${g.color}18` : 'none',
+                    animation: isNext ? 'torch 3s ease-in-out infinite' : 'none' }}></div>
+                  {/* Door / opening */}
+                  {isPassed ? (
+                    <div style={{ width:'26px', height:'40px', borderRadius:'13px 13px 0 0',
+                      background:`radial-gradient(ellipse at 50% 20%, ${g.color}25, transparent)` }}></div>
+                  ) : (
+                    <div style={{ width:'26px', height:'40px', borderRadius:'13px 13px 0 0',
+                      background: isNext
+                        ? `linear-gradient(180deg, ${g.color}45, ${g.color}20)`
+                        : 'rgba(10,6,12,.9)',
+                      border:`1px solid ${isNext ? g.accent+'40' : g.color+'18'}`,
+                      borderBottom:'none' }}></div>
+                  )}
+                </div>
+                <div style={{ textAlign:'center' }}>
+                  <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'15px',
+                    color: isPassed ? `${g.accent}45` : isNext ? g.accent : 'rgba(240,232,220,.28)',
+                    letterSpacing:'.05em' }}>
+                    {isPassed ? '· passed ·' : g.veil}
+                  </p>
+                  {isPassed && entry?.laid && (
+                    <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+                      fontSize:'11px', color:`${g.accent}30`, marginTop:'2px', maxWidth:'200px' }}>
+                      “{entry.laid.slice(0, 44)}{entry.laid.length > 44 ? '…' : ''}”
+                    </p>
+                  )}
+                  {isNext && (
+                    <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'8px',
+                      letterSpacing:'.28em', textTransform:'uppercase',
+                      color:`${g.accent}50`, marginTop:'3px' }}>enter</p>
+                  )}
+                </div>
+              </button>
+            </div>
+          );
+        })}
+
+        {allPassed && (
+          <div style={{ textAlign:'center', padding:'12px 0 8px', animation:'emerge .8s ease' }}>
+            <button onClick={onEmerge} style={{ padding:'14px 38px', borderRadius:'28px',
+              cursor:'pointer', background:'rgba(232,144,128,.10)',
+              border:'1px solid rgba(232,144,128,.35)',
+              fontFamily:"'Cormorant Garamond',serif", fontSize:'16px',
+              letterSpacing:'.18em', textTransform:'uppercase',
+              color:'rgba(240,232,220,.82)' }}>The Return</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+Object.assign(window, { MapView });
+</script>
+
+<!-- ═══ C · A GATE ═══ -->
+<script type="text/babel">
+const { useState:useG, useEffect:useGE, useRef:useGR } = React;
+const { GATES:GTG, getGateData:GGDG, setGateData:SGDG } = window;
+
+function GateView({ idx, onPassed, onBack }) {
+  const g = GTG[idx];
+  const [phase, setPhase] = useG('approach');  // approach | ask | laying | witness | open
+  const [text, setText] = useG('');
+  const [witness, setWitness] = useG('');
+  const holdRef = useGR(null);
+  const [hold, setHold] = useG(0);
+
+  // Approach → ask after the whisper is read (tap)
+  function startHold() {
+    let p = 0;
+    holdRef.current = setInterval(() => {
+      p += 50/2600;
+      setHold(Math.min(p, 1));
+      if (p >= 1) { clearInterval(holdRef.current); layDown(); }
+    }, 50);
+  }
+  function stopHold() { clearInterval(holdRef.current); setHold(0); }
+
+  async function layDown() {
+    setPhase('laying');
+    const laid = text.trim();
+    setTimeout(async () => {
+      setPhase('witness');
+      try {
+        const r = await window.claude.complete({ messages: [{ role:'user', content:
+          `Someone is descending through seven inner gates, an initiation of putting things down rather than gaining them. At gate ${g.n} — ${g.veil} (${g.chakra}) — they were asked: "${g.asks}" They laid this down:\n\n"${laid}"\n\nSpeak one or two sentences as the gatekeeper — ancient, kind, unimpressed by performance, deeply respectful of what was just released. Acknowledge the weight of what they put down and let them pass. Do not use markdown. Do not use the word "journey".`
+        }]});
+        setWitness(r.trim());
+      } catch {
+        setWitness('It is heavier than it looks, what you just set down. You may pass.');
+      }
+      // Persist
+      const data = GGDG();
+      const passed = [...(data.passed||[]), idx];
+      const entries = { ...(data.entries||{}), [idx]: { laid, ts: Date.now() } };
+      SGDG({ passed, entries });
+    }, 1900);
+  }
+
+  const circ = 2 * Math.PI * 36;
+
+  if (phase === 'approach') return (
+    <div onClick={() => setPhase('ask')} style={{ height:'100%', display:'flex',
+      flexDirection:'column', alignItems:'center', justifyContent:'center',
+      padding:'40px 34px', textAlign:'center', cursor:'pointer',
+      background:`radial-gradient(ellipse at 50% 30%, ${g.color}14, #070409)` }}>
+      <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.34em',
+        textTransform:'uppercase', color:`${g.accent}48`, marginBottom:'26px' }}>
+        gate {g.n} of 7 · {g.veil}
+      </p>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'20px',
+        color:'rgba(240,232,220,.72)', lineHeight:1.9, maxWidth:'280px',
+        animation:'emerge 1.2s ease' }}>{g.whisper}</p>
+      <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'9px', letterSpacing:'.26em',
+        textTransform:'uppercase', color:`${g.accent}30`, marginTop:'40px' }}>tap to approach</p>
+    </div>
+  );
+
+  if (phase === 'ask') return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column',
+      background:`radial-gradient(ellipse at 50% 20%, ${g.color}12, #070409)` }}>
+      <div style={{ padding:'14px 22px 0', flexShrink:0 }}>
+        <button onClick={onBack} style={{ background:'none', border:'none', cursor:'pointer',
+          fontSize:'11px', letterSpacing:'.22em', color:`${g.accent}40`,
+          textTransform:'uppercase' }}>← Retreat</button>
+      </div>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center',
+        padding:'16px 28px', gap:'18px' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'25px',
+          color:'rgba(240,232,220,.88)', lineHeight:1.45 }}>{g.asks}</p>
+        <textarea value={text} onChange={e => setText(e.target.value)} rows={4} autoFocus
+          placeholder="name it plainly…"
+          style={{ width:'100%', background:`${g.color}0A`, border:`1px solid ${g.accent}22`,
+            borderRadius:'16px', padding:'16px', color:'rgba(240,232,220,.88)',
+            fontFamily:"'Cormorant Garamond',serif", fontSize:'19px', lineHeight:1.75,
+            resize:'none' }}></textarea>
+        {text.trim() && (
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'10px',
+            animation:'emerge .5s ease' }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic',
+              fontSize:'13px', color:`${g.accent}45` }}>hold to lay it down</p>
+            <div style={{ position:'relative', width:'88px', height:'88px' }}>
+              <svg width="88" height="88" style={{ position:'absolute', inset:0 }}>
+                <circle cx="44" cy="44" r="36" fill="none" stroke={`${g.color}28`} strokeWidth="2"/>
+                <circle cx="44" cy="44" r="36" fill="none" stroke={g.accent} strokeWidth="2"
+                  strokeDasharray={circ} strokeDashoffset={circ*(1-hold)}
+                  strokeLinecap="round" transform="rotate(-90 44 44)"
+                  style={{ transition:'stroke-dashoffset .05s' }}/>
+              </svg>
+              <button
+                onMouseDown={startHold} onMouseUp={stopHold} onMouseLeave={stopHold}
+                onTouchStart={e => { e.preventDefault(); startHold(); }} onTouchEnd={stopHold}
+                style={{ position:'absolute', inset:'12px', borderRadius:'50%',
+                  cursor:'pointer', background:`${g.color}18`,
+                  border:`1px solid ${g.accent}30`,
+                  fontFamily:"'DM Sans',sans-serif", fontSize:'8px', letterSpacing:'.2em',
+                  textTransform:'uppercase', color:`${g.accent}70` }}>hold</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (phase === 'laying') return (
+    <div style={{ height:'100%', display:'flex', alignItems:'center', justifyContent:'center',
+      background:`radial-gradient(ellipse at 50% 60%, ${g.color}10, #070409)` }}>
+      <div style={{ maxWidth:'250px', padding:'20px 24px', borderRadius:'16px',
+        border:`1px solid ${g.accent}25`, background:`${g.color}0A`,
+        animation:'put-down 1.7s .2s ease forwards' }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'17px',
+          color:'rgba(240,232,220,.60)', lineHeight:1.7, textAlign:'center' }}>
+          {text.trim().slice(0, 90)}{text.trim().length > 90 ? '…' : ''}
+        </p>
+      </div>
+    </div>
+  );
+
+  // witness → gate opens
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 32px', textAlign:'center', gap:'26px',
+      background:`radial-gradient(ellipse at 50% 30%, ${g.color}14, #070409)` }}>
+      {/* Open gate */}
+      <div style={{ width:'64px', height:'72px', position:'relative',
+        display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+        <div style={{ position:'absolute', inset:0, borderRadius:'32px 32px 0 0',
+          border:`1.4px solid ${g.accent}55`, borderBottom:'none',
+          boxShadow:`0 0 24px ${g.color}45, inset 0 0 18px ${g.color}20` }}></div>
+        <div style={{ width:'32px', height:'50px', borderRadius:'16px 16px 0 0',
+          background:`radial-gradient(ellipse at 50% 10%, ${g.accent}30, transparent 75%)` }}></div>
+      </div>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'19px',
+        color:'rgba(240,232,220,.80)', lineHeight:1.85, maxWidth:'280px',
+        animation:'emerge .9s ease' }}>
+        {witness || <span style={{ opacity:.35 }}>the gatekeeper is weighing it…</span>}
+      </p>
+      {witness && (
+        <button onClick={onPassed} style={{ padding:'14px 40px', borderRadius:'28px',
+          cursor:'pointer', background:`${g.color}14`, border:`1px solid ${g.accent}38`,
+          fontFamily:"'Cormorant Garamond',serif", fontSize:'16px', letterSpacing:'.18em',
+          textTransform:'uppercase', color:'rgba(240,232,220,.80)',
+          animation:'emerge .6s ease' }}>Pass through</button>
+      )}
+    </div>
+  );
+}
+Object.assign(window, { GateView });
+</script>
+
+<!-- ═══ D · THE RETURN + APP ═══ -->
+<script type="text/babel">
+const { useState:useR, useEffect:useRE } = React;
+const { GATES:GTR, getGateData:GGDR, setGateData:SGDR, MapView:MV, GateView:GV } = window;
+
+function ReturnView({ onDone }) {
+  const [text, setText] = useR('');
+  const data = GGDR();
+  const entries = data.entries || {};
+
+  useRE(() => {
+    async function weave() {
+      const laid = GTR.map((g, i) => entries[i]?.laid ? `${g.veil}: "${entries[i].laid}"` : null)
+        .filter(Boolean).join('\n');
+      try {
+        const r = await window.claude.complete({ messages: [{ role:'user', content:
+          `Someone has completed a descent through seven inner gates, laying something down at each one:\n\n${laid}\n\nThey are now at the bottom — empty-handed, and about to return to their life. Speak 2-3 sentences as the deep itself: what they are now, having put all of this down. Not what they gained — what they ARE without what they carried. End with a clear, simple sending back up into their life. Do not use markdown. Do not use the word "journey".`
+        }]});
+        setText(r.trim());
+      } catch {
+        setText('You came down carrying seven things and you are leaving with none of them. What walks back up is not lighter — it is truer. Go and live as what remains.');
+      }
+    }
+    weave();
+  }, []);
+
+  function complete() {
+    SGDR({ completions: (GGDR().completions||0) + 1, passed: [], entries: {} });
+    onDone();
+  }
+
+  return (
+    <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center',
+      justifyContent:'center', padding:'40px 34px', textAlign:'center', gap:'28px',
+      background:'radial-gradient(ellipse at 50% 70%, #14060A, #070409)' }}>
+      <div style={{ display:'flex', gap:'6px' }}>
+        {GTR.map((g, i) => (
+          <div key={i} style={{ width:'8px', height:'8px', borderRadius:'50%',
+            background:g.color, opacity:.55,
+            animation:`breathe ${3+i*.3}s ${i*.2}s ease-in-out infinite` }}></div>
+        ))}
+      </div>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontStyle:'italic', fontSize:'20px',
+        color:'rgba(240,232,220,.82)', lineHeight:1.9, maxWidth:'290px',
+        animation:'emerge 1s ease' }}>
+        {text || <span style={{ opacity:.35 }}>the deep is speaking…</span>}
+      </p>
+      {text && (
+        <button onClick={complete} style={{ padding:'15px 42px', borderRadius:'30px',
+          cursor:'pointer', background:'rgba(232,144,128,.10)',
+          border:'1px solid rgba(232,144,128,.35)',
+          fontFamily:"'Cormorant Garamond',serif", fontSize:'17px', letterSpacing:'.2em',
+          textTransform:'uppercase', color:'rgba(240,232,220,.82)',
+          animation:'emerge .6s ease' }}>Ascend</button>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  const [view, setView] = useR('map');
+  const [gateIdx, setGateIdx] = useR(0);
+  return (
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"></div>
+          <div className="ph-content">
+            {view === 'map' && <MV onEnter={i => { setGateIdx(i); setView('gate'); }} onEmerge={() => setView('return')}/>}
+            {view === 'gate' && <GV idx={gateIdx} onPassed={() => setView('map')} onBack={() => setView('map')}/>}
+            {view === 'return' && <ReturnView onDone={() => setView('map')}/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

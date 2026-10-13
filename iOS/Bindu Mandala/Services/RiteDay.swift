@@ -101,7 +101,9 @@ enum RiteDay {
 enum GraceChannel {
 
     /// After grace speaks it rests this many days before it may speak again.
-    static let restDays = 3
+    /// Was 3 — an app-added limit, lifted by ruling 16 (12 Oct 2026). It still
+    /// never repeats a moment it has returned (`surfaced`).
+    static let restDays = 0
     /// How far back grace reads.
     static let reachDays = 30
 

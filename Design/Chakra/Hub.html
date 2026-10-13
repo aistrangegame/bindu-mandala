@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>The Journey · Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:#030108;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.07);opacity:1}}
+@keyframes emerge{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes spin-rev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.6);opacity:0}}
+@keyframes seal-stamp{0%{transform:scale(1.5);opacity:0}65%{transform:scale(.94);opacity:1}80%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+@keyframes eq{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0C0A12;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#181620;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #181620,0 108px 0 #181620;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#181620;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#06040A;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+textarea,input{font-family:inherit;outline:none;}
+textarea::placeholder,input::placeholder{color:rgba(240,232,220,.22);}
+.scroll-inner::-webkit-scrollbar{display:none;}
+.scroll-inner{-ms-overflow-style:none;scrollbar-width:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     A · ENGINE: AUDIO + PULSE + MINI MANDALA
+═══════════════════════════════════════════════════ -->
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const CHAKRAS = [
+  { id:'root',     name:'Muladhara',    title:'Root',      color:'#A83232', accent:'#E89080', hz:396,  theme:'I AM',    solfLabel:'UT'  },
+  { id:'sacral',   name:'Svadhisthana', title:'Sacral',    color:'#C45A18', accent:'#F0A870', hz:417,  theme:'I FEEL',  solfLabel:'RE'  },
+  { id:'solar',    name:'Manipura',     title:'Solar',     color:'#C49B17', accent:'#F5DC80', hz:528,  theme:'I DO',    solfLabel:'MI'  },
+  { id:'heart',    name:'Anahata',      title:'Heart',     color:'#1A8060', accent:'#80E5BC', hz:639,  theme:'I LOVE',  solfLabel:'FA'  },
+  { id:'throat',   name:'Vishuddha',    title:'Throat',    color:'#1E6EA0', accent:'#80C8F0', hz:741,  theme:'I SPEAK', solfLabel:'SOL' },
+  { id:'thirdeye', name:'Ajna',         title:'Third Eye', color:'#4A3AAB', accent:'#C0B0F8', hz:852,  theme:'I SEE',   solfLabel:'LA'  },
+  { id:'crown',    name:'Sahasrara',    title:'Crown',     color:'#8A3AB5', accent:'#E0B8F8', hz:963,  theme:'I KNOW',  solfLabel:'SI'  },
+];
+
+const CEREMONY_PROMPTS = [
+  'Place both feet on the ground.\nFeel the earth receiving every part of you.',
+  'Let your hips soften.\nYou are water — you take the shape of this moment.',
+  'Rest your hand on your belly.\nFeel the quiet fire of your will.',
+  'Open your chest. Breathe wide.\nLet love move through you like wind through an open window.',
+  'Soften your jaw, your tongue.\nWhat truth is resting at the edge of your voice?',
+  'Let your eyes close gently.\nWhat do you see when you stop looking?',
+  'Feel the very crown of your head open upward.\nYou are human. You are also infinite.',
+];
+
+// ── Solfeggio Audio Engine ────────────────────────────
+class SolfeggioEngine {
+  constructor(){ this.ctx=null; this.node=null; this._hz=null; }
+
+  _boot(){
+    if(!this.ctx) this.ctx=new(window.AudioContext||window.webkitAudioContext)();
+    if(this.ctx.state==='suspended') this.ctx.resume();
+  }
+
+  play(hz){
+    this._boot();
+    this._fade(0.35);
+    const ctx=this.ctx, now=ctx.currentTime;
+    const master=ctx.createGain();
+    master.gain.setValueAtTime(0,now);
+    master.gain.linearRampToValueAtTime(0.11,now+2.8);
+    master.connect(ctx.destination);
+
+    const sine=(f,amp)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine'; o.frequency.value=f; g.gain.value=amp;
+      o.connect(g); g.connect(master); o.start(); return o;
+    };
+    const oscs=[sine(hz,1),sine(hz*2,.13),sine(hz*.5,.09)];
+    this.node={master,oscs}; this._hz=hz;
+  }
+
+  _fade(dur=2){
+    if(!this.node) return;
+    const{master,oscs}=this.node, now=this.ctx.currentTime;
+    master.gain.setValueAtTime(master.gain.value,now);
+    master.gain.linearRampToValueAtTime(0,now+dur);
+    oscs.forEach(o=>{try{o.stop(now+dur+.1);}catch(e){}});
+    this.node=null; this._hz=null;
+  }
+
+  stop(){ this._fade(2); }
+  get playing(){ return this._hz; }
+}
+
+const audioEng = new SolfeggioEngine();
+
+// ── Collective Pulse Widget ───────────────────────────
+function PulseWidget({ style={} }){
+  const [count,setCount]=useState(84);
+  const [p,setP]=useState(0);
+
+  useEffect(()=>{
+    const id=setInterval(()=>setCount(c=>Math.max(76,Math.min(96,c+(Math.random()<.5?-1:1)))),6800);
+    return ()=>clearInterval(id);
+  },[]);
+
+  useEffect(()=>{
+    let t=0;
+    const id=setInterval(()=>{ t+=.016; setP(.5+.5*Math.sin(t*(Math.PI/4))); },16);
+    return ()=>clearInterval(id);
+  },[]);
+
+  const scale=.78+p*.58, glow=Math.round(p*14);
+
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:'10px',...style}}>
+      <div style={{width:'9px',height:'9px',borderRadius:'50%',background:'#80E5BC',flexShrink:0,
+        transform:`scale(${scale})`,transition:'transform .08s linear',boxShadow:`0 0 ${glow}px #80E5BC`}}/>
+      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'10px',letterSpacing:'.22em',color:'rgba(180,160,240,.42)',textTransform:'uppercase'}}>
+        {count} hearts breathing
+      </span>
+    </div>
+  );
+}
+
+// ── Mini Mandala ──────────────────────────────────────
+function MiniMandala({ size=120 }){
+  const ref=useRef(null);
+  useEffect(()=>{
+    const c=ref.current; if(!c) return;
+    const dpr=window.devicePixelRatio||1;
+    c.width=size*dpr; c.height=size*dpr;
+    const ctx=c.getContext('2d'); ctx.scale(dpr,dpr);
+    const cx=size/2,cy=size/2;
+    let rot=0,raf;
+    function draw(){
+      ctx.clearRect(0,0,size,size);
+      // outer bead ring
+      for(let i=0;i<108;i++){
+        const a=(i/108)*Math.PI*2-Math.PI/2+rot;
+        const x=cx+(size*.43)*Math.cos(a),y=cy+(size*.43)*Math.sin(a);
+        ctx.beginPath(); ctx.arc(x,y,1.6,0,Math.PI*2);
+        ctx.fillStyle=CHAKRAS[i%7].color+'60'; ctx.fill();
+      }
+      // chakra rings
+      CHAKRAS.forEach((ch,i)=>{
+        const r=size*(.07+i*.042);
+        ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+        ctx.strokeStyle=ch.color+'45'; ctx.lineWidth=1.3; ctx.stroke();
+      });
+      // spokes
+      ctx.save(); ctx.rotate(rot*.25);
+      for(let i=0;i<12;i++){
+        const a=(i/12)*Math.PI*2;
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+size*.38*Math.cos(a),cy+size*.38*Math.sin(a));
+        ctx.strokeStyle='rgba(180,160,240,.035)'; ctx.lineWidth=.5; ctx.stroke();
+      }
+      ctx.restore();
+      // center
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,size*.09);
+      g.addColorStop(0,'#E0B8F845'); g.addColorStop(1,'#E0B8F800');
+      ctx.beginPath(); ctx.arc(cx,cy,size*.09,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx,cy,3.2,0,Math.PI*2); ctx.fillStyle='#E0B8F865'; ctx.fill();
+      rot+=.0025; raf=requestAnimationFrame(draw);
+    }
+    draw(); return ()=>cancelAnimationFrame(raf);
+  },[size]);
+  return <canvas ref={ref} style={{width:size+'px',height:size+'px',display:'block'}}/>;
+}
+
+Object.assign(window,{CHAKRAS,CEREMONY_PROMPTS,audioEng,PulseWidget,MiniMandala});
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     B · SOUND VIEW
+═══════════════════════════════════════════════════ -->
+<script type="text/babel">
+const{useState:useSV,useEffect:useSE}=React;
+const{CHAKRAS:CK,audioEng:AE}=window;
+
+const INTENTS=[
+  'Releasing fear & guilt',
+  'Dissolving old patterns',
+  'Transformation & miracles',
+  'Connecting & harmonising',
+  'Awakening intuition',
+  'Returning to spiritual order',
+  'Pure consciousness',
+];
+
+function SoundView({onBack}){
+  const[playing,setPlaying]=useSV(null);
+  useSE(()=>()=>AE.stop(),[]);
+
+  function toggle(ch){
+    if(playing===ch.hz){AE.stop();setPlaying(null);}
+    else{AE.play(ch.hz);setPlaying(ch.hz);}
+  }
+
+  return(
+    <div style={{height:'100%',background:'radial-gradient(ellipse at 50% 18%,#0A0618,#030108)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{padding:'14px 22px 0',flexShrink:0}}>
+        <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(180,160,240,.38)',textTransform:'uppercase'}}>← Back</button>
+      </div>
+      <div style={{padding:'10px 26px 4px',flexShrink:0}}>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'28px',color:'rgba(240,232,220,.88)',letterSpacing:'.06em'}}>Solfeggio Tones</p>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'14px',color:'rgba(180,160,240,.38)',marginTop:'3px',lineHeight:1.6}}>Ancient frequencies. One at a time.</p>
+      </div>
+      <div className="scroll-inner" style={{flex:1,overflowY:'auto',padding:'10px 18px 24px',display:'flex',flexDirection:'column',gap:'7px'}}>
+        {CK.map((ch,i)=>{
+          const active=playing===ch.hz;
+          return(
+            <button key={ch.id} onClick={()=>toggle(ch)} style={{
+              display:'flex',alignItems:'center',gap:'14px',padding:'13px 15px',
+              borderRadius:'16px',cursor:'pointer',textAlign:'left',
+              border:`1px solid ${active?ch.color+'75':ch.color+'1E'}`,
+              background:active?`${ch.color}12`:'rgba(255,255,255,.018)',
+              transition:'all .22s',animation:`emerge .35s ${i*.04}s ease both`,
+            }}>
+              <div style={{width:'38px',height:'38px',borderRadius:'50%',flexShrink:0,
+                background:`radial-gradient(circle at 36% 36%,${ch.accent}55,${ch.color}80)`,
+                boxShadow:active?`0 0 22px ${ch.color}55,0 0 44px ${ch.color}22`:`0 0 8px ${ch.color}28`,
+                animation:active?'breathe 3.5s ease-in-out infinite':'none',
+                display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {active&&(
+                  <svg width="12" height="12" viewBox="0 0 12 12">
+                    <rect x="1" y="1" width="3.5" height="10" fill={ch.accent} rx="1.5"/>
+                    <rect x="7.5" y="1" width="3.5" height="10" fill={ch.accent} rx="1.5"/>
+                  </svg>
+                )}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{display:'flex',alignItems:'baseline',gap:'8px'}}>
+                  <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'19px',color:active?ch.accent:'rgba(240,232,220,.80)'}}>{ch.title}</span>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'10px',letterSpacing:'.16em',color:`${ch.accent}55`}}>{ch.hz} Hz</span>
+                </div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.16em',color:'rgba(180,160,240,.32)',textTransform:'uppercase',marginTop:'2px'}}>{INTENTS[i]}</div>
+              </div>
+              {active&&(
+                <div style={{display:'flex',gap:'2.5px',alignItems:'flex-end',height:'18px',paddingRight:'4px'}}>
+                  {[.45,.75,.95,.6,.35,.7,.5].map((h,j)=>(
+                    <div key={j} style={{width:'2.5px',borderRadius:'2px',background:ch.accent,
+                      height:Math.round(h*16)+'px',opacity:.55,
+                      animation:`eq ${1.1+j*.12}s ${j*.06}s ease-in-out infinite`,
+                      transformOrigin:'bottom'}}/>
+                  ))}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {playing&&(
+        <div style={{padding:'10px 24px 18px',flexShrink:0,textAlign:'center',animation:'fade-in .4s ease'}}>
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:'rgba(180,160,240,.28)',letterSpacing:'.06em'}}>
+            Tap again to stop · breathe with the tone
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window,{SoundView});
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     C · THE CEREMONY
+═══════════════════════════════════════════════════ -->
+<script type="text/babel">
+const{useState:useCV,useEffect:useCE,useRef:useCR}=React;
+const{CHAKRAS:CKC,CEREMONY_PROMPTS:CP,audioEng:AEC}=window;
+
+function CeremonyView({onBack}){
+  const[stage,setStage]=useCV('intro');
+  const[phase,setPhase]=useCV(0);
+  const[secs,setSecs]=useCV(60);
+  const[mode,setMode]=useCV('full');
+  const dur=mode==='fast'?15:60;
+  const ch=CKC[phase]||CKC[0];
+
+  useCE(()=>{
+    if(stage!=='running') return;
+    AEC.play(ch.hz);
+    setSecs(dur);
+    const id=setInterval(()=>{
+      setSecs(s=>{
+        if(s<=1){
+          clearInterval(id);
+          if(phase<6){ setPhase(p=>p+1); }
+          else{ AEC.stop(); setStage('complete'); }
+          return dur;
+        }
+        return s-1;
+      });
+    },1000);
+    return()=>clearInterval(id);
+  },[stage,phase,dur]);
+
+  useCE(()=>()=>AEC.stop(),[]);
+
+  function skipPhase(){
+    if(phase<6) setPhase(p=>p+1);
+    else{ AEC.stop(); setStage('complete'); }
+  }
+
+  if(stage==='intro') return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'radial-gradient(ellipse at 50% 28%,#130920,#04020C)',padding:'36px',position:'relative',overflow:'hidden'}}>
+      <button onClick={onBack} style={{position:'absolute',top:'14px',left:'22px',background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(180,160,240,.38)',textTransform:'uppercase'}}>← Back</button>
+      <div style={{display:'flex',gap:'7px',marginBottom:'32px'}}>
+        {CKC.map((c,i)=><div key={i} style={{width:'10px',height:'10px',borderRadius:'50%',background:c.color,opacity:.65,boxShadow:`0 0 6px ${c.color}60`}}/>)}
+      </div>
+      <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'36px',fontWeight:300,color:'rgba(240,232,220,.90)',textAlign:'center',lineHeight:1.3,marginBottom:'10px',letterSpacing:'.04em'}}>The Convergence<br/>Ceremony</p>
+      <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'17px',color:'rgba(240,232,220,.38)',textAlign:'center',lineHeight:1.8,marginBottom:'36px',maxWidth:'260px'}}>Seven chakras. Seven tones.<br/>One unbroken thread of return.</p>
+      <div style={{display:'flex',gap:'10px',marginBottom:'32px'}}>
+        {[['full','7 min'],['fast','2 min']].map(([m,label])=>(
+          <button key={m} onClick={()=>setMode(m)} style={{
+            padding:'9px 22px',borderRadius:'22px',cursor:'pointer',
+            background:mode===m?'rgba(180,160,240,.12)':'none',
+            border:`1px solid ${mode===m?'rgba(180,160,240,.42)':'rgba(180,160,240,.16)'}`,
+            fontFamily:"'DM Sans',sans-serif",fontSize:'11px',letterSpacing:'.2em',textTransform:'uppercase',
+            color:mode===m?'rgba(240,232,220,.72)':'rgba(180,160,240,.30)',
+          }}>{label}</button>
+        ))}
+      </div>
+      <button onClick={()=>setStage('running')} style={{
+        padding:'16px 52px',borderRadius:'32px',cursor:'pointer',
+        background:'rgba(180,160,240,.09)',border:'1px solid rgba(180,160,240,.34)',
+        fontFamily:"'Cormorant Garamond',serif",fontSize:'18px',letterSpacing:'.22em',textTransform:'uppercase',
+        color:'rgba(240,232,220,.80)',
+      }}>Begin</button>
+    </div>
+  );
+
+  if(stage==='complete') return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'radial-gradient(ellipse at 50% 38%,#14081E,#04020C)',padding:'40px',textAlign:'center'}}>
+      <div style={{width:'80px',height:'80px',borderRadius:'50%',marginBottom:'28px',
+        background:'radial-gradient(circle at 36% 36%,#E0B8F840,#8A3AB560)',
+        boxShadow:'0 0 44px #8A3AB538',animation:'breathe 5s ease-in-out infinite'}}/>
+      <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'30px',color:'rgba(240,232,220,.90)',marginBottom:'14px',lineHeight:1.35}}>You have moved<br/>through all seven.</p>
+      <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'17px',color:'rgba(240,232,220,.38)',lineHeight:1.8,marginBottom:'44px'}}>The ceremony does not end.<br/>It continues in your body.</p>
+      <button onClick={onBack} style={{padding:'14px 40px',borderRadius:'28px',cursor:'pointer',background:'rgba(180,160,240,.09)',border:'1px solid rgba(180,160,240,.32)',fontFamily:"'Cormorant Garamond',serif",fontSize:'16px',color:'rgba(240,232,220,.78)',letterSpacing:'.18em',textTransform:'uppercase'}}>Return</button>
+    </div>
+  );
+
+  // Running
+  const progress=1-(secs/dur);
+  const R=48, circLen=2*Math.PI*R;
+
+  return(
+    <div style={{height:'100%',display:'flex',flexDirection:'column',alignItems:'center',position:'relative',overflow:'hidden',
+      background:`radial-gradient(ellipse at 50% 35%,${ch.color}18,#04020C 65%)`}}>
+      <div style={{position:'absolute',inset:0,background:`radial-gradient(ellipse at 50% 40%,${ch.color}10,transparent 60%)`,pointerEvents:'none'}}/>
+
+      <button onClick={onBack} style={{position:'absolute',top:'14px',left:'22px',background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:`${ch.accent}42`,textTransform:'uppercase',zIndex:10}}>← End</button>
+
+      <div style={{paddingTop:'16px',position:'relative',zIndex:10,textAlign:'center'}}>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.32em',textTransform:'uppercase',color:`${ch.accent}48`}}>Phase {phase+1} of 7 · {ch.title}</p>
+      </div>
+
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'28px',position:'relative',zIndex:10,width:'100%'}}>
+        {/* Progress ring + orb */}
+        <div style={{position:'relative',width:'124px',height:'124px'}}>
+          <svg width="124" height="124" style={{position:'absolute',top:0,left:0}}>
+            <circle cx="62" cy="62" r={R} fill="none" stroke={`${ch.color}20`} strokeWidth="2"/>
+            <circle cx="62" cy="62" r={R} fill="none" stroke={ch.accent} strokeWidth="2.2"
+              strokeDasharray={circLen} strokeDashoffset={circLen*(1-progress)}
+              strokeLinecap="round" transform="rotate(-90 62 62)"
+              style={{transition:'stroke-dashoffset .9s linear'}}/>
+          </svg>
+          <div style={{
+            position:'absolute',inset:'11px',borderRadius:'50%',
+            background:`radial-gradient(circle at 36% 36%,${ch.accent}45,${ch.color}80)`,
+            boxShadow:`0 0 32px ${ch.color}55,0 0 64px ${ch.color}22`,
+            animation:'breathe 4s ease-in-out infinite',
+            display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'1px',
+          }}>
+            <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'12px',color:ch.accent,letterSpacing:'.15em'}}>{ch.solfLabel}</span>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',color:`${ch.accent}70`,letterSpacing:'.1em'}}>{ch.hz}Hz</span>
+          </div>
+        </div>
+
+        <div style={{textAlign:'center',padding:'0 38px'}}>
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'21px',color:'rgba(240,232,220,.84)',lineHeight:1.65,whiteSpace:'pre-line'}}>{CP[phase]}</p>
+        </div>
+
+        <div style={{display:'flex',gap:'7px'}}>
+          {CKC.map((c,i)=>(
+            <div key={i} style={{
+              width:i===phase?'10px':'8px',height:i===phase?'10px':'8px',
+              borderRadius:'50%',transition:'all .5s',
+              background:i<phase?c.color:i===phase?c.color:`${c.color}1E`,
+              boxShadow:i===phase?`0 0 8px ${c.color}`:'none',
+            }}/>
+          ))}
+        </div>
+      </div>
+
+      <div style={{padding:'12px 26px 22px',display:'flex',justifyContent:'space-between',alignItems:'center',width:'100%',position:'relative',zIndex:10}}>
+        <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'16px',color:`${ch.accent}50`}}>
+          {Math.floor(secs/60)}:{String(secs%60).padStart(2,'0')}
+        </span>
+        <button onClick={skipPhase} style={{padding:'9px 22px',borderRadius:'20px',cursor:'pointer',background:'none',border:`1px solid ${ch.accent}22`,fontFamily:"'DM Sans',sans-serif",fontSize:'10px',letterSpacing:'.2em',color:`${ch.accent}45`,textTransform:'uppercase'}}>
+          Skip →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window,{CeremonyView});
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     D · THE LETTER
+═══════════════════════════════════════════════════ -->
+<script type="text/babel">
+const{useState:useLV,useEffect:useLE}=React;
+
+function LetterView({onBack}){
+  const[stored,setStored]=useLV(()=>{
+    try{return JSON.parse(localStorage.getItem('hub_letter_v1')||'null');}catch{return null;}
+  });
+  const[intention,setIntention]=useLV('');
+  const[phase,setPhase]=useLV(()=>{
+    const s=(() => {try{return JSON.parse(localStorage.getItem('hub_letter_v1')||'null');}catch{return null;}})();
+    if(!s) return 'write';
+    return Date.now()>=(s.openAt||0)?'open':'sealed';
+  });
+  const[generated,setGenerated]=useLV(stored?.letter||'');
+  const[loading,setLoading]=useLV(false);
+
+  const daysLeft=stored?Math.max(0,Math.ceil((stored.openAt-Date.now())/86400000)):30;
+
+  async function generate(){
+    if(!intention.trim()) return;
+    setLoading(true);
+    try{
+      const r=await window.claude.complete({messages:[{role:'user',content:
+        `You are someone's future self, writing back to them 30 days ahead. They are on a chakra and spiritual journey. They wrote this intention to their future self: "${intention.trim()}"\n\nWrite a tender, intimate letter back to them from 30 days in the future. You have actually lived those 30 days — speak from embodied experience. Mention small physical sensations, quiet realizations, one specific moment of shift. Be real, not poetic for its own sake. 3 short paragraphs. Begin with "Beloved,"`
+      }]});
+      setGenerated(r); setPhase('preview');
+    }catch{
+      setGenerated(`Beloved,\n\nThirty days from now, you will remember the exact weight of this moment — the uncertainty that was also a kind of readiness. What you are holding as a question has already begun to answer itself. You just can't feel the movement yet, the way you can't feel the earth turning.\n\nSomething in your chest opened around day eleven. Not dramatically — just enough that you noticed you were breathing into more space. The thing you were afraid of came, in a smaller form than you expected, and you were okay with it. More than okay.\n\nYou were already further along than you thought. You still are.\n\nWith love,\nyour future self`);
+      setPhase('preview');
+    }
+    setLoading(false);
+  }
+
+  function seal(){
+    const rec={intention:intention.trim(),letter:generated,createdAt:Date.now(),openAt:Date.now()+30*24*60*60*1000};
+    localStorage.setItem('hub_letter_v1',JSON.stringify(rec));
+    setStored(rec); setPhase('sealing');
+    setTimeout(()=>setPhase('sealed'),2200);
+  }
+
+  function reset(){
+    localStorage.removeItem('hub_letter_v1');
+    setStored(null); setIntention(''); setGenerated(''); setPhase('write');
+  }
+
+  if(phase==='write') return(
+    <div style={{height:'100%',background:'radial-gradient(ellipse at 50% 18%,#100820,#04020C)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{padding:'14px 22px 0',flexShrink:0}}>
+        <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(180,160,240,.38)',textTransform:'uppercase'}}>← Back</button>
+      </div>
+      <div className="scroll-inner" style={{flex:1,overflowY:'auto',padding:'14px 28px 20px',display:'flex',flexDirection:'column',gap:'18px',justifyContent:'center'}}>
+        <div>
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'30px',color:'rgba(240,232,220,.90)',lineHeight:1.3}}>A Letter<br/>to Your Future Self</p>
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'15px',color:'rgba(180,160,240,.38)',marginTop:'8px',lineHeight:1.75}}>Write one true thing about where you are right now. Claude will carry it 30 days forward and write back to you.</p>
+        </div>
+        <textarea value={intention} onChange={e=>setIntention(e.target.value)} rows={5}
+          placeholder="I am standing at the edge of something I cannot yet name…"
+          style={{width:'100%',background:'rgba(180,160,240,.05)',border:'1px solid rgba(180,160,240,.20)',borderRadius:'16px',padding:'16px',color:'rgba(240,232,220,.88)',fontFamily:"'Cormorant Garamond',serif",fontSize:'20px',lineHeight:1.75,resize:'none'}}/>
+        {intention.trim()&&(
+          <button onClick={generate} disabled={loading} style={{
+            padding:'16px',borderRadius:'24px',cursor:'pointer',
+            background:'rgba(180,160,240,.09)',border:'1px solid rgba(180,160,240,.35)',
+            fontFamily:"'Cormorant Garamond',serif",fontSize:'17px',color:'rgba(240,232,220,.80)',letterSpacing:'.14em',textTransform:'uppercase',animation:'emerge .4s ease',
+          }}>{loading?'Writing from the future…':'Send forward'}</button>
+        )}
+      </div>
+    </div>
+  );
+
+  if(phase==='preview') return(
+    <div style={{height:'100%',background:'radial-gradient(ellipse at 50% 18%,#100820,#04020C)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{padding:'14px 22px 0',flexShrink:0}}>
+        <button onClick={()=>setPhase('write')} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(180,160,240,.38)',textTransform:'uppercase'}}>← Rewrite</button>
+      </div>
+      <div className="scroll-inner" style={{flex:1,overflowY:'auto',padding:'12px 28px 0',animation:'emerge .6s ease'}}>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontStyle:'italic',fontSize:'10px',letterSpacing:'.22em',color:'rgba(180,160,240,.30)',marginBottom:'14px',textTransform:'uppercase'}}>From 30 days ahead</p>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'19px',color:'rgba(240,232,220,.82)',lineHeight:1.9,whiteSpace:'pre-line'}}>{generated}</p>
+      </div>
+      <div style={{padding:'18px 28px 26px',flexShrink:0,display:'flex',flexDirection:'column',gap:'10px'}}>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:'rgba(180,160,240,.28)',textAlign:'center'}}>Seal it. Open it in 30 days.</p>
+        <button onClick={seal} style={{padding:'15px',borderRadius:'24px',cursor:'pointer',background:'rgba(180,160,240,.09)',border:'1px solid rgba(180,160,240,.35)',fontFamily:"'Cormorant Garamond',serif",fontSize:'17px',color:'rgba(240,232,220,.80)',letterSpacing:'.14em',textTransform:'uppercase'}}>Seal the letter</button>
+      </div>
+    </div>
+  );
+
+  if(phase==='sealing') return(
+    <div style={{height:'100%',background:'radial-gradient(ellipse at 50% 40%,#14081E,#04020C)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div style={{textAlign:'center',animation:'seal-stamp .85s cubic-bezier(.3,1.4,.5,1) both'}}>
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(180,160,240,.42)" strokeWidth="1.5"/>
+          <circle cx="40" cy="40" r="27" fill="none" stroke="rgba(180,160,240,.22)" strokeWidth="1" strokeDasharray="4 7"/>
+          <text x="40" y="47" textAnchor="middle" fontFamily="'Cormorant Garamond',serif" fontSize="20" fill="rgba(180,160,240,.68)">✦</text>
+        </svg>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'22px',color:'rgba(240,232,220,.72)',marginTop:'18px',letterSpacing:'.12em'}}>Sealed.</p>
+      </div>
+    </div>
+  );
+
+  if(phase==='sealed') return(
+    <div style={{height:'100%',background:'radial-gradient(ellipse at 50% 28%,#0E0818,#04020C)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'36px',position:'relative'}}>
+      <button onClick={onBack} style={{position:'absolute',top:'72px',left:'22px',background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(180,160,240,.35)',textTransform:'uppercase'}}>← Back</button>
+      <svg width="84" height="84" viewBox="0 0 84 84" style={{marginBottom:'26px',opacity:.65}}>
+        <circle cx="42" cy="42" r="38" fill="none" stroke="rgba(180,160,240,.35)" strokeWidth="1.5"/>
+        <circle cx="42" cy="42" r="28" fill="none" stroke="rgba(180,160,240,.18)" strokeWidth="1" strokeDasharray="4 8"/>
+        <text x="42" y="50" textAnchor="middle" fontFamily="'Cormorant Garamond',serif" fontSize="23" fill="rgba(180,160,240,.62)">✦</text>
+      </svg>
+      <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'26px',color:'rgba(240,232,220,.80)',textAlign:'center',lineHeight:1.4,marginBottom:'10px'}}>The letter is sealed.</p>
+      <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'16px',color:'rgba(180,160,240,.35)',textAlign:'center',lineHeight:1.75,marginBottom:'38px'}}>
+        {daysLeft>0?`Opens in ${daysLeft} day${daysLeft!==1?'s':''}.`:'Ready to open.'}
+      </p>
+      {daysLeft===0?(
+        <button onClick={()=>setPhase('open')} style={{padding:'15px 40px',borderRadius:'26px',cursor:'pointer',background:'rgba(240,232,220,.07)',border:'1px solid rgba(240,232,220,.25)',fontFamily:"'Cormorant Garamond',serif",fontSize:'17px',color:'rgba(240,232,220,.80)',letterSpacing:'.15em',textTransform:'uppercase'}}>Open it</button>
+      ):(
+        <button onClick={()=>setPhase('open')} style={{padding:'10px 26px',borderRadius:'20px',cursor:'pointer',background:'none',border:'1px solid rgba(180,160,240,.15)',fontFamily:"'DM Sans',sans-serif",fontSize:'10px',color:'rgba(180,160,240,.28)',letterSpacing:'.22em',textTransform:'uppercase'}}>Peek · break seal</button>
+      )}
+    </div>
+  );
+
+  if(phase==='open') return(
+    <div style={{height:'100%',background:'radial-gradient(ellipse at 50% 18%,#181008,#04020C)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{padding:'14px 22px 0',flexShrink:0}}>
+        <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',fontSize:'11px',letterSpacing:'.22em',color:'rgba(240,200,80,.38)',textTransform:'uppercase'}}>← Back</button>
+      </div>
+      <div className="scroll-inner" style={{flex:1,overflowY:'auto',padding:'12px 28px 0',animation:'emerge .8s ease'}}>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontStyle:'italic',fontSize:'10px',letterSpacing:'.22em',color:'rgba(240,200,80,.38)',marginBottom:'14px',textTransform:'uppercase'}}>30 days later</p>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'19px',color:'rgba(240,232,220,.85)',lineHeight:1.9,whiteSpace:'pre-line'}}>{stored?.letter||generated}</p>
+      </div>
+      <div style={{padding:'20px 28px 26px',flexShrink:0}}>
+        <button onClick={reset} style={{width:'100%',padding:'13px',borderRadius:'22px',cursor:'pointer',background:'none',border:'1px solid rgba(240,200,80,.16)',fontFamily:"'DM Sans',sans-serif",fontSize:'10px',color:'rgba(240,200,80,.35)',letterSpacing:'.25em',textTransform:'uppercase'}}>Begin a new letter</button>
+      </div>
+    </div>
+  );
+
+  return null;
+}
+
+Object.assign(window,{LetterView});
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     E · HOME + APP
+═══════════════════════════════════════════════════ -->
+<script type="text/babel">
+const{useState:useHA,useEffect:useHE}=React;
+const{CHAKRAS:CKH,audioEng:AEH,PulseWidget:PW,MiniMandala:MM}=window;
+const{SoundView:SVH,CeremonyView:CVH,LetterView:LVH}=window;
+
+const SECTIONS=[
+  {label:'the journey', items:[
+    {label:'The Journey',        sub:'7 chakras',            symbol:'◉', href:'Chakra Game.html',           color:'#4A3AAB'},
+    {label:'Living Mandala',     sub:'your practice, woven', symbol:'◈', href:'Living Mandala.html',         color:'#8A3AB5'},
+    {label:'Sacred Experiences', sub:'deep dives',           symbol:'✦', href:'Sacred Experiences.html',     color:'#1E6EA0'},
+    {label:'Mini Practices',     sub:'18 sacred games',      symbol:'◇', href:'Mini Games.html',             color:'#1A8060'},
+  ]},
+  {label:'across time', items:[
+    {label:'The Correspondence', sub:'letters to past & future', symbol:'✉', href:'The Correspondence.html',  color:'#C49B17'},
+    {label:'The Record',         sub:'your sacred document',     symbol:'◎', href:'The Record.html',          color:'#1A8060'},
+  ]},
+  {label:'the deep', items:[
+    {label:'The Seven Gates',       sub:'the descent',            symbol:'∩', href:'The Seven Gates.html',       color:'#A83232'},
+    {label:'The Mirror',            sub:'sixty seconds of witness',symbol:'◍', href:'The Mirror.html',           color:'#8890A8'},
+    {label:'Body as Scripture',     sub:'what the body is saying', symbol:'▲', href:'The Body as Scripture.html', color:'#C45A18'},
+    {label:'The Field',             sub:'hearts breathing in sync',symbol:'●', href:'The Field.html',            color:'#1A8060'},
+  ]},
+  {label:'the child', items:[
+    {label:'The Child Space',    sub:'the small door',              symbol:'☀', href:'The Child Space.html',    color:'#C47820'},
+    {label:'The World in a Box', sub:'grows as you live',           symbol:'❦', href:'The World in a Box.html', color:'#90C050'},
+  ]},
+];
+
+const FEATURES=[
+  {key:'sound',    label:'Solfeggio Tones', sub:'396 → 963 Hz',          symbol:'♫', color:'rgba(180,160,240,1)'},
+  {key:'ceremony', label:'The Ceremony',   sub:'7 chakras · convergence', symbol:'✦', color:'#8A3AB5'},
+];
+
+function HomeView({setView}){
+  // Read completion from localStorage (checks common key patterns)
+  const completed=CKH.filter(ch=>{
+    try{
+      return !!(
+        JSON.parse(localStorage.getItem(`game_${ch.id}_complete`)||'false')||
+        JSON.parse(localStorage.getItem(`chakra_complete_${ch.id}`)||'false')
+      );
+    }catch{return false;}
+  }).length;
+
+  const hasLetter=!!(()=>{try{return localStorage.getItem('hub_letter_v1');}catch{return null;}})();
+
+  function handleFeature(key){
+    setView(key);
+  }
+
+  return(
+    <div className="scroll-inner" style={{height:'100%',background:'radial-gradient(ellipse at 50% 0%,#0F0820 0%,#04020C 55%)',overflowY:'auto',display:'flex',flexDirection:'column'}}>
+
+      {/* Header */}
+      <div style={{padding:'10px 24px 0',flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:'5px'}}>
+        <PW />
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.48em',color:'rgba(180,160,240,.22)',textTransform:'uppercase',marginTop:'3px'}}>Your Journey</p>
+      </div>
+
+      {/* Mandala + chakra progress */}
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',padding:'12px 0 6px',flexShrink:0}}>
+        <MM size={108}/>
+        <div style={{display:'flex',gap:'7px',marginTop:'10px',alignItems:'center'}}>
+          {CKH.map((ch,i)=>(
+            <div key={ch.id} title={ch.title} style={{
+              width:i<completed?'10px':'8px',height:i<completed?'10px':'8px',
+              borderRadius:'50%',transition:'all .4s',
+              background:i<completed?ch.color:`${ch.color}1E`,
+              boxShadow:i<completed?`0 0 6px ${ch.color}90`:'none',
+            }}/>
+          ))}
+        </div>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:'rgba(180,160,240,.25)',marginTop:'5px',letterSpacing:'.06em'}}>
+          {completed}/7 awakened
+        </p>
+      </div>
+
+      {/* All spaces, grouped */}
+      {SECTIONS.map(sec=>(
+        <div key={sec.label} style={{flexShrink:0}}>
+          <p style={{padding:'10px 24px 6px',fontFamily:"'DM Sans',sans-serif",fontSize:'8px',letterSpacing:'.4em',textTransform:'uppercase',color:'rgba(180,160,240,.28)'}}>{sec.label}</p>
+          <div style={{padding:'0 18px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:'7px'}}>
+            {sec.items.map(d=>(
+              <a key={d.href} href={d.href} style={{
+                display:'flex',flexDirection:'column',padding:'14px 14px 12px',borderRadius:'18px',
+                background:`${d.color}0A`,border:`1px solid ${d.color}24`,
+                textDecoration:'none',cursor:'pointer',transition:'all .2s',
+              }}>
+                <span style={{fontSize:'17px',marginBottom:'6px',color:d.color}}>{d.symbol}</span>
+                <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'15px',color:'rgba(240,232,220,.78)',lineHeight:1.2}}>{d.label}</span>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'8px',letterSpacing:'.15em',textTransform:'uppercase',color:`${d.color}55`,marginTop:'3px'}}>{d.sub}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* Divider */}
+      <div style={{margin:'14px 22px 8px',height:'1px',background:'rgba(180,160,240,.07)',flexShrink:0}}/>
+      <p style={{padding:'0 24px 6px',fontFamily:"'DM Sans',sans-serif",fontSize:'8px',letterSpacing:'.4em',textTransform:'uppercase',color:'rgba(180,160,240,.28)',flexShrink:0}}>in this room</p>
+
+      {/* Feature list */}
+      <div style={{padding:'0 18px 28px',flexShrink:0,display:'flex',flexDirection:'column',gap:'7px'}}>
+        {FEATURES.map(f=>(
+          <button key={f.key} onClick={()=>handleFeature(f.key)} style={{
+            display:'flex',alignItems:'center',gap:'14px',padding:'15px 17px',
+            borderRadius:'17px',cursor:'pointer',textAlign:'left',
+            background:'rgba(255,255,255,.018)',border:`1px solid ${f.color}1E`,
+            transition:'all .2s',
+          }}>
+            <div style={{
+              width:'37px',height:'37px',borderRadius:'50%',flexShrink:0,
+              background:`radial-gradient(circle,${f.color}20,${f.color}06)`,
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:'16px',color:f.color,
+              animation:f.key==='ceremony'?'breathe 5s ease-in-out infinite':'none',
+            }}>{f.symbol}</div>
+            <div style={{flex:1}}>
+              <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'17px',color:'rgba(240,232,220,.80)'}}>{f.label}</span>
+                {f.key==='letter'&&hasLetter&&(
+                  <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'rgba(240,200,80,.65)',flexShrink:0,boxShadow:'0 0 6px rgba(240,200,80,.5)'}}/>
+                )}
+              </div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.17em',textTransform:'uppercase',color:`${f.color}48`,marginTop:'2px'}}>{f.sub}</div>
+            </div>
+            <span style={{color:`${f.color}30`,fontSize:'14px'}}>→</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const[view,setView]=useHA('home');
+  return(
+    <div className="ph-wrap">
+      <div className="ph-body">
+        <div className="ph-screen">
+          <div className="ph-island"/>
+          <div className="ph-content">
+            {view==='home'    &&<HomeView setView={setView}/>}
+            {view==='sound'   &&<SVH onBack={()=>setView('home')}/>}
+            {view==='ceremony'&&<CVH onBack={()=>setView('home')}/>}
+            {view==='letter'  &&<LVH onBack={()=>setView('home')}/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

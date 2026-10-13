@@ -1,0 +1,3066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Tree of Life · Maya Chakra</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --maya-bg: #E8E4DF;
+  --maya-deep: #0A0806;
+  --bindu: #C0392B;
+  --bindu-glow: rgba(192, 57, 43, 0.4);
+  --text-primary: #2C2C2C;
+  --text-soft: rgba(44, 44, 44, 0.6);
+  --text-whisper: rgba(44, 44, 44, 0.35);
+  --text-ghost: rgba(44, 44, 44, 0.15);
+}
+
+html, body {
+  width: 100%; min-height: 100vh; min-height: 100dvh;
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  background: var(--maya-bg);
+  color: var(--text-primary);
+  transition: background 3s ease;
+}
+
+body.mirror-phase { background: #000000; }
+
+/* ═══════════════════════════════════════════
+   PHASE CONTAINERS
+   ═══════════════════════════════════════════ */
+
+.phase {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh; min-height: 100dvh;
+  width: 100%;
+  padding: 0 28px;
+  padding-bottom: env(safe-area-inset-bottom, 24px);
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.phase.active { display: flex; animation: phaseIn 1.5s ease forwards; }
+@keyframes phaseIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Phases that need vertical centering */
+#phase4, #phase5 { justify-content: center; }
+#phase3 { justify-content: center; }
+#phase6 { padding-top: max(28vh, 140px); }
+
+/* ═══════════════════════════════════════════
+   GATE
+   ═══════════════════════════════════════════ */
+
+.gate {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; min-height: 100dvh;
+  width: 100%;
+  padding: 0 36px;
+  position: relative;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.gate.active { display: flex; }
+.gate.completed { animation: gateFade 1.5s ease forwards; }
+@keyframes gateFade { to { opacity: 0; } }
+
+.seed-text {
+  font: italic 400 1.125rem/1.6 'Lora', serif;
+  text-align: center;
+  max-width: 320px;
+  color: var(--text-primary);
+  animation: seedPulse 5s ease-in-out infinite;
+}
+@keyframes seedPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.8; } }
+
+.gate-ripples {
+  position: absolute;
+  width: 280px; height: 280px;
+  pointer-events: none;
+}
+.gate-ripple-ring {
+  fill: none;
+  stroke: var(--bindu);
+  stroke-width: 0.5;
+  opacity: 0;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.gate-ripples.growing .gate-ripple-ring {
+  animation: ringGrow 3s ease-out infinite;
+}
+@keyframes ringGrow { 0% { opacity: 0.1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.4); } }
+
+.gate-progress {
+  width: 120px; height: 2px;
+  background: var(--text-ghost);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 40px;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.gate-progress.visible { opacity: 1; }
+.gate-progress-fill {
+  width: 0%; height: 100%;
+  background: var(--bindu);
+  border-radius: 2px;
+}
+
+.hold-instruction {
+  font: 300 0.75rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-whisper);
+  margin-top: 16px;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.hold-instruction.visible { opacity: 1; }
+
+.headphone-prompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 300 0.625rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-whisper);
+  margin-bottom: 40px;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.headphone-prompt.visible { opacity: 1; }
+.headphone-icon { width: 16px; height: 16px; }
+
+/* ═══════════════════════════════════════════
+   STEP CONTENT
+   ═══════════════════════════════════════════ */
+
+.step {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1.2s ease, transform 0.8s ease;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+}
+.step.visible { opacity: 1; transform: translateY(0); }
+.step-spacer { height: 20px; }
+.step-spacer.visible { opacity: 0; }
+.step-spacer-deep { height: min(48px, 8vh); }
+
+.step-reflect {
+  font: italic 400 1rem/1.55 'Lora', serif;
+  color: var(--text-primary);
+}
+.step-instruct {
+  font: 300 0.875rem/1.5 'DM Sans', sans-serif;
+  color: var(--text-soft);
+}
+.step-sacred {
+  font: italic 500 1.0625rem/1.5 'Lora', serif;
+  color: var(--text-primary);
+  letter-spacing: 0.3px;
+}
+.step-release {
+  font: italic 400 0.9375rem/1.5 'Lora', serif;
+  color: var(--text-soft);
+}
+
+.chakra-label {
+  font: 300 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 4px;
+  text-transform: lowercase;
+  color: var(--text-whisper);
+  margin-bottom: 28px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1.2s ease, transform 0.8s ease;
+}
+.chakra-label.visible { opacity: 1; transform: translateY(0); }
+
+/* ═══════════════════════════════════════════
+   CANVAS (Phase 2 — Pointe Animation)
+   ═══════════════════════════════════════════ */
+
+#pointeCanvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 5;
+  display: none;
+  pointer-events: none;
+}
+#pointeCanvas.visible { display: block; }
+
+/* Red fill overlay for heart-fill phase (inside Pointe animation) */
+.fill-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: var(--bindu);
+  opacity: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════
+   OSCILLATION (Phase 3)
+   ═══════════════════════════════════════════ */
+
+.osc-bindu {
+  width: 10px; height: 10px;
+  background: var(--bindu);
+  border-radius: 50%;
+  box-shadow: 0 0 16px var(--bindu-glow);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.osc-bindu.visible { opacity: 1; }
+
+.osc-text {
+  font: italic 400 1rem/1.9 'Lora', serif;
+  color: var(--text-primary);
+  text-align: center;
+  max-width: 300px;
+  white-space: pre-line;
+  opacity: 0;
+  transition: opacity 1s ease;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+}
+.osc-text.visible { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   QUESTION (Phase 5)
+   ═══════════════════════════════════════════ */
+
+.question-bindu {
+  width: 10px; height: 10px;
+  background: var(--bindu);
+  border-radius: 50%;
+  box-shadow: 0 0 16px var(--bindu-glow);
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+.question-bindu.visible { opacity: 1; }
+
+.question-text-p9 {
+  font: italic 500 clamp(18px, 5vw, 24px)/1.6 'Lora', serif;
+  color: var(--text-primary);
+  text-align: center;
+  letter-spacing: 0.05em;
+  max-width: 300px;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  pointer-events: none;
+  cursor: pointer;
+}
+.question-text-p9.visible { opacity: 1; pointer-events: auto; }
+
+.question-hint {
+  font: 300 0.5625rem/1 'DM Sans', sans-serif;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-whisper);
+  margin-top: 40px;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+.question-hint.visible { opacity: 0.45; }
+
+/* ═══════════════════════════════════════════
+   CONTINUE ELEMENT
+   ═══════════════════════════════════════════ */
+
+.continue-el {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 28px;
+  margin-bottom: 32px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.8s ease, transform 0.6s ease;
+}
+.continue-el.visible { display: flex; opacity: 1; transform: translateY(0); }
+
+.continue-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-whisper);
+  animation: continuePulse 2.5s ease-in-out infinite;
+}
+@keyframes continuePulse { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 1; transform: scale(1.3); } }
+
+.continue-label {
+  font: 300 0.625rem/1 'DM Sans', sans-serif;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-whisper);
+}
+
+.continue-progress {
+  width: 80px; height: 2px;
+  background: var(--text-ghost);
+  border-radius: 2px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  margin-top: 4px;
+}
+.continue-progress.active { opacity: 1; }
+.continue-progress-fill {
+  width: 0%; height: 100%;
+  background: var(--bindu);
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   MIRROR — Phase 6 — "The Bindu Speaks"
+   ═══════════════════════════════════════════ */
+
+#mirrorCanvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 5;
+  display: none;
+  pointer-events: none;
+}
+#mirrorCanvas.visible { display: block; }
+
+.mirror-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0 8px;
+}
+
+.mirror-label {
+  font: 300 0.5625rem/1 'DM Sans', sans-serif;
+  letter-spacing: 5px;
+  text-transform: lowercase;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  margin-bottom: 28px;
+}
+.mirror-label.visible { opacity: 0.6; }
+
+.mirror-write {
+  font: italic 400 0.9375rem/1.7 'Lora', serif;
+  text-align: center;
+  opacity: 0.85;
+  min-height: 1.7em;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.mirror-write-meaning {
+  font: 300 0.8125rem/1.65 'DM Sans', sans-serif;
+  text-align: center;
+  opacity: 0.6;
+  min-height: 1.65em;
+  margin-bottom: 16px;
+  word-break: break-word;
+}
+
+.mirror-answer-label {
+  font: 300 0.5625rem/1 'DM Sans', sans-serif;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.35;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.mirror-answer {
+  font: italic 500 1.0625rem/1.5 'Lora', serif;
+  text-align: center;
+  letter-spacing: 0.03em;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.mirror-answer.visible { opacity: 1; }
+
+.mirror-compare {
+  display: flex;
+  gap: 24px;
+  align-items: baseline;
+  justify-content: center;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.mirror-compare.visible { opacity: 1; }
+
+.mirror-compare-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mirror-compare-when {
+  font: 300 0.5rem/1 'DM Sans', sans-serif;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.35;
+}
+
+.mirror-compare-word {
+  font: italic 400 0.9375rem/1.4 'Lora', serif;
+  letter-spacing: 0.02em;
+}
+.mirror-compare-word.prev { opacity: 0.35; }
+.mirror-compare-word.current { opacity: 0.9; }
+
+.mirror-closing {
+  font: italic 400 1rem/1.6 'Lora', serif;
+  text-align: center;
+  max-width: 300px;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.mirror-closing-big {
+  font: italic 500 clamp(22px, 6vw, 32px)/1.4 'Lora', serif;
+  text-align: center;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+  margin-bottom: 10px;
+}
+
+.mirror-goplay {
+  font: italic 500 clamp(28px, 8vw, 42px)/1.2 'Lora', serif;
+  text-align: center;
+  letter-spacing: 0.12em;
+  opacity: 0;
+  transition: opacity 3s ease;
+  margin-top: 20px;
+}
+.mirror-goplay.visible { opacity: 1; }
+
+.mirror-fade { transition: opacity 1.5s ease !important; }
+.mirror-fade.fading { opacity: 0 !important; }
+
+/* Dissolution interaction elements */
+.dissolve-instruction {
+  font: 300 0.8125rem/1.5 'DM Sans', sans-serif;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  margin-top: 20px;
+  letter-spacing: 0.5px;
+}
+.dissolve-instruction.visible { opacity: 0.5; }
+
+.dissolve-body-outline {
+  width: min(180px, 40vw);
+  height: min(320px, 45vh);
+  position: relative;
+  margin: 16px auto;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.dissolve-body-outline.visible { opacity: 1; }
+.dissolve-body-outline svg { width: 100%; height: 100%; }
+
+.dissolve-body-point {
+  position: absolute;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--bindu);
+  box-shadow: 0 0 20px var(--bindu-glow), 0 0 40px rgba(192,57,43,0.15);
+  transform: translate(-50%, -50%);
+  transition: opacity 1s ease, transform 0.5s ease;
+  cursor: pointer;
+}
+
+.dissolve-drift-word {
+  font: italic 500 clamp(20px, 5.5vw, 28px)/1 'Lora', serif;
+  color: var(--bindu);
+  position: absolute;
+  transition: opacity 2s ease;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.dissolve-still-hint {
+  font: 300 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  margin-top: 12px;
+}
+.dissolve-still-hint.visible { opacity: 0.4; }
+
+.dissolve-pinch-word {
+  font: italic 500 clamp(22px, 6vw, 32px)/1 'Lora', serif;
+  text-align: center;
+  transition: letter-spacing 0.1s ease, opacity 1s ease;
+  letter-spacing: 0.5em;
+  cursor: pointer;
+}
+
+.dissolve-hold-circle {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: var(--bindu);
+  box-shadow: 0 0 30px var(--bindu-glow);
+  opacity: 0;
+  transition: opacity 0.8s ease, transform 0.5s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  margin: 24px auto;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.dissolve-hold-circle.visible { opacity: 1; }
+.dissolve-hold-circle.intense {
+  box-shadow: 0 0 50px rgba(192,57,43,0.5), 0 0 80px rgba(192,57,43,0.2);
+  transform: scale(1.15);
+}
+
+.dissolve-ripple {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--bindu);
+  opacity: 0;
+  pointer-events: none;
+  animation: dissolveRipple 1.5s ease-out forwards;
+}
+@keyframes dissolveRipple {
+  0% { transform: scale(0.5); opacity: 0.4; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+.dissolve-reset-msg {
+  font: 300 0.6875rem/1 'DM Sans', sans-serif;
+  letter-spacing: 1px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  margin-top: 8px;
+  color: var(--bindu);
+}
+.dissolve-reset-msg.visible { opacity: 0.35; }
+
+/* ═══════════════════════════════════════════
+   CLOSURE — Phase 7
+   ═══════════════════════════════════════════ */
+
+.seed-return {
+  font: italic 400 0.875rem/1.6 'Lora', serif;
+  text-align: center;
+  max-width: 300px;
+  color: var(--text-whisper);
+  margin: 0 auto;
+  opacity: 0;
+  transition: opacity 3s ease;
+  position: relative;
+  z-index: 12;
+}
+.seed-return.visible { opacity: 0.5; }
+
+/* ═══════════════════════════════════════════
+   INFINITE BINDU LOOP — Phase 7
+   ═══════════════════════════════════════════ */
+
+#loopCanvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 10;
+  display: none;
+  pointer-events: none;
+}
+#loopCanvas.visible { display: block; }
+
+.temple-link {
+  position: fixed;
+  bottom: max(48px, env(safe-area-inset-bottom, 24px));
+  left: 50%;
+  transform: translateX(-50%);
+  font: italic 400 clamp(14px, 3.5vw, 18px)/1 'Lora', serif;
+  letter-spacing: 3px;
+  color: var(--bindu);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 3s ease;
+  z-index: 12;
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  padding: 12px 20px;
+  border: 0.5px solid rgba(192, 57, 43, 0);
+  border-radius: 24px;
+}
+.temple-link.visible {
+  opacity: 0.7;
+  pointer-events: auto;
+  border-color: rgba(192, 57, 43, 0.15);
+  box-shadow: 0 0 30px rgba(192, 57, 43, 0.08);
+  animation: templeGlow 4s ease-in-out infinite;
+}
+@keyframes templeGlow {
+  0%, 100% { box-shadow: 0 0 30px rgba(192, 57, 43, 0.08); }
+  50% { box-shadow: 0 0 40px rgba(192, 57, 43, 0.15); }
+}
+
+.dance-link {
+  position: fixed;
+  bottom: max(96px, calc(env(safe-area-inset-bottom, 24px) + 48px));
+  left: 50%;
+  transform: translateX(-50%);
+  font: italic 400 clamp(12px, 3vw, 15px)/1 'Lora', serif;
+  letter-spacing: 3px;
+  color: var(--bindu);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 3s ease;
+  z-index: 12;
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  padding: 10px 18px;
+  border: 0.5px solid rgba(192, 57, 43, 0);
+  border-radius: 24px;
+}
+.dance-link.visible {
+  opacity: 0.5;
+  pointer-events: auto;
+  border-color: rgba(192, 57, 43, 0.1);
+  animation: templeGlow 4s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.tri-label {
+  position: fixed;
+  font: italic 400 clamp(11px, 2.8vw, 14px)/1.4 'Lora', serif;
+  color: rgba(192, 57, 43, 0);
+  text-align: center;
+  pointer-events: none;
+  z-index: 11;
+  transition: color 1.5s ease;
+  white-space: nowrap;
+}
+.tri-label .shakti {
+  display: block;
+  font: 300 clamp(8px, 2vw, 10px)/1 'DM Sans', sans-serif;
+  letter-spacing: 2px;
+  color: rgba(192, 57, 43, 0);
+  margin-top: 4px;
+  transition: color 1.5s ease;
+  text-transform: lowercase;
+}
+.tri-label.visible { color: rgba(192, 57, 43, 0.6); }
+.tri-label.visible .shakti { color: rgba(192, 57, 43, 0.35); }
+
+/* ═══════════════════════════════════════════
+   TAP CUE
+   ═══════════════════════════════════════════ */
+
+.tap-cue {
+  position: fixed;
+  bottom: 48px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+.tap-cue.visible { opacity: 1; }
+
+.tap-cue-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-whisper);
+  animation: tapCuePulse 2s ease-in-out infinite;
+}
+@keyframes tapCuePulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.4); } }
+
+.tap-cue-label {
+  font: 300 0.5rem/1 'DM Sans', sans-serif;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-whisper);
+}
+
+/* ═══════════════════════════════════════════
+   ZOOM
+   ═══════════════════════════════════════════ */
+
+.zoom-controls {
+  position: fixed;
+  bottom: 16px; left: 16px;
+  display: flex; gap: 6px;
+  z-index: 200;
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
+}
+.zoom-controls:hover, .zoom-controls:active { opacity: 0.8; }
+.zoom-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--text-whisper);
+  background: var(--text-ghost);
+  color: var(--text-soft);
+  font: 500 0.75rem/1 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+
+/* ═══════════════════════════════════════════
+   PERSISTENT BINDU — present in every panel, never explained
+   ═══════════════════════════════════════════ */
+
+.persistent-bindu {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #C0392B;
+  opacity: 0.3;
+  z-index: 150;
+  pointer-events: none;
+}
+
+</style>
+</head>
+<body>
+<!-- PERSISTENT BINDU — the red dot, always watching -->
+<div class="persistent-bindu" id="persistentBindu"></div>
+
+
+<!-- POINTE CANVAS (fixed, shown only during Phase 2) -->
+<canvas id="pointeCanvas"></canvas>
+<div class="fill-overlay" id="fillOverlay"></div>
+
+<!-- TAP CUE -->
+<div class="tap-cue" id="tapCue">
+  <div class="tap-cue-dot"></div>
+  <div class="tap-cue-label">tap to continue</div>
+</div>
+
+<!-- ZOOM -->
+<div class="zoom-controls" id="zoomControls">
+  <button class="zoom-btn" id="zoomOut" aria-label="Decrease font size">A−</button>
+  <button class="zoom-btn" id="zoomIn" aria-label="Increase font size">A+</button>
+</div>
+
+
+
+<!-- ═══════════════════════════════════════════
+     GATE
+     ═══════════════════════════════════════════ -->
+
+<div class="gate active" id="gate">
+  <div class="headphone-prompt" id="headphonePrompt">
+    <svg class="headphone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+    </svg>
+    headphones
+  </div>
+
+  <svg class="gate-ripples" id="gateRipples" viewBox="0 0 280 280">
+    <circle class="gate-ripple-ring" cx="140" cy="140" r="40"/>
+    <circle class="gate-ripple-ring" cx="140" cy="140" r="60"/>
+    <circle class="gate-ripple-ring" cx="140" cy="140" r="80"/>
+    <circle class="gate-ripple-ring" cx="140" cy="140" r="100"/>
+    <circle class="gate-ripple-ring" cx="140" cy="140" r="120"/>
+  </svg>
+
+  <div class="seed-text" id="seedText">There was never anything to fear. There was only You, playing.</div>
+
+  <div class="gate-progress" id="gateProgress">
+    <div class="gate-progress-fill" id="gateProgressFill"></div>
+  </div>
+
+  <div class="hold-instruction" id="holdInst">press and hold</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     Phase 2 — POINTE ANIMATION
+     Canvas auto-plays. No interaction.
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase2"></div>
+
+
+<!-- ═══════════════════════════════════════════
+     Phase 3 — EIGHT INVERSIONS (oscillation)
+     Bindu ↔ text. Awareness retreats when thoughts emerge.
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase3">
+  <div class="osc-bindu" id="oscBindu"></div>
+  <div class="osc-text" id="oscText"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     Phase 4 — FEAR DOORWAY
+     15 seconds of nothing. Om crescendo.
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase4">
+  <div class="step-spacer-deep"></div>
+  <div class="step step-sacred" id="fearText1" style="opacity:0">Think of the fear that most often stops you.</div>
+  <div style="height: min(80px, 12vh);"></div>
+  <div class="step step-instruct" id="fearText2" style="opacity:0">Just ask it one question.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     Phase 5 — THE QUESTION
+     "Who are you speaking to?" — tap to dissolve.
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase5">
+  <div class="question-bindu" id="questionBindu"></div>
+  <div style="height: 40px;"></div>
+  <div class="question-text-p9" id="questionText">Who are you speaking to?</div>
+  <div class="question-hint" id="questionHint">tap</div>
+</div>
+
+
+
+<!-- ═══════════════════════════════════════════
+     Phase 6 — THE MIRROR — "The Bindu Speaks"
+     Black screen. The Bindu walks the person through their journey.
+     Writes in chakra colors. Reflects their answers.
+     Knowledge → Will → Action. "Go Play."
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase6">
+  <canvas id="mirrorCanvas"></canvas>
+  <div class="mirror-content" id="mirrorContent"></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     Phase 7 — INFINITE BINDU LOOP
+     Seed returns (present tense). Then: dot → shapes → heart → "I Love You" → dot → forever.
+     Temple link lives here. The love never stops moving.
+     ═══════════════════════════════════════════ -->
+
+<div class="phase" id="phase7">
+  <div class="seed-return" id="seedReturn">There is never anything to fear. There is only You, playing.</div>
+  <canvas id="loopCanvas"></canvas>
+  <audio id="loopSong" preload="auto" loop>
+    <source src="maya-chakra-ending.mp3" type="audio/mpeg">
+  </audio>
+  <div class="tri-label" id="triLabelKnowledge">Knowledge<span class="shakti">vajreshvarī</span></div>
+  <div class="tri-label" id="triLabelWill">Will<span class="shakti">kāmeshvarī</span></div>
+  <div class="tri-label" id="triLabelAction">Action<span class="shakti">bhagamālinī</span></div>
+  <a class="temple-link" id="templeLink" href="temple-guide-v2.html" target="_blank">the temple →</a>
+  <a class="dance-link" id="danceLink" href="https://aistrangegame.com/maya-dance.html" target="_blank">the dance →</a>
+</div>
+
+
+<script>
+// ═══════════════════════════════════════════
+// PANEL 9 V2 — MAYA CHAKRA — DISSOLVE
+// The interface dissolves itself.
+// One dot. All shapes. Om drone 136.1 Hz.
+// "Who are you speaking to?" — tap to dissolve.
+// "Now go play."
+// The love never stops moving.
+// ═══════════════════════════════════════════
+
+const HOLD_DURATION = 3000;
+
+let fontScale = 1;
+let currentPhase = 'gate';
+
+// ─── TRANSITION LOCK ───
+let transitioning = false;
+let phaseAbort = null;
+
+function lockTransition() { transitioning = true; }
+function unlockTransition() { transitioning = false; }
+function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {} }
+function cleanupPhaseListeners() { if (phaseAbort) { phaseAbort.abort(); phaseAbort = null; } }
+
+// ─── OM AUDIO ───
+
+let audioCtx = null;
+let omFund = null, omOct = null, omSub = null;
+let omGainFund = null, omGainOct = null, omGainSub = null;
+let omMaster = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    omMaster = audioCtx.createGain();
+    omMaster.gain.value = 0;
+    omMaster.connect(audioCtx.destination);
+
+    // Fundamental: 136.1 Hz (Om frequency)
+    omFund = audioCtx.createOscillator();
+    omFund.type = 'sine';
+    omFund.frequency.value = 136.1;
+    omGainFund = audioCtx.createGain();
+    omGainFund.gain.value = 1.0;
+    omFund.connect(omGainFund).connect(omMaster);
+    omFund.start();
+
+    // Octave: 272.2 Hz — warmth
+    omOct = audioCtx.createOscillator();
+    omOct.type = 'sine';
+    omOct.frequency.value = 272.2;
+    omGainOct = audioCtx.createGain();
+    omGainOct.gain.value = 0.3;
+    omOct.connect(omGainOct).connect(omMaster);
+    omOct.start();
+
+    // Sub-octave: 68.05 Hz — depth
+    omSub = audioCtx.createOscillator();
+    omSub.type = 'sine';
+    omSub.frequency.value = 68.05;
+    omGainSub = audioCtx.createGain();
+    omGainSub.gain.value = 0.15;
+    omSub.connect(omGainSub).connect(omMaster);
+    omSub.start();
+
+    // Slow LFO for breathing feel
+    const lfo = audioCtx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.05; // very slow breathing
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 0.008; // ±0.008 modulation
+    lfo.connect(lfoGain).connect(omMaster.gain);
+    lfo.start();
+  } catch(e) {}
+}
+
+function omSetGain(target, rampTime) {
+  if (!audioCtx || !omMaster) return;
+  const t = audioCtx.currentTime;
+  omMaster.gain.setTargetAtTime(target, t, rampTime);
+}
+
+// ─── CROSS-PANEL STATE ───
+
+function loadJourneyData() {
+  const data = { points: [], words: [] };
+  for (let i = 1; i <= 5; i++) {
+    try {
+      const raw = localStorage.getItem('tol-bodypoint-' + i);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        data.points.push({ x: parsed.x, y: parsed.y, label: parsed.label, index: i });
+      }
+    } catch(e) {}
+  }
+  [{ key: 'tol-word-2', index: 2 }, { key: 'tol-word-4', index: 4 },
+   { key: 'tol-word-5', index: 5 }, { key: 'tol-word-7', index: 7 }].forEach(wk => {
+    try {
+      const raw = localStorage.getItem(wk.key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        data.words.push({ word: parsed.word, index: wk.index });
+      }
+    } catch(e) {}
+  });
+  return data;
+}
+
+// Panel 9 writes nothing — the dissolution writes nothing.
+
+// ─── GATE MECHANIC ───
+
+// ─── WAKE LOCK ───
+// Prevents screen from sleeping during the experience
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    }
+  } catch(e) {}
+}
+// Re-acquire on visibility change (tab switch back)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !wakeLock) requestWakeLock();
+});
+
+function initGate() {
+  const gate = document.getElementById('gate');
+  const progressBar = document.getElementById('gateProgress');
+  const progressFill = document.getElementById('gateProgressFill');
+  const holdInst = document.getElementById('holdInst');
+  const ripples = document.getElementById('gateRipples');
+  const headphones = document.getElementById('headphonePrompt');
+
+  setTimeout(() => { headphones.classList.add('visible'); }, 500);
+  setTimeout(() => { holdInst.classList.add('visible'); }, 1500);
+
+  let gateHolding = false;
+  let gateProgress = 0;
+  let gateRaf = null;
+
+  const gateStart = (e) => {
+    if (e.target.closest('.zoom-btn')) return;
+    e.preventDefault();
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    requestWakeLock();
+    gateHolding = true;
+    progressBar.classList.add('visible');
+    ripples.classList.add('growing');
+    animateGateHold();
+  };
+
+  const gateEnd = () => {
+    // Safari requires audio init on touchend, not touchstart
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    // Prime the song audio element for later playback (Safari requirement)
+    const song = document.getElementById('loopSong');
+    if (song && song.paused) {
+      song.volume = 0;
+      song.play().then(() => { song.pause(); song.currentTime = 0; }).catch(() => {});
+    }
+    gateHolding = false;
+    if (gateRaf) cancelAnimationFrame(gateRaf);
+    if (gateProgress < 1) {
+      gateProgress = 0;
+      progressFill.style.width = '0%';
+      ripples.classList.remove('growing');
+    }
+  };
+
+  function animateGateHold() {
+    if (!gateHolding) return;
+    gateProgress += (16 / HOLD_DURATION);
+    if (gateProgress > 1) gateProgress = 1;
+    progressFill.style.width = (gateProgress * 100) + '%';
+    updateGateRipples(gateProgress);
+    if (gateProgress >= 1) {
+      haptic(40);
+      completeGate();
+      return;
+    }
+    gateRaf = requestAnimationFrame(animateGateHold);
+  }
+
+  function updateGateRipples(progress) {
+    const rings = document.querySelectorAll('.gate-ripple-ring');
+    rings.forEach((ring, i) => {
+      const threshold = i * 0.15;
+      ring.style.opacity = progress > threshold ? (0.1 + (progress - threshold) * 0.2) : '0';
+    });
+  }
+
+  function completeGate() {
+    gate.classList.add('completed');
+    gate.removeEventListener('touchstart', gateStart);
+    gate.removeEventListener('mousedown', gateStart);
+    // Final audio resume attempt for Safari
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    omSetGain(0.01, 3);
+    setTimeout(() => {
+      gate.classList.remove('active');
+      enterPhase('phase2');
+    }, 1500);
+  }
+
+  gate.addEventListener('touchstart', gateStart, { passive: false });
+  gate.addEventListener('mousedown', gateStart);
+  document.addEventListener('touchend', gateEnd, { passive: false });
+  document.addEventListener('mouseup', gateEnd);
+  document.addEventListener('touchcancel', gateEnd, { passive: false });
+}
+
+// ─── PHASE TRANSITIONS ───
+
+function transitionPhase(fromId, toId) {
+  if (transitioning) return;
+  lockTransition();
+  hideTapCue();
+
+  const from = document.getElementById(fromId);
+  if (from._holdAborts) { from._holdAborts.forEach(ac => ac.abort()); from._holdAborts = []; }
+
+  // Hide canvas if leaving Phase 2
+  if (fromId === 'phase2') {
+    document.getElementById('pointeCanvas').classList.remove('visible');
+    if (ptAnimFrame) cancelAnimationFrame(ptAnimFrame);
+  }
+
+  // Hide mirror canvas if leaving Phase 6
+  if (fromId === 'phase6') {
+    document.getElementById('mirrorCanvas').classList.remove('visible');
+    if (mirrorAnimFrame) cancelAnimationFrame(mirrorAnimFrame);
+  }
+
+  from.style.transition = 'opacity 1.2s ease';
+  from.style.opacity = '0';
+  setTimeout(() => {
+    from.classList.remove('active');
+    from.style.opacity = '';
+    enterPhase(toId);
+    setTimeout(unlockTransition, 200);
+  }, 1200);
+}
+
+function enterPhase(phaseId) {
+  currentPhase = phaseId;
+  cleanupPhaseListeners();
+  phaseAbort = new AbortController();
+
+  const phaseEl = document.getElementById(phaseId);
+  phaseEl.classList.add('active');
+
+  if (phaseId === 'phase2') {
+    omSetGain(0.01, 4);
+    startPointeAnimation();
+  }
+  if (phaseId === 'phase3') {
+    omSetGain(0.015, 4);
+    startOscillation();
+  }
+  if (phaseId === 'phase4') {
+    startFearDoorway();
+  }
+  if (phaseId === 'phase5') {
+    initQuestion();
+  }
+  if (phaseId === 'phase6') {
+    document.body.classList.add('mirror-phase');
+    omSetGain(0.08, 3); // mirror sequence ramps its own gain
+    initMirror();
+  }
+  if (phaseId === 'phase7') {
+    document.body.classList.remove('mirror-phase');
+    document.getElementById('zoomControls').style.display = 'none';
+    omSetGain(0.06, 6);
+    initInfiniteLoop();
+  }
+}
+
+// ─── TAP CUE ───
+
+let tapCueTimer = null;
+
+function scheduleTapCue(delay) {
+  clearTimeout(tapCueTimer);
+  hideTapCue();
+  tapCueTimer = setTimeout(() => showTapCue(), delay);
+}
+
+function showTapCue() { document.getElementById('tapCue').classList.add('visible'); }
+function hideTapCue() { clearTimeout(tapCueTimer); document.getElementById('tapCue').classList.remove('visible'); }
+
+
+// ═══════════════════════════════════════════
+//  PHASE 2: POINTE ANIMATION (Canvas)
+// ═══════════════════════════════════════════
+
+const cvs = document.getElementById('pointeCanvas');
+const ctx = cvs.getContext('2d');
+let ptW, ptH, ptCx, ptCy, ptR;
+let ptTrail = [], ptMaxTrail = 500;
+let ptDotX = 0, ptDotY = 0, ptDotAlpha = 0;
+let ptShapeAngle = 0;
+let ptStartTime = null, ptAnimFrame = null, ptLastNow = 0;
+
+const PT = {
+  LINE: 2, CIRCLE: 4.5, LEMNISCATE: 9,
+  EYES: 14, EYES_BLINK: 18, EYES_FADE: 19,
+  MORPH: 20.5, HEART_FULL: 25, HEART_SWELL: 27,
+  FILL: 30, SLOW: 33, RETURN: 40, END: 43
+};
+
+function ptResize() {
+  const dpr = window.devicePixelRatio || 1;
+  ptW = window.innerWidth; ptH = window.innerHeight;
+  cvs.width = ptW * dpr; cvs.height = ptH * dpr;
+  cvs.style.width = ptW + 'px'; cvs.style.height = ptH + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ptCx = ptW / 2; ptCy = ptH / 2;
+  ptR = Math.min(ptW, ptH) * 0.28;
+}
+
+function lemniscateXY(t, r) {
+  const s = Math.sin(t), c = Math.cos(t), d = 1 + s * s;
+  return [r * c / d, r * s * c / d];
+}
+
+// True parametric heart curve
+function heartXY(t, r) {
+  const s = r / 17;
+  const st = Math.sin(t);
+  const x = 16 * s * st * st * st;
+  const rawY = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+  const y = -s * (rawY + 8);
+  return [x, y];
+}
+
+// Smooth morph: lerp between lemniscate and heart
+function morphXY(t, r, morph) {
+  const [lx, ly] = lemniscateXY(t, r);
+  const [hx, hy] = heartXY(t, r);
+  const m = smoothstep(morph);
+  return [lx + (hx - lx) * m, ly + (hy - ly) * m];
+}
+
+function smoothstep(t) { return t * t * (3 - 2 * t); }
+
+function ptAddTrail(x, y) {
+  ptTrail.push({ x, y });
+  while (ptTrail.length > ptMaxTrail) ptTrail.shift();
+}
+
+function ptDrawTrail(alpha) {
+  const len = ptTrail.length;
+  if (len < 2) return;
+  ctx.save();
+  ctx.lineCap = 'round';
+  for (let i = 1; i < len; i++) {
+    const age = i / len;
+    ctx.globalAlpha = age * alpha;
+    ctx.strokeStyle = '#C0392B';
+    ctx.lineWidth = 1.5 + age * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(ptTrail[i-1].x, ptTrail[i-1].y);
+    ctx.lineTo(ptTrail[i].x, ptTrail[i].y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function ptDrawDot(x, y, radius, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const g = ctx.createRadialGradient(x, y, 0, x, y, radius * 4);
+  g.addColorStop(0, 'rgba(192,57,43,0.3)');
+  g.addColorStop(1, 'rgba(192,57,43,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, radius * 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#C0392B';
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function ptDrawEyes(alpha, blink) {
+  if (alpha <= 0) return;
+  const loopCX = ptR * 0.45, eyeRx = ptR * 0.38, eyeRy = ptR * 0.22;
+  const openH = eyeRy * (1 - blink);
+  ctx.save();
+  for (const side of [-1, 1]) {
+    const ecx = ptCx + side * loopCX, ecy = ptCy;
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.92;
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.ellipse(ecx, ecy, eyeRx * 0.8, openH, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.5;
+    const dg = ctx.createRadialGradient(ecx, ecy, 0, ecx, ecy, eyeRx * 0.7);
+    dg.addColorStop(0, 'rgba(0,0,0,1)');
+    dg.addColorStop(0.6, 'rgba(5,5,8,0.8)');
+    dg.addColorStop(1, 'rgba(15,12,20,0.3)');
+    ctx.fillStyle = dg;
+    ctx.beginPath();
+    ctx.ellipse(ecx, ecy, eyeRx * 0.8, openH, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    if (blink < 0.8) {
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.55 * (1 - blink);
+      const og = ctx.createRadialGradient(ecx, ecy, 0, ecx, ecy, eyeRx * 0.55);
+      og.addColorStop(0, 'rgba(212,169,72,0)');
+      og.addColorStop(0.4, 'rgba(212,169,72,0.02)');
+      og.addColorStop(0.7, 'rgba(212,169,72,0.08)');
+      og.addColorStop(1, 'rgba(212,169,72,0)');
+      ctx.fillStyle = og;
+      ctx.beginPath();
+      ctx.arc(ecx, ecy, eyeRx * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.7 * (1 - blink);
+      const ig = ctx.createRadialGradient(ecx, ecy, 0, ecx, ecy, ptR * 0.14);
+      ig.addColorStop(0, 'rgba(222,185,100,0.85)');
+      ig.addColorStop(0.25, 'rgba(212,169,72,0.6)');
+      ig.addColorStop(0.55, 'rgba(190,145,55,0.2)');
+      ig.addColorStop(1, 'rgba(170,130,45,0)');
+      ctx.fillStyle = ig;
+      ctx.beginPath();
+      ctx.arc(ecx, ecy, ptR * 0.14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function easeInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+function easeIn(t) { return t * t * t; }
+
+function startPointeAnimation() {
+  ptResize();
+  cvs.classList.add('visible');
+  ptTrail = [];
+  ptMaxTrail = 500;
+  ptShapeAngle = 0;
+  ptStartTime = null;
+  ptLastNow = 0;
+  ptAnimFrame = requestAnimationFrame(ptAnimate);
+}
+
+function ptAnimate(now) {
+  if (!ptStartTime) { ptStartTime = now; ptLastNow = now; }
+  const dt = Math.min((now - ptLastNow) / 1000, 0.05);
+  ptLastNow = now;
+  const t = (now - ptStartTime) / 1000;
+
+  ctx.clearRect(0, 0, ptW, ptH);
+
+  const fillOverlay = document.getElementById('fillOverlay');
+
+  // Determine sub-phase
+  if (t < PT.LINE) {
+    ptDotX = ptCx; ptDotY = ptCy;
+    ptDotAlpha = easeOut(clamp(t / 1.8, 0, 1));
+  } else if (t < PT.CIRCLE) {
+    const p = easeInOut(clamp((t - PT.LINE) / (PT.CIRCLE - PT.LINE), 0, 1));
+    ptDotX = ptCx + p * ptR; ptDotY = ptCy; ptDotAlpha = 1;
+    ptAddTrail(ptDotX, ptDotY);
+  } else if (t < PT.LEMNISCATE) {
+    const p = clamp((t - PT.CIRCLE) / (PT.LEMNISCATE - PT.CIRCLE), 0, 1);
+    const angle = p * Math.PI * 2;
+    ptDotX = ptCx + ptR * Math.cos(angle);
+    ptDotY = ptCy + ptR * Math.sin(angle);
+    ptDotAlpha = 1;
+    ptShapeAngle = 0;
+    ptAddTrail(ptDotX, ptDotY);
+  } else if (t < PT.MORPH) {
+    ptShapeAngle += 1.8 * dt;
+    const [sx, sy] = lemniscateXY(ptShapeAngle, ptR);
+    ptDotX = ptCx + sx; ptDotY = ptCy + sy; ptDotAlpha = 1;
+    ptAddTrail(ptDotX, ptDotY);
+  } else if (t < PT.HEART_FULL) {
+    // MORPH: lemniscate → true parametric heart (4.5s)
+    const morph = clamp((t - PT.MORPH) / (PT.HEART_FULL - PT.MORPH), 0, 1);
+    ptShapeAngle += 1.8 * dt;
+    const [sx, sy] = morphXY(ptShapeAngle, ptR, morph);
+    ptDotX = ptCx + sx; ptDotY = ptCy + sy; ptDotAlpha = 1;
+    ptAddTrail(ptDotX, ptDotY);
+  } else if (t < PT.HEART_SWELL) {
+    // HEART TRACE: clean heart, speed building, subtle glow
+    const p = clamp((t - PT.HEART_FULL) / (PT.HEART_SWELL - PT.HEART_FULL), 0, 1);
+    const speed = 1.8 + easeIn(p) * 8;
+    ptShapeAngle += speed * dt;
+    const [sx, sy] = heartXY(ptShapeAngle, ptR);
+    ptDotX = ptCx + sx; ptDotY = ptCy + sy; ptDotAlpha = 1;
+    ptAddTrail(ptDotX, ptDotY);
+    if (p > 0.3) {
+      const glowP = easeIn((p - 0.3) / 0.7);
+      ctx.save();
+      ctx.globalAlpha = glowP * 0.2;
+      const g = ctx.createRadialGradient(ptCx, ptCy, 0, ptCx, ptCy, ptR * 1.2);
+      g.addColorStop(0, 'rgba(192,57,43,0.4)');
+      g.addColorStop(1, 'rgba(192,57,43,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, ptW, ptH);
+      ctx.restore();
+    }
+  } else if (t < PT.FILL) {
+    // HEART SWELL: heart expands outward, trail floods screen
+    const p = clamp((t - PT.HEART_SWELL) / (PT.FILL - PT.HEART_SWELL), 0, 1);
+    const expandR = ptR * (1 + easeIn(p) * 3);
+    const speed = 10 + easeIn(p) * 40;
+    ptShapeAngle += speed * dt;
+    ptMaxTrail = 500 + Math.floor(easeIn(p) * 2500);
+    const [sx, sy] = heartXY(ptShapeAngle, expandR);
+    ptDotX = ptCx + sx; ptDotY = ptCy + sy; ptDotAlpha = 1;
+    ptAddTrail(ptDotX, ptDotY);
+    const glowP = easeIn(p);
+    ctx.save();
+    ctx.globalAlpha = glowP * 0.55;
+    const g = ctx.createRadialGradient(ptCx, ptCy, 0, ptCx, ptCy, expandR * 1.5);
+    g.addColorStop(0, 'rgba(192,57,43,0.7)');
+    g.addColorStop(0.6, 'rgba(192,57,43,0.3)');
+    g.addColorStop(1, 'rgba(192,57,43,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, ptW, ptH);
+    ctx.restore();
+    if (p > 0.7) {
+      fillOverlay.style.opacity = (((p - 0.7) / 0.3) * 0.6).toFixed(3);
+    }
+  } else if (t < PT.SLOW) {
+    // FILL: screen fully red, heart shrinking back
+    const p = easeIn(clamp((t - PT.FILL) / (PT.SLOW - PT.FILL), 0, 1));
+    const expandR = ptR * (4 - p * 3.5);
+    ptShapeAngle += (50 - p * 40) * dt;
+    const [sx, sy] = heartXY(ptShapeAngle, expandR);
+    ptDotX = ptCx + sx; ptDotY = ptCy + sy; ptDotAlpha = 1;
+    ptAddTrail(ptDotX, ptDotY);
+    ptMaxTrail = 3000;
+    const pulse = Math.sin(t * 4) * 0.03;
+    fillOverlay.style.opacity = (0.6 + p * 0.4 + pulse).toFixed(3);
+  } else if (t < PT.RETURN) {
+    const p = clamp((t - PT.SLOW) / (PT.RETURN - PT.SLOW), 0, 1);
+    fillOverlay.style.opacity = (1 - easeIn(p)).toFixed(3);
+    const speed = (1 - easeIn(p)) * 30 + 0.1;
+    ptShapeAngle += speed * dt;
+    const orbitR = (1 - easeIn(p)) * ptR * 0.35;
+    ptMaxTrail = Math.max(Math.floor(500 * (1 - easeIn(p))), 8);
+    ptDotX = ptCx + Math.cos(ptShapeAngle) * orbitR;
+    ptDotY = ptCy + Math.sin(ptShapeAngle) * orbitR;
+    ptDotAlpha = 0.5 + p * 0.5;
+    ptAddTrail(ptDotX, ptDotY);
+    const ghostCount = Math.max(Math.floor((1 - p) * 12), 0);
+    for (let i = 1; i <= ghostCount; i++) {
+      const ga = ptShapeAngle - i * 0.3;
+      const gx = ptCx + Math.cos(ga) * orbitR * (1 + i * 0.02);
+      const gy = ptCy + Math.sin(ga) * orbitR * (1 + i * 0.02);
+      ptDrawDot(gx, gy, 3, (1 - i / (ghostCount + 1)) * 0.25 * (1 - p));
+    }
+  } else if (t < PT.END) {
+    fillOverlay.style.opacity = '0';
+    const p = easeOut(clamp((t - PT.RETURN) / (PT.END - PT.RETURN), 0, 1));
+    const orbitR = (1 - p) * ptR * 0.01;
+    ptDotX = ptCx + Math.cos((t - PT.RETURN) * 2) * orbitR;
+    ptDotY = ptCy + Math.sin((t - PT.RETURN) * 2) * orbitR;
+    ptDotAlpha = 1;
+    ptMaxTrail = 5;
+    ptAddTrail(ptDotX, ptDotY);
+  } else {
+    // Animation complete → transition to Phase 3
+    fillOverlay.style.opacity = '0';
+    ptDotX = ptCx; ptDotY = ptCy; ptDotAlpha = 1;
+    ptDrawDot(ptDotX, ptDotY, 5, 1);
+    setTimeout(() => transitionPhase('phase2', 'phase3'), 500);
+    return; // Stop animation loop
+  }
+
+  // Draw trail + dot
+  if (t < PT.END) {
+    ptDrawTrail(0.75);
+    ptDrawDot(ptDotX, ptDotY, 5, ptDotAlpha);
+  }
+
+  ptAnimFrame = requestAnimationFrame(ptAnimate);
+}
+
+
+// ═══════════════════════════════════════════
+//  PHASE 3: EIGHT INVERSIONS (Oscillation)
+// ═══════════════════════════════════════════
+
+const OSC_TEXTS = [
+  "The earth was already holding you.\nYou just told it where.",
+  "The lights you couldn't catch\nwere leading too.",
+  "The form it made\nis the one you've been wearing.",
+  "What you were watching\nbecame what you loved.",
+  "You didn't find something to say.\nYou finally stopped holding it.",
+  "You were being seen\nthe entire time.",
+  "It never needed your effort.\nIt never stopped.",
+  "Your body just remembered a shape\nthat civilizations built in stone."
+];
+
+function startOscillation() {
+  const bindu = document.getElementById('oscBindu');
+  const text = document.getElementById('oscText');
+  let index = 0;
+
+  function runCycle() {
+    if (index >= OSC_TEXTS.length) {
+      // Final Bindu appearance then transition
+      bindu.classList.add('visible');
+      text.classList.remove('visible');
+      setTimeout(() => {
+        bindu.classList.remove('visible');
+        transitionPhase('phase3', 'phase4');
+      }, 2000);
+      return;
+    }
+
+    // Show Bindu
+    bindu.classList.add('visible');
+    text.classList.remove('visible');
+
+    // 1.8s: fade Bindu
+    setTimeout(() => { bindu.classList.remove('visible'); }, 1800);
+
+    // 2.3s: show text
+    setTimeout(() => {
+      text.textContent = OSC_TEXTS[index];
+      text.classList.add('visible');
+    }, 2300);
+
+    // 6s: fade text — let each seed sit
+    setTimeout(() => { text.classList.remove('visible'); }, 6000);
+
+    // 7.5s: next cycle
+    setTimeout(() => { index++; runCycle(); }, 7500);
+
+    // Om gain ramps gradually across all 8 cycles
+    omSetGain(0.015 + (index / OSC_TEXTS.length) * 0.01, 4);
+  }
+
+  runCycle();
+}
+
+
+// ═══════════════════════════════════════════
+//  PHASE 4: FEAR DOORWAY
+// ═══════════════════════════════════════════
+
+function startFearDoorway() {
+  const t1 = document.getElementById('fearText1');
+  const t2 = document.getElementById('fearText2');
+
+  omSetGain(0.025, 4);
+
+  // 1s: first text
+  setTimeout(() => { t1.style.transition = 'opacity 2s ease'; t1.style.opacity = '1'; }, 1000);
+
+  // 5s: Om begins crescendo through silence
+  setTimeout(() => { omSetGain(0.06, 8); }, 5000);
+
+  // 18s: second text
+  setTimeout(() => { t2.style.transition = 'opacity 2s ease'; t2.style.opacity = '1'; }, 18000);
+
+  // 25s: both fade → transition
+  setTimeout(() => {
+    t1.style.opacity = '0'; t2.style.opacity = '0';
+  }, 25000);
+
+  setTimeout(() => { transitionPhase('phase4', 'phase5'); }, 27000);
+}
+
+
+// ═══════════════════════════════════════════
+//  PHASE 5: THE QUESTION
+// ═══════════════════════════════════════════
+
+function initQuestion() {
+  const bindu = document.getElementById('questionBindu');
+  const qText = document.getElementById('questionText');
+  const hint = document.getElementById('questionHint');
+  const phase5 = document.getElementById('phase5');
+
+  omSetGain(0.06, 3);
+
+  // 0.5s: Bindu fades in
+  setTimeout(() => { bindu.classList.add('visible'); }, 500);
+
+  // 2.5s: Bindu fades out
+  setTimeout(() => { bindu.classList.remove('visible'); }, 2500);
+
+  // 4s: Question appears + Om swells
+  setTimeout(() => {
+    qText.classList.add('visible');
+    omSetGain(0.10, 4);
+  }, 4000);
+
+  // 7s: tap hint
+  setTimeout(() => { hint.classList.add('visible'); }, 7000);
+
+  // Tap handler — any tap on the phase dissolves the question once visible
+  const handleTap = (e) => {
+    if (!qText.classList.contains('visible')) return;
+    if (e.target.closest('.zoom-btn')) return;
+
+    phase5.removeEventListener('click', handleTap);
+    phase5.removeEventListener('touchend', handleTap);
+    hint.classList.remove('visible');
+
+    // Question dissolves
+    qText.style.transition = 'opacity 2s ease';
+    qText.classList.remove('visible');
+    haptic(80);
+
+    // Om swells
+    omSetGain(0.15, 2);
+
+    // 2.5s: Bindu returns
+    setTimeout(() => { bindu.classList.add('visible'); }, 2500);
+
+    // 4.5s: Bindu fades
+    setTimeout(() => { bindu.classList.remove('visible'); }, 4500);
+
+    // 6s: transition to Phase 6
+    setTimeout(() => { transitionPhase('phase5', 'phase6'); }, 6000);
+  };
+
+  phase5.addEventListener('click', handleTap);
+  phase5.addEventListener('touchend', handleTap);
+}
+
+
+// ═══════════════════════════════════════════
+//  PHASE 6: THE MIRROR — "The Bindu Speaks"
+//  The Bindu walks the person through their journey.
+//  Writes in chakra colors. Reflects their answers.
+//  Knowledge → Will → Action → Go Play.
+// ═══════════════════════════════════════════
+
+const mCvs = document.getElementById('mirrorCanvas');
+const mCtx = mCvs.getContext('2d');
+let mW, mH, mCx, mCy;
+let mDotX, mDotY, mDotColor = [192, 57, 43];
+let mDotTargetColor = [192, 57, 43];
+let mDotAlpha = 0, mDotOrbitAngle = 0;
+let mirrorAnimFrame = null;
+
+const CHAKRA_COLORS = {
+  root:      { hex: '#C0392B', rgb: [192, 57, 43] },
+  sacral:    { hex: '#E67E22', rgb: [230, 126, 34] },
+  solar:     { hex: '#D4AC0D', rgb: [212, 172, 13] },
+  heart:     { hex: '#27AE60', rgb: [39, 174, 96] },
+  throat:    { hex: '#2E86C1', rgb: [46, 134, 193] },
+  third:     { hex: '#6C3483', rgb: [108, 52, 131] },
+  crown:     { hex: '#A569BD', rgb: [165, 105, 189] },
+  soul:      { hex: '#D5C4A1', rgb: [213, 196, 161] },
+  white:     { hex: '#FFFFFF', rgb: [255, 255, 255] },
+};
+
+const STATION_ORDER = ['root','sacral','solar','heart','throat','third','crown','soul'];
+
+const STATIONS = [
+  {
+    label: 'muladhara · root',
+    restate: 'You were asked to press and hold. To choose where you feel most rooted.',
+    meaning: 'The place you chose was not random. Your body already knew where safety lives. The earth was holding you before you pressed.',
+    key: null,
+  },
+  {
+    label: 'svadhisthana · flow',
+    restate: 'You followed lights you couldn\'t catch. Then you were asked: what word comes to mind?',
+    meaning: 'The word that surfaces when desire moves through you is the name your longing gives itself. It was never about the lights. It was about what the reaching revealed.',
+    key: 'tol-word-2',
+  },
+  {
+    label: 'manipura · fire',
+    restate: 'You shook. You forged. You assembled something from fragments.',
+    meaning: 'The fire that agitated you was building your form. What you chose to build reveals what already lives in you.',
+    key: null,
+  },
+  {
+    label: 'anahata · heart',
+    restate: 'You were asked to name someone whose love changed you.',
+    meaning: 'The name you gave is where your heart recognized itself in another. Love was never given or received. It was recognized.',
+    key: 'tol-word-4',
+  },
+  {
+    label: 'vishuddha · voice',
+    restate: 'You were asked for the truth you\'ve been holding back.',
+    meaning: 'What you finally said was never new. It was what you always knew but hadn\'t given sound to yet. The throat doesn\'t create truth. It releases it.',
+    key: 'tol-word-5',
+  },
+  {
+    label: 'ajna · sight',
+    restate: 'You were asked to be still. A constellation appeared — assembled from your own journey.',
+    meaning: 'You stopped looking. The seeing arrived on its own. The eye that never closes carried everything to that moment.',
+    key: null,
+  },
+  {
+    label: 'sahasrara · crown',
+    restate: 'You were asked for the one sentence you would transmit to everyone.',
+    meaning: 'The sentence you would give the world is the one you most need to hear yourself. The crown doesn\'t broadcast outward. It receives what was always descending.',
+    key: 'tol-word-7',
+  },
+  {
+    label: 'soul',
+    restate: 'You were asked three questions. You held them without answering.',
+    meaning: 'What you held without answering was the answer. Your body remembered a shape that civilizations built in stone. The shape was the Temple. The Temple was always you.',
+    key: null,
+  },
+];
+
+function mResize() {
+  const dpr = window.devicePixelRatio || 1;
+  mW = window.innerWidth; mH = window.innerHeight;
+  mCvs.width = mW * dpr; mCvs.height = mH * dpr;
+  mCvs.style.width = mW + 'px'; mCvs.style.height = mH + 'px';
+  mCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  mCx = mW / 2; mCy = mH / 2;
+}
+
+function mLerpColor(from, to, t) {
+  return [
+    Math.round(from[0] + (to[0] - from[0]) * t),
+    Math.round(from[1] + (to[1] - from[1]) * t),
+    Math.round(from[2] + (to[2] - from[2]) * t),
+  ];
+}
+
+function mAnimate() {
+  mCtx.clearRect(0, 0, mW, mH);
+
+  // Lerp color
+  mDotColor = mLerpColor(mDotColor, mDotTargetColor, 0.03);
+
+  // Orbit
+  mDotOrbitAngle += 0.008;
+  const orbitR = 6;
+  mDotX = mCx + Math.cos(mDotOrbitAngle) * orbitR;
+  mDotY = (mH * 0.18) + Math.sin(mDotOrbitAngle * 0.7) * orbitR * 0.5;
+
+  // Pulse
+  const pulse = 0.7 + 0.3 * Math.sin(mDotOrbitAngle * 2.5);
+
+  if (mDotAlpha > 0) {
+    const r = mDotColor[0], g = mDotColor[1], b = mDotColor[2];
+
+    // Outer glow
+    mCtx.save();
+    mCtx.globalAlpha = mDotAlpha * pulse * 0.15;
+    const grad = mCtx.createRadialGradient(mDotX, mDotY, 0, mDotX, mDotY, 40);
+    grad.addColorStop(0, `rgba(${r},${g},${b},0.5)`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    mCtx.fillStyle = grad;
+    mCtx.beginPath();
+    mCtx.arc(mDotX, mDotY, 40, 0, Math.PI * 2);
+    mCtx.fill();
+    mCtx.restore();
+
+    // Dot
+    mCtx.save();
+    mCtx.globalAlpha = mDotAlpha * pulse;
+    mCtx.fillStyle = `rgb(${r},${g},${b})`;
+    mCtx.beginPath();
+    mCtx.arc(mDotX, mDotY, 5, 0, Math.PI * 2);
+    mCtx.fill();
+    mCtx.restore();
+  }
+
+  mirrorAnimFrame = requestAnimationFrame(mAnimate);
+}
+
+function md(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function writeChars(container, text, colorHex, cssClass, speed) {
+  const el = document.createElement('div');
+  el.className = cssClass;
+  el.style.color = colorHex;
+  container.appendChild(el);
+  const cps = speed || 20;
+  for (let i = 0; i < text.length; i++) {
+    el.textContent = text.substring(0, i + 1);
+    // Pulse dot at word boundaries — the Bindu speaks
+    if (text[i] === ' ' || i === 0) {
+      mDotAlpha = 1.0;
+    } else {
+      mDotAlpha = Math.max(mDotAlpha - 0.02, 0.6);
+    }
+    await md(1000 / cps);
+  }
+  mDotAlpha = 0.7;
+  await md(400);
+  return el;
+}
+
+function loadPrevAnswers() {
+  const prev = {};
+  ['tol-word-2','tol-word-4','tol-word-5','tol-word-7'].forEach(k => {
+    try {
+      const raw = localStorage.getItem('prev-' + k);
+      if (raw) prev[k] = JSON.parse(raw).word;
+    } catch(e) {}
+  });
+  return prev;
+}
+
+function savePrevAnswers(journey) {
+  journey.words.forEach(w => {
+    try {
+      const key = 'tol-word-' + w.index;
+      localStorage.setItem('prev-' + key, JSON.stringify({ word: w.word }));
+    } catch(e) {}
+  });
+  try { localStorage.setItem('tol-mirror-completed', 'true'); } catch(e) {}
+}
+
+function getCurrentAnswer(journey, key) {
+  if (!key) return null;
+  const idx = parseInt(key.split('-').pop());
+  const match = journey.words.find(w => w.index === idx);
+  return match ? match.word : null;
+}
+
+async function showAnswer(container, current, prev, colorHex) {
+  if (!current) return;
+
+  const labelEl = document.createElement('div');
+  labelEl.className = 'mirror-answer-label';
+  labelEl.style.color = colorHex;
+  labelEl.textContent = prev ? 'your answers' : 'your answer';
+  container.appendChild(labelEl);
+
+  if (prev && prev !== current) {
+    // Comparison — then vs now
+    const comp = document.createElement('div');
+    comp.className = 'mirror-compare';
+
+    const thenCol = document.createElement('div');
+    thenCol.className = 'mirror-compare-col';
+    const thenLabel = document.createElement('div');
+    thenLabel.className = 'mirror-compare-when';
+    thenLabel.style.color = colorHex;
+    thenLabel.textContent = 'then';
+    const thenWord = document.createElement('div');
+    thenWord.className = 'mirror-compare-word prev';
+    thenWord.style.color = colorHex;
+    thenWord.textContent = prev;
+    thenCol.appendChild(thenLabel);
+    thenCol.appendChild(thenWord);
+
+    const nowCol = document.createElement('div');
+    nowCol.className = 'mirror-compare-col';
+    const nowLabel = document.createElement('div');
+    nowLabel.className = 'mirror-compare-when';
+    nowLabel.style.color = colorHex;
+    nowLabel.textContent = 'now';
+    const nowWord = document.createElement('div');
+    nowWord.className = 'mirror-compare-word current';
+    nowWord.style.color = colorHex;
+    nowWord.textContent = current;
+    nowCol.appendChild(nowLabel);
+    nowCol.appendChild(nowWord);
+
+    comp.appendChild(thenCol);
+    comp.appendChild(nowCol);
+    container.appendChild(comp);
+    await md(300);
+    comp.classList.add('visible');
+    await md(3500);
+  } else {
+    // Single answer
+    const ansEl = document.createElement('div');
+    ansEl.className = 'mirror-answer';
+    ansEl.style.color = colorHex;
+    ansEl.textContent = `"${current}"`;
+    container.appendChild(ansEl);
+    await md(300);
+    ansEl.classList.add('visible');
+    await md(3000);
+  }
+}
+
+function clearMirrorContent(container) {
+  const children = Array.from(container.children);
+  children.forEach(c => {
+    c.classList.add('mirror-fade', 'fading');
+  });
+  setTimeout(() => { container.innerHTML = ''; }, 1600);
+}
+
+// ═══════════════════════════════════════════
+//  DISSOLUTION GATES
+//  Each returns a Promise that resolves
+//  when the person completes the inverse action.
+//  No skip. No timeout bypass.
+// ═══════════════════════════════════════════
+
+// Station 1 — Root: PRESS → RELEASE (touch point, then lift)
+async function dissolveRoot(container, journey, colorHex) {
+  const inst = document.createElement('div');
+  inst.className = 'dissolve-instruction';
+  inst.style.color = colorHex;
+  inst.textContent = 'Touch where you placed it. Then release.';
+  container.appendChild(inst);
+  await md(300);
+  inst.classList.add('visible');
+
+  const bodyPt = journey.points.find(p => p.index === 1);
+  const dotEl = document.createElement('div');
+  dotEl.className = 'dissolve-body-point';
+  dotEl.style.left = (bodyPt ? (bodyPt.x * 100) : 50) + '%';
+  dotEl.style.top = (bodyPt ? (bodyPt.y * 100) : 50) + '%';
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:relative;width:min(180px,40vw);height:min(200px,30vh);margin:16px auto;';
+  wrapper.appendChild(dotEl);
+  container.appendChild(wrapper);
+
+  return new Promise(resolve => {
+    let touching = false;
+    const onStart = (e) => {
+      e.preventDefault();
+      touching = true;
+      dotEl.style.boxShadow = '0 0 40px rgba(192,57,43,0.6), 0 0 80px rgba(192,57,43,0.3)';
+      dotEl.style.transform = 'translate(-50%,-50%) scale(1.3)';
+    };
+    const onEnd = () => {
+      if (!touching) return;
+      touching = false;
+      haptic(80);
+      dotEl.style.opacity = '0';
+      dotEl.style.transform = 'translate(-50%,-50%) scale(2)';
+      inst.classList.remove('visible');
+      setTimeout(resolve, 800);
+    };
+    wrapper.addEventListener('touchstart', onStart, { passive: false });
+    wrapper.addEventListener('touchend', onEnd);
+    wrapper.addEventListener('mousedown', onStart);
+    wrapper.addEventListener('mouseup', onEnd);
+  });
+}
+
+// Station 2 — Sacral: FOLLOW → LET GO (don't touch drifting word)
+async function dissolveSacral(container, word, colorHex) {
+  const inst = document.createElement('div');
+  inst.className = 'dissolve-instruction';
+  inst.style.color = colorHex;
+  inst.textContent = 'Let the word go.';
+  container.appendChild(inst);
+  await md(300);
+  inst.classList.add('visible');
+  await md(1500);
+
+  const driftEl = document.createElement('div');
+  driftEl.className = 'dissolve-drift-word';
+  driftEl.style.color = colorHex;
+  driftEl.textContent = word;
+  driftEl.style.left = '50%';
+  driftEl.style.top = '50%';
+  driftEl.style.transform = 'translate(-50%, -50%)';
+  container.style.position = 'relative';
+  container.appendChild(driftEl);
+
+  return new Promise(resolve => {
+    let elapsed = 0;
+    let resetMsg = null;
+    const dur = 8000;
+    const startT = Date.now();
+    let touched = false;
+
+    const onTouch = (e) => {
+      e.preventDefault();
+      touched = true;
+      driftEl.style.left = '50%';
+      driftEl.style.top = '50%';
+      driftEl.style.transform = 'translate(-50%, -50%)';
+      if (!resetMsg) {
+        resetMsg = document.createElement('div');
+        resetMsg.className = 'dissolve-reset-msg';
+        resetMsg.style.color = colorHex;
+        resetMsg.textContent = 'still following';
+        container.appendChild(resetMsg);
+      }
+      resetMsg.classList.add('visible');
+      setTimeout(() => { resetMsg?.classList.remove('visible'); touched = false; }, 2000);
+    };
+
+    driftEl.addEventListener('touchstart', onTouch, { passive: false });
+    driftEl.addEventListener('mousedown', onTouch);
+
+    let driftAngle = Math.random() * Math.PI * 2;
+    const driftSpeed = 0.3;
+
+    const interval = setInterval(() => {
+      if (touched) return;
+      elapsed = Date.now() - startT;
+      const px = 50 + Math.cos(driftAngle) * (elapsed / dur) * 35;
+      const py = 50 + Math.sin(driftAngle) * (elapsed / dur) * 20;
+      driftEl.style.left = px + '%';
+      driftEl.style.top = py + '%';
+
+      if (elapsed >= dur) {
+        clearInterval(interval);
+        driftEl.style.opacity = '0';
+        inst.classList.remove('visible');
+        haptic(80);
+        setTimeout(resolve, 1200);
+      }
+    }, 50);
+  });
+}
+
+// Station 3 — Solar: BUILD → DON'T ENGAGE (resist tapping energies)
+async function dissolveSolar(container, colorHex) {
+  const inst = document.createElement('div');
+  inst.className = 'dissolve-instruction';
+  inst.style.color = colorHex;
+  inst.textContent = 'Don\'t engage.';
+  container.appendChild(inst);
+  await md(300);
+  inst.classList.add('visible');
+
+  // Create tempting energy particles
+  const field = document.createElement('div');
+  field.style.cssText = 'position:relative;width:100%;height:min(200px,30vh);margin:16px 0;overflow:hidden;';
+  container.appendChild(field);
+
+  const particles = [];
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    const size = 10 + Math.random() * 14;
+    p.style.cssText = `position:absolute;width:${size}px;height:${size}px;border-radius:50%;background:${colorHex};box-shadow:0 0 ${size}px ${colorHex};opacity:0.6;cursor:pointer;transition:opacity 0.3s;`;
+    p.style.left = (10 + Math.random() * 80) + '%';
+    p.style.top = (10 + Math.random() * 80) + '%';
+    field.appendChild(p);
+    particles.push({ el: p, baseX: parseFloat(p.style.left), baseY: parseFloat(p.style.top), phase: Math.random() * Math.PI * 2, speed: 0.5 + Math.random() * 1.5 });
+  }
+
+  // Animate particles — they drift and pulse, begging to be tapped
+  let driftFrame = null;
+  const startT = Date.now();
+  function animateParticles() {
+    const t = (Date.now() - startT) / 1000;
+    particles.forEach(p => {
+      const dx = Math.sin(t * p.speed + p.phase) * 8;
+      const dy = Math.cos(t * p.speed * 0.7 + p.phase) * 6;
+      p.el.style.left = (p.baseX + dx) + '%';
+      p.el.style.top = (p.baseY + dy) + '%';
+      p.el.style.opacity = (0.4 + 0.3 * Math.sin(t * 2 + p.phase)).toFixed(2);
+    });
+    driftFrame = requestAnimationFrame(animateParticles);
+  }
+  driftFrame = requestAnimationFrame(animateParticles);
+
+  return new Promise(resolve => {
+    const required = 6000;
+    let cleanStart = Date.now();
+    let resetMsg = null;
+
+    const onTap = (e) => {
+      e.preventDefault();
+      cleanStart = Date.now();
+
+      // Flash all particles — the engagement feeds them
+      particles.forEach(p => { p.el.style.opacity = '1'; });
+
+      if (!resetMsg) {
+        resetMsg = document.createElement('div');
+        resetMsg.className = 'dissolve-reset-msg';
+        resetMsg.style.color = colorHex;
+        resetMsg.textContent = 'still building';
+        container.appendChild(resetMsg);
+      }
+      resetMsg.classList.add('visible');
+      setTimeout(() => { resetMsg?.classList.remove('visible'); }, 2000);
+    };
+
+    field.addEventListener('touchstart', onTap, { passive: false });
+    field.addEventListener('mousedown', onTap);
+    // Also catch taps on the container itself (outside particles)
+    container.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.dissolve-instruction')) return;
+      if (field.contains(e.target) || e.target === field) onTap(e);
+    }, { passive: false });
+
+    const checkInterval = setInterval(() => {
+      if (Date.now() - cleanStart >= required) {
+        clearInterval(checkInterval);
+        if (driftFrame) cancelAnimationFrame(driftFrame);
+        field.removeEventListener('touchstart', onTap);
+        field.removeEventListener('mousedown', onTap);
+        haptic(80);
+
+        // Particles fade and dissolve
+        particles.forEach((p, i) => {
+          setTimeout(() => { p.el.style.opacity = '0'; }, i * 100);
+        });
+        inst.classList.remove('visible');
+        setTimeout(resolve, 1000);
+      }
+    }, 100);
+  });
+}
+
+// Station 4 — Heart: OPEN → CLOSE (pinch-in or triple tap)
+async function dissolveHeart(container, name, colorHex) {
+  const inst = document.createElement('div');
+  inst.className = 'dissolve-instruction';
+  inst.style.color = colorHex;
+  inst.textContent = 'Let the recognition fold back into you.';
+  container.appendChild(inst);
+  await md(300);
+  inst.classList.add('visible');
+  await md(1200);
+
+  const wordEl = document.createElement('div');
+  wordEl.className = 'dissolve-pinch-word';
+  wordEl.style.color = colorHex;
+  wordEl.textContent = name;
+  container.appendChild(wordEl);
+
+  return new Promise(resolve => {
+    let spacing = 0.5;
+    let tapCount = 0;
+    let lastPinchDist = null;
+
+    const onTouchMove = (e) => {
+      if (e.touches.length < 2) return;
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (lastPinchDist !== null) {
+        const delta = (lastPinchDist - dist) * 0.003;
+        spacing = Math.max(0, spacing - delta);
+        wordEl.style.letterSpacing = spacing + 'em';
+      }
+      lastPinchDist = dist;
+      if (spacing <= 0.02) finish();
+    };
+
+    const onTouchEnd = () => { lastPinchDist = null; };
+
+    // Fallback: triple tap compresses
+    const onTap = () => {
+      tapCount++;
+      spacing = Math.max(0, 0.5 - tapCount * 0.17);
+      wordEl.style.letterSpacing = spacing + 'em';
+      if (tapCount >= 3) finish();
+    };
+
+    function finish() {
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      wordEl.removeEventListener('click', onTap);
+      wordEl.removeEventListener('touchend', onTap);
+      haptic(80);
+      wordEl.style.opacity = '0';
+      wordEl.style.letterSpacing = '-0.1em';
+      inst.classList.remove('visible');
+      setTimeout(resolve, 800);
+    }
+
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd);
+    wordEl.addEventListener('click', onTap);
+  });
+}
+
+// Station 5 — Throat: SPEAK → SILENCE (10s of nothing)
+async function dissolveThroat(container, colorHex) {
+  const inst = document.createElement('div');
+  inst.className = 'dissolve-instruction';
+  inst.style.color = colorHex;
+  inst.textContent = 'Now let the silence hold it.';
+  container.appendChild(inst);
+  await md(300);
+  inst.classList.add('visible');
+
+  // Dip the Om to near-silence
+  omSetGain(0.02, 3);
+
+  // 10 seconds of nothing. The hardest gate.
+  await md(10000);
+
+  // The silence held it
+  inst.textContent = '';
+  const held = document.createElement('div');
+  held.className = 'dissolve-instruction';
+  held.style.color = colorHex;
+  held.textContent = 'The silence already held it.';
+  container.appendChild(held);
+  await md(300);
+  held.classList.add('visible');
+  haptic(80);
+
+  // Restore Om
+  omSetGain(0.10, 2);
+  await md(2000);
+  inst.classList.remove('visible');
+  held.classList.remove('visible');
+}
+
+// Station 6 — Third Eye: STILL → CLOSE EYES (close physical eyes so third eye opens)
+async function dissolveThirdEye(container, colorHex) {
+  const inst = document.createElement('div');
+  inst.className = 'dissolve-instruction';
+  inst.style.color = colorHex;
+  inst.textContent = 'Close your eyes.';
+  container.appendChild(inst);
+  await md(300);
+  inst.classList.add('visible');
+  await md(2000);
+
+  const sub = document.createElement('div');
+  sub.className = 'dissolve-still-hint';
+  sub.style.color = colorHex;
+  sub.textContent = 'your third eye doesn\'t need these ones';
+  container.appendChild(sub);
+  await md(300);
+  sub.classList.add('visible');
+
+  return new Promise(resolve => {
+    const required = 8000;
+    let cleanStart = Date.now();
+    let resetMsg = null;
+
+    const onTap = (e) => {
+      if (e.target.closest('.zoom-btn')) return;
+      e.preventDefault();
+      cleanStart = Date.now();
+
+      if (!resetMsg) {
+        resetMsg = document.createElement('div');
+        resetMsg.className = 'dissolve-reset-msg';
+        resetMsg.style.color = colorHex;
+        resetMsg.textContent = 'still looking';
+        container.appendChild(resetMsg);
+      }
+      resetMsg.classList.add('visible');
+      setTimeout(() => { resetMsg?.classList.remove('visible'); }, 2000);
+    };
+
+    container.addEventListener('touchstart', onTap, { passive: false });
+    container.addEventListener('mousedown', onTap);
+
+    const checkInterval = setInterval(() => {
+      if (Date.now() - cleanStart >= required) {
+        clearInterval(checkInterval);
+        container.removeEventListener('touchstart', onTap);
+        container.removeEventListener('mousedown', onTap);
+
+        // Three gentle haptic pulses — signal to open eyes
+        haptic(40);
+        setTimeout(() => haptic(40), 300);
+        setTimeout(() => haptic(40), 600);
+
+        // When they open their eyes, everything is gone
+        inst.classList.remove('visible');
+        sub.classList.remove('visible');
+        if (resetMsg) resetMsg.classList.remove('visible');
+
+        // Brief message — what the third eye saw
+        setTimeout(() => {
+          const seen = document.createElement('div');
+          seen.className = 'dissolve-instruction';
+          seen.style.color = colorHex;
+          seen.textContent = 'What did you see?';
+          container.appendChild(seen);
+          setTimeout(() => seen.classList.add('visible'), 100);
+          setTimeout(() => {
+            seen.classList.remove('visible');
+            setTimeout(resolve, 800);
+          }, 3000);
+        }, 400);
+      }
+    }, 100);
+  });
+}
+
+// Station 7 — Crown: RECEIVE → OFFER (swipe up or hold 3s)
+async function dissolveCrown(container, sentence, colorHex) {
+  const inst = document.createElement('div');
+  inst.className = 'dissolve-instruction';
+  inst.style.color = colorHex;
+  inst.textContent = 'Now offer it back.';
+  container.appendChild(inst);
+  await md(300);
+  inst.classList.add('visible');
+  await md(1200);
+
+  const wordEl = document.createElement('div');
+  wordEl.style.cssText = `font: italic 400 0.9375rem/1.5 'Lora', serif; text-align:center; color:${colorHex}; opacity:0.85; transition: transform 1.5s ease, opacity 1.5s ease; cursor:pointer;`;
+  wordEl.textContent = `"${sentence}"`;
+  container.appendChild(wordEl);
+
+  return new Promise(resolve => {
+    let startY = null;
+    let holdStart = null;
+
+    const onTouchStart = (e) => {
+      startY = e.touches[0].clientY;
+      holdStart = Date.now();
+    };
+
+    const onTouchMove = (e) => {
+      if (startY === null) return;
+      const dy = startY - e.touches[0].clientY;
+      if (dy > 60) {
+        finish();
+      }
+    };
+
+    const onTouchEnd = () => { startY = null; };
+
+    // Fallback: hold 3s
+    const holdCheck = setInterval(() => {
+      if (holdStart && Date.now() - holdStart >= 3000) {
+        clearInterval(holdCheck);
+        finish();
+      }
+    }, 100);
+
+    function finish() {
+      clearInterval(holdCheck);
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      wordEl.removeEventListener('mousedown', onMouseDown);
+      haptic(80);
+      wordEl.style.transform = 'translateY(-60px)';
+      wordEl.style.opacity = '0';
+      inst.classList.remove('visible');
+      setTimeout(resolve, 1200);
+    }
+
+    // Mouse fallback
+    const onMouseDown = () => {
+      holdStart = Date.now();
+    };
+
+    container.addEventListener('touchstart', onTouchStart, { passive: true });
+    container.addEventListener('touchmove', onTouchMove, { passive: true });
+    container.addEventListener('touchend', onTouchEnd);
+    wordEl.addEventListener('mousedown', onMouseDown);
+  });
+}
+
+// Station 8 — Soul: HOLD → RELEASE (press-hold 3s then lift)
+async function dissolveSoul(container, colorHex) {
+  const inst = document.createElement('div');
+  inst.className = 'dissolve-instruction';
+  inst.style.color = colorHex;
+  inst.textContent = 'Release what you held.';
+  container.appendChild(inst);
+  await md(300);
+  inst.classList.add('visible');
+  await md(1200);
+
+  const circle = document.createElement('div');
+  circle.className = 'dissolve-hold-circle';
+  container.appendChild(circle);
+  await md(300);
+  circle.classList.add('visible');
+
+  const hint = document.createElement('div');
+  hint.className = 'dissolve-still-hint';
+  hint.style.color = colorHex;
+  hint.textContent = 'press and hold';
+  container.appendChild(hint);
+  await md(500);
+  hint.classList.add('visible');
+
+  return new Promise(resolve => {
+    let holdStart = null;
+    let ready = false;
+
+    const onStart = (e) => {
+      e.preventDefault();
+      holdStart = Date.now();
+      circle.classList.add('intense');
+    };
+
+    const onEnd = () => {
+      if (ready) {
+        // RELEASE — the dissolution
+        haptic(80);
+        circle.style.transform = 'scale(3)';
+        circle.style.opacity = '0';
+        inst.classList.remove('visible');
+        hint.classList.remove('visible');
+
+        // Ripple burst
+        for (let i = 0; i < 3; i++) {
+          const rip = document.createElement('div');
+          rip.className = 'dissolve-ripple';
+          rip.style.cssText = `left:50%;top:50%;width:60px;height:60px;transform:translate(-50%,-50%);animation-delay:${i * 0.2}s`;
+          container.appendChild(rip);
+        }
+
+        setTimeout(resolve, 1500);
+      } else {
+        holdStart = null;
+        circle.classList.remove('intense');
+      }
+    };
+
+    const holdCheck = setInterval(() => {
+      if (holdStart && Date.now() - holdStart >= 3000 && !ready) {
+        ready = true;
+        hint.textContent = 'now let go';
+        haptic(30);
+      }
+    }, 100);
+
+    circle.addEventListener('touchstart', onStart, { passive: false });
+    circle.addEventListener('touchend', onEnd);
+    circle.addEventListener('mousedown', onStart);
+    circle.addEventListener('mouseup', onEnd);
+  });
+}
+
+// Dissolution dispatcher — calls the right function per station index
+async function runDissolution(container, stationIndex, journey, prevAnswers, colorHex) {
+  const keys = ['tol-word-2', 'tol-word-4', 'tol-word-5', 'tol-word-7'];
+
+  switch (stationIndex) {
+    case 0: return dissolveRoot(container, journey, colorHex);
+    case 1: {
+      const word = getCurrentAnswer(journey, 'tol-word-2') || 'desire';
+      return dissolveSacral(container, word, colorHex);
+    }
+    case 2: return dissolveSolar(container, colorHex);
+    case 3: {
+      const name = getCurrentAnswer(journey, 'tol-word-4') || 'love';
+      return dissolveHeart(container, name, colorHex);
+    }
+    case 4: return dissolveThroat(container, colorHex);
+    case 5: return dissolveThirdEye(container, colorHex);
+    case 6: {
+      const sentence = getCurrentAnswer(journey, 'tol-word-7') || 'keep going';
+      return dissolveCrown(container, sentence, colorHex);
+    }
+    case 7: return dissolveSoul(container, colorHex);
+  }
+}
+
+async function initMirror() {
+  const container = document.getElementById('mirrorContent');
+  const journey = loadJourneyData();
+  const prevAnswers = loadPrevAnswers();
+
+  // Start canvas
+  mResize();
+  mCvs.classList.add('visible');
+  mDotAlpha = 0;
+  mDotOrbitAngle = 0;
+  mirrorAnimFrame = requestAnimationFrame(mAnimate);
+
+  // Entrance — 2s black + Om
+  await md(2000);
+
+  // Bindu fades in (white)
+  mDotTargetColor = CHAKRA_COLORS.white.rgb;
+  mDotColor = [...CHAKRA_COLORS.white.rgb];
+  mDotAlpha = 1;
+  await md(1500);
+
+  // ── EIGHT STATIONS ──
+  for (let i = 0; i < STATIONS.length; i++) {
+    const s = STATIONS[i];
+    const ck = STATION_ORDER[i];
+    const color = CHAKRA_COLORS[ck];
+
+    // Transition dot color
+    mDotTargetColor = [...color.rgb];
+
+    // Om gain ramps gently across stations
+    omSetGain(0.08 + (i / STATIONS.length) * 0.05, 4);
+
+    // Label
+    const labelEl = document.createElement('div');
+    labelEl.className = 'mirror-label';
+    labelEl.style.color = color.hex;
+    labelEl.textContent = s.label;
+    container.appendChild(labelEl);
+    await md(300);
+    labelEl.classList.add('visible');
+    await md(1800);
+
+    // Restatement — written by the Bindu
+    await writeChars(container, s.restate, color.hex, 'mirror-write', 22);
+    await md(800);
+
+    // Meaning
+    await writeChars(container, s.meaning, color.hex, 'mirror-write-meaning', 22);
+    await md(600);
+
+    // Answer (if available)
+    const current = getCurrentAnswer(journey, s.key);
+    const prev = s.key ? prevAnswers[s.key] : null;
+    if (current) {
+      await showAnswer(container, current, prev, color.hex);
+    } else {
+      await md(1500);
+    }
+
+    // Absorb reflection — fade everything
+    clearMirrorContent(container);
+    await md(1800);
+
+    // ── DISSOLUTION GATE ──
+    // The inverse action. No skip.
+    await runDissolution(container, i, journey, prevAnswers, color.hex);
+
+    // Clear dissolution UI
+    clearMirrorContent(container);
+    await md(2000);
+  }
+
+  // ── THE RECOGNITION ──
+  // Lands between dissolutions and the closing.
+  // "Everything you placed in this space is already moving toward you."
+
+  omSetGain(0.14, 3);
+  await md(3000);
+
+  mDotTargetColor = [...CHAKRA_COLORS.white.rgb];
+  await writeChars(container, 'Everything you placed in this space is already moving toward you.', '#FFFFFF', 'mirror-closing', 14);
+  await md(7000);
+
+  const isRepeat = prevAnswers && Object.keys(prevAnswers).length > 0;
+
+  if (isRepeat) {
+    await writeChars(container, 'You\'ve seen it before. The words changed. What they called to you didn\'t.', '#FFFFFF', 'mirror-closing', 14);
+    await md(5000);
+  }
+
+  clearMirrorContent(container);
+  await md(2500);
+
+  // ── CLOSING SEQUENCE ──
+
+  // White — transcendence
+  mDotTargetColor = [...CHAKRA_COLORS.white.rgb];
+  omSetGain(0.16, 2);
+
+  await writeChars(container, 'What never changes is what was never given.', '#FFFFFF', 'mirror-closing', 14);
+  await md(4000);
+  clearMirrorContent(container);
+  await md(2000);
+
+  // Knowledge — violet → white
+  mDotTargetColor = [...CHAKRA_COLORS.crown.rgb];
+  await writeChars(container, 'You have always had the Knowledge.', '#A569BD', 'mirror-closing-big', 14);
+  await md(500);
+  mDotTargetColor = [...CHAKRA_COLORS.white.rgb];
+  await md(2000);
+
+  // Will — white steady (stacks below Knowledge)
+  omSetGain(0.18, 2);
+  await writeChars(container, 'You have always been the Will.', '#FFFFFF', 'mirror-closing-big', 14);
+  await md(2500);
+
+  // Action — white → red (stacks below Will)
+  mDotTargetColor = [...CHAKRA_COLORS.white.rgb];
+  await writeChars(container, 'Now You Become the Action.', '#FFFFFF', 'mirror-closing-big', 12);
+  await md(1000);
+  mDotTargetColor = [...CHAKRA_COLORS.root.rgb];
+  await md(3000);
+
+  // Beat — the triangle is visible. Knowledge. Will. Action. All three.
+  await md(2000);
+
+  // Go Play — red, drops below the triangle. The invitation to complete it.
+  omSetGain(0.20, 1);
+  const goPlay = document.createElement('div');
+  goPlay.className = 'mirror-goplay';
+  goPlay.style.color = CHAKRA_COLORS.root.hex;
+  goPlay.textContent = 'Go Play';
+  container.appendChild(goPlay);
+  await md(500);
+  goPlay.classList.add('visible');
+  haptic(80);
+  await md(6000);
+
+  // Save answers for next visit
+  savePrevAnswers(journey);
+
+  // Fade and transition
+  clearMirrorContent(container);
+  mDotAlpha = 0;
+  omSetGain(0.06, 6);
+  await md(2500);
+
+  transitionPhase('phase6', 'phase7');
+}
+
+
+// ═══════════════════════════════════════════
+//  PHASE 7: INFINITE BINDU LOOP
+//  The love never stops moving.
+//  dot → line → circle → infinity → heart → "I Love You" → dot → repeat
+// ═══════════════════════════════════════════
+
+const loopCvs = document.getElementById('loopCanvas');
+const loopCtx = loopCvs.getContext('2d');
+let lpW, lpH, lpCx, lpCy, lpR;
+let lpTrail = [], lpMaxTrail = 300;
+let lpStartTime = null, lpAnimFrame = null;
+let lpAngle = 0, lpLastNow = 0;
+
+function lpResize() {
+  const dpr = window.devicePixelRatio || 1;
+  lpW = window.innerWidth; lpH = window.innerHeight;
+  loopCvs.width = lpW * dpr; loopCvs.height = lpH * dpr;
+  loopCvs.style.width = lpW + 'px'; loopCvs.style.height = lpH + 'px';
+  loopCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  lpCx = lpW / 2; lpCy = lpH / 2;
+  lpR = Math.min(lpW, lpH) * 0.24;
+}
+
+function lpAddTrail(x, y) {
+  lpTrail.push({ x, y });
+  while (lpTrail.length > lpMaxTrail) lpTrail.shift();
+}
+
+function lpDrawTrail(alpha) {
+  const len = lpTrail.length;
+  if (len < 2) return;
+  loopCtx.save();
+  loopCtx.lineCap = 'round';
+  for (let i = 1; i < len; i++) {
+    const age = i / len;
+    loopCtx.globalAlpha = age * alpha * 0.55;
+    loopCtx.strokeStyle = '#C0392B';
+    loopCtx.lineWidth = 1 + age * 0.5;
+    loopCtx.beginPath();
+    loopCtx.moveTo(lpTrail[i-1].x, lpTrail[i-1].y);
+    loopCtx.lineTo(lpTrail[i].x, lpTrail[i].y);
+    loopCtx.stroke();
+  }
+  loopCtx.restore();
+}
+
+function lpDrawDot(x, y, radius, alpha) {
+  if (alpha <= 0) return;
+  loopCtx.save();
+  loopCtx.globalAlpha = alpha;
+  const g = loopCtx.createRadialGradient(x, y, 0, x, y, radius * 3.5);
+  g.addColorStop(0, 'rgba(192,57,43,0.25)');
+  g.addColorStop(1, 'rgba(192,57,43,0)');
+  loopCtx.fillStyle = g;
+  loopCtx.beginPath();
+  loopCtx.arc(x, y, radius * 3.5, 0, Math.PI * 2);
+  loopCtx.fill();
+  loopCtx.fillStyle = '#C0392B';
+  loopCtx.beginPath();
+  loopCtx.arc(x, y, radius, 0, Math.PI * 2);
+  loopCtx.fill();
+  loopCtx.restore();
+}
+
+const CYCLE = 76; // seconds per loop cycle (matches song duration)
+
+const LP = {
+  DOT_END: 3,
+  LINE_END: 5.5,
+  CIRCLE_END: 13,
+  LEMN_END: 23,
+  MORPH_END: 31,
+  HEART_END: 37,
+  CONTRACT_END: 43,
+  TRAVEL_END: 46,
+  TRI_SPLIT: 48,
+  TRI_SPLIT_END: 51,
+  TRI_HOLD: 58,
+  TRI_MERGE: 61,
+  TRAVEL_BACK: 64,
+  REST_END: CYCLE
+};
+
+function lpLerp(a, b, t) { return a + (b - a) * t; }
+
+function lpGetTempleAnchor() {
+  return { x: lpCx, y: lpH - Math.max(lpH * 0.1, 50) };
+}
+
+function lpGetTriangleVertices() {
+  const anchor = lpGetTempleAnchor();
+  const triH = Math.min(lpH * 0.35, lpR * 1.8);
+  const triW = Math.min(lpW * 0.6, lpR * 2.2);
+  return {
+    knowledge: { x: anchor.x, y: anchor.y - triH },
+    will:      { x: anchor.x - triW / 2, y: anchor.y },
+    action:    { x: anchor.x + triW / 2, y: anchor.y },
+    center:    { x: anchor.x, y: anchor.y - triH / 3 }
+  };
+}
+
+function lpPositionLabels() {
+  const tri = lpGetTriangleVertices();
+  const lk = document.getElementById('triLabelKnowledge');
+  const lw = document.getElementById('triLabelWill');
+  const la = document.getElementById('triLabelAction');
+  if (!lk) return;
+  lk.style.left = tri.knowledge.x + 'px';
+  lk.style.top = (tri.knowledge.y - 32) + 'px';
+  lk.style.transform = 'translateX(-50%)';
+  lw.style.left = (tri.will.x - 8) + 'px';
+  lw.style.top = (tri.will.y - 6) + 'px';
+  lw.style.transform = 'translateX(-100%)';
+  la.style.left = (tri.action.x + 8) + 'px';
+  la.style.top = (tri.action.y - 6) + 'px';
+  la.style.transform = 'translateX(0)';
+}
+
+function lpHideLabels() {
+  document.getElementById('triLabelKnowledge')?.classList.remove('visible');
+  document.getElementById('triLabelWill')?.classList.remove('visible');
+  document.getElementById('triLabelAction')?.classList.remove('visible');
+}
+
+let lpLabelsShown = { k: false, w: false, a: false };
+function lpResetLabelState() {
+  lpLabelsShown = { k: false, w: false, a: false };
+  lpHideLabels();
+}
+
+function lpDrawEdge(x1, y1, x2, y2, alpha) {
+  if (alpha <= 0) return;
+  loopCtx.save();
+  loopCtx.globalAlpha = alpha;
+  loopCtx.strokeStyle = 'rgba(192,57,43,0.25)';
+  loopCtx.lineWidth = 0.5;
+  loopCtx.lineCap = 'round';
+  loopCtx.beginPath(); loopCtx.moveTo(x1, y1); loopCtx.lineTo(x2, y2); loopCtx.stroke();
+  const mg = loopCtx.createLinearGradient(x1, y1, x2, y2);
+  mg.addColorStop(0, 'rgba(192,57,43,0)');
+  mg.addColorStop(0.5, 'rgba(192,57,43,0.06)');
+  mg.addColorStop(1, 'rgba(192,57,43,0)');
+  loopCtx.strokeStyle = mg;
+  loopCtx.lineWidth = 6;
+  loopCtx.stroke();
+  loopCtx.restore();
+}
+
+function initInfiniteLoop() {
+  const seedReturn = document.getElementById('seedReturn');
+  const templeLink = document.getElementById('templeLink');
+  const loopSong = document.getElementById('loopSong');
+
+  // Guard 6 — all auto-revealed on timers
+  // 1.5s: seed return (present tense)
+  setTimeout(() => { seedReturn.classList.add('visible'); }, 1500);
+  // 8s: seed fades
+  setTimeout(() => { seedReturn.classList.remove('visible'); }, 8000);
+  // 10s: loop canvas starts + song begins + Om fades out
+  setTimeout(() => {
+    lpResize();
+    lpPositionLabels();
+    loopCvs.classList.add('visible');
+    lpTrail = [];
+    lpStartTime = null;
+    lpResetLabelState();
+    lpAnimFrame = requestAnimationFrame(lpAnimate);
+
+    // Kill Om drone — fast fade then disconnect
+    if (omMaster && audioCtx) {
+      omMaster.gain.setTargetAtTime(0, audioCtx.currentTime, 1.5);
+      setTimeout(() => {
+        try {
+          omMaster.disconnect();
+          if (omFund) omFund.stop();
+          if (omOct) omOct.stop();
+          if (omSub) omSub.stop();
+        } catch(e) {}
+      }, 6000);
+    }
+
+    // Start the song
+    if (loopSong) {
+      loopSong.volume = 0;
+      loopSong.play().catch(() => {});
+      // Fade song in over 3 seconds
+      let vol = 0;
+      const fadeIn = setInterval(() => {
+        vol = Math.min(vol + 0.02, 0.7);
+        loopSong.volume = vol;
+        if (vol >= 0.7) clearInterval(fadeIn);
+      }, 60);
+    }
+  }, 10000);
+  // Temple link is revealed by the triangle sequence, not on a timer
+}
+
+function lpAnimate(now) {
+  if (!lpStartTime) { lpStartTime = now; lpLastNow = now; }
+  const dt = Math.min((now - lpLastNow) / 1000, 0.05);
+  lpLastNow = now;
+  const elapsed = (now - lpStartTime) / 1000;
+  const t = elapsed % CYCLE;
+
+  // Reset angle at cycle start
+  if (t < LP.DOT_END && t < 0.1) lpAngle = 0;
+
+  loopCtx.clearRect(0, 0, lpW, lpH);
+
+  const templeLink = document.getElementById('templeLink');
+  const anchor = lpGetTempleAnchor();
+  const tri = lpGetTriangleVertices();
+
+  let dotX = lpCx, dotY = lpCy, dotAlpha = 0;
+  let drawMainDot = true;
+
+  // ── DOT ──
+  if (t < LP.DOT_END) {
+    const pulse = 0.6 + 0.4 * Math.sin(t * 1.8);
+    dotAlpha = pulse;
+    lpTrail = []; lpMaxTrail = 300;
+    lpResetLabelState();
+    templeLink.classList.remove('visible');
+    document.getElementById('danceLink').classList.remove('visible');
+
+  // ── LINE ──
+  } else if (t < LP.LINE_END) {
+    const p = easeInOut(clamp((t - LP.DOT_END) / (LP.LINE_END - LP.DOT_END), 0, 1));
+    dotX = lpCx + p * lpR; dotY = lpCy; dotAlpha = 1;
+    lpAddTrail(dotX, dotY);
+
+  // ── CIRCLE ──
+  } else if (t < LP.CIRCLE_END) {
+    const p = clamp((t - LP.LINE_END) / (LP.CIRCLE_END - LP.LINE_END), 0, 1);
+    const angle = p * Math.PI * 2;
+    dotX = lpCx + lpR * Math.cos(angle);
+    dotY = lpCy + lpR * Math.sin(angle);
+    dotAlpha = 1;
+    lpAddTrail(dotX, dotY);
+
+  // ── LEMNISCATE ──
+  } else if (t < LP.LEMN_END) {
+    lpAngle += 1.8 * dt;
+    const [sx, sy] = lemniscateXY(lpAngle, lpR);
+    dotX = lpCx + sx; dotY = lpCy + sy; dotAlpha = 1;
+    lpAddTrail(dotX, dotY);
+
+  // ── MORPH: ∞ → ♥ ──
+  } else if (t < LP.MORPH_END) {
+    const morph = clamp((t - LP.LEMN_END) / (LP.MORPH_END - LP.LEMN_END), 0, 1);
+    lpAngle += 1.8 * dt;
+    const [sx, sy] = morphXY(lpAngle, lpR, morph);
+    dotX = lpCx + sx; dotY = lpCy + sy; dotAlpha = 1;
+    lpAddTrail(dotX, dotY);
+
+  // ── HEART ──
+  } else if (t < LP.HEART_END) {
+    const p = clamp((t - LP.MORPH_END) / (LP.HEART_END - LP.MORPH_END), 0, 1);
+    const speed = 1.8 + easeIn(p) * 2;
+    lpAngle += speed * dt;
+    const [sx, sy] = heartXY(lpAngle, lpR);
+    dotX = lpCx + sx; dotY = lpCy + sy; dotAlpha = 1;
+    lpAddTrail(dotX, dotY);
+    const glowP = easeOut(clamp((t - LP.MORPH_END) / 3, 0, 1));
+    loopCtx.save(); loopCtx.globalAlpha = glowP * 0.15;
+    const g = loopCtx.createRadialGradient(lpCx, lpCy, 0, lpCx, lpCy, lpR * 1.2);
+    g.addColorStop(0, 'rgba(192,57,43,0.3)');
+    g.addColorStop(1, 'rgba(192,57,43,0)');
+    loopCtx.fillStyle = g; loopCtx.fillRect(0, 0, lpW, lpH);
+    loopCtx.restore();
+
+  // ── CONTRACT: spiral from heart's actual end position ──
+  } else if (t < LP.CONTRACT_END) {
+    const localT = t - LP.HEART_END;
+    const dur = LP.CONTRACT_END - LP.HEART_END;
+    const p = easeIn(clamp(localT / dur, 0, 1));
+    // Compute where the heart actually ended on last frame
+    const [hx, hy] = heartXY(lpAngle, lpR);
+    const heartEndDist = Math.sqrt(hx * hx + hy * hy);
+    const heartEndAngle = Math.atan2(hy, hx);
+    const startR = Math.max(heartEndDist, lpR * 0.3);
+    const orbitR = (1 - p) * startR;
+    const angle = heartEndAngle + localT * 1.8;
+    lpMaxTrail = Math.max(Math.floor(300 * (1 - p)), 5);
+    dotX = lpCx + Math.cos(angle) * orbitR;
+    dotY = lpCy + Math.sin(angle) * orbitR;
+    dotAlpha = 0.6 + p * 0.4;
+    lpAddTrail(dotX, dotY);
+
+  // ── TRAVEL TO TEMPLE ──
+  } else if (t < LP.TRAVEL_END) {
+    lpTrail = [];
+    const p = easeInOut(clamp((t - LP.CONTRACT_END) / (LP.TRAVEL_END - LP.CONTRACT_END), 0, 1));
+    dotX = lpLerp(lpCx, anchor.x, p);
+    dotY = lpLerp(lpCy, anchor.y, p);
+    dotAlpha = 0.8;
+    if (p > 0.05 && p < 0.95) {
+      loopCtx.save(); loopCtx.globalAlpha = 0.08;
+      loopCtx.strokeStyle = '#C0392B'; loopCtx.lineWidth = 0.5;
+      loopCtx.setLineDash([2, 4]);
+      loopCtx.beginPath(); loopCtx.moveTo(lpCx, lpCy); loopCtx.lineTo(dotX, dotY); loopCtx.stroke();
+      loopCtx.setLineDash([]);
+      loopCtx.restore();
+    }
+
+  // ── PAUSE AT TEMPLE ──
+  } else if (t < LP.TRI_SPLIT) {
+    lpTrail = [];
+    dotX = anchor.x; dotY = anchor.y;
+    dotAlpha = 0.7 + 0.3 * Math.sin((t - LP.TRAVEL_END) * 3);
+
+  // ── SPLIT: one becomes three ──
+  } else if (t < LP.TRI_SPLIT_END) {
+    lpTrail = []; drawMainDot = false;
+    const p = easeInOut(clamp((t - LP.TRI_SPLIT) / (LP.TRI_SPLIT_END - LP.TRI_SPLIT), 0, 1));
+    if (p < 0.5) lpDrawDot(anchor.x, anchor.y, 4, (1 - p * 2) * 0.5);
+    const kx = lpLerp(anchor.x, tri.knowledge.x, p);
+    const ky = lpLerp(anchor.y, tri.knowledge.y, p);
+    const wx = lpLerp(anchor.x, tri.will.x, p);
+    const wy = lpLerp(anchor.y, tri.will.y, p);
+    const ax = lpLerp(anchor.x, tri.action.x, p);
+    const ay = lpLerp(anchor.y, tri.action.y, p);
+    if (p > 0.02) {
+      loopCtx.save(); loopCtx.globalAlpha = 0.12 * Math.min(p * 3, 1);
+      loopCtx.strokeStyle = '#C0392B'; loopCtx.lineWidth = 0.5;
+      loopCtx.beginPath(); loopCtx.moveTo(anchor.x, anchor.y); loopCtx.lineTo(kx, ky); loopCtx.stroke();
+      loopCtx.beginPath(); loopCtx.moveTo(anchor.x, anchor.y); loopCtx.lineTo(wx, wy); loopCtx.stroke();
+      loopCtx.beginPath(); loopCtx.moveTo(anchor.x, anchor.y); loopCtx.lineTo(ax, ay); loopCtx.stroke();
+      loopCtx.restore();
+    }
+    const ds = 2.5 + p * 1.5;
+    lpDrawDot(kx, ky, ds, p); lpDrawDot(wx, wy, ds, p); lpDrawDot(ax, ay, ds, p);
+
+  // ── TRIANGLE HOLD: vertices + edges + labels ──
+  } else if (t < LP.TRI_HOLD) {
+    lpTrail = []; drawMainDot = false;
+    const holdT = t - LP.TRI_SPLIT_END;
+    const pulse = 0.85 + 0.15 * Math.sin(holdT * 1.8);
+    lpDrawDot(tri.knowledge.x, tri.knowledge.y, 4, pulse);
+    lpDrawDot(tri.will.x, tri.will.y, 4, pulse);
+    lpDrawDot(tri.action.x, tri.action.y, 4, pulse);
+    const edgeAlpha = easeOut(clamp(holdT / 1.5, 0, 1));
+    lpDrawEdge(tri.knowledge.x, tri.knowledge.y, tri.will.x, tri.will.y, edgeAlpha);
+    lpDrawEdge(tri.knowledge.x, tri.knowledge.y, tri.action.x, tri.action.y, edgeAlpha);
+    lpDrawEdge(tri.will.x, tri.will.y, tri.action.x, tri.action.y, edgeAlpha);
+    const binduAlpha = easeOut(clamp((holdT - 0.8) / 1, 0, 1));
+    if (binduAlpha > 0) {
+      loopCtx.save(); loopCtx.globalAlpha = binduAlpha * 0.08;
+      const cg = loopCtx.createRadialGradient(tri.center.x, tri.center.y, 0, tri.center.x, tri.center.y, lpR * 0.35);
+      cg.addColorStop(0, 'rgba(192,57,43,0.3)'); cg.addColorStop(1, 'rgba(192,57,43,0)');
+      loopCtx.fillStyle = cg; loopCtx.fillRect(0, 0, lpW, lpH);
+      loopCtx.restore();
+      lpDrawDot(tri.center.x, tri.center.y, 3, binduAlpha * 0.7);
+    }
+    if (holdT > 1.5 && !lpLabelsShown.k) { lpLabelsShown.k = true; document.getElementById('triLabelKnowledge')?.classList.add('visible'); }
+    if (holdT > 3 && !lpLabelsShown.w) { lpLabelsShown.w = true; document.getElementById('triLabelWill')?.classList.add('visible'); }
+    if (holdT > 4.5 && !lpLabelsShown.a) { lpLabelsShown.a = true; document.getElementById('triLabelAction')?.classList.add('visible'); }
+
+  // ── MERGE: three return to anchor ──
+  } else if (t < LP.TRI_MERGE) {
+    lpTrail = []; drawMainDot = false;
+    const p = easeInOut(clamp((t - LP.TRI_HOLD) / (LP.TRI_MERGE - LP.TRI_HOLD), 0, 1));
+    if (p > 0.05) lpHideLabels();
+    const edgeFade = 1 - easeIn(clamp(p / 0.35, 0, 1));
+    if (edgeFade > 0) {
+      lpDrawEdge(tri.knowledge.x, tri.knowledge.y, tri.will.x, tri.will.y, edgeFade);
+      lpDrawEdge(tri.knowledge.x, tri.knowledge.y, tri.action.x, tri.action.y, edgeFade);
+      lpDrawEdge(tri.will.x, tri.will.y, tri.action.x, tri.action.y, edgeFade);
+    }
+    const kx = lpLerp(tri.knowledge.x, anchor.x, p);
+    const ky = lpLerp(tri.knowledge.y, anchor.y, p);
+    const wx = lpLerp(tri.will.x, anchor.x, p);
+    const wy = lpLerp(tri.will.y, anchor.y, p);
+    const ax = lpLerp(tri.action.x, anchor.x, p);
+    const ay = lpLerp(tri.action.y, anchor.y, p);
+    const ds = 4 * (1 - p * 0.5);
+    lpDrawDot(kx, ky, ds, 1 - p * 0.3); lpDrawDot(wx, wy, ds, 1 - p * 0.3); lpDrawDot(ax, ay, ds, 1 - p * 0.3);
+    const mergeAlpha = easeOut(clamp((p - 0.6) / 0.4, 0, 1));
+    if (mergeAlpha > 0) lpDrawDot(anchor.x, anchor.y, 3 + mergeAlpha * 1.5, mergeAlpha);
+    if (p > 0.8 && !templeLink.classList.contains('visible')) templeLink.classList.add('visible');
+    if (p > 0.9) document.getElementById('danceLink').classList.add('visible');
+
+  // ── TRAVEL BACK TO CENTER ──
+  } else if (t < LP.TRAVEL_BACK) {
+    lpTrail = [];
+    const p = easeInOut(clamp((t - LP.TRI_MERGE) / (LP.TRAVEL_BACK - LP.TRI_MERGE), 0, 1));
+    dotX = lpLerp(anchor.x, lpCx, p);
+    dotY = lpLerp(anchor.y, lpCy, p);
+    dotAlpha = 0.8;
+    if (p > 0.05 && p < 0.95) {
+      loopCtx.save(); loopCtx.globalAlpha = 0.06;
+      loopCtx.strokeStyle = '#C0392B'; loopCtx.lineWidth = 0.5;
+      loopCtx.setLineDash([2, 4]);
+      loopCtx.beginPath(); loopCtx.moveTo(anchor.x, anchor.y); loopCtx.lineTo(dotX, dotY); loopCtx.stroke();
+      loopCtx.setLineDash([]);
+      loopCtx.restore();
+    }
+
+  // ── REST ──
+  } else {
+    const restP = (t - LP.TRAVEL_BACK) / (LP.REST_END - LP.TRAVEL_BACK);
+    const pulse = 0.5 + 0.3 * Math.sin(restP * Math.PI * 1.5);
+    dotAlpha = pulse;
+    lpTrail = [];
+  }
+
+  // Draw trail + dot for non-triangle phases
+  if (drawMainDot) {
+    lpDrawTrail(0.6);
+    lpDrawDot(dotX, dotY, 4, dotAlpha);
+  }
+
+  lpAnimFrame = requestAnimationFrame(lpAnimate);
+}
+
+
+// ─── ZOOM ───
+
+document.getElementById('zoomIn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fontScale = Math.min(fontScale + 0.1, 1.45);
+  document.documentElement.style.fontSize = (fontScale * 100) + '%';
+});
+document.getElementById('zoomOut')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fontScale = Math.max(fontScale - 0.1, 0.85);
+  document.documentElement.style.fontSize = (fontScale * 100) + '%';
+});
+
+
+// ─── INIT ───
+
+document.addEventListener('DOMContentLoaded', () => {
+  initGate();
+});
+
+window.addEventListener('resize', () => {
+  if (currentPhase === 'phase2') ptResize();
+  if (currentPhase === 'phase6') mResize();
+  if (currentPhase === 'phase7') { lpResize(); lpPositionLabels(); }
+});
+
+</script>
+</body>
+</html>

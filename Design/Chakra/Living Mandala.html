@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Living Mandala</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:#020205;}
+body{display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;min-height:100vh;}
+@keyframes breathe{0%,100%{opacity:.82;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes emerge{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.ph-wrap{padding:20px;display:flex;align-items:center;justify-content:center;}
+.ph-body{width:390px;height:844px;background:#0C0A12;border-radius:52px;position:relative;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.04);}
+.ph-body::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:44px;background:#181620;border-radius:2px 0 0 2px;box-shadow:0 60px 0 #181620,0 108px 0 #181620;}
+.ph-body::after{content:'';position:absolute;right:-3px;top:194px;width:3px;height:76px;background:#181620;border-radius:0 2px 2px 0;}
+.ph-screen{position:absolute;inset:10px;border-radius:43px;overflow:hidden;background:#06040A;}
+.ph-island{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:200;}
+.ph-content{position:absolute;inset:0;top:58px;overflow:hidden;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────────────────────────────────
+const BODY_W = 370, BODY_H = 680;
+const ROOT_W = 370, ROOT_H = 680;
+const CHAKRA_COLORS = ['#A83232','#C45A18','#C49B17','#1A8060','#1E6EA0','#4A3AAB','#8A3AB5'];
+
+// Pre-compute 108 dot positions (normalized: outer ring radius = 1)
+const DOTS_108 = (() => {
+  const d = [];
+  [[40,1.0],[32,.735],[24,.484],[12,.281]].forEach(([count,r]) => {
+    for (let i=0;i<count;i++) {
+      const a=(i/count)*Math.PI*2-Math.PI/2;
+      d.push({id:d.length, nx:r*Math.cos(a), ny:r*Math.sin(a)});
+    }
+  });
+  return d;
+})();
+
+const safe = (key, def) => { try { const v=localStorage.getItem(key); return v?JSON.parse(v):def; } catch { return def; } };
+
+function readData() {
+  return {
+    bodyMap:   safe('game_bodymap_v1', []),
+    roots:     safe('game_roots_v1', []),
+    tapped108: new Set(safe('g108', [])),
+    seed:      safe('game_seed_v1', null),
+    letter:    safe('game_letter_v1', null),
+    mandala:   safe('game_mandala_v1', []),
+  };
+}
+
+function getSeedStage(seed) {
+  if (!seed?.ts) return 'none';
+  const hrs = (Date.now()-seed.ts)/3600000;
+  if (hrs<2)  return 'seed';
+  if (hrs<8)  return 'sprout';
+  if (hrs<24) return 'sapling';
+  if (hrs<72) return 'tree';
+  return 'flower';
+}
+
+function getPracticeDays(data) {
+  const days = new Set();
+  data.bodyMap.forEach(s  => s.ts  && days.add(new Date(s.ts).toDateString()));
+  data.mandala.forEach(s  => s.ts  && days.add(new Date(s.ts).toDateString()));
+  if (data.tapped108.size > 0 || (data.roots && data.roots.length > 0))
+    days.add(new Date().toDateString());
+  return days;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDERING
+// ─────────────────────────────────────────────────────────────────────────────
+function renderMandala(ctx, W, H, data, anim, todayStrokes) {
+  const cx=W/2, cy=H/2;
+  const R = Math.min(W,H)*0.44;
+
+  // ── Background ──────────────────────────────────────────
+  ctx.fillStyle='#06040A'; ctx.fillRect(0,0,W,H);
+
+  // ── Chakra color wash ────────────────────────────────────
+  CHAKRA_COLORS.forEach((color,i) => {
+    const r1=R*(i/7.5), r2=R*((i+1)/7.5);
+    const g=ctx.createRadialGradient(cx,cy,r1,cx,cy,r2);
+    g.addColorStop(0,color+'00'); g.addColorStop(.5,color+'07'); g.addColorStop(1,color+'00');
+    ctx.beginPath(); ctx.arc(cx,cy,r2,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+  });
+
+  // ── Base sacred geometry (faint skeleton) ───────────────
+  ctx.save();
+  [.24,.46,.68,.88,1.0].forEach(f => {
+    ctx.beginPath(); ctx.arc(cx,cy,R*f,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(180,160,240,${f<1?.042:.055})`; ctx.lineWidth=.7; ctx.stroke();
+  });
+  for(let i=0;i<12;i++) {
+    const a=(i/12)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*1.02*Math.cos(a),cy+R*1.02*Math.sin(a));
+    ctx.strokeStyle='rgba(180,160,240,.03)'; ctx.lineWidth=.5; ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── Practice wheel ──────────────────────────────────────
+  ctx.save();
+  const days = getPracticeDays(data);
+  const yearStart = new Date(); yearStart.setMonth(0); yearStart.setDate(1); yearStart.setHours(0,0,0,0);
+  const dayOfYear = Math.floor((Date.now()-yearStart)/86400000);
+  const rOuter=R*0.97, rInner=R*0.86;
+  for(let d=0;d<365;d++) {
+    const a1=(d/365)*Math.PI*2-Math.PI/2+anim.rotation;
+    const a2=((d+0.68)/365)*Math.PI*2-Math.PI/2+anim.rotation;
+    const checkDate=new Date(yearStart.getTime()+d*86400000).toDateString();
+    const isToday=d===dayOfYear;
+    const hasData=days.has(checkDate);
+    ctx.beginPath();
+    ctx.arc(cx,cy,rOuter,a1,a2); ctx.arc(cx,cy,rInner,a2,a1,true); ctx.closePath();
+    ctx.fillStyle = isToday
+      ? 'rgba(240,232,220,.90)'
+      : hasData ? `${CHAKRA_COLORS[d%7]}65` : 'rgba(180,160,240,.055)';
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // ── 108 bead ring ───────────────────────────────────────
+  ctx.save();
+  const ring108R = R*0.74;
+  DOTS_108.forEach(dot => {
+    const x=cx+dot.nx*ring108R, y=cy+dot.ny*ring108R;
+    const tapped=data.tapped108.has(dot.id);
+    ctx.beginPath(); ctx.arc(x,y,tapped?3.8:2.2,0,Math.PI*2);
+    if(tapped){
+      ctx.shadowColor='#C0B0F8'; ctx.shadowBlur=5;
+      ctx.fillStyle='#C0B0F8';
+    } else {
+      ctx.fillStyle='rgba(180,160,240,.14)'; ctx.shadowBlur=0;
+    }
+    ctx.fill(); ctx.shadowBlur=0;
+  });
+  ctx.restore();
+
+  // ── Root web (8-fold symmetry) ──────────────────────────
+  ctx.save();
+  const rootMaxR=R*0.52;
+  const rootScale=rootMaxR/(ROOT_H*0.48);
+
+  function drawRootPath(stroke) {
+    if(!stroke||stroke.length<3) return;
+    const norm=stroke.map(p=>({
+      x:(p.x-ROOT_W/2)*rootScale,
+      y:(p.y-ROOT_H*0.38)*rootScale,
+    }));
+    for(let rot=0;rot<8;rot++){
+      const angle=(rot/8)*Math.PI*2;
+      const cos=Math.cos(angle),sin=Math.sin(angle);
+      ctx.beginPath();
+      norm.forEach((p,i)=>{
+        const rx=p.x*cos-p.y*sin, ry=p.x*sin+p.y*cos;
+        i===0?ctx.moveTo(cx+rx,cy+ry):ctx.lineTo(cx+rx,cy+ry);
+      });
+      ctx.strokeStyle=`rgba(140,90,35,${rot%2===0?.38:.28})`;
+      ctx.lineWidth=rot===0?1.4:.9; ctx.lineCap='round'; ctx.stroke();
+    }
+  }
+
+  data.roots.forEach(stroke=>drawRootPath(stroke));
+  // Today's root strokes
+  todayStrokes.filter(s=>s.mode==='root').forEach(s=>drawRootPath(s.points));
+  ctx.restore();
+
+  // ── Body map petals ─────────────────────────────────────
+  ctx.save();
+  const bodyInnerR=R*0.28, bodyOuterR=R*0.66;
+  const modeColor = { alive:'#80E5BC', tight:'#E89080', absent:'#8090C0' };
+
+  function drawBodyDot(dot) {
+    const angle=(dot.x/BODY_W)*Math.PI*2-Math.PI/2;
+    const r=bodyInnerR+(dot.y/BODY_H)*(bodyOuterR-bodyInnerR);
+    const x=cx+r*Math.cos(angle), y=cy+r*Math.sin(angle);
+    const col=modeColor[dot.mode]||modeColor.alive;
+    if(dot.mode==='alive'){
+      ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2);
+      ctx.fillStyle=col+'65'; ctx.fill();
+      ctx.beginPath(); ctx.arc(x,y,10,0,Math.PI*2);
+      ctx.fillStyle=col+'18'; ctx.fill();
+    } else if(dot.mode==='tight'){
+      ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2);
+      ctx.fillStyle=col+'60'; ctx.fill();
+      for(let k=0;k<4;k++){
+        const ka=(k/4)*Math.PI*2+angle;
+        ctx.beginPath(); ctx.moveTo(x+3.5*Math.cos(ka),y+3.5*Math.sin(ka));
+        ctx.lineTo(x+8*Math.cos(ka),y+8*Math.sin(ka));
+        ctx.strokeStyle=col+'35'; ctx.lineWidth=.9; ctx.stroke();
+      }
+    } else {
+      ctx.beginPath(); ctx.arc(x,y,5.5,0,Math.PI*2);
+      ctx.strokeStyle=col+'45'; ctx.lineWidth=1.1; ctx.stroke();
+    }
+  }
+
+  data.bodyMap.forEach(session=>{
+    const dots=Array.isArray(session.dots)?session.dots:[];
+    dots.forEach(drawBodyDot);
+  });
+  // Today's alive/tight/absent strokes
+  todayStrokes.filter(s=>['alive','tight','absent'].includes(s.mode)).forEach(s=>{
+    s.points.forEach(p=>drawBodyDot({...p, mode:s.mode}));
+  });
+  ctx.restore();
+
+  // ── Mandala's own drawing history ───────────────────────
+  ctx.save();
+  data.mandala.forEach(session=>{
+    (session.strokes||[]).forEach(s=>{
+      if(s.mode==='root') { drawRootPath(s.points); return; }
+      s.points?.forEach(p=>drawBodyDot({...p, mode:s.mode}));
+    });
+  });
+  ctx.restore();
+
+  // ── Seed / center bloom ─────────────────────────────────
+  ctx.save();
+  const centerR=R*0.21;
+  const pulse=1+0.055*Math.sin(anim.pulse);
+  const stage=getSeedStage(data.seed);
+  const letterSealed=data.letter?.fate==='seal'&&Date.now()<(data.letter?.openAt||0);
+  const letterOpen  =data.letter?.fate==='seal'&&Date.now()>=(data.letter?.openAt||0);
+  const centerColor = letterOpen?'#F5DC80':CHAKRA_COLORS[6];
+
+  if(letterSealed){
+    // Sealed eye — dark and quiet
+    ctx.beginPath(); ctx.arc(cx,cy,centerR*1.3,0,Math.PI*2);
+    ctx.fillStyle='rgba(4,3,10,.92)'; ctx.fill();
+    ctx.strokeStyle='rgba(180,160,240,.22)'; ctx.lineWidth=.9; ctx.stroke();
+    // Eye symbol
+    ctx.beginPath();
+    ctx.moveTo(cx-10,cy); ctx.quadraticCurveTo(cx,cy-8,cx+10,cy);
+    ctx.quadraticCurveTo(cx,cy+8,cx-10,cy);
+    ctx.strokeStyle='rgba(180,160,240,.38)'; ctx.lineWidth=1.1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,2.5,0,Math.PI*2);
+    ctx.fillStyle='rgba(180,160,240,.45)'; ctx.fill();
+  } else {
+    const petalN = {none:0,seed:1,sprout:4,sapling:8,tree:12,flower:16}[stage]||0;
+
+    // Center glow
+    const g=ctx.createRadialGradient(cx,cy,0,cx,cy,centerR*1.6*pulse);
+    g.addColorStop(0,centerColor+'55'); g.addColorStop(.4,centerColor+'22'); g.addColorStop(1,centerColor+'00');
+    ctx.beginPath(); ctx.arc(cx,cy,centerR*1.6*pulse,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
+
+    // Petals
+    for(let i=0;i<petalN;i++){
+      const a=(i/petalN)*Math.PI*2-Math.PI/2;
+      const pr=centerR*0.72*pulse;
+      const px=cx+pr*Math.cos(a), py=cy+pr*Math.sin(a);
+      const pg=ctx.createRadialGradient(px,py,0,px,py,centerR*.38*pulse);
+      pg.addColorStop(0,centerColor+'40'); pg.addColorStop(1,centerColor+'00');
+      ctx.beginPath(); ctx.arc(px,py,centerR*.38*pulse,0,Math.PI*2); ctx.fillStyle=pg; ctx.fill();
+    }
+    // Star lines for flower stage
+    if(stage==='flower'){
+      for(let i=0;i<8;i++){
+        const a=(i/8)*Math.PI*2-Math.PI/2;
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+centerR*1.4*pulse*Math.cos(a),cy+centerR*1.4*pulse*Math.sin(a));
+        ctx.strokeStyle=centerColor+'25'; ctx.lineWidth=.8; ctx.stroke();
+      }
+    }
+    // Center point
+    ctx.beginPath(); ctx.arc(cx,cy,stage==='none'?2.5:4*pulse,0,Math.PI*2);
+    ctx.fillStyle=stage==='none'?'rgba(180,160,240,.40)':centerColor;
+    if(stage!=='none'){ctx.shadowColor=centerColor; ctx.shadowBlur=10;}
+    ctx.fill(); ctx.shadowBlur=0;
+
+    // "Begin" text if truly empty
+    if(stage==='none'&&data.bodyMap.length===0&&data.roots.length===0&&data.tapped108.size===0){
+      ctx.fillStyle='rgba(180,160,240,.28)';
+      ctx.font="italic 11px 'Cormorant Garamond',serif";
+      ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText('your practice shapes this',cx,cy+centerR*2.8);
+    }
+  }
+  ctx.restore();
+
+  // ── Current live stroke preview ──────────────────────────
+  // (handled in App via overlay)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APP
+// ─────────────────────────────────────────────────────────────────────────────
+const MODES = [
+  {id:'alive',  label:'Alive',  color:'#80E5BC'},
+  {id:'tight',  label:'Tight',  color:'#E89080'},
+  {id:'absent', label:'Absent', color:'#8090C0'},
+  {id:'root',   label:'Root',   color:'rgba(160,100,40,1)'},
+];
+
+function App() {
+  const canvasRef      = useRef(null);
+  const overlayRef     = useRef(null);
+  const animRef        = useRef({rotation:0, pulse:0});
+  const rafRef         = useRef(null);
+  const [data, setData]         = useState(() => readData());
+  const [mode, setMode]         = useState('alive');
+  const [todayStrokes, setTodayStrokes] = useState([]);
+  const [drawing, setDrawing]   = useState(false);
+  const currentRef = useRef([]);
+  const [saveFlash, setSaveFlash] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
+
+  // Main render loop
+  useEffect(() => {
+    const c = canvasRef.current; if(!c) return;
+    const dpr = window.devicePixelRatio||1;
+    c.width  = c.offsetWidth  * dpr;
+    c.height = c.offsetHeight * dpr;
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr,dpr);
+
+    function frame() {
+      animRef.current.rotation += 0.00055;
+      animRef.current.pulse    += 0.018;
+      renderMandala(ctx, c.offsetWidth, c.offsetHeight, data, animRef.current, todayStrokes);
+      rafRef.current = requestAnimationFrame(frame);
+    }
+    rafRef.current = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [data, todayStrokes]);
+
+  // Overlay canvas for live stroke preview
+  useEffect(() => {
+    const ov = overlayRef.current; if(!ov) return;
+    const dpr = window.devicePixelRatio||1;
+    ov.width  = ov.offsetWidth  * dpr;
+    ov.height = ov.offsetHeight * dpr;
+    const ctx = ov.getContext('2d');
+    ctx.scale(dpr,dpr);
+    ctx.clearRect(0,0,ov.offsetWidth,ov.offsetHeight);
+    if(currentRef.current.length>1){
+      const col = MODES.find(m=>m.id===mode)?.color||'#80E5BC';
+      ctx.beginPath();
+      currentRef.current.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+      ctx.strokeStyle=col+'80'; ctx.lineWidth=mode==='root'?2:12;
+      ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+    }
+  }, [drawing, mode]);
+
+  function getPos(e){
+    const c=canvasRef.current, r=c.getBoundingClientRect();
+    const src=e.touches?.[0]||e;
+    return {x:src.clientX-r.left, y:src.clientY-r.top};
+  }
+
+  function onStart(e){
+    e.preventDefault(); setDrawing(true);
+    currentRef.current=[getPos(e)];
+  }
+  function onMove(e){
+    e.preventDefault(); if(!drawing) return;
+    currentRef.current=[...currentRef.current, getPos(e)];
+    // Trigger overlay re-render
+    const ov=overlayRef.current; if(!ov) return;
+    const dpr=window.devicePixelRatio||1;
+    const ctx=ov.getContext('2d');
+    ctx.clearRect(0,0,ov.offsetWidth,ov.offsetHeight);
+    if(currentRef.current.length>1){
+      const col=MODES.find(m=>m.id===mode)?.color||'#80E5BC';
+      ctx.beginPath();
+      currentRef.current.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+      ctx.strokeStyle=col+'80'; ctx.lineWidth=mode==='root'?2.5:14;
+      ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+    }
+  }
+  function onEnd(e){
+    e.preventDefault();
+    setDrawing(false);
+    const pts=currentRef.current;
+    if(pts.length>=2){
+      setTodayStrokes(prev=>[...prev,{mode, points:pts, ts:Date.now()}]);
+    }
+    currentRef.current=[];
+    const ov=overlayRef.current; if(ov){ const ctx=ov.getContext('2d'); ctx.clearRect(0,0,ov.offsetWidth,ov.offsetHeight); }
+  }
+
+  function exportMandala() {
+    const c = canvasRef.current; if (!c) return;
+    // Render one final frame to ensure it's current
+    const dpr = window.devicePixelRatio || 1;
+    const ctx = c.getContext('2d');
+    renderMandala(ctx, c.offsetWidth, c.offsetHeight, data, animRef.current, todayStrokes);
+    const link = document.createElement('a');
+    link.download = `mandala-${new Date().toISOString().slice(0,10)}.png`;
+    link.href = c.toDataURL('image/png');
+    link.click();
+  }
+
+  function save() {
+    // Persist mandala session
+    const existing=safe('game_mandala_v1',[]);
+    localStorage.setItem('game_mandala_v1',
+      JSON.stringify([...existing.slice(-49),{strokes:todayStrokes,ts:Date.now()}]));
+
+    // Persist body dots (reverse-transform from mandala canvas → body-map space)
+    const c=canvasRef.current;
+    const CX=c.offsetWidth/2, CY=c.offsetHeight/2;
+    const MR=Math.min(c.offsetWidth,c.offsetHeight)*0.44;
+    const bInner=MR*0.28, bOuter=MR*0.66;
+
+    const bodyDots = todayStrokes
+      .filter(s=>['alive','tight','absent'].includes(s.mode))
+      .flatMap(s=>s.points.map(p=>{
+        const dx=p.x-CX, dy=p.y-CY;
+        const r=Math.hypot(dx,dy);
+        const angle=(Math.atan2(dy,dx)+Math.PI/2+Math.PI*2)%(Math.PI*2);
+        const bx=(angle/(Math.PI*2))*BODY_W;
+        const by=Math.max(0,Math.min(BODY_H,((r-bInner)/(bOuter-bInner))*BODY_H));
+        return {x:bx,y:by,mode:s.mode};
+      }));
+    if(bodyDots.length>0){
+      const bm=safe('game_bodymap_v1',[]);
+      localStorage.setItem('game_bodymap_v1',
+        JSON.stringify([...bm.slice(-29),{dots:bodyDots,ts:Date.now()}]));
+    }
+
+    // Persist root strokes (reverse-transform)
+    const rootScale=MR*0.52/(ROOT_H*0.48);
+    const rootStrokes=todayStrokes
+      .filter(s=>s.mode==='root')
+      .map(s=>s.points.map(p=>({
+        x:(p.x-CX)/rootScale+ROOT_W/2,
+        y:(p.y-CY)/rootScale+ROOT_H*0.38,
+      })));
+    if(rootStrokes.length>0){
+      const rt=safe('game_roots_v1',[]);
+      localStorage.setItem('game_roots_v1',
+        JSON.stringify([...rt.slice(-59),...rootStrokes]));
+    }
+
+    setTodayStrokes([]);
+    setData(readData());
+    setSaveFlash(true);
+    setTimeout(()=>setSaveFlash(false),2000);
+  }
+
+  const days=getPracticeDays(data);
+  const stage=getSeedStage(data.seed);
+  const stageLabels={none:'',seed:'seed',sprout:'first sprout',sapling:'sapling',tree:'tree',flower:'in bloom'};
+
+  return (
+    <div style={{height:'100%',background:'#06040A',display:'flex',flexDirection:'column',position:'relative'}}>
+
+      {/* Header */}
+      <div style={{padding:'10px 20px 5px',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'20px',color:'rgba(240,232,220,.82)',letterSpacing:'.14em'}}>Living Mandala</p>
+        <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
+          <button onClick={exportMandala} title="Save mandala as image" style={{background:'none',border:'none',cursor:'pointer',fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.2em',color:'rgba(180,160,240,.32)',textTransform:'uppercase'}}>↓ save</button>
+          <button onClick={()=>setShowLegend(l=>!l)} style={{background:'none',border:'none',cursor:'pointer',fontFamily:"'DM Sans',sans-serif",fontSize:'9px',letterSpacing:'.2em',color:'rgba(180,160,240,.32)',textTransform:'uppercase'}}>
+            {days.size} days · {data.tapped108.size}/108
+          </button>
+        </div>
+      </div>
+
+      {/* Canvas stack */}
+      <div style={{flex:1,position:'relative',overflow:'hidden'}}>
+        <canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%',display:'block'}}/>
+        <canvas ref={overlayRef}
+          onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
+          onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
+          style={{position:'absolute',inset:0,width:'100%',height:'100%',display:'block',touchAction:'none',cursor:'crosshair'}}/>
+
+        {/* Legend overlay */}
+        {showLegend && (
+          <div onClick={()=>setShowLegend(false)} style={{position:'absolute',inset:0,background:'rgba(6,4,10,.88)',display:'flex',flexDirection:'column',justifyContent:'center',padding:'24px 32px',gap:'14px',animation:'fade-in .3s ease',cursor:'pointer'}}>
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'22px',color:'rgba(240,232,220,.85)',marginBottom:'8px',letterSpacing:'.1em'}}>Your mandala layers</p>
+            {[
+              ['Practice Wheel','One segment per day of practice, outermost ring','rgba(240,232,220,.8)'],
+              ['108 Beads','Each dot you tapped in The 108 game','#C0B0F8'],
+              ['Body Petals','Sessions from Body Map, mapped to position','#80E5BC'],
+              ['Root Web','Root System strokes, reflected 8 times','rgba(160,100,40,.9)'],
+              ['Center Bloom','Grows as The Seed ages: '+stageLabels[stage],'#8A3AB5'],
+            ].map(([name,desc,color])=>(
+              <div key={name} style={{display:'flex',gap:'12px',alignItems:'flex-start'}}>
+                <div style={{width:'8px',height:'8px',borderRadius:'50%',background:color,flexShrink:0,marginTop:'4px'}}/>
+                <div>
+                  <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'15px',color:color,lineHeight:1.2}}>{name}</p>
+                  <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:'10px',color:'rgba(180,160,240,.45)',marginTop:'2px',lineHeight:1.5}}>{desc}</p>
+                </div>
+              </div>
+            ))}
+            <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:'rgba(180,160,240,.25)',marginTop:'8px',textAlign:'center'}}>tap to close</p>
+          </div>
+        )}
+      </div>
+
+      {/* Mode selector */}
+      <div style={{padding:'7px 14px 5px',flexShrink:0,display:'flex',gap:'5px'}}>
+        {MODES.map(m=>(
+          <button key={m.id} onClick={()=>setMode(m.id)} style={{
+            flex:1,padding:'9px 0',borderRadius:'13px',cursor:'pointer',transition:'all .2s',
+            border:`1px solid ${mode===m.id?m.color:m.color+'30'}`,
+            background:mode===m.id?`${m.color}1C`:'none',
+            fontFamily:"'Cormorant Garamond',serif",fontSize:'14px',letterSpacing:'.04em',
+            color:mode===m.id?m.color:'rgba(240,232,220,.38)',
+          }}>{m.label}</button>
+        ))}
+      </div>
+
+      {/* Save / hint */}
+      <div style={{padding:'3px 16px 16px',flexShrink:0,textAlign:'center',minHeight:'44px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        {todayStrokes.length>0 ? (
+          <button onClick={save} style={{padding:'10px 36px',borderRadius:'22px',background:'rgba(180,160,240,.14)',border:'1px solid rgba(180,160,240,.38)',fontFamily:"'Cormorant Garamond',serif",fontSize:'15px',color:'rgba(240,232,220,.80)',cursor:'pointer',letterSpacing:'.12em',textTransform:'uppercase',animation:'emerge .3s ease',transition:'background .3s'}}>
+            {saveFlash?'Woven in.':'Add to mandala'}
+          </button>
+        ):(
+          <p style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontSize:'12px',color:'rgba(180,160,240,.22)',letterSpacing:'.06em'}}>Draw on the mandala to weave today into it.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <div className="ph-wrap">
+    <div className="ph-body">
+      <div className="ph-screen">
+        <div className="ph-island"/>
+        <div className="ph-content"><App/></div>
+      </div>
+    </div>
+  </div>
+);
+</script>
+</body>
+</html>
