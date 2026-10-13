@@ -75,7 +75,7 @@ struct HomeCentre: View {
             let size = geo.size
             let c = HomeLayout.point(in: size)
             ZStack {
-                HomeGround(met: met, todayColour: todayColour)
+                BinduHomeGround(met: met, todayColour: todayColour)
                 figure(size: size, centre: c)
                 spreadRegion(centre: c)
                 stationLabels(size: size, centre: c)

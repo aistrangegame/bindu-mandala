@@ -74,7 +74,7 @@ enum HomeLayout {
 }
 
 /// Home's silence ground and its two weathers — `spine-and-home.md` #8, #10.
-struct HomeGround: View {
+struct BinduHomeGround: View {
     let met: Bool
     let todayColour: Color
 
