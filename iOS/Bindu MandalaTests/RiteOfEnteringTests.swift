@@ -263,9 +263,9 @@ final class RiteOfEnteringTests: XCTestCase {
         scene.stand(atApproach: 1)
         XCTAssertEqual(scene.eye.z, standing, accuracy: 1e-4)
 
-        // The crossing adds nothing to the room: the binding condition still holds.
-        XCTAssertEqual(scene.solidsInHerLayer, 0,
-                       "the approach put a solid under her layer")
+        // U0 (VER-L-0788): the "no solids in her layer" binding condition is
+        // lifted; the floor (no figure of a Śakti) reads node kinds, in
+        // `RoomSceneTests`, not a solid count.
 
         // An entered room is still exactly one clock: posing it sets the air to
         // her own world time, so the seam the threshold needs cannot leave a
@@ -598,7 +598,8 @@ final class RiteOfEnteringTests: XCTestCase {
 
     // MARK: - Nothing the rite can say measures him
 
-    /// **Design's nine MEASURING patterns over the whole rite corpus**, for all
+    /// **The narrow measuring floor over the whole rite corpus** (U0, ruling 10,
+    /// VER-L-0754: four of Design's nine — no quantity of his practice), for all
     /// 102 — the sixteen that genuinely ship and sync, and the rest driven off
     /// real vocabulary keyed by position.
     ///
@@ -629,68 +630,14 @@ final class RiteOfEnteringTests: XCTestCase {
                       """)
 
         // The detector can fail.
-        XCTAssertFalse(Measuring.measuresOutLoud("your progress · 3 of 9 · day 4").isEmpty,
+        XCTAssertFalse(Measuring.measuresOutLoud("felt 4 times · a three-day streak").isEmpty,
                        "the measuring detector caught nothing in a string written to break it")
     }
 
-    /// **The half the patterns cannot see.** "welcome back" carries no digit, so
-    /// no measuring pattern will ever catch it; it is caught here, by refusing
-    /// the rite's own authored vocabulary any word about returning.
-    ///
-    /// Her content is not in scope and must not be — it is the base's, and a
-    /// Śakti whose phrase says *"Thank you for the hook that returns me"* is
-    /// speaking about herself, not about him. What is in scope is every word
-    /// these two files put in his way on their own account.
-    func testTheRiteNeverSaysHeHasBeenHereBefore() throws {
-        let returning: [(what: String, pattern: String)] = [
-            ("a welcome",           #"(?i)\bwelcome\b"#),
-            ("a return",            #"(?i)\breturn(s|ed|ing)?\b"#),
-            ("a coming back",       #"(?i)\bback\b"#),
-            ("an again",            #"(?i)\bagain\b"#),
-            ("a before",            #"(?i)\bbefore\b"#),
-            ("a standing here",     #"(?i)\bstood\b|\bhave\s+been\s+here\b"#),
-            ("a visit",             #"(?i)\bvisit(s|ed|ing)?\b"#),
-            ("a remembering",       #"(?i)\bremember(s|ed|ing)?\b"#),
-            ("an already",          #"(?i)\balready\b"#),
-            ("a last time",         #"(?i)\blast\s+time\b"#),
-            ("an anew",             #"(?i)\bonce\s+more\b"#),
-        ]
-
-        var literals = 0
-        var offences: [String] = []
-        for name in ["RiteOfEntering.swift", "RiteOfEnteringView.swift"] {
-            let file = try XCTUnwrap(LawSource.production(name), "\(name) is missing")
-            for literal in file.lexed.literals {
-                literals += 1
-                for rule in returning where Rx.matches(rule.pattern, literal.shape) {
-                    offences.append("\(file.path) · \(rule.what) · \(SwiftLexer.collapse(literal.shape))")
-                }
-            }
-        }
-
-        XCTAssertGreaterThanOrEqual(literals, 20,
-                                    "only \(literals) literals were read from the rite — the scan is not reading it")
-        XCTAssertTrue(offences.isEmpty,
-                      """
-                      the rite says out loud what it is only allowed to let him feel. The compression \
-                      is the ceremony being quicker, and the head start is her room already open; \
-                      neither is ever announced, and there is no line telling him he has been here.
-                      \(offences.joined(separator: "\n"))
-                      """)
-
-        // The detector can fail.
-        for planted in ["welcome back", "you have stood here before", "your 4th visit",
-                        "here again", "she remembers you"] {
-            XCTAssertTrue(returning.contains { Rx.matches($0.pattern, planted) },
-                          "\"\(planted)\" slipped past the returning detector")
-        }
-        // …and it lets the ceremony's own words through.
-        for allowed in [RitePrompt.goOn.words, RitePrompt.enter.words,
-                        "Thank you for the weight that holds me here."] {
-            XCTAssertFalse(returning.contains { Rx.matches($0.pattern, allowed) },
-                           "false positive on \"\(allowed)\"")
-        }
-    }
+    // U0 · retired (verification.md §2.2, VER-L-0767): `testTheRiteNeverSaysHeHasBeenHereBefore`.
+    // The returning-word ban is lifted — Homecoming already says "She will greet
+    // you again, as on the first day.", and ruling 15 brings "you have stood
+    // here before" back once inside her room.
 
     // MARK: - The walker's own motion setting
 
@@ -819,7 +766,7 @@ final class RiteOfEnteringTests: XCTestCase {
         let driver = try XCTUnwrap(view.delegate as? RoomDriver)
         XCTAssertEqual(driver.scene.room.position, RiteFixture.garima,
                        "the rite is standing in front of somebody else's room")
-        XCTAssertEqual(driver.scene.solidsInHerLayer, 0)
+        // U0 (VER-L-0789): the solid count is no longer asserted (lifted).
 
         // He is outside it, looking in.
         let standing = try XCTUnwrap(view.pointOfView?.position.z)

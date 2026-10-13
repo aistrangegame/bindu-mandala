@@ -112,10 +112,31 @@ final class GameStructureTests: XCTestCase {
 
     // MARK: Leela
 
-    func testALeelaDropIsRareAndNeverTwiceInADay() {
-        // Never in the first days, never twice a day, never within the gap.
-        XCTAssertFalse(LeelaDrops.shouldDrop(today: 10, firstSeenDay: 9, lastDropDay: nil,
+    /// His ruling, pinned (V34, VER-FL-0910): drops are at least three days
+    /// apart, and then come by a 30 % chance.
+    func testHisLeelaConstantsArePinned() {
+        XCTAssertEqual(LeelaDrops.minimumGapDays, 3)
+        XCTAssertEqual(LeelaDrops.chance, 0.30, accuracy: 1e-12)
+        XCTAssertTrue(LeelaDrops.shouldDrop(today: 20, firstSeenDay: 0, lastDropDay: 17,
+                                            lastConsideredDay: nil, roll: 0.299))
+        XCTAssertFalse(LeelaDrops.shouldDrop(today: 20, firstSeenDay: 0, lastDropDay: 17,
+                                             lastConsideredDay: nil, roll: 0.30))
+        XCTAssertFalse(LeelaDrops.shouldDrop(today: 19, firstSeenDay: 0, lastDropDay: 17,
                                              lastConsideredDay: nil, roll: 0))
+    }
+
+    /// U0 · ruling 16: the app's own "never in the first days" rule is retired
+    /// (VER-S-0728). A walker on his first day may meet a drop; his own gap and
+    /// chance still hold.
+    func testALeelaDropMayComeInTheFirstDays() {
+        XCTAssertTrue(LeelaDrops.shouldDrop(today: 9, firstSeenDay: 9, lastDropDay: nil,
+                                            lastConsideredDay: nil, roll: 0))
+        XCTAssertTrue(LeelaDrops.shouldDrop(today: 10, firstSeenDay: 9, lastDropDay: nil,
+                                            lastConsideredDay: nil, roll: 0))
+    }
+
+    func testALeelaDropIsRareAndNeverTwiceInADay() {
+        // Never twice a day, never within the gap.
         XCTAssertTrue(LeelaDrops.shouldDrop(today: 12, firstSeenDay: 9, lastDropDay: nil,
                                             lastConsideredDay: nil, roll: 0))
         XCTAssertFalse(LeelaDrops.shouldDrop(today: 12, firstSeenDay: 9, lastDropDay: nil,

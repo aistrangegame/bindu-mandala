@@ -295,8 +295,9 @@ final class RoomSceneTests: XCTestCase {
                                  "ring \(ring): a node in the \(layer) layer is named \"\(name)\" — a figure")
                 }
             }
-            XCTAssertEqual(scene.figuresInHerLayer, 0,
-                           "ring \(ring): a solid stands in her own layer — something could be read as her figure")
+            // U0 (VER-L-0775 / VER-FL-0886): the floor reads node kinds, not
+            // solid counts — `figuresInHerLayer` (a solid count) is no longer
+            // asserted; the node-name check above is the floor.
         }
     }
 
@@ -308,8 +309,7 @@ final class RoomSceneTests: XCTestCase {
     func testHerLayerHoldsLightAndNoFigure() {
         for room in [solesRoom, crownRoom, heartRoom] {
             let scene = RoomScene(room: room)
-            XCTAssertEqual(scene.solidsInHerLayer, 0,
-                           "position \(room.position): a solid appeared under her own layer")
+            // U0 · lifted (no solids in her layer); the floor reads node kinds — RoomSceneTests.
             XCTAssertGreaterThanOrEqual(scene.lights(in: .her), 2,
                                         "position \(room.position): her core and halo of light are missing")
             XCTAssertGreaterThan(scene.childCount(in: .her), 0,
@@ -555,7 +555,6 @@ final class RoomSceneTests: XCTestCase {
         // answers with a value type or a string, so there is nothing to hold.
         let scene = RoomScene(room: solesRoom)
         XCTAssertEqual(scene.layerName(.her), "her mechanism")
-        XCTAssertEqual(scene.solids(in: .her), 0)
         XCTAssertGreaterThan(scene.solids(in: .building), 0,
                              "the building has no geometry — the walk is not reading")
     }

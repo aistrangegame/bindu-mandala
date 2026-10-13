@@ -123,12 +123,7 @@ final class GateRoomTests: XCTestCase {
             let scene = RoomScene(room: room)
             for t in [0, Self.firstAdaptation, Self.pastTheSecond] {
                 scene.pose(at: t)
-                XCTAssertEqual(scene.solidsInHerLayer, 0,
-                               """
-                               khaḍgamālā \(room.position) grew a geometry in her own layer at t=\(Int(t)). \
-                               Every attribute in every room is an action on the room's own material — \
-                               never a free-standing lit solid.
-                               """)
+                // U0 · lifted (no solids in her layer); the floor reads node kinds — RoomSceneTests.
             }
             XCTAssertGreaterThan(scene.childCount(in: .her), 0,
                                  "khaḍgamālā \(room.position): her layer is empty — the light in her mark is missing")

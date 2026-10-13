@@ -482,9 +482,9 @@ final class PlayScreenTests: XCTestCase {
     }
 
     /// No number about him. Every walker-facing string in `Views/Play/` — its
-    /// words, and the values bound into it — against Design's nine and the
-    /// practice record; and no count reaches a play screen at all, not even a
-    /// structural one.
+    /// words, and the values bound into it — against the narrow floor, the
+    /// practice record and each game's own measure of his play. (U0: digits
+    /// and structural counts are allowed now.)
     func testNoPlayScreenShowsANumberAboutHim() {
         var offences: [String] = []
         for f in playFiles {
@@ -493,17 +493,14 @@ final class PlayScreenTests: XCTestCase {
                     if !NeverMeasure.measuresOutLoud(NeverMeasure.probe(lit.shape)).isEmpty {
                         offences.append("\(call.origin) — \"\(lit.shape)\"")
                     }
-                    if Rx.matches(#"\d"#, lit.text) {
-                        offences.append("\(call.origin) — a digit on a play screen: \"\(lit.text)\"")
-                    }
+                    // U0 (VER-L-0762): the digit ban is retired (ruling 10).
                 }
                 for expr in call.expressions where !expr.isEmpty {
                     for what in NeverMeasure.practiceTouched(in: expr) {
                         offences.append("\(call.origin) — binds \(what)")
                     }
-                    for c in NeverMeasure.countExpressions(in: expr) {
-                        offences.append("\(call.origin) — counts \(c)")
-                    }
+                    // U0: a structural count may be shown; a game's measure of
+                    // his play (below) may not — the narrow floor.
                     if Rx.matches(#"(?i)\b(depth|tended|turned|acts|drawn|degree|cleared|opened|breaths|stillFor|seconds|startedAt)\b"#, expr) {
                         offences.append("\(call.origin) — binds a game's own measure: \(expr)")
                     }
@@ -555,24 +552,28 @@ final class PlayScreenTests: XCTestCase {
         XCTAssertTrue(offences.isEmpty, "a play screen judges him:\n" + offences.joined(separator: "\n"))
     }
 
-    /// Play keeps no store of its own. The one record is the ledger.
-    func testPlayKeepsNoStoreOfItsOwn() {
-        for f in playFiles {
-            let code = String(f.lexed.masked)
-            for road in ["UserDefaults", "@AppStorage", "@SceneStorage", "FileManager", "modelContext.insert", "context.insert"] {
-                XCTAssertFalse(code.contains(road), "\(f.path) keeps a store of its own: \(road)")
-            }
-        }
-        // And the ledger is reached through its one door.
+    /// U0 · retired (VER-L-0803): "play keeps no store of its own" —
+    /// `PlayGardenStore` and `PlayTraceStore` exist and fold into the
+    /// PracticeStoreContract. What stays: the ledger is reached through its
+    /// one door.
+    func testPlayReachesTheLedgerThroughItsOneDoor() {
         let host = playFiles.first { $0.path == "Views/Play/PlayGameHost.swift" }
         XCTAssertNotNil(host)
         XCTAssertTrue(String(host?.lexed.masked ?? []).contains("AirtableService.shared.logActivity("))
     }
 
-    /// No figure: play is drawn from light and geometry alone.
-    func testPlayIsDrawnFromLightAlone() {
+    /// No figure (U0 rewrite, VER-L-0773 / VER-FL-0888): play may draw an
+    /// image, but nothing it hands a drawing primitive names a figure.
+    func testPlayDrawsNoFigure() {
         for f in playFiles {
-            XCTAssertTrue(f.calls(to: Aniconic.drawingCallees).isEmpty, "\(f.path) draws an image")
+            for call in f.calls(to: Aniconic.drawingCallees) {
+                XCTAssertNil(Rx.first(Aniconic.figuralVocabulary, call.argumentCode),
+                             "\(f.path) draws a figure: \(call.origin)")
+                for lit in call.literals {
+                    XCTAssertNil(Rx.first(Aniconic.figuralVocabulary, lit.text),
+                                 "\(f.path) draws a figure: \"\(lit.text)\"")
+                }
+            }
         }
     }
 }

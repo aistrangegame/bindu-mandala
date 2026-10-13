@@ -119,7 +119,13 @@ final class SpikeCensusTests: XCTestCase {
         XCTAssertEqual(t.seatNames, 0, "no names at the cosmic tier with nothing focused")
         XCTAssertEqual(t.seatBijas, 0)
         XCTAssertEqual(t.seatFlares, 0, "reduce-motion silences the periodic flare")
-        XCTAssertEqual(t.seatGlows, 26, "one soft glow per felt seat")
+        // U0 rewrite (VER-L-0802): a seat may carry several states, so its
+        // glows are no longer pinned to exactly one per felt seat. What stays:
+        // a glow is never a function of a count — at most a bounded few per
+        // seat, and none where nothing is felt or marked.
+        XCTAssertGreaterThanOrEqual(t.seatGlows, field.felt.count > 0 ? 1 : 0)
+        XCTAssertLessThanOrEqual(t.seatGlows, KhadgamalaMap.total * 4,
+                                 "more glows than a seat's few states could carry")
         XCTAssertEqual(t.seatHalos, 1, "today alone wears the halo")
         XCTAssertEqual(t.constellation, 0, "no seat is focused")
         XCTAssertEqual(t.todayRing, 1)

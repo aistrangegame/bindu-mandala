@@ -41,7 +41,7 @@ final class MandalaLightReachTests: XCTestCase {
     /// `MandalaLightTests.testTheLightIsOnByDefault` exists beside them and why
     /// `testTheLightIsOnInTheLaunchThatShips` asks it again of a running app.
     private func litMandala() -> XCUIApplication {
-        Reach.app(["START_TAB=mandala"])
+        Reach.app(["OPEN_WORLD=mandala"])
     }
 
     /// The same Mandala with the phase flag off — the control for anything that
@@ -53,7 +53,7 @@ final class MandalaLightReachTests: XCTestCase {
     /// and stop being able to tell a light that ate the control apart from a
     /// digitizer that dropped the press.
     private func unlitMandala() -> XCUIApplication {
-        Reach.app(["START_TAB=mandala", "MANDALA_LIGHT=off"])
+        Reach.app(["OPEN_WORLD=mandala", "MANDALA_LIGHT=off"])
     }
 
     /// The hamburger, found where it lives rather than by a name this phase
@@ -265,12 +265,12 @@ final class MandalaLightReachTests: XCTestCase {
     /// cropped to the middle of the glass, away from the status bar, so a clock
     /// that ticked between the two launches cannot be what passes it.
     func testTheLightIsOnInTheLaunchThatShips() throws {
-        let shipped = Reach.app(["START_TAB=mandala", "REDUCE_MOTION"])
+        let shipped = Reach.app(["OPEN_WORLD=mandala", "REDUCE_MOTION"])
         XCTAssertTrue(Reach.text(shipped, "Śrī Yantra"), "the shipped Mandala never arrived")
         let litShot = shipped.screenshot().image
         shipped.terminate()
 
-        let control = Reach.app(["START_TAB=mandala", "REDUCE_MOTION", "MANDALA_LIGHT=off"])
+        let control = Reach.app(["OPEN_WORLD=mandala", "REDUCE_MOTION", "MANDALA_LIGHT=off"])
         XCTAssertTrue(Reach.text(control, "Śrī Yantra"), "the unlit Mandala never arrived")
         let unlitShot = control.screenshot().image
         control.terminate()

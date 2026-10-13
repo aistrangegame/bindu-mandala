@@ -259,10 +259,10 @@ struct SnapshotScreen {
     // recoverable by re-recording now, which would only write down the change
     // this suite exists to catch.
     static let all: [SnapshotScreen] = [
-        SnapshotScreen(name: "mandala", arguments: ["START_TAB=mandala"],
+        SnapshotScreen(name: "mandala", arguments: ["OPEN_WORLD=mandala"],
                        settles: { text($0, "Śrī Yantra") }),
 
-        SnapshotScreen(name: "mandala-descent", arguments: ["START_TAB=mandala", "OPEN_SILENCE"],
+        SnapshotScreen(name: "mandala-descent", arguments: ["OPEN_WORLD=mandala", "OPEN_SILENCE"],
                        settles: { text($0, "THE BINDU") }, afterSettle: 3.0),
 
         // kp 33, not 29, and this matters: `AUTO_RECOGNIZE` writes a real local
@@ -271,10 +271,10 @@ struct SnapshotScreen {
         // every time this suite is run and its geometry is different on every
         // pass. Sparśākarṣiṇī is felt by nothing here, so her Detail is the same
         // screen on the first run and the hundredth.
-        SnapshotScreen(name: "detail", arguments: ["START_TAB=mandala", "OPEN_DETAIL=33"],
+        SnapshotScreen(name: "detail", arguments: ["OPEN_WORLD=mandala", "OPEN_DETAIL=33"],
                        settles: { text($0, "Embodiment") }),
 
-        SnapshotScreen(name: "rite", arguments: ["START_TAB=rite"],
+        SnapshotScreen(name: "rite", arguments: ["OPEN_WORLD=today"],
                        settles: { button($0, "I feel her") }, afterSettle: 2.4),
 
         // `ENERGY_POS=1` and it matters, because the LAST one wins. A `SYNC_OFF`
@@ -287,19 +287,19 @@ struct SnapshotScreen {
         // the deliberate, permanent case instead of the likely one — the
         // baselines are untouched, because this is the composition they already
         // hold.
-        SnapshotScreen(name: "field", arguments: ["START_TAB=102", "ENERGY_POS=1"],
+        SnapshotScreen(name: "field", arguments: ["OPEN_WORLD=rings", "ENERGY_POS=1"],
                        settles: { text($0, "The Field") }),
 
-        SnapshotScreen(name: "well", arguments: ["START_TAB=well"],
+        SnapshotScreen(name: "well", arguments: ["OPEN_WORLD=well"],
                        settles: { text($0, "Your Letters to Them") }),
 
-        SnapshotScreen(name: "well-letter", arguments: ["START_TAB=well", "OPEN_LETTER=29"],
+        SnapshotScreen(name: "well-letter", arguments: ["OPEN_WORLD=well", "OPEN_LETTER=29"],
                        settles: { button($0, "The Well") }, afterSettle: 2.0),
 
-        SnapshotScreen(name: "memory", arguments: ["START_TAB=memory"],
+        SnapshotScreen(name: "memory", arguments: ["OPEN_WORLD=memory"],
                        settles: { text($0, "she is felt, not measured") }, afterSettle: 2.4),
 
-        SnapshotScreen(name: "settings", arguments: ["START_TAB=well"],
+        SnapshotScreen(name: "settings", arguments: ["OPEN_WORLD=well"],
                        settles: { text($0, "Daily Rhythm") },
                        approach: { openSettings($0) }),
 
@@ -310,7 +310,7 @@ struct SnapshotScreen {
         // reading a different instrument than the screen before it did. It also
         // means the simulator is dirty afterwards; `testTheSimulatorHasNotBeenFeltIn`
         // is what makes that loud on the next run instead of mysterious.
-        SnapshotScreen(name: "recognition", arguments: ["START_TAB=rite", "AUTO_RECOGNIZE"],
+        SnapshotScreen(name: "recognition", arguments: ["OPEN_WORLD=today", "AUTO_RECOGNIZE"],
                        // The whole line, never a fragment of it: `LawsTests`
                        // holds both Recognition lines verbatim at every site,
                        // and "felt you back" on its own is a near-miss of one.
@@ -522,6 +522,13 @@ final class FeltRegisterSnapshots: XCTestCase {
                     + "iOS/SnapshotBaselines/.record and run again to judge.")
             return
         }
+        // U0 (verification.md §2.2, VER-L-0816 / 0817 / 0822): confirmed — the
+        // lock stays retired as a gate, `FeltRegisterClassifications` is no
+        // gate either (its `ClassifiedShift` shape is the parity exemption
+        // ledger), and the thirty `SnapshotBaselines/*.geom` are kept only as
+        // the word inventory of the Wave-6 screens (a "before"). The engine —
+        // `ScreenReader`, the `.geom` format, the displacement metric — is what
+        // `TheWalk` reuses for every step's accessibility dump.
         // Wave 1 (Build Charter II): the composition lock is retired as a gate.
         // It held every screen to its pre-Phase-4 geometry, and the wave that
         // brings Design's light home moves that geometry on purpose. What stays

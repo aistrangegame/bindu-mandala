@@ -132,7 +132,7 @@ final class TheWayInUITests: XCTestCase {
     /// Today → know her → be with her → the threshold → her room → out, and back
     /// where he came from.
     func testFromAColdLaunchAWalkerReachesARoomAndComesOutWhereHeStarted() {
-        let app = coldLaunch(["START_TAB=rite"])
+        let app = coldLaunch(["OPEN_WORLD=today"])
 
         // 1 · Today offers her, she opens, and her screen offers her room.
         //     That door is what Phase 3.7 cut.
@@ -175,7 +175,7 @@ final class TheWayInUITests: XCTestCase {
     /// Letting go of the crossing keeps him in the room. A stay is not ended by
     /// a finger that touched the glass and changed its mind.
     func testLettingGoOfTheCrossingLeavesHimInTheRoom() {
-        let app = coldLaunch(["START_TAB=rite"])
+        let app = coldLaunch(["OPEN_WORLD=today"])
         let door = walkIntoHerRoom(app)
 
         let out = wayOut(app)
@@ -215,7 +215,7 @@ final class TheWayInUITests: XCTestCase {
     /// and the axis as `forceReduceMotion`; it is the same flag the captures and
     /// the room suites use, reached from outside so the whole walk can be driven.
     func testUnderReducedMotionOneTouchLeavesTheRoom() {
-        let app = coldLaunch(["START_TAB=rite", "REDUCE_MOTION"])
+        let app = coldLaunch(["OPEN_WORLD=today", "REDUCE_MOTION"])
         let door = walkIntoHerRoom(app)
 
         // The word follows the gesture: a step, not a walk held through.
@@ -247,7 +247,7 @@ final class TheWayInUITests: XCTestCase {
 
     /// The Field offers the nine as one ascent, and the ascent lets him off it.
     func testTheFieldOpensTheClimbAndTheClimbLetsHimOut() {
-        let app = coldLaunch(["START_TAB=102"])
+        let app = coldLaunch(["OPEN_WORLD=rings"])
 
         let field = app.staticTexts["The Field"]
         XCTAssertTrue(field.waitForExistence(timeout: 20), "the Field never arrived")
@@ -281,7 +281,7 @@ final class TheWayInUITests: XCTestCase {
     /// out two inches below it, and it knows nothing but whether he has moved
     /// on this visit.
     func testTheAxisSaysItCanBeClimbed() {
-        let app = coldLaunch(["START_TAB=102", "OPEN_CLIMB"])
+        let app = coldLaunch(["OPEN_WORLD=rings", "OPEN_CLIMB"])
         let out = wayOut(app)
         XCTAssertTrue(out.waitForExistence(timeout: 25), "OPEN_CLIMB did not arrive on the axis")
 
@@ -325,7 +325,7 @@ final class TheWayInUITests: XCTestCase {
     /// an āvaraṇa's — so a later pass measuring the climb does not have to drive
     /// the Field to get to it.
     func testTheClimbCanBeOpenedDirectly() {
-        let app = coldLaunch(["START_TAB=102", "OPEN_CLIMB"])
+        let app = coldLaunch(["OPEN_WORLD=rings", "OPEN_CLIMB"])
         XCTAssertTrue(wayOut(app).waitForExistence(timeout: 25),
                       "OPEN_CLIMB did not arrive on the axis")
     }
@@ -348,7 +348,7 @@ final class TheWayInUITests: XCTestCase {
     /// instrument, and there is nothing there to count at.
     func testWhatTheRoomAndTheAxisAddToTheScreenSaysNoNumber() {
         for surface in ["a room", "the axis"] {
-            let app = coldLaunch(surface == "a room" ? ["START_TAB=rite"] : ["START_TAB=102"])
+            let app = coldLaunch(surface == "a room" ? ["OPEN_WORLD=today"] : ["OPEN_WORLD=rings"])
             let before: Set<String>
 
             if surface == "a room" {
@@ -369,33 +369,15 @@ final class TheWayInUITests: XCTestCase {
 
             let arrived = labels(of: app).subtracting(before)
             XCTAssertFalse(arrived.isEmpty, "\(surface) drew nothing a reader can see")
-            let counting = arrived.filter { $0.rangeOfCharacter(from: .decimalDigits) != nil }
-            XCTAssertTrue(counting.isEmpty,
-                          "\(surface) says a number out loud: \(counting.sorted())")
-
-            // **A digit is not the only way to measure.** "your third stay",
-            // "welcome back", "again" and a streak spelled out in words all
-            // carry no digit and all say the same forbidden thing. Design's own
-            // nine `MEASURING` patterns are applied at source level by
-            // `LawsTests`; these are the ones that can only be caught *here*,
-            // on the running app, where what is on the glass is the evidence
-            // rather than what a literal says before it is interpolated.
-            // An ordinal naming the yantra's own structure ("the second
-            // āvaraṇa") describes the place, not him (Charter II §4.6), so it
-            // is lifted out before the measuring words are looked for.
-            let measuring = arrived.filter { label in
-                let place = label.replacingOccurrences(
-                    of: #"\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth) (āvaraṇa|enclosure)"#,
-                    with: "", options: [.regularExpression, .caseInsensitive])
-                // Whole words only: "Totality" (the ninth world's body region)
-                // is not "total".
-                return TheWayInUITests.wordsThatMeasure.contains { word in
-                    place.range(of: "\\b" + NSRegularExpression.escapedPattern(for: word) + "\\b",
-                                options: [.caseInsensitive, .regularExpression]) != nil
-                }
-            }
+            // U0 rewrite (verification.md §2.2, VER-L-0748 / VER-L-0768): the
+            // digit scan and the word list ("again", "welcome back", the
+            // ordinals, "total", "progress"…) are lifted by ruling 10 — and
+            // ruling 15 brings "you have stood here before" back once inside her
+            // room. What a surface may still never say is a quantity of his
+            // practice: the narrow floor.
+            let measuring = arrived.filter(NarrowFloor.saysAQuantityOfHisPractice)
             XCTAssertTrue(measuring.isEmpty,
-                          "\(surface) measures him in words: \(measuring.sorted())")
+                          "\(surface) says a quantity of his practice: \(measuring.sorted())")
             app.terminate()
         }
     }
@@ -415,16 +397,5 @@ final class TheWayInUITests: XCTestCase {
     /// without one of them going red.
     static let crossing: TimeInterval = 2.2
 
-    /// What a surface may never say to him without a digit in it.
-    ///
-    /// Ordinals, returns and totals — the three ways a count arrives spelled
-    /// out. `again` and `back` are here because a room that greets a returning
-    /// walker has told him it has been keeping his returns, which is the same
-    /// breach as a visit number and is easier to write by accident.
-    static let wordsThatMeasure: [String] = [
-        "streak", "progress", "score", "total", "complete", "completed",
-        "first time", "welcome back", "once more", "again", "so far", "as usual",
-        "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
-        "times", "visit", "your stay", "you have been",
-    ]
+    // U0 · retired (VER-L-0768): `wordsThatMeasure`, the returning-word ban.
 }

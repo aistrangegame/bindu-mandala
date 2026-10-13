@@ -18,7 +18,7 @@ final class TheMarginUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
     private static let base = ["SKIP_SUMMONS", "SKIP_HOMECOMING", "SYNC_OFF",
-                               "ENERGY_POS=29", "EPHEMERAL_STORE", "START_TAB=well"]
+                               "ENERGY_POS=29", "EPHEMERAL_STORE", "OPEN_WORLD=well"]
 
     private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
@@ -156,17 +156,15 @@ final class TheMarginUITests: XCTestCase {
                 let spoken = [element.label, (element.value as? String) ?? ""]
                 for said in spoken where !said.isEmpty {
                     read += 1
+                    // U0 rewrite (VER-L-0749): numerals, ordinals and dates are
+                    // allowed (ruling 10); a count of what he did is not — the
+                    // narrow floor, plus a count of his notes.
                     let withoutHisWords = said.replacingOccurrences(of: words, with: "")
-                    XCTAssertFalse(withoutHisWords.contains(where: \.isNumber),
-                                   """
-                                   the margin says "\(said)" — a numeral in the spoken surface. \
-                                   A list of his notes is his own words handed back; a count, an \
-                                   ordinal or a date said as a digit is the instrument measuring.
-                                   """)
-                    for forbidden in ["note 1", "notes)", "of 1", "1 note", "total"] {
-                        XCTAssertFalse(said.lowercased().contains(forbidden),
-                                       "the margin counts out loud: \"\(said)\"")
-                    }
+                    XCTAssertFalse(NarrowFloor.saysAQuantityOfHisPractice(withoutHisWords),
+                                   "the margin says a quantity of his practice: \"\(said)\"")
+                    XCTAssertNil(withoutHisWords.range(of: #"(?i)\b\d+\s+notes?\b|\(\d+\)"#,
+                                                       options: .regularExpression),
+                                 "the margin counts his notes out loud: \"\(said)\"")
                 }
             }
         }
@@ -218,52 +216,11 @@ final class TheMarginUITests: XCTestCase {
                       "the note he was interrupted in the middle of never reached his list")
     }
 
-    // MARK: The sheet does not grow with his writing
-
-    /// **The claim the door exists to make, proven on the glass.** If the notes
-    /// rendered inline, Settings would be longer the more he had written, and
-    /// "Re-enter the Homecoming" would sink a little further with every note —
-    /// a measure *drawn* rather than printed, which is exactly the Phase 3.8
-    /// breach. So the distance the margin occupies is measured with an empty
-    /// margin and again with notes in it, and it is the same distance.
-    ///
-    /// It also prints that distance, which is the number
-    /// `FeltRegisterClassifications` classifies the whole sheet's translation by.
-    func testTheSheetIsTheSameLengthHoweverMuchHeHasWritten() {
-        let app = launch()
-        let leave = openSettings(app)
-        let empty = marginHeight(app)
-        XCTAssertGreaterThan(empty, 0, "the margin's own two rows could not be measured")
-
-        for words in ["the corridor doors are hard to tell apart",
-                      "her name is cut on the smallest screen",
-                      "the bell sounds twice on a fast return"] {
-            write(words, in: app, from: app.buttons["Leave a note"])
-        }
-
-        let after = marginHeight(app)
-        let bounds = app.frame
-        let device = SnapshotStore.deviceClass(width: bounds.width, height: bounds.height)
-        print("MARGIN-HEIGHT \(device) empty=\(empty) after=\(after) "
-              + "homecoming=\(app.buttons["Re-enter the Homecoming"].frame.minY)")
-
-        XCTAssertEqual(after, empty, accuracy: 0.5,
-                       """
-                       Settings grew by \(after - empty) pt because he wrote three notes. The \
-                       sheet must be the same length on the first day and the thousandth — the \
-                       notes live behind a door for exactly this reason.
-                       """)
-        _ = leave
-    }
-
-    /// From the top of the margin's own title to the top of the next section's —
-    /// the whole of what this phase adds to the sheet, spacing included.
-    private func marginHeight(_ app: XCUIApplication) -> Double {
-        let mine = app.staticTexts["THE MARGIN"]
-        let next = app.staticTexts["DAILY RHYTHM"]
-        guard mine.waitForExistence(timeout: 12), next.exists else { return 0 }
-        return Double(next.frame.minY - mine.frame.minY)
-    }
+    // MARK: The sheet's length — retired in U0
+    //
+    // `testTheSheetIsTheSameLengthHoweverMuchHeHasWritten` (VER-L-0750 /
+    // VER-L-0821) held the composition lock on Settings. Retired with the lock;
+    // Settings is re-laid as a world in U1/U2 and held to Design's frames.
 
     // MARK: The still path
 

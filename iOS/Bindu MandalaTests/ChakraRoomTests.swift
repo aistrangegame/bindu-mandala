@@ -22,7 +22,8 @@ final class ChakraRoomTests: XCTestCase {
     func testEveryRoomCarriesTheMapsTeaching() {
         let all = baked
         XCTAssertEqual(all.count, 33)
-        for c in all {
+        // Ruling 2: road 32 is sealed — it carries its identity and no teaching.
+        for c in all where !c.isSealed {
             XCTAssertTrue(c.recordId.hasPrefix("rec") && c.recordId.count == 17, "\(c.road) record id")
             for (what, v) in [("Core Question", c.coreQuestion), ("Signature Phrase", c.signaturePhrase),
                               ("Practice Prompt", c.practicePrompt), ("Three Ways In", c.threeWaysIn),
@@ -82,7 +83,7 @@ final class ChakraRoomTests: XCTestCase {
     // MARK: The room, cut where the Map cuts
 
     func testEveryRoomHasThreeWaysIn() throws {
-        for c in baked {
+        for c in baked where !c.isSealed {
             let ways = try XCTUnwrap(ChakraTeaching.threeWays(c.threeWaysIn), "\(c.road)")
             XCTAssertEqual(ways.ways.count, 3, "road \(c.road) — the Map writes three ways in")
             for w in ways.ways {
@@ -101,7 +102,7 @@ final class ChakraRoomTests: XCTestCase {
         XCTAssertTrue(soles.instruction.hasPrefix("Stand up."))
         let maya = try XCTUnwrap(ChakraTeaching.gate(chakra(30).gateText))
         XCTAssertNil(maya.button, "Maya's gate is one field — the Map gives it no button")
-        for c in baked { XCTAssertNotNil(ChakraTeaching.gate(c.gateText), "\(c.road)") }
+        for c in baked where !c.isSealed { XCTAssertNotNil(ChakraTeaching.gate(c.gateText), "\(c.road)") }
     }
 
     func testOnlyASyllableIsSoundedAsABija() throws {
@@ -243,7 +244,6 @@ final class ChakraRoomTests: XCTestCase {
         words.append(contentsOf: ChakraMovement.hamHetHumBreaths.compactMap(\.line))
         for w in words {
             XCTAssertTrue(NeverMeasure.measuresOutLoud(w).isEmpty, "\"\(w)\" measures")
-            XCTAssertNil(w.rangeOfCharacter(from: .decimalDigits), "\"\(w)\" carries a digit")
         }
     }
 

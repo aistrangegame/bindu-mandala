@@ -492,11 +492,7 @@ final class SourcingRoomTests: XCTestCase {
             let scene = RoomScene(room: room)
             for t in [0, HomeMemory.firstAdaptation, HomeMemory.secondAdaptationEnd] {
                 scene.pose(at: t)
-                XCTAssertEqual(scene.solidsInHerLayer, 0,
-                               """
-                               khaḍgamālā \(row.position) mounted \(scene.solidsInHerLayer) solids \
-                               at \(t)s.
-                               """)
+                // U0 · lifted (no solids in her layer); the floor reads node kinds — RoomSceneTests.
             }
         }
     }

@@ -160,43 +160,24 @@ final class TheLibraryFoldUITests: XCTestCase {
     /// seat, reached the same way, over the same screen. Both readings are
     /// therefore of one composition, and the only variable in them is the
     /// recognition.
+    ///
+    /// U0 rewrite (verification.md §2.2, VER-L-0763): the half that held her
+    /// screen's geometry still between "unfelt" and "felt" was the composition
+    /// lock and the two-state rule (a seat may carry several states now); it is
+    /// retired. What stays is the floor: nothing on her screen says a quantity
+    /// of his practice, and nothing he made becomes unreachable — the register
+    /// is folded behind its shelf, one touch away.
     func testHerScreenReportsNothingOfHisPracticeAndStillHoldsAllOfIt() {
-        let app = launch(["START_TAB=mandala", "OPEN_DETAIL=29", "RECOGNIZE_AUTOCLOSE"])
+        let app = launch(["OPEN_WORLD=mandala", "OPEN_DETAIL=29", "RECOGNIZE_AUTOCLOSE"])
         XCTAssertTrue(herScreen(app), "her Detail never arrived")
-        Thread.sleep(forTimeInterval: 2.0)
-        let unfelt = composition(of: app)
-        XCTAssertGreaterThanOrEqual(unfelt.count, 8,
-                                    "her screen exposed almost nothing to read — a screen that "
-                                    + "reports nothing holds every composition it is given")
-
         feelHer(app)
         returnToHerScreen(app)
         Thread.sleep(forTimeInterval: 2.0)
-        let felt = composition(of: app)
 
-        var moved: [String] = []
-        var compared = 0
-        for (key, was) in unfelt.sorted(by: { $0.key < $1.key }) {
-            guard let now = felt[key] else {
-                moved.append("gone once she had been felt — \(key)")
-                continue
-            }
-            compared += 1
-            let dx = abs(now.minX - was.minX), dy = abs(now.minY - was.minY)
-            if dx > 1.0 || dy > 1.0 {
-                moved.append(String(format: "%@ moved (dx %.2f, dy %.2f) because she had been felt",
-                                    key, dx, dy))
-            }
+        for element in app.staticTexts.allElementsBoundByIndex where element.exists {
+            XCTAssertFalse(NarrowFloor.saysAQuantityOfHisPractice(element.label),
+                           "her screen says a quantity of his practice: “\(element.label)”")
         }
-        for key in felt.keys where unfelt[key] == nil {
-            moved.append("arrived on her screen because she had been felt — \(key)")
-        }
-        XCTAssertGreaterThanOrEqual(compared, 8, "only \(compared) elements were comparable")
-        XCTAssertTrue(moved.isEmpty,
-                      "**her screen reports her practice in its own geometry.** The register "
-                      + "belongs behind a shut shelf precisely so that a Śakti felt a hundred "
-                      + "times and one felt never have the same screen:\n"
-                      + moved.joined(separator: "\n"))
 
         // …and it was folded, not thrown away. With the shelf shut the
         // register's own first line is nowhere on her screen; one touch brings
@@ -330,7 +311,7 @@ final class TheLibraryFoldUITests: XCTestCase {
         let entries = FeltRegisterClassifications.folded.filter { $0.screen == "detail" }
         XCTAssertFalse(entries.isEmpty, "no element on the Detail is classified as folded")
 
-        let app = launch(["START_TAB=mandala", "OPEN_DETAIL=33"])
+        let app = launch(["OPEN_WORLD=mandala", "OPEN_DETAIL=33"])
         XCTAssertTrue(herScreen(app), "her Detail never arrived")
         Thread.sleep(forTimeInterval: 2.0)
 
@@ -368,7 +349,7 @@ final class TheLibraryFoldUITests: XCTestCase {
     /// Width is asserted everywhere; height is not, because her Detail scrolls
     /// and a column taller than the glass is what a scroll view is for.
     func testBothShelvesHoldWithTheLargestTypeOnTheSmallestScreen() {
-        let app = launch(["START_TAB=mandala", "OPEN_DETAIL=33"], type: true)
+        let app = launch(["OPEN_WORLD=mandala", "OPEN_DETAIL=33"], type: true)
         XCTAssertTrue(herScreen(app), "her Detail never arrived at the largest type size")
         Thread.sleep(forTimeInterval: 2.0)
 
@@ -424,90 +405,9 @@ final class TheLibraryFoldUITests: XCTestCase {
     }
 }
 
-// MARK: - The vocabulary itself, held to the shape of a claim
-
-/// `FeltRegisterClassifications.folded` is the one place in the composition lock
-/// where an element may leave a screen. `ClassifiedShift`'s own history is the
-/// reason this class exists: a bound written `keyContains: "|"` matches every key
-/// there is, and three of the shift entries are written exactly that way, so a
-/// fold entry written loosely would let a whole screen empty itself and stay
-/// green.
-///
-/// An entry is a claim about one element and the door it went behind. These are
-/// the shape of that claim.
-final class TheFoldVocabularyTests: XCTestCase {
-
-    func testNoFoldEntryCanStandForAWholeScreen() {
-        for entry in FeltRegisterClassifications.folded {
-            let parts = entry.keyContains.components(separatedBy: "|")
-            XCTAssertGreaterThanOrEqual(parts.count, 2,
-                                        "“\(entry.keyContains)” does not name an element's type — a "
-                                        + "key is `type|label|ordinal`, and an entry has to say "
-                                        + "which kind of thing went behind the door")
-            let words = parts.dropFirst().joined(separator: "|")
-            XCTAssertGreaterThanOrEqual(words.count, 6,
-                                        "“\(entry.keyContains)” names \(words.count) characters of "
-                                        + "one element's words — that is a screenful, not an "
-                                        + "element")
-            XCTAssertFalse(entry.behind.isEmpty,
-                           "“\(entry.keyContains)” is folded behind nothing at all")
-            XCTAssertGreaterThanOrEqual(entry.reason.count, 60,
-                                        "“\(entry.keyContains)” went behind “\(entry.behind)” for "
-                                        + "\(entry.reason.count) characters of reason. An entry "
-                                        + "with a vague reason is a regression somebody talked "
-                                        + "their way past.")
-            XCTAssertFalse(entry.screen.isEmpty)
-        }
-    }
-
-    // MARK: - The other vocabulary this phase added: a shift that names a device
-
-    /// A device is one of the three the lock actually runs on. `deviceKey`
-    /// derives "promax" / "phone" / "se" from the screen's own points and names
-    /// the baseline directory with it; an entry pinned to anything else is an
-    /// entry that can never answer for anything, and would leave the blanket
-    /// bound below it silently in charge of a move somebody thought they had
-    /// written down.
-    func testEveryDeviceAShiftNamesIsOneTheLockRunsOn() {
-        let known: Set<String> = ["se", "phone", "promax"]
-        for shift in ClassifiedShift.table {
-            guard let device = shift.device else { continue }
-            XCTAssertTrue(known.contains(device),
-                          "“\(shift.keyContains)” on \(shift.screen) is classified for a device "
-                          + "called “\(device)”, and the lock runs on \(known.sorted()). An entry "
-                          + "no run can match classifies nothing.")
-        }
-    }
-
-    /// **And it is the entry that actually answers.**
-    ///
-    /// `allowance` takes the *first* match, so a device-specific entry written
-    /// below a blanket one for the same element is dead: the blanket entry
-    /// answers on every device and the sharper number is never consulted. That
-    /// is a silent failure — the lock still passes, at the looser bound, with a
-    /// sentence in the file saying otherwise. So each one is asked to answer for
-    /// itself.
-    func testEveryDeviceSpecificEntryIsTheOneThatAnswersForItsDevice() {
-        for shift in ClassifiedShift.table {
-            guard let device = shift.device else { continue }
-            let answered = ClassifiedShift.allowance(screen: shift.screen,
-                                                     key: shift.keyContains,
-                                                     device: device)
-            XCTAssertEqual(answered?.reason, shift.reason,
-                           "“\(shift.keyContains)” on \(shift.screen)/\(device) is classified at "
-                           + "\(shift.settlesDescription) ± \(shift.maxDelta), and a broader entry "
-                           + "above it answers instead. Move it up: the first match wins.")
-        }
-    }
-
-    /// Every door named in the vocabulary is a door `TheLibraryFoldUITests`
-    /// actually opens. A screen added to `folded` whose door nobody opens would
-    /// be a disappearance with a sentence beside it and nothing checking the
-    /// sentence.
-    func testEveryScreenInTheVocabularyIsDrivenBySomething() {
-        let screens = Set(FeltRegisterClassifications.folded.map(\.screen))
-        XCTAssertEqual(screens, ["detail"],
-                       "the fold vocabulary now covers \(screens.sorted()), and only the Detail's "
-                       + "doors are opened by a test. Add the driving before the entry.")
-    }
-}
+// MARK: - Retired in U0
+//
+// `TheFoldVocabularyTests` (verification.md §2.2, VER-L-0818) held the shape of
+// the composition lock's fold vocabulary. The lock is retired as a gate;
+// `ClassifiedShift` lives on as the parity exemption ledger (V01) and is
+// re-pinned against Design's frames when parity runs (U1+).

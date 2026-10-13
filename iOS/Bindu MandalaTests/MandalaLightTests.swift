@@ -63,22 +63,9 @@ final class MandalaLightTests: XCTestCase {
         XCTAssertEqual(MandalaLight.scatter(ring: 42), HomeGem.behaviour[2]!.diffuse, accuracy: 1e-12)
     }
 
-    /// **The corrected mistake stays corrected.** `HomeGem`'s header records
-    /// that Design derived a room's colour from the gemstone's name and then
-    /// took it back: *"topaz is not a hue the walker's light is allowed to come
-    /// from."* Idea 27 as the expansion doc writes it asks for exactly that
-    /// again. This reads the shipped file and refuses it.
-    func testNoGemstoneNameAppearsInTheLight() {
-        guard let file = LawSource.production("MandalaLight.swift") else {
-            return XCTFail("MandalaLight.swift is not in the shipping corpus")
-        }
-        let body = String(file.lexed.masked)     // comments blanked, code intact
-        for ring in 1...9 {
-            let gem = HomeGem.behaviour[ring]!.gem
-            XCTAssertFalse(body.lowercased().contains(gem.lowercased()),
-                           "the light names the gemstone “\(gem)”; the gem is a behaviour, never a colour")
-        }
-    }
+    // U0 · retired (verification.md §2.2, VER-L-0794): `testNoGemstoneNameAppearsInTheLight`.
+    // "The gem never colours" is lifted — the gem may colour. Its behaviour as
+    // diffusion stays, held above (`scatter` / `refraction` are `HomeGem`'s).
 
     /// A Śakti is always more herself than she is the source. The refraction is
     /// bounded, and a seat's arriving hue never crosses the halfway point.
@@ -139,7 +126,9 @@ final class MandalaLightTests: XCTestCase {
 
     /// The reduction from a count to a state lives on the **model**, not on the
     /// screen — so the number never travels to a surface that draws, and a
-    /// future refactor has nothing there to turn into a dimension.
+    /// future refactor has nothing there to turn into a dimension. (U0,
+    /// VER-L-0797: kept as the narrow floor; further states may join "felt",
+    /// each answered by its store the same way.)
     func testWhetherSheHasBeenFeltIsAnsweredByTheStoreNotTheScreen() {
         guard let model = LawSource.production("Shakti.swift"),
               let host = LawSource.production("LivingMandalaView.swift") else {
@@ -154,8 +143,9 @@ final class MandalaLightTests: XCTestCase {
     }
 
     /// Whether she has been felt is a state and may be seen. It is a `Bool` and
-    /// there is nothing behind it.
-    func testTheOnlyThingTheLightKnowsAboutPracticeIsWhetherNotHowOften() {
+    /// there is nothing behind it. (U0, VER-L-0798: a seat may carry other
+    /// states as well — felt is one of several; none of them is a count.)
+    func testTheLightKnowsStatesNeverHowOften() {
         let l = MandalaLightField(viewportRadius: 400, stillness: 1).light(ring: 2)
         let own = Atmosphere.ringHue(2)
         XCTAssertNotEqual(l.seatColor(own: own, felt: true), l.seatColor(own: own, felt: false),
@@ -185,18 +175,19 @@ final class MandalaLightTests: XCTestCase {
     /// a number, perfectly readable as *how far along I am*. Its inputs are the
     /// ring, how near the viewport is and how still the glass is, and this
     /// reads the shipped file to prove nothing else can reach it.
-    func testTheVeilCanNeverKnowWhatHeHasDone() {
+    func testTheVeilIsNeverACompletionMeter() {
         guard let file = LawSource.production("MandalaLight.swift") else {
             return XCTFail("MandalaLight.swift is not in the shipping corpus")
         }
+        // U0 rewrite (VER-L-0795): the veil may know where he has been — what
+        // he felt, when, which rooms he dwelt in. The narrow floor stays: never
+        // a completion meter, so no count of his practice may reach it.
         let body = String(file.lexed.masked)
-        let forbidden = ["countByKp", "serverRecognitionCount", "recognitionCount",
-                         "RecognitionEntry", "RecognitionLogStore", "HomeMemory",
-                         "HomeMemoryStore", "lastFelt", "ActivityLedger", "feltCount",
-                         "streak", "visits"]
+        let forbidden = ["countByKp", "serverRecognitionCount", "recognitionCount", "feltCount",
+                         "visitCount", "streak", "visits"]
         for id in forbidden {
             XCTAssertFalse(body.contains(id),
-                           "the light reaches \(id) — the veil may only know ring, nearness and stillness")
+                           "the light reaches \(id) — the veil may know where he has been, never how much")
         }
         // And the same for the canvas's own veil call sites: the whole render
         // path is count-free after this phase.
@@ -507,11 +498,16 @@ final class MandalaLightTests: XCTestCase {
         guard let canvas = LawSource.production("MandalaCanvasLayer.swift") else {
             return XCTFail("MandalaCanvasLayer.swift is not in the shipping corpus")
         }
+        // U0 rewrite (VER-L-0799): a seat may carry several states (felt,
+        // written to, dwelt in, a sealed letter waiting), each a named number;
+        // none may scale with a count. "Felt or unfelt, nothing else" is lifted.
         let body = String(canvas.lexed.masked)
         XCTAssertFalse(body.contains("min(CGFloat(n), 6)"),
                        "the seven-step practice ramp is back in the canvas")
+        for count in LawsDrawnMeasureTests.countIdentifiers {
+            XCTAssertFalse(body.contains(count), "the canvas sizes a seat by \(count)")
+        }
         XCTAssertTrue(body.contains("feltRadius"), "the felt radius should be one named number")
-        XCTAssertTrue(body.contains("unfeltRadius"))
     }
 
     // MARK: - helpers

@@ -140,6 +140,14 @@ final class ChakraConstellationTests: XCTestCase {
         XCTAssertTrue(ChakraConstellation.thresholdsCrossed(from: 4, to: 6, in: all).isEmpty)
         XCTAssertTrue(ChakraConstellation.thresholdsCrossed(from: 7, to: 3, in: all).isEmpty,
                       "the moments ride the inward fall")
+        // U0 rewrite (VER-L-0815): a threshold is never only behind the fall —
+        // deepening is offered, never withheld. Each one is also a stop of its
+        // own on the Road, a direct door beside the slow one.
+        let roadStops = ChakraRoad.stops(all, seats: [:], in: CGSize(width: 390, height: 844))
+        for threshold in all where threshold.isThreshold {
+            XCTAssertTrue(roadStops.contains { $0.chakra.road == threshold.road },
+                          "\(threshold.name) is reachable only by falling through it")
+        }
     }
 
     func testAThresholdIsDrawnBetweenItsTwoRings() throws {
@@ -172,12 +180,17 @@ final class ChakraConstellationTests: XCTestCase {
 
     // MARK: Spoken
 
-    /// A chakra is a place, not a rung: nothing it says aloud carries a digit.
-    func testTheSpokenConstellationCarriesNoNumber() {
+    /// A chakra is a place, not a rung. U0 (VER-L-0765): the no-digit clause
+    /// is retired (ruling 10); the narrow floor stays, and the sealed room
+    /// (ruling 2) is spoken as held and nothing more.
+    func testTheSpokenConstellationNamesPlacesAndHoldsTheSealedRoom() {
         for c in baked {
             let label = ChakraConstellation.spokenLabel(c, seatName: "Sarvajñā")
-            XCTAssertNil(label.rangeOfCharacter(from: .decimalDigits), label)
+            XCTAssertTrue(NeverMeasure.measuresOutLoud(label).isEmpty, label)
             XCTAssertTrue(label.hasPrefix(c.name), "her name first: \(label)")
+            if c.road == ChakraConstellation.sealedRoad {
+                XCTAssertTrue(label.hasSuffix(ChakraConstellation.sealedLine), label)
+            }
         }
     }
 }

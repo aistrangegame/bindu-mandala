@@ -18,8 +18,7 @@ final class PlayWholePhysicsTests: XCTestCase {
             _ = PlayModels.make(g, startPosition: nil)
             XCTAssertFalse(g.title.isEmpty)
             XCTAssertFalse(g.verb.isEmpty)
-            XCTAssertFalse(Rx.matches(#"\d"#, g.hint), "\(g) hint carries a digit")
-            XCTAssertFalse(Rx.matches(#"\d"#, g.verb), "\(g) verb carries a digit")
+            // U0: the digit clauses are retired (ruling 10).
         }
     }
 

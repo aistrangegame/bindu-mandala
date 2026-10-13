@@ -86,13 +86,9 @@ final class HomeMemoryTests: XCTestCase {
 
     // MARK: - The fifth: the ninth world, a very long stay, or a long bond
 
-    func testFifthIsNotGrantedEarlyInAnOrdinaryRoom() {
-        XCTAssertEqual(HomeMemory.grantsFifth(ring: 3, elapsed: 30, dwell: 0), 0, accuracy: 1e-12)
-        XCTAssertEqual(HomeMemory.grantsFifth(ring: 3, elapsed: 30, dwell: 120), 0, accuracy: 1e-12)
-        // Even at the hold's end it has not begun — it begins *after* it.
-        XCTAssertEqual(HomeMemory.grantsFifth(ring: 3, elapsed: HomeMemory.holdEnd, dwell: 0),
-                       0, accuracy: 1e-12)
-    }
+    // U0 · retired (verification.md §2.2, VER-L-0810 / 0813):
+    // `testFifthIsNotGrantedEarlyInAnOrdinaryRoom`. Withholding the fifth was
+    // gating; it becomes an offer (U4). The ways it is granted stay below.
 
     func testTheNinthWorldGrantsTheFifthImmediately() {
         XCTAssertEqual(HomeMemory.grantsFifth(ring: 9, elapsed: 0, dwell: 0), 1, accuracy: 1e-12)

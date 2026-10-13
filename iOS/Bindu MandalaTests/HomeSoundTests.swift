@@ -168,14 +168,12 @@ final class HomeSoundTests: XCTestCase {
                        carrier * 2, accuracy: epsilon)
     }
 
-    // MARK: - The withheld fifth
+    // MARK: - The fifth, when granted
+    //
+    // U0 (VER-L-0810): "silent unless granted" was gating and is retired — the
+    // fifth becomes an offer (U4). Design's gain when it sounds stays.
 
-    /// Silent unless granted.
-    func testFifthIsWithheldUntilGranted() {
-        for ring in 1...8 {
-            XCTAssertEqual(HomeCarrier.fifthGain(b: 0, ring: ring), 0, accuracy: epsilon,
-                           "ring \(ring) should withhold the fifth")
-        }
+    func testTheFifthSoundsAtDesignsGainWhenGranted() {
         // The second adaptation grants it.
         XCTAssertEqual(HomeCarrier.fifthGain(b: 1, ring: 3), 0.05, accuracy: epsilon)
         XCTAssertEqual(HomeCarrier.fifthGain(b: 0.5, ring: 3), 0.025, accuracy: epsilon)

@@ -131,15 +131,16 @@ final class TheWayInTests: XCTestCase {
         }
     }
 
-    // MARK: - 3 · No room is ever reached without the rite
+    // MARK: - 3 · Every room through one door type
+    //
+    // U0 rewrite (verification.md §2.2, VER-L-0804 / 0805): "a room only behind
+    // the rite" is lifted. Every door is one door type (``HerRoomDoor`` and the
+    // view it presents); the Rite of Entering is *offered* there — compressible
+    // (`RiteOfEntering(compression:)`) and, from U4, skippable — never a wall.
 
-    /// The room is drawn by exactly one thing in the shipping tree, and that
-    /// thing is the threshold.
-    ///
-    /// This is the law *"a room may not be reached without the rite"* held where
-    /// it cannot be got round: not by checking that today's two doors go through
-    /// the ceremony, but by proving there is nowhere else a room can come from.
-    func testTheOnlyRoomInTheShellIsTheOneBehindTheRite() throws {
+    /// The room is drawn only by the one door type, so no way in can drift from
+    /// the others.
+    func testEveryRoomIsDrawnByTheOneDoorType() throws {
         // **No directory is excused.** This check used to skip `Views/Spike/`,
         // and the project synchronises its whole source root into the app
         // target — the spike ships. A room constructed there is a room in the
@@ -151,12 +152,18 @@ final class TheWayInTests: XCTestCase {
                 sites.append(f.path)
             }
         }
-        XCTAssertEqual(sites, ["Views/Rooms/RiteOfEnteringView.swift"],
-                       """
-                       a room is drawn somewhere other than behind the rite of entering. \
-                       The threshold is the only way in; a second construction site is a room \
-                       a walker can arrive at without being admitted to it.
-                       """)
+        XCTAssertFalse(sites.isEmpty, "no room is drawn anywhere — the scan is not reading")
+        for site in sites {
+            XCTAssertTrue(["Views/Rooms/RiteOfEnteringView.swift", "Views/Rooms/HerRoomDoor.swift"].contains(site),
+                          """
+                          a room is drawn in \(site), outside the one door type. Every way in is \
+                          one door (`HerRoomDoor`), where the rite is offered.
+                          """)
+        }
+        // The rite is offered compressed: a compression below one is a quicker
+        // ceremony, never none (HomeMemory's floor).
+        XCTAssertGreaterThan(HomeMemory.compressionFloor, 0)
+        XCTAssertLessThan(HomeMemory.compressionFloor, 1)
     }
 
     /// **Many doors, one threshold** (Wave 2 · rewritten).
@@ -177,8 +184,8 @@ final class TheWayInTests: XCTestCase {
         XCTAssertEqual(thresholds, ["Views/Rooms/HerRoomDoor.swift"],
                        """
                        a threshold is built in \(thresholds.count) place(s): \(thresholds). Every way \
-                       into a room passes the rite of entering through ``HerRoomDoor``; a second \
-                       builder is a way in that could drift from the rite.
+                       into a room is the one door type, ``HerRoomDoor``, where the rite is offered; \
+                       a second builder is a way in that could drift from the others (U0 rewrite).
                        """)
 
         // …and the doors that use it stand where the charter says one building
@@ -317,10 +324,9 @@ final class TheWayInTests: XCTestCase {
     func testTheWayOutCannotSayANumber() throws {
         let file = try XCTUnwrap(LawSource.production("TheWayOut.swift"))
         for lit in file.literals {
+            // U0 (VER-L-0755): the digit clause is retired; the narrow floor stays.
             XCTAssertTrue(NeverMeasure.measuresOutLoud(lit.text).isEmpty,
                           "the way out measures out loud: \"\(lit.text)\"")
-            XCTAssertNil(Rx.first(#"\d"#, lit.text),
-                         "the way out says a digit: \"\(lit.text)\"")
         }
         // **The scan reads the whole type, attributes and all.**
         //

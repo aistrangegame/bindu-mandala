@@ -231,9 +231,9 @@ final class TheRiverTests: XCTestCase {
 
         // Nothing composed here measures him: no digit in a name or detail
         // that the instrument wrote (the opening day is his letter's, quoted).
+        // U0 (VER-L-0760): the digit clauses became the narrow floor.
         for row in [back, opened, drawn, watched, open] {
-            XCTAssertNil(row.name.rangeOfCharacter(from: .decimalDigits), row.name)
-            XCTAssertNil(row.detail.rangeOfCharacter(from: .decimalDigits), row.detail)
+            XCTAssertTrue(NeverMeasure.measuresOutLoud(row.name + " " + row.detail).isEmpty, row.detail)
         }
         for row in [sealed, back, opened, drawn, watched, open] {
             XCTAssertTrue(ActivityLedger.fields(for: row).keys.contains(ActivityLedger.Field.activityType))

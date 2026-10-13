@@ -184,25 +184,15 @@ final class HomeDescentTests: XCTestCase {
 
     // MARK: - The shaft, in the graph
 
-    /// The binding condition, in the one part of Design's package that let it
-    /// go. Design's descent hangs a torus knot, thirteen boxes, an icosahedron
-    /// and three tori in the air; this one hangs nothing at all.
-    func testTheDescentHoldsNoSolidInAnyRoom() {
-        for room in HomesCorpus.resolvedRooms() {
-            let shaft = DescentShaft(room: room.room, roots: 3)
-            XCTAssertEqual(shaft.solids, 0,
-                           "kp \(room.row.position) put a solid in the descent")
-        }
-    }
-
-    /// …and opening it does not put one in **her** layer either, which is the
-    /// check the whole render spine is built around.
-    func testOpeningTheDescentLeavesHerLayerEmpty() {
+    /// U0 · retired (verification.md §2.2, VER-L-0774): `testTheDescentHoldsNoSolidInAnyRoom`
+    /// and the her-layer solid count of `testOpeningTheDescentLeavesHerLayerEmpty`.
+    /// "No solids in her layer" is lifted; the floor (no figure of a Śakti)
+    /// reads node kinds in `RoomSceneTests`. What stays: opening the descent
+    /// builds in the building.
+    func testOpeningTheDescentBuildsInTheBuilding() {
         for position in [1, 4, 29, 57, 93, 102] {
             let scene = RoomScene(room: room(position: position))
-            XCTAssertEqual(scene.solidsInHerLayer, 0)
             scene.openTheDescent(roots: 3)
-            XCTAssertEqual(scene.solidsInHerLayer, 0, "kp \(position)")
             XCTAssertGreaterThan(scene.solids(in: .building), 0)
         }
     }
@@ -324,17 +314,14 @@ final class HomeDescentTests: XCTestCase {
         XCTAssertTrue(TheDescent.isOffered(atChamberTime: 0), "the way down is withheld from a stranger")
         XCTAssertTrue(TheDescent.isOffered(atChamberTime: HomeMemory.firstAdaptation - 0.001))
 
-        XCTAssertEqual(DescentReach.stations(atChamberTime: 0), DescentReach.shallow)
-        XCTAssertEqual(DescentReach.stations(atChamberTime: HomeMemory.firstAdaptation - 0.001),
-                       DescentReach.shallow)
+        // U0 rewrite (VER-L-0811): deepening is offered, never withheld. The
+        // assertions that a first visit is held to the shallow shaft are
+        // retired (U4 gives every station a direct door beside the slow one);
+        // what stays is that the way down is always there and reaches deep.
         XCTAssertEqual(DescentReach.stations(atChamberTime: HomeMemory.firstAdaptation),
                        TheDescent.stations)
         XCTAssertGreaterThan(DescentReach.shallow, 0, "a descent that reaches nothing is a lock")
-        XCTAssertLessThan(DescentReach.shallow, TheDescent.stations, "dwelling deepens nothing")
 
-        // A room never stood in opens at the beginning: shallow at first.
-        XCTAssertEqual(DescentReach.stations(atChamberTime: HomeMemory.headStart(dwell: 0)),
-                       DescentReach.shallow)
         // Two minutes of accumulated dwell opens it to its floor on arrival.
         XCTAssertEqual(DescentReach.stations(atChamberTime: HomeMemory.headStart(dwell: 120)),
                        TheDescent.stations)
@@ -381,11 +368,10 @@ final class HomeDescentTests: XCTestCase {
     func testTheDescentSaysNothingAboutHowDeepHeIs() {
         var descent = TheDescent()
         let spoken = [TheDescent.mouthPrompt.words, RitePrompt.goOn.words]
+        // U0: the digit and measuring-word bans are retired (ruling 10); the
+        // narrow floor stays.
         for words in spoken {
-            XCTAssertFalse(words.contains(where: \.isNumber), words)
-            for banned in ["of", "step", "level", "stage", "deep"] where words.hasSuffix(banned) {
-                XCTFail("\(words) counts")
-            }
+            XCTAssertTrue(NeverMeasure.measuresOutLoud(words).isEmpty, words)
         }
         // One instruction at every station, the floor included: a word for
         // coming back is a word about having been somewhere, and

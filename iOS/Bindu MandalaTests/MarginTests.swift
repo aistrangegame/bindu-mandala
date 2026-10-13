@@ -267,14 +267,15 @@ final class MarginDateTests: XCTestCase {
     /// any year.** §4.4's finding applied to a date: the ink may say "Aug 21",
     /// the voice says the day as a word, through the same ordinal table the
     /// Mandala already speaks a seat with.
-    func testNoDayOfAnyYearIsEverSpokenAsADigit() {
+    ///
+    /// U0 (VER-L-0761): the no-numeral clause is retired (ruling 10 allows
+    /// dates and numbers). What stays: every day of the year can be spoken.
+    func testEveryDayOfTheYearCanBeSpoken() {
         let now = date(2026, 12, 31)
         var day = date(2025, 12, 31)
         var checked = 0
         while day <= now {
             let said = MarginDate.spoken(day, now: now, calendar: cal)
-            XCTAssertFalse(said.contains(where: \.isNumber),
-                           "\(said) — a numeral reached the spoken surface")
             XCTAssertFalse(said.isEmpty)
             day = cal.date(byAdding: .day, value: 1, to: day)!
             checked += 1

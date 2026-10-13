@@ -86,7 +86,7 @@ final class AccessibilityReachTests: XCTestCase {
     /// asserting a number it cannot reach: the count is checked against what the
     /// Field itself reports, and every one of them is checked for a real name.
     func testEverySeatOnTheScreenIsAnElementThatSpeaksHerName() {
-        let app = Reach.app(["START_TAB=mandala"])
+        let app = Reach.app(["OPEN_WORLD=mandala"])
         XCTAssertTrue(Reach.text(app, "Śrī Yantra"), "the Mandala never arrived")
 
         let field = Reach.spokenField(app)
@@ -109,8 +109,10 @@ final class AccessibilityReachTests: XCTestCase {
                            "a seat is speaking its ring before her name: “\(label)”")
             XCTAssertTrue(label.contains("of the one hundred and two"),
                           "a seat does not say where in the garland she sits: “\(label)”")
-            XCTAssertNil(label.first(where: \.isNumber),
-                         "a spoken label carries a numeral: “\(label)”")
+            // U0 (VER-S-0646): the no-numeral clause is dropped (ruling 10);
+            // a seat may say its number. A quantity of his practice may not.
+            XCTAssertFalse(NarrowFloor.saysAQuantityOfHisPractice(label),
+                           "a spoken label says a quantity of his practice: “\(label)”")
             XCTAssertGreaterThanOrEqual(seat.frame.width, 43.5,
                                         "“\(label)” is a target a finger cannot find")
             XCTAssertGreaterThanOrEqual(seat.frame.height, 43.5,
@@ -134,7 +136,7 @@ final class AccessibilityReachTests: XCTestCase {
     /// middle dots gone, `SHAH` no longer spelled out as three letters, her
     /// quality, and her place in the garland said in words.
     func testTheSeatedSixteenAreEachFindableByHerOwnName() {
-        let app = Reach.app(["START_TAB=mandala"])
+        let app = Reach.app(["OPEN_WORLD=mandala"])
         XCTAssertTrue(Reach.text(app, "Śrī Yantra"), "the Mandala never arrived")
 
         let seats = Reach.spokenField(app).map(\.label)
@@ -166,7 +168,7 @@ final class AccessibilityReachTests: XCTestCase {
     /// walker swiping right through the field should travel the ring the way the
     /// ring is strung, not the way SwiftUI happens to lay the rectangles out.
     func testTheFieldIsSpokenInGarlandOrder() {
-        let app = Reach.app(["START_TAB=mandala"])
+        let app = Reach.app(["OPEN_WORLD=mandala"])
         XCTAssertTrue(Reach.text(app, "Śrī Yantra"), "the Mandala never arrived")
 
         let labels = Reach.spokenField(app).map(\.label)
@@ -209,7 +211,7 @@ final class AccessibilityReachTests: XCTestCase {
     /// which finds the nearest seat. If the element were in the wrong place the
     /// card that blooms would carry a different name, or none.
     func testActivatingASeatOpensHerSignificance() {
-        let app = Reach.app(["START_TAB=mandala"])
+        let app = Reach.app(["OPEN_WORLD=mandala"])
         XCTAssertTrue(Reach.text(app, "Śrī Yantra"), "the Mandala never arrived")
 
         let target = Reach.spokenField(app).first {
@@ -260,13 +262,13 @@ final class DynamicTypeReachTests: XCTestCase {
     /// ninety degrees.
     func testNothingRunsOffTheSideOfTheSmallestScreen() {
         let screens: [(name: String, args: [String], settles: String)] = [
-            ("the Mandala",   ["START_TAB=mandala"],            "Śrī Yantra"),
-            ("her presence",  ["START_TAB=mandala", "OPEN_DETAIL=33"], "Embodiment"),
-            ("the Rite",      ["START_TAB=rite"],               "I feel her"),
-            ("the Field",     ["START_TAB=102"],                "The Field"),
-            ("the Well",      ["START_TAB=well"],               "Your Letters"),
-            ("the Portrait",  ["START_TAB=memory"],             "she is felt, not measured"),
-            ("the Bindu",     ["START_TAB=mandala", "OPEN_SILENCE"], "THE BINDU"),
+            ("the Mandala",   ["OPEN_WORLD=mandala"],            "Śrī Yantra"),
+            ("her presence",  ["OPEN_WORLD=mandala", "OPEN_DETAIL=33"], "Embodiment"),
+            ("the Rite",      ["OPEN_WORLD=today"],               "I feel her"),
+            ("the Field",     ["OPEN_WORLD=rings"],                "The Field"),
+            ("the Well",      ["OPEN_WORLD=well"],               "Your Letters"),
+            ("the Portrait",  ["OPEN_WORLD=memory"],             "she is felt, not measured"),
+            ("the Bindu",     ["OPEN_WORLD=mandala", "OPEN_SILENCE"], "THE BINDU"),
         ]
 
         var failures: [String] = []
@@ -331,9 +333,9 @@ final class DynamicTypeReachTests: XCTestCase {
     /// phase and a clock the same string across two launches.
     func testNoStringIsCutShortByAColumnThatCannotGrow() {
         let screens: [(name: String, args: [String], settles: String)] = [
-            ("the Rite",  ["START_TAB=rite"],                    "I feel her"),
-            ("the Well",  ["START_TAB=well"],                    "Your Letters"),
-            ("the Bindu", ["START_TAB=mandala", "OPEN_SILENCE"], "THE BINDU"),
+            ("the Rite",  ["OPEN_WORLD=today"],                    "I feel her"),
+            ("the Well",  ["OPEN_WORLD=well"],                    "Your Letters"),
+            ("the Bindu", ["OPEN_WORLD=mandala", "OPEN_SILENCE"], "THE BINDU"),
         ]
 
         var failures: [String] = []
@@ -421,7 +423,7 @@ final class DynamicTypeReachTests: XCTestCase {
 
     /// The two headers' heights in one launch: Cormorant, and the system sans.
     private func fieldHeader(largest: Bool) -> (title: Double, strip: Double) {
-        let app = Reach.app(["START_TAB=102"], type: largest)
+        let app = Reach.app(["OPEN_WORLD=rings"], type: largest)
         defer { app.terminate() }
         let title = app.staticTexts
             .matching(NSPredicate(format: "label == %@", "The Field"))
@@ -438,7 +440,7 @@ final class DynamicTypeReachTests: XCTestCase {
     /// box did not is a button that reads as a smear — and §4.2's eight targets
     /// were paid for in points that Dynamic Type can spend again.
     func testEveryControlIsStillReachableAtTheLargestSize() {
-        let app = Reach.app(["START_TAB=mandala", "OPEN_DETAIL=33"], type: true)
+        let app = Reach.app(["OPEN_WORLD=mandala", "OPEN_DETAIL=33"], type: true)
         XCTAssertTrue(Reach.text(app, "Embodiment", 35), "her presence never arrived")
         Thread.sleep(forTimeInterval: 2.0)
 
@@ -479,7 +481,7 @@ final class VoiceOverCeremonyExitTests: XCTestCase {
     /// all. A tap-anywhere exit gives a sighted walker the whole screen and a
     /// VoiceOver walker nothing, unless something says so.
     func testTheTapAnywhereExitIsAnElementAVoiceCanFind() {
-        let app = Reach.app(["START_TAB=rite", "AUTO_RECOGNIZE"])
+        let app = Reach.app(["OPEN_WORLD=today", "AUTO_RECOGNIZE"])
         XCTAssertTrue(Reach.text(app, "and she felt you back", 40),
                       "the ceremony never reached its second line")
 

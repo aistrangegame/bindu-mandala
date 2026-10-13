@@ -27,12 +27,51 @@ final class ElementTests: XCTestCase {
         XCTAssertEqual(Element.parse(tattva: "something unmapped"), .ether)
     }
 
+    // MARK: Ruling 4 (12 Oct 2026) and C12 — the Karṣiṇīs by position
+    //
+    // U0 rewrite (VER-S-0686): Element has a light branch in Ring 2, and the
+    // sixteen Karṣiṇīs take their element from one explicit table by kp — Ahaṅ
+    // fire (31), Nāma air (40), Ātma light (42), Amṛta water (43) — never from
+    // a parse of her tattva text, which for kp 34–44 names the cross-mapped organ.
+
+    static let ring2: [Int: Element] = [
+        29: .earth, 30: .water, 31: .fire, 32: .air, 33: .ether,
+        34: .fire, 35: .water, 36: .earth, 37: .ether, 38: .earth,
+        39: .water, 40: .air, 41: .fire, 42: .light, 43: .water, 44: .earth,
+    ]
+
+    func testRulingFourElementsByPosition() {
+        // Each tattva below is chosen to *disagree* with the table, so the test
+        // fails if the element is read from the text instead of the position.
+        XCTAssertEqual(makeShakti(ring: 2, kp: 31, tattva: "Ākāśa (ether)").element, .fire, "Ahaṅ is fire")
+        XCTAssertEqual(makeShakti(ring: 2, kp: 40, tattva: "Earth").element, .air, "Nāma is air")
+        XCTAssertEqual(makeShakti(ring: 2, kp: 42, tattva: "Water").element, .light, "Ātma is light")
+        XCTAssertEqual(makeShakti(ring: 2, kp: 43, tattva: "Fire").element, .water, "Amṛta is water")
+    }
+
+    func testTheSixteenKarshinisFollowTheTable() {
+        XCTAssertEqual(Element.ring2ByKp, Self.ring2)
+        for (kp, element) in Self.ring2 {
+            XCTAssertEqual(Element.forRing2(kp: kp), element, "kp \(kp)")
+            XCTAssertEqual(makeShakti(ring: 2, kp: kp, tattva: "something unmapped").element, element, "kp \(kp)")
+        }
+        XCTAssertNil(Element.forRing2(kp: 28))
+        XCTAssertNil(Element.forRing2(kp: 45))
+    }
+
+    /// The light branch reaches what every element reaches: Recognition's
+    /// nature (light radiates) — and ring 9 stays light.
+    func testTheLightBranch() {
+        XCTAssertTrue(Element.allCases.contains(.light))
+        XCTAssertEqual(RecognitionNature.of(.light), .radiate)
+        XCTAssertEqual(RecognitionNature.of(.fire), .flare)
+        XCTAssertEqual(RecognitionNature.of(.air), .disperse)
+        XCTAssertEqual(RecognitionNature.of(.water), .pool)
+        XCTAssertEqual(Element.forRing(9), .light)
+        XCTAssertEqual(makeShakti(ring: 9, kp: 102, tattva: "").element, .light)
+    }
+
     func testShaktiElementResolvesForAllRings() {
-        // Ring 2 reads her tattva.
-        let s2 = makeShakti(ring: 2, kp: 33, tattva: "Fire (Agni)")
-        XCTAssertEqual(s2.element, .fire)
-        let s2blank = makeShakti(ring: 2, kp: 34, tattva: "")
-        XCTAssertEqual(s2blank.element, .ether)
         // The 86 take the ring table regardless of tattva.
         let s5 = makeShakti(ring: 5, kp: 70, tattva: "irrelevant")
         XCTAssertEqual(s5.element, .fire)

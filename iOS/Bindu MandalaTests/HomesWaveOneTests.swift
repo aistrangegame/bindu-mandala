@@ -238,14 +238,14 @@ final class HomesWaveOneTests: XCTestCase {
         XCTAssertTrue(words.place.hasSuffix("the fourth āvaraṇa"))
     }
 
-    /// Nothing the room says counts anything — Design's nine MEASURING
-    /// patterns, over every word every one of the 102 could say.
+    /// Nothing the room says is a quantity of his practice — the narrow floor
+    /// (U0, ruling 10: `Measuring.patterns`, four of Design's nine), over every
+    /// word every one of the 102 could say.
     func testNoRoomWordMeasuresHim() throws {
-        let measuring = [#"\b\d+\s*(?:of|\/)\s*\d+\b"#, #"\b\d+\s*%"#, #"\bvisit(?:s)?\s*[:=]\s*\d+"#,
-                         #"\bstreak\b"#, #"\bprogress\b"#, #"\blevel\s*\d"#, #"\bscore\b"#,
-                         #"\bday\s*\d+\b"#, #"\b\d+\s*(?:times|visits)\b"#]
-        let patterns = try measuring.map { try NSRegularExpression(pattern: $0, options: [.caseInsensitive]) }
-        var said: [String] = [HomeAfterEffect.line, RoomWords.seatSentence]
+        let patterns = try Measuring.patterns.map {
+            try NSRegularExpression(pattern: $0.pattern, options: [.caseInsensitive])
+        }
+        var said: [String] = [RoomWords.seatSentence]
         for position in 1...102 {
             let ring = KhadgamalaMap.ringNumber(forKhadgamala: position)
             guard let room = HomeRooms.resolve(position: position, ring: ring, tattva: "Pṛthivī",
@@ -269,7 +269,9 @@ final class HomesWaveOneTests: XCTestCase {
                                                 .heavier, .wider, .lighter, .wider]
         XCTAssertEqual(HomeWorlds.rings.map(HomeAfterEffect.kind(ring:)), expected)
         XCTAssertEqual(HomeAfterEffect.lingers, 180)
-        XCTAssertEqual(HomeAfterEffect.line, "her siddhi is still on the instrument")
+        // Ruling 15 (VER-S-0691): the after-effect is felt, never named — the
+        // line "her siddhi is still on the instrument" is gone (asserted absent
+        // from the whole app in `RulingTests`); the light lingers 180 s.
 
         for kind in HomeAfterEffect.Kind.allCases {
             let leaving = HomeAfterEffect.look(kind: kind, age: 0)
@@ -292,7 +294,5 @@ final class HomesWaveOneTests: XCTestCase {
         }
         // The exposure lift is the Axis's, and every kind leaves lighter at first.
         XCTAssertGreaterThan(HomeAfterEffect.look(kind: .heavier, age: 0).brightness, -0.06)
-        XCTAssertTrue(HomeAfterEffect.lineShows(age: 0))
-        XCTAssertFalse(HomeAfterEffect.lineShows(age: HomeAfterEffect.lineHolds))
     }
 }

@@ -137,18 +137,17 @@ final class MandalaVoiceTests: XCTestCase {
                            "\(origin) hands Devanāgarī to a voice as text: “\(text)”")
             XCTAssertNil(text.unicodeScalars.first { $0.value >= 0x0300 && $0.value <= 0x036F },
                          "\(origin) carries a combining mark: “\(text)”")
-            XCTAssertNil(text.first(where: \.isNumber),
-                         "\(origin) says a numeral out loud — her seat is spelled, never counted: “\(text)”")
+            // U0: the no-numeral clause is retired (ruling 10 allows numbers
+            // and seat numbers); `MandalaVoice.ordinal` still spells her seat.
         }
     }
 
     // MARK: - The law, over the spoken surface
 
-    func testNoSpokenStringMeasures() {
+    /// U0 (VER-L-0753): the measuring-word half of this scan is retired; the
+    /// practice half — no quantity of his practice is said aloud — is the floor.
+    func testNoSpokenStringSaysHisPractice() {
         for (origin, text) in everySpokenString() {
-            let hits = NeverMeasure.measuresOutLoud(text)
-            XCTAssertTrue(hits.isEmpty,
-                          "\(origin) measures out loud (\(hits.joined(separator: ", "))): “\(text)”")
             let practice = NeverMeasure.practiceTouched(in: text)
             XCTAssertTrue(practice.isEmpty,
                           "\(origin) says \(practice.joined(separator: ", ")) aloud: “\(text)”")
@@ -296,8 +295,6 @@ final class MandalaVoiceTests: XCTestCase {
         for ring in 1...9 {
             let spoken = MandalaVoice.enclosureForms[ring]
             XCTAssertFalse(spoken.isEmpty, "ring \(ring) has no spoken form")
-            XCTAssertNil(spoken.first(where: \.isNumber),
-                         "ring \(ring)'s spoken form carries a numeral: \(spoken)")
         }
     }
 

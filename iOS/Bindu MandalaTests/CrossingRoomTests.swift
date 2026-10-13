@@ -425,7 +425,7 @@ final class CrossingRoomTests: XCTestCase {
                                  half grows until it is the room around him, and here it is the room \
                                  that answers.
                                  """)
-            XCTAssertEqual(scene.solidsInHerLayer, 0)
+            // U0 · lifted (no solids in her layer); the floor reads node kinds — RoomSceneTests.
             departures[row.position] = scene.enclosureRose
         }
         let key = try? XCTUnwrap(departures[CrossingRoom.keyPosition])
@@ -479,8 +479,9 @@ final class CrossingRoomTests: XCTestCase {
         // And nothing in any of it measures the walker.
         for (_, room) in karsinis() {
             for words in [room.label?.near ?? "", room.label?.deep ?? ""] {
-                XCTAssertNil(words.rangeOfCharacter(from: .decimalDigits),
-                             "a room's words carry a number: \"\(words)\"")
+                // U0: the digit clause became the narrow floor (ruling 10).
+                XCTAssertTrue(Measuring.measuresOutLoud(words).isEmpty,
+                              "a room's words say a quantity of his practice: \"\(words)\"")
             }
         }
     }
@@ -513,8 +514,7 @@ final class CrossingRoomTests: XCTestCase {
             let scene = RoomScene(room: room)
             for t in [0.0, Self.firstAdaptation, HomeMemory.holdEnd, Self.pastTheSecond] {
                 scene.pose(at: t)
-                XCTAssertEqual(scene.solidsInHerLayer, 0,
-                               "khaḍgamālā \(row.position): a geometry appeared under her own layer")
+                // U0 · lifted (no solids in her layer); the floor reads node kinds — RoomSceneTests.
             }
             XCTAssertGreaterThan(scene.childCount(in: .her), 0,
                                  "khaḍgamālā \(row.position): the light in her mark is missing")

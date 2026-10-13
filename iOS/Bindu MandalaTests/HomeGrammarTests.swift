@@ -588,17 +588,8 @@ final class HomeGrammarTests: XCTestCase {
                        "a measuring quality must trip the detector once composed")
     }
 
-    /// Belt and braces, and the plainer statement of the same law: no digit
-    /// reaches a label at all.
-    func testNoLabelCarriesANumber() {
-        let digits = CharacterSet.decimalDigits
-        for r in Self.allOneHundredAndTwo() {
-            XCTAssertNil(r.label.near.rangeOfCharacter(from: digits),
-                         "kp \(r.position) near label carries a number: \"\(r.label.near)\"")
-            XCTAssertNil(r.label.deep.rangeOfCharacter(from: digits),
-                         "kp \(r.position) deep label carries a number: \"\(r.label.deep)\"")
-        }
-    }
+    // U0 · retired: `testNoLabelCarriesANumber` — the digit ban is lifted
+    // (ruling 10); the narrow floor over every label stays in the test above.
 
     /// Her words are hers: within a ring, no two sisters say the same thing
     /// while the eye is still settling.

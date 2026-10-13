@@ -269,31 +269,32 @@ final class MandalaYantraTests: XCTestCase {
         }
     }
 
-    /// **The surviving law, held in the source.** The Veil's light is read from
-    /// where he is standing, and it cannot be read from anything he has done:
-    /// nothing in the Veil reaches a felt state, a crossing record, the ledger
-    /// or a count. A ladder of rings he has "unlocked" is a progress readout;
-    /// a light that moves with his feet is a place.
-    func testTheVeilCannotKnowWhatHeHasDone() {
+    /// **U0 rewrite (verification.md §2.2, VER-L-0796).** "A veil that cannot
+    /// learn" is lifted: the Veil may know where he has been — what he felt,
+    /// how deep he has gone, which rings he crossed. The narrow floor is what
+    /// stays: **never a completion meter** — no count of his practice reaches
+    /// the Veil or the breath, and nothing it says is a fraction or a
+    /// percentage of the rings.
+    func testTheVeilIsNeverACompletionMeter() {
         guard let veil = LawSource.production("MandalaVeil.swift"),
               let breath = LawSource.production("MandalaBreath.swift") else {
             return XCTFail("the Veil or the breath is not in the shipping corpus")
         }
         for file in [veil, breath] {
             let code = String(file.lexed.masked)
-            for forbidden in ["felt", "Felt", "DescentState", "deepest", "RecognitionEntry",
-                              "ActivityLedger", "HomeMemory", "recognitionCount",
-                              "serverRecognitionCount", "crossings", "visits", "streak"] {
+            for forbidden in ["recognitionCount", "serverRecognitionCount", "countByKp", "feltCount",
+                              "visitCount", "visits", "streak", "percent", "Percent"] {
                 XCTAssertFalse(code.contains(forbidden),
-                               "\(file.name) reaches \(forbidden) — its light must be read from "
-                               + "where he stands, never from what he has done")
+                               "\(file.name) reaches \(forbidden) — the Veil may know where he has "
+                               + "been, never how much")
             }
         }
-        // And nothing in it is spoken as a numeral.
         for ring in 1...9 {
             for here in 1...9 {
                 let spoken = MandalaVeil.spokenRow(ring: ring, here: here)
-                XCTAssertNil(spoken.first(where: \.isNumber), "the Veil speaks a numeral: \(spoken)")
+                XCTAssertNil(Rx.first(#"(?i)\b\d+\s*(?:of|/)\s*\d+\b|%|\bof (?:the )?nine\b"#, spoken),
+                             "the Veil speaks a fraction of the rings: \(spoken)")
+                XCTAssertTrue(NeverMeasure.measuresOutLoud(spoken).isEmpty, spoken)
                 XCTAssertFalse(spoken.lowercased().contains("enclosure"),
                                "the Veil's rows must not be mistaken for the field's spoken seats")
             }

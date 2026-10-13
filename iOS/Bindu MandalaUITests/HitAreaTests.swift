@@ -70,7 +70,7 @@ final class HitAreaTests: XCTestCase {
     //     of the Bindu. Its padding sat on the `Button` rather than on the
     //     label, so the tappable thing was the bare line of text.
     func testReturnToTheFieldIsReachable() {
-        let app = launch(["START_TAB=mandala", "OPEN_SILENCE"])
+        let app = launch(["OPEN_WORLD=mandala", "OPEN_SILENCE"])
         let control = app.buttons
             .matching(NSPredicate(format: "label CONTAINS[c] 'return to the field'")).firstMatch
         assertReachable(control, "LalitaSourceView · return to the field", in: app)
@@ -85,7 +85,7 @@ final class HitAreaTests: XCTestCase {
     //     allowed to look alike: the row is measured wherever it *is* on the
     //     screen, and skipped, out loud, where it is not.
     func testTheThresholdRowIsReachable() throws {
-        let app = launch(["START_TAB=102"])
+        let app = launch(["OPEN_WORLD=rings"])
         // `[cd]`, not `[c]`: the ring header announces itself as "2nd Avaraṇa"
         // — the seat row's own spelling, without the macron — and `[c]` folds
         // case but not diacritics, so 'Āvaraṇa' matched nothing at all.
@@ -117,7 +117,7 @@ final class HitAreaTests: XCTestCase {
     //     anything. Launching with it and never opening Settings measured
     //     nothing at all, which is how this test first went red.
     func testFilmCloseIsReachable() {
-        let app = launch(["START_TAB=well", "OPEN_FILM"])
+        let app = launch(["OPEN_WORLD=well", "OPEN_FILM"])
         SnapshotScreen.openSettings(app)
         let control = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'close'")).firstMatch
         assertReachable(control, "DescentFilmView · CLOSE", in: app)
@@ -132,7 +132,7 @@ final class HitAreaTests: XCTestCase {
     //     the screen at all — which the committed `rite` baseline shows, and which
     //     is why this one first went red.
     func testCelestialStripIsReachable() throws {
-        let app = launch(["START_TAB=rite"])
+        let app = launch(["OPEN_WORLD=today"])
         XCTAssertTrue(SnapshotScreen.button(app, "I feel her"), "the Rite never arrived")
         let control = app.buttons
             .matching(NSPredicate(format: "label CONTAINS[c] '›' AND NOT (label CONTAINS[c] 'know her')"))
@@ -149,7 +149,7 @@ final class HitAreaTests: XCTestCase {
 
     // 5 · The Rite's way into her full presence.
     func testKnowHerIsReachable() {
-        let app = launch(["START_TAB=rite"])
+        let app = launch(["OPEN_WORLD=today"])
         let control = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'know her'")).firstMatch
         assertReachable(control, "RiteBlockView · know her ›", in: app)
     }
@@ -157,7 +157,7 @@ final class HitAreaTests: XCTestCase {
     // 6 · Settings' rename field — the only place the practitioner types a name
     //     of his own into the instrument.
     func testRenameFieldIsReachable() {
-        let app = launch(["START_TAB=well"])
+        let app = launch(["OPEN_WORLD=well"])
         SnapshotScreen.openSettings(app)
         // The sheet and the field are two different failures and must not read
         // alike: a hamburger tap swallowed by an arriving screen is the host,
@@ -177,7 +177,7 @@ final class HitAreaTests: XCTestCase {
     //     settling and be swallowed whole. One attempt made this test a report on
     //     the machine it ran on.
     func testHoldThisImageIsReachable() {
-        let app = launch(["START_TAB=memory"])
+        let app = launch(["OPEN_WORLD=memory"])
         XCTAssertTrue(SnapshotScreen.text(app, "she is felt, not measured"),
                       "the Portrait never arrived")
         Thread.sleep(forTimeInterval: 2.4)

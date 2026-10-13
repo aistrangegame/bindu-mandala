@@ -147,39 +147,13 @@ final class MudraRoomTests: XCTestCase {
         // would be noise pretending to be a law. The first run of this test found
         // that honestly: it failed on khaḍgamālā 24 for saying *"the kāla of the
         // eyes"*, which is where she is felt.
-        let bodyWords = ["hand", "finger", "thumb", "palm", "fist", "knuckle", "wrist",
-                         "grip", "clasp", "limb", "torso", "womb", "flesh"]
-
-        // ── the ten rooms' own words ────────────────────────────────────────
-        for (row, room) in rooms() {
-            if let label = room.label {
-                for said in [label.near, label.deep] {
-                    let lowered = said.lowercased()
-                    for word in bodyWords {
-                        XCTAssertFalse(lowered.contains(word),
-                                       """
-                                       khaḍgamālā \(row.position) says "\(said)" to the walker, and \
-                                       that names a \(word). A mudrā is a sealing; law 4 does not \
-                                       let the one family where the figure is closest be the one \
-                                       that names it.
-                                       """)
-                    }
-                }
-            }
-            guard let form = HomeAttribute.form(atPosition: row.position) else {
-                XCTFail("khaḍgamālā \(row.position) brings no attribute into her room")
-                continue
-            }
-            let drawn = (form.rawValue + " " + form.shape).lowercased()
-            for word in bodyWords {
-                XCTAssertFalse(drawn.contains(word),
-                               """
-                               khaḍgamālā \(row.position)'s attribute is drawn as "\(form.shape)", \
-                               which names a \(word). Design's own card word here is \
-                               "\(HomeAttribute.designKey(atPosition: row.position) ?? "—")", and \
-                               the whole point of `kin` is that it never arrives as one.
-                               """)
-            }
+        // U0 · retired (verification.md §2.2, VER-L-0792): the body-word ban
+        // over the ten rooms' words and attribute names. "no figure" stays —
+        // the geometry below (a seal that is its own mirror image, no taper,
+        // no centre) is what keeps this family from being a hand.
+        for (row, _) in rooms() {
+            XCTAssertNotNil(HomeAttribute.form(atPosition: row.position),
+                            "khaḍgamālā \(row.position) brings no attribute into her room")
         }
 
         // ── the seal is its own mirror image ────────────────────────────────
@@ -720,8 +694,7 @@ final class MudraRoomTests: XCTestCase {
             let scene = RoomScene(room: room)
             for t in [0, Self.firstAdaptation, Self.pastTheSecond] {
                 scene.pose(at: t)
-                XCTAssertEqual(scene.solidsInHerLayer, 0,
-                               "khaḍgamālā \(row.position) mounted a solid at \(t)s")
+                // U0 · lifted (no solids in her layer); the floor reads node kinds — RoomSceneTests.
             }
         }
     }

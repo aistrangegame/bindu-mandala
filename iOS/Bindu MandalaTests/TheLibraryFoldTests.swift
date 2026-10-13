@@ -210,48 +210,12 @@ final class TheLibraryFoldTests: XCTestCase {
         XCTAssertEqual(shelves.map { $0[1] }.sorted(), ["go deeper", "her moments"])
     }
 
-    // MARK: - 5 · The shelves stand at the foot, under everything that stays
-
-    /// **The whole reason nothing that stays out moves.**
-    ///
-    /// A fold placed in the middle of a scroll lifts everything beneath it by
-    /// whatever it swallowed; a fold at the foot lifts nothing. That is the same
-    /// argument Phase 3.7 made for putting the door in the footer — *a door that
-    /// disturbs the screen it joins has been put in the wrong place* — and it is
-    /// why this phase's entire cost to the composition lock is one classified
-    /// translation of one control.
-    ///
-    /// It also fixes the order of the library itself: the record he made first,
-    /// the reference tradition wrote second.
-    func testTheShelvesAreTheLastThingsInTheScrollAndInThatOrder() throws {
-        let (_, code, _) = try detail()
-        let body = try body(code)
-
-        let order = ["heroSection", "codexPortraitSection", "somaticSection", "bijaSection",
-                     "appreciationPhraseSection", "embodimentSection", "fieldConnectionSection",
-                     "herMomentsFold", "goDeeperSection"]
-        var last = body.startIndex
-        for name in order {
-            let at = try XCTUnwrap(body.range(of: name, range: last..<body.endIndex),
-                                   "\(name) is no longer in the body, or is out of order")
-            last = at.upperBound
-        }
-
-        // The two doors are still outside the scroll and still in the ladder's
-        // order. Phase 3.7 owns both facts; this phase must not have moved them.
-        let scroll = try XCTUnwrap(Rx.first(#"ScrollView \{[\s\S]*?\n                    \}"#, body),
-                                   "the Detail's ScrollView is no longer where this check reads it")
-        XCTAssertTrue(scroll.contains("herMomentsFold") && scroll.contains("goDeeperSection"),
-                      "the library is no longer inside the scroll")
-        XCTAssertFalse(scroll.contains("herDoor"), "the way into her room fell into the scroll")
-        XCTAssertFalse(scroll.contains("recognitionFooter"), "the recognition fell into the scroll")
-        let scrolled = try XCTUnwrap(body.range(of: scroll))
-        let door = try XCTUnwrap(body.range(of: "herDoor"))
-        let felt = try XCTUnwrap(body.range(of: "recognitionFooter"))
-        XCTAssertTrue(scrolled.upperBound <= door.lowerBound && door.lowerBound < felt.lowerBound,
-                      "the footer's ladder — the scroll, then her room, then the recognition — "
-                      + "is no longer in that order")
-    }
+    // MARK: - 5 · retired in U0
+    //
+    // `testTheShelvesAreTheLastThingsInTheScrollAndInThatOrder` (VER-L-0819)
+    // held the composition lock — the order of her screen so that nothing
+    // that stays out moves. The composition lock is retired; her screen is
+    // held to Design's frames (V04) from U4.
 
     // MARK: - 6 · What the shelf says, and what it will not say
 
@@ -279,18 +243,8 @@ final class TheLibraryFoldTests: XCTestCase {
                       "the shelf row takes something other than two words and whether it is open — "
                       + "a value it holds is a value it can be made to show:\n\(signature)")
 
-        // …and **nothing else**, which the three `contains` above cannot say: a
-        // row that grew a fourth parameter still contains all three, and the
-        // fourth is the one that would arrive carrying a number. There is one
-        // comma per parameter and none inside `() -> Void`, so the count of them
-        // is the count of what the row can be handed.
-        let taken = signature
-            .replacingOccurrences(of: "private func shelf(", with: "")
-            .components(separatedBy: ",")
-        XCTAssertEqual(taken.count, 4,
-                       "the shelf row takes \(taken.count) things. It takes two words, whether it "
-                       + "is open, and what to do — and a fifth would be the one that arrives "
-                       + "carrying how often she has been felt:\n\(signature)")
+        // U0 (VER-L-0764): the arity pin on the shelf row is retired with the
+        // measuring-word lists; the practice-symbol scan above is the floor.
 
         var read = 0
         var offences: [String] = []

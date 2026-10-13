@@ -294,13 +294,21 @@ final class RecognitionNatureTests: XCTestCase {
         }
     }
 
-    /// **The light is light.** No asset, no picture: the ceremony is drawn
-    /// from gradients, shapes and rays.
+    /// **The light is never a figure.** U0 rewrite (VER-L-0772 / VER-FL-0887):
+    /// the "no Image at all" pin is lifted to the floor — an image may be
+    /// drawn in the ceremony, but nothing handed to a drawing primitive here
+    /// may name a figure.
     func testTheCeremonysLightIsNeverAFigure() throws {
         for name in ["RecognitionLight.swift", "RecognitionNature.swift", "RecognitionMomentView.swift"] {
-            let body = try code(name)
-            XCTAssertFalse(Rx.matches(#"\bImage\s*\("#, body), "\(name) draws an Image")
-            XCTAssertFalse(Rx.matches(#"\bUIImage\s*\("#, body), "\(name) loads a picture")
+            let file = try XCTUnwrap(LawSource.production(name), "\(name) is missing")
+            for call in file.calls(to: Aniconic.drawingCallees) {
+                XCTAssertNil(Rx.first(Aniconic.figuralVocabulary, call.argumentCode),
+                             "\(name) draws a figure: \(call.origin)")
+                for lit in call.literals {
+                    XCTAssertNil(Rx.first(Aniconic.figuralVocabulary, lit.text),
+                                 "\(name) draws a figure: \"\(lit.text)\"")
+                }
+            }
         }
     }
 }

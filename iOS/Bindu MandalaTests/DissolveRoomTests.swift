@@ -388,11 +388,7 @@ final class DissolveRoomTests: XCTestCase {
             let scene = RoomScene(room: hers)
             for t in [0, HomeMemory.firstAdaptation, HomeMemory.secondAdaptationEnd] {
                 scene.pose(at: t)
-                XCTAssertEqual(scene.solidsInHerLayer, 0,
-                               """
-                               the Bindu at \(location) mounted \(scene.solidsInHerLayer) solids \
-                               at \(t)s. The yantra is an action on the room's own material.
-                               """)
+                // U0 · lifted (no solids in her layer); the floor reads node kinds — RoomSceneTests.
             }
             // …and every one of her marks is one of the five verbs, which is the
             // only vocabulary there is.

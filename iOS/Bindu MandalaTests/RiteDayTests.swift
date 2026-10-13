@@ -98,13 +98,17 @@ final class RiteDayTests: XCTestCase {
                                          lastSurfaced: nil, surfaced: []))
     }
 
-    func testGraceSpeaksOnceThenRests() {
+    /// U0 · ruling 16: grace's rest was an app-added limit and is lifted
+    /// (`GraceChannel.restDays` = 0). Grace may speak the day after it last
+    /// spoke; a moment once returned is still never returned again.
+    func testGraceSpeaksOnceForEachMomentAndNeedsNoRest() {
         let now = date(2026, 10, 12, 9)
         let rows = [row("r1", ActivityLedger.ActivityType.letterWritten, "2026-10-08T15:00:00.000Z", "recHER")]
-        XCTAssertNil(GraceChannel.choose(rows: rows, herRecordId: "recHER", sisterRecordIds: [],
-                                         names: names, now: now, calendar: calendar,
-                                         lastSurfaced: date(2026, 10, 11), surfaced: []),
-                     "inside the rest it says nothing")
+        XCTAssertEqual(GraceChannel.restDays, 0, "grace keeps no rest of its own")
+        XCTAssertNotNil(GraceChannel.choose(rows: rows, herRecordId: "recHER", sisterRecordIds: [],
+                                            names: names, now: now, calendar: calendar,
+                                            lastSurfaced: date(2026, 10, 11), surfaced: []),
+                        "the day after it spoke, it may speak")
         XCTAssertNil(GraceChannel.choose(rows: rows, herRecordId: "recHER", sisterRecordIds: [],
                                          names: names, now: now, calendar: calendar,
                                          lastSurfaced: nil, surfaced: ["r1"]),

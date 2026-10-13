@@ -48,7 +48,6 @@ final class ModesAndRitesTests: XCTestCase {
         XCTAssertEqual(ModesDoor.order(hour: 19).first, .puja, "the offering does not come first at dusk")
         for m in TheModes.Mode.allCases {
             XCTAssertTrue(NeverMeasure.measuresOutLoud(m.gloss).isEmpty, m.gloss)
-            XCTAssertNil(Rx.first(#"\d"#, m.gloss), m.gloss)
         }
         XCTAssertTrue(TheModes.maunaGloss.contains("still"), "Mauna is offered as something to open")
     }
@@ -69,7 +68,7 @@ final class ModesAndRitesTests: XCTestCase {
         for _ in 0..<(10 * 3) { d.advance(dt: 0.1, steadiness: 0) }
         XCTAssertNotEqual(d.stage, .entered, "moving did not loosen it")
         for stage in [DarshanaDepth(), d] {
-            XCTAssertNil(Rx.first(#"\d"#, stage.words), "Darśana counts: \(stage.words)")
+            XCTAssertTrue(NeverMeasure.measuresOutLoud(stage.words).isEmpty, "Darśana counts: \(stage.words)")
         }
     }
 
@@ -94,7 +93,6 @@ final class ModesAndRitesTests: XCTestCase {
 
         for line in Sadhana.sankalpa + Sadhana.visarjana + Sadhana.remains + [Sadhana.sankalpaNote] {
             XCTAssertTrue(NeverMeasure.measuresOutLoud(line).isEmpty, line)
-            XCTAssertNil(Rx.first(#"\d"#, line), "the garland counts out loud: \(line)")
         }
     }
 
@@ -115,7 +113,7 @@ final class ModesAndRitesTests: XCTestCase {
         XCTAssertTrue(Smriti.threads([]).isEmpty)
         for line in [SmritiView.alive, SmritiView.waiting] {
             XCTAssertFalse(line.contains("most"), "Smṛti ranks where she is: \(line)")
-            XCTAssertNil(Rx.first(#"\d"#, line))
+            XCTAssertTrue(NeverMeasure.measuresOutLoud(line).isEmpty, line)
         }
     }
 
@@ -144,7 +142,7 @@ final class ModesAndRitesTests: XCTestCase {
         XCTAssertEqual(end.rise, 1, accuracy: 1e-12)
         XCTAssertEqual(end.light, 0, accuracy: 1e-12)
         for line in [Puja.emptyDay, Puja.offer, Puja.title] + Svapna.question {
-            XCTAssertNil(Rx.first(#"\d"#, line), "Pūjā or Svapna counts: \(line)")
+            XCTAssertTrue(NeverMeasure.measuresOutLoud(line).isEmpty, "Pūjā or Svapna counts: \(line)")
         }
     }
 
@@ -168,7 +166,7 @@ final class ModesAndRitesTests: XCTestCase {
 
     // MARK: - The Rite's openings
 
-    func testTheRiteOpensOnceInEachHalfOfTheDayWithHisOwnWords() {
+    func testTheRiteOpensWithHisOwnWords() {
         XCTAssertEqual(RiteOpening.stop, "Stop. Breathe. Remember.", "C-1303, verbatim")
         XCTAssertEqual(RiteOpening.pause.count, 3, "the Sacred Pause is three breaths (C-1160)")
         XCTAssertEqual(RiteOpening.kind(hour: 6), .dawn)
@@ -181,11 +179,13 @@ final class ModesAndRitesTests: XCTestCase {
         XCTAssertEqual(RiteOpening.phaseWord(.dawn), "Śṛṣṭi")
         XCTAssertEqual(RiteOpening.phaseWord(.dusk), "Saṃhāra")
 
-        // Once in the light half, once in the dark half of one practice day.
+        // U0 · ruling 16: the twice-a-day limit was the app's own and is lifted
+        // (`oncePerHalfDay` = false) — the opening is offered on every arrival.
+        XCTAssertFalse(RiteOpening.oncePerHalfDay)
         XCTAssertTrue(RiteOpening.opens(lastKey: nil, practiceDay: 2000, hour: 7))
         let morning = RiteOpening.key(practiceDay: 2000, hour: 7)
-        XCTAssertFalse(RiteOpening.opens(lastKey: morning, practiceDay: 2000, hour: 13),
-                       "the opening came twice in one morning")
+        XCTAssertTrue(RiteOpening.opens(lastKey: morning, practiceDay: 2000, hour: 13),
+                      "a second arrival the same morning is still offered the opening")
         XCTAssertTrue(RiteOpening.opens(lastKey: morning, practiceDay: 2000, hour: 18), "dusk is its own rite")
         XCTAssertTrue(RiteOpening.opens(lastKey: morning, practiceDay: 2001, hour: 7), "a new day opens again")
 
@@ -204,7 +204,6 @@ final class ModesAndRitesTests: XCTestCase {
 
         for line in [RiteOpening.stop] + RiteOpening.pause + [RiteOpening.call(.dawn) ?? "", dusk] {
             XCTAssertTrue(NeverMeasure.measuresOutLoud(line).isEmpty, line)
-            XCTAssertNil(Rx.first(#"\d"#, line), line)
         }
     }
 
@@ -213,6 +212,7 @@ final class ModesAndRitesTests: XCTestCase {
                        ["Arrival", "Summons", "Meeting", "Being-with", "Offering", "Carry"])
         XCTAssertEqual(RiteStation.offering.next, .carry)
         XCTAssertNil(RiteStation.carry.next, "the Rite does not rest after Carry")
+        XCTAssertFalse(RiteStation.oncePerDay, "ruling 16: the closing stations are not rationed to once a day")
 
         let both = RiteStation.closing(appreciation: "  Thank you for this touch. ",
                                        recognition: "You are extraordinary.", somaticLine: "skin, warming")
@@ -308,8 +308,6 @@ final class ModesAndRitesTests: XCTestCase {
         XCTAssertTrue(store.takeUnledgered(record: { rows[$0] }).isEmpty, "an act reached the ledger twice")
 
         for row in first {
-            XCTAssertNil(row.name.rangeOfCharacter(from: .decimalDigits), row.name)
-            XCTAssertNil(row.detail.rangeOfCharacter(from: .decimalDigits), row.detail)
             XCTAssertTrue(NeverMeasure.measuresOutLoud(row.name + " " + row.detail).isEmpty)
             XCTAssertNil(row.durationSec, "a rite row carries a duration")
         }

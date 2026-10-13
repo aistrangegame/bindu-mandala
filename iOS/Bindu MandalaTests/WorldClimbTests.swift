@@ -732,21 +732,15 @@ final class WorldClimbTests: XCTestCase {
         XCTAssertEqual(scene.layerName(.presences), "presences")
         XCTAssertEqual(WorldClimbScene.Layer.allCases.count, 3)
 
-        XCTAssertEqual(scene.solids(in: .ground), 1,
-                       "the building is one ground; \(scene.solids(in: .ground)) meshes were found")
-        XCTAssertEqual(scene.solids(in: .world), 1, "the world's only mesh is the air itself")
-
+        // U0 rewrite (VER-L-0790): the floor only — no figure of a Śakti, read
+        // by node kind. The solid counts (one ground mesh, one air mesh, the
+        // exact census of the third layer) were the binding condition and are
+        // lifted; the climb may hold more than light and ground.
         scene.hold(seats: ClimbLights.bareGarland, met: [3, 40], today: 61)
         XCTAssertEqual(scene.presenceCount, KhadgamalaMap.total, "the climb does not hold all 102")
         XCTAssertTrue(scene.everyPresenceIsLight,
                       "a mesh on the climb's third layer is not light — a lit body standing in the "
                       + "space is the one shape a figure could take")
-        XCTAssertEqual(scene.solidsInTheClimb,
-                       2 + scene.solids(in: .presences),
-                       "something stands in the climb outside its three layers")
-        // Halos, a core at every one of the 102 (Wave 6, C-1284), one crown,
-        // and the follow light — nothing else.
-        XCTAssertEqual(scene.solids(in: .presences), KhadgamalaMap.total * 2 + 1 + 1)
     }
 
     /// **She was expecting you — all 102 alike** (C-1284, *"when you recognize

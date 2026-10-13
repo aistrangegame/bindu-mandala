@@ -14,7 +14,10 @@ final class BinduMandalaUITests: XCTestCase {
     private func launchToday() -> XCUIApplication {
         let app = XCUIApplication()
         // SYNC_OFF: the app must never write to Airtable during a UI run (honoured by AppRuntime.syncDisabled).
-        app.launchArguments = ["SKIP_SUMMONS", "SKIP_HOMECOMING", "START_TAB=rite", "ENERGY_POS=29", "SYNC_OFF"]
+        // U0 (VER-L-0806 / 0807): no longer "a new day always opens on the Rite"
+        // (START_TAB=rite). Ruling 1: launch arrives at the Bindu and Today is
+        // the first door — so Today is asked for by its world, OPEN_WORLD=today.
+        app.launchArguments = ["SKIP_SUMMONS", "SKIP_HOMECOMING", "OPEN_WORLD=today", "ENERGY_POS=29", "SYNC_OFF"]
         app.launch()
         return app
     }
